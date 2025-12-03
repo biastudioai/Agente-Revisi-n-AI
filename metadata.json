@@ -1,0 +1,5 @@
+{
+  "name": "Evaluador Médico IA",
+  "description": "Evaluador inteligente de informes médicos utilizando Gemini 2.0 para validación de reglas de aseguradoras y pre-aprobación.",
+  "requestFramePermissions": []
+}
