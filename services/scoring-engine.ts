@@ -1,4 +1,7 @@
 
+
+
+
 import { ExtractedData, ScoringRule, ScoringResult } from "../types";
 
 // Helper para parsear números que pueden venir con comas o texto extra
@@ -300,6 +303,19 @@ export const DEFAULT_SCORING_RULES: ScoringRule[] = [
     description: 'Trámite de Programación de Cirugía detectado. Requiere validación de presupuesto.',
     validator: (data) => data.tramite?.programacion_cirugia === true,
     affectedFields: ['tramite.programacion_cirugia']
+  },
+  
+  {
+    id: 'coherencia_clinica',
+    name: 'Incoherencia Clínica Detectada',
+    level: 'DISCRETO',
+    points: 0,
+    description: 'Nota de IA: Posible falta de coherencia lógica entre Padecimiento, Diagnóstico y Tratamiento.',
+    validator: (data) => {
+      // Si la metadata existe y es false explícitamente, levanta la nota
+      return data.metadata?.existe_coherencia_clinica === false;
+    },
+    affectedFields: ['diagnostico.diagnostico_definitivo', 'tratamiento.descripcion']
   }
 ];
 
@@ -329,12 +345,19 @@ export function calculateScore(
 
     if (fails) {
       totalDeducted += rule.points;
+      
+      // Si es coherencia clínica, tratamos de usar la observación de la metadata si existe
+      let message = rule.description;
+      if (rule.id === 'coherencia_clinica' && data.metadata?.observacion_coherencia) {
+        message = `${rule.description} Detalle: ${data.metadata.observacion_coherencia}`;
+      }
+
       flags.push({
         type: rule.level === 'CRÍTICO' ? 'ERROR_CRÍTICO' : 
               rule.level === 'IMPORTANTE' ? 'ALERTA' :
               rule.level === 'MODERADO' ? 'OBSERVACIÓN' : 'NOTA',
         rule: rule.name,
-        message: rule.description,
+        message: message,
         fieldPath: rule.affectedFields[0]
       });
     }

@@ -1,12 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import FileUpload from './components/FileUpload';
 import Dashboard from './components/Dashboard';
 import RuleConfigurator from './components/RuleConfigurator';
+import PdfViewer from './components/PdfViewer';
 import { analyzeReportImage, reEvaluateReport } from './services/geminiService';
 import { DEFAULT_SCORING_RULES } from './services/scoring-engine';
 import { AnalysisReport, AnalysisStatus, ExtractedData, ScoringRule } from './types';
-import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw } from 'lucide-react';
+import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw, AlignLeft, Image as ImageIcon } from 'lucide-react';
 
 const App: React.FC = () => {
   const [status, setStatus] = useState<AnalysisStatus>('idle');
@@ -20,7 +20,13 @@ const App: React.FC = () => {
   const [rules, setRules] = useState<ScoringRule[]>(DEFAULT_SCORING_RULES);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
 
-  // Convert Base64 to Blob URL for robust PDF rendering
+  // State for Pending Changes (Sync Form -> PDF)
+  const [pendingChanges, setPendingChanges] = useState<Record<string, { old: any, new: any }>>({});
+
+  // State for Left Panel View Mode (Visual vs Text)
+  const [leftPanelView, setLeftPanelView] = useState<'visual' | 'text'>('visual');
+
+  // Convert Base64 to Blob URL for download link
   useEffect(() => {
     if (filePreview) {
       try {
@@ -50,6 +56,8 @@ const App: React.FC = () => {
     setStatus('analyzing');
     setError(null);
     setFilePreview({ data: base64Data, type: mimeType });
+    setPendingChanges({});
+    setLeftPanelView('visual'); // Reset to visual on new file
     
     try {
       const data = await analyzeReportImage(base64Data, mimeType, rules);
@@ -91,6 +99,61 @@ const App: React.FC = () => {
       }
   };
 
+  const handleSyncChanges = (changes: Record<string, { old: any, new: any }>) => {
+      setPendingChanges(changes);
+  };
+
+  // Determine approval status
+  let approvalStatus: 'APPROVED' | 'REVIEW' | 'REJECTED' = 'REVIEW';
+  if (report) {
+      if (report.score.finalScore >= 85) approvalStatus = 'APPROVED';
+      else if (report.score.finalScore < 50) approvalStatus = 'REJECTED';
+  }
+
+  // --- Helper to render Narrative Text in Left Panel ---
+  const renderLeftPanelNarrative = (data: ExtractedData) => {
+    return (
+        <div className="max-w-md mx-auto font-mono text-xs text-emerald-400/90 leading-relaxed whitespace-pre-wrap space-y-4">
+            <div className="border-b border-emerald-900/50 pb-2 mb-2">
+                <p className="font-bold text-emerald-300 uppercase">{data.hospital?.nombre_hospital || "NOTA MÉDICA"}</p>
+                <p>DR: {data.medico_tratante?.nombres} {data.medico_tratante?.primer_apellido}</p>
+                <p>FECHA: {data.padecimiento_actual?.fecha_inicio || "S/D"}</p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2 text-[10px] opacity-80">
+                <p>PAC: {data.identificacion?.nombres} {data.identificacion?.primer_apellido}</p>
+                <p>EDAD: {data.identificacion?.edad}</p>
+            </div>
+
+            {data.padecimiento_actual?.descripcion && (
+                <div>
+                    <span className="font-bold text-emerald-300 block mb-1">PADECIMIENTO:</span>
+                    {data.padecimiento_actual.descripcion}
+                </div>
+            )}
+            
+            <div className="border-y border-emerald-900/50 py-2 my-2 grid grid-cols-2 gap-2">
+                 <p>TA: {data.signos_vitales?.presion_arterial}</p>
+                 <p>TEMP: {data.signos_vitales?.temperatura}</p>
+            </div>
+
+            {data.diagnostico?.diagnostico_definitivo && (
+                <div>
+                    <span className="font-bold text-emerald-300 block mb-1">DX:</span>
+                    {data.diagnostico.diagnostico_definitivo}
+                </div>
+            )}
+
+            {data.tratamiento?.descripcion && (
+                <div>
+                     <span className="font-bold text-emerald-300 block mb-1">TX:</span>
+                     {data.tratamiento.descripcion}
+                </div>
+            )}
+        </div>
+    );
+  };
+
   // Render: SPLIT VIEW
   if (status === 'complete' || status === 're-evaluating') {
     return (
@@ -130,65 +193,88 @@ const App: React.FC = () => {
             className={`bg-slate-900 relative transition-all duration-500 ease-in-out flex flex-col shadow-2xl z-10 ${isPanelOpen ? '' : 'w-0 opacity-0'}`}
             style={{ width: isPanelOpen ? '50%' : '0px', flex: 'none' }}
           >
-            <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
-               <div className="bg-black/60 backdrop-blur text-white text-xs px-3 py-1.5 rounded-full flex items-center border border-white/10 shadow-lg">
-                  <Eye className="w-3.5 h-3.5 mr-2 text-brand-400" /> 
+            {/* Header Controls for Left Panel */}
+            <div className="absolute top-4 left-4 z-20 flex items-center gap-3">
+               <div className="bg-black/60 backdrop-blur text-white text-xs px-3 py-1.5 rounded-full flex items-center border border-white/10 shadow-lg select-none">
+                  {leftPanelView === 'visual' ? <Eye className="w-3.5 h-3.5 mr-2 text-brand-400" /> : <AlignLeft className="w-3.5 h-3.5 mr-2 text-brand-400" />}
                   <span className="font-medium tracking-wide">Documento Original</span>
                </div>
+               
+               {/* View Toggle */}
+               <div className="bg-black/60 backdrop-blur rounded-full flex items-center border border-white/10 shadow-lg p-1">
+                  <button 
+                    onClick={() => setLeftPanelView('visual')}
+                    className={`p-1.5 rounded-full transition-all ${leftPanelView === 'visual' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}
+                    title="Vista Visual (PDF/Imagen)"
+                  >
+                    <ImageIcon className="w-3.5 h-3.5" />
+                  </button>
+                  <button 
+                    onClick={() => setLeftPanelView('text')}
+                    className={`p-1.5 rounded-full transition-all ${leftPanelView === 'text' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}
+                    title="Vista Texto (Transcripción)"
+                  >
+                    <AlignLeft className="w-3.5 h-3.5" />
+                  </button>
+               </div>
+
                {blobUrl && (
                   <a 
                     href={blobUrl} 
                     target="_blank"
                     rel="noreferrer"
                     className="bg-black/60 hover:bg-black/80 backdrop-blur text-white p-1.5 rounded-full flex items-center border border-white/10 shadow-lg transition-all hover:scale-105 cursor-pointer"
-                    title="Abrir en nueva pestaña (Recomendado si no carga)"
+                    title="Abrir en nueva pestaña"
                   >
                      <ExternalLink className="w-3.5 h-3.5 text-white" />
                   </a>
                )}
             </div>
             
-            <div className="flex-1 w-full h-full bg-slate-900 flex items-center justify-center overflow-hidden p-0">
-              {blobUrl ? (
-                filePreview?.type === 'application/pdf' ? (
-                  <object
-                    data={blobUrl} // REMOVED query params to prevent chrome blocking
-                    type="application/pdf"
-                    className="w-full h-full block border-none bg-slate-800"
-                  >
-                     {/* Fallback content if PDF fails to load or is blocked */}
-                     <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 p-8 text-center bg-slate-900">
-                        <FileText className="w-16 h-16 mb-4 opacity-30" />
-                        <h3 className="text-lg font-semibold text-slate-300 mb-2">Vista previa no disponible</h3>
-                        <p className="mb-6 max-w-xs text-sm text-slate-500">
-                           Tu navegador bloqueó la visualización directa del PDF en este panel.
-                        </p>
-                        <a 
-                          href={blobUrl} 
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-5 py-2.5 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors shadow-lg font-medium text-sm flex items-center"
-                        >
-                          <ExternalLink className="w-4 h-4 mr-2" />
-                          Abrir PDF en nueva pestaña
-                        </a>
-                     </div>
-                  </object>
+            <div className="flex-1 w-full h-full bg-slate-900 flex items-center justify-center overflow-hidden p-0 relative">
+              
+              {leftPanelView === 'visual' ? (
+                // --- VISUAL MODE (PDF/IMAGE) ---
+                filePreview ? (
+                    filePreview.type === 'application/pdf' ? (
+                    <PdfViewer 
+                        base64Data={filePreview.data} 
+                        approvalStatus={approvalStatus}
+                        pendingChanges={pendingChanges}
+                    />
+                    ) : (
+                    <div className="w-full h-full overflow-auto flex items-center justify-center p-8 bg-slate-900/50">
+                        <img 
+                            src={`data:${filePreview.type};base64,${filePreview.data}`} 
+                            className="max-w-full max-h-full object-contain shadow-2xl"
+                            alt="Medical Report"
+                        />
+                    </div>
+                    )
                 ) : (
-                  <div className="w-full h-full overflow-auto flex items-center justify-center p-8 bg-slate-900/50">
-                      <img 
-                        src={blobUrl} 
-                        className="max-w-full max-h-full object-contain shadow-2xl"
-                        alt="Medical Report"
-                      />
-                  </div>
+                    <div className="text-slate-500 flex flex-col items-center animate-pulse">
+                        <FileText className="w-10 h-10 mb-2 opacity-50" />
+                        <span className="text-xs">Cargando documento...</span>
+                    </div>
                 )
               ) : (
-                 <div className="text-slate-500 flex flex-col items-center animate-pulse">
-                    <FileText className="w-10 h-10 mb-2 opacity-50" />
-                    <span className="text-xs">Cargando documento...</span>
-                 </div>
+                // --- TEXT MODE (TRANSCRIPTION) ---
+                <div className="w-full h-full flex flex-col bg-slate-950">
+                    <div className="flex-1 overflow-auto custom-scrollbar p-8">
+                        <div className="max-w-2xl mx-auto">
+                            <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-6 pb-2 border-b border-slate-800 flex items-center gap-2">
+                                <AlignLeft className="w-4 h-4" /> Transcripción del Sistema (Modo Nota)
+                            </h3>
+                            {report?.extracted ? (
+                                renderLeftPanelNarrative(report.extracted)
+                            ) : (
+                                <span className="text-slate-600 italic">No hay transcripción disponible.</span>
+                            )}
+                        </div>
+                    </div>
+                </div>
               )}
+
             </div>
           </div>
 
@@ -212,6 +298,7 @@ const App: React.FC = () => {
                   report={report} 
                   onReevaluate={handleReevaluate} 
                   isReevaluating={status === 're-evaluating'}
+                  onSyncChanges={handleSyncChanges}
                 />
              )}
           </div>

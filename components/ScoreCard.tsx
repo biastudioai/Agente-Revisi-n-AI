@@ -22,7 +22,7 @@ const ScoreCard: React.FC<ScoreCardProps> = ({ scoreData, flags, hasChanges, isR
   let bgGradient = "from-red-50 to-white";
   let statusIcon = <XCircle className="w-5 h-5 text-red-600" />;
 
-  if (finalScore >= 90) {
+  if (finalScore >= 85) {
     colorBase = "text-emerald-600";
     strokeColor = "#10b981"; // emerald-500
     statusText = "PRE-APROBADO";

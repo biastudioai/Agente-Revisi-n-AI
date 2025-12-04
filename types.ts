@@ -1,4 +1,5 @@
 
+
 export interface TramiteData {
   reembolso?: boolean;
   programacion_cirugia?: boolean;
@@ -123,6 +124,11 @@ export interface FirmaData {
   nombre_firma?: string;
 }
 
+export interface ExtractedMetadata {
+  existe_coherencia_clinica?: boolean;
+  observacion_coherencia?: string;
+}
+
 export interface ExtractedData {
   tramite?: TramiteData;
   identificacion?: IdentificacionData;
@@ -140,6 +146,7 @@ export interface ExtractedData {
   medico_tratante?: MedicoTratanteData;
   otros_medicos?: MedicoInterconsultanteData[];
   firma?: FirmaData;
+  metadata?: ExtractedMetadata;
 }
 
 // Scoring Types
