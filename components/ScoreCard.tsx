@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ScoringResult, Flag } from '../types';
-import { TrendingUp, TrendingDown, RefreshCw, Save, AlertCircle, AlertTriangle, CheckCircle2, XCircle, MousePointerClick, Info } from 'lucide-react';
+import { TrendingUp, TrendingDown, RefreshCw, Save, AlertCircle, AlertTriangle, CheckCircle2, XCircle, MousePointerClick, Send } from 'lucide-react';
 
 interface ScoreCardProps {
   scoreData: ScoringResult;
@@ -10,9 +10,10 @@ interface ScoreCardProps {
   isReevaluating: boolean;
   onReevaluate: () => void;
   onIssueClick: (fieldPath: string) => void;
+  onOpenReview: () => void;
 }
 
-const ScoreCard: React.FC<ScoreCardProps> = ({ scoreData, flags, hasChanges, isReevaluating, onReevaluate, onIssueClick }) => {
+const ScoreCard: React.FC<ScoreCardProps> = ({ scoreData, flags, hasChanges, isReevaluating, onReevaluate, onIssueClick, onOpenReview }) => {
   const { finalScore, delta } = scoreData;
   
   // Determine Visual Status
@@ -55,11 +56,45 @@ const ScoreCard: React.FC<ScoreCardProps> = ({ scoreData, flags, hasChanges, isR
   const offset = circumference - ((Math.max(0, Math.min(100, finalScore)) / 100) * circumference);
 
   return (
-    <div className={`rounded-2xl shadow-lg border border-white/60 overflow-hidden bg-gradient-to-br ${bgGradient} backdrop-blur-sm transition-all duration-500`}>
+    <div className={`rounded-2xl shadow-lg border border-white/60 overflow-hidden bg-gradient-to-br ${bgGradient} backdrop-blur-sm transition-all duration-500 relative`}>
       
       {/* HEADER: GAUGE & SCORE */}
       <div className="p-6 flex flex-col items-center relative">
         
+        {/* Send Review Button (Top Left) */}
+        <div className="absolute top-4 left-4 z-10">
+           <button
+              onClick={onOpenReview}
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-white/80 hover:bg-brand-50 border border-white/50 hover:border-brand-200 shadow-sm text-brand-600 transition-all transform hover:scale-110"
+              title="Enviar Revisión"
+           >
+              <Send className="w-4 h-4" />
+           </button>
+        </div>
+
+        {/* Re-evaluate Button (Top Right) */}
+        {hasChanges && (
+            <div className="absolute top-4 right-4 z-10">
+                 <button
+                    onClick={onReevaluate}
+                    disabled={isReevaluating}
+                    className={`
+                        flex items-center px-3 py-2 rounded-lg text-xs font-bold text-white shadow-lg shadow-accent-500/30 transition-all transform
+                        ${isReevaluating ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-brand-600 to-accent-600 hover:scale-105 active:scale-95'}
+                    `}
+                    >
+                    {isReevaluating ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                        <>
+                        <Save className="w-3.5 h-3.5 mr-1.5" />
+                        Actualizar
+                        </>
+                    )}
+                </button>
+            </div>
+        )}
+
         {/* Gauge Chart */}
         <div className="relative w-40 h-40">
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 80 80">
@@ -107,29 +142,6 @@ const ScoreCard: React.FC<ScoreCardProps> = ({ scoreData, flags, hasChanges, isR
             </div>
             )}
         </div>
-
-        {/* Re-evaluate Button */}
-        {hasChanges && (
-            <div className="absolute top-4 right-4">
-                 <button
-                    onClick={onReevaluate}
-                    disabled={isReevaluating}
-                    className={`
-                        flex items-center px-3 py-2 rounded-lg text-xs font-bold text-white shadow-lg shadow-accent-500/30 transition-all transform
-                        ${isReevaluating ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-brand-600 to-accent-600 hover:scale-105 active:scale-95'}
-                    `}
-                    >
-                    {isReevaluating ? (
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                        <>
-                        <Save className="w-3.5 h-3.5 mr-1.5" />
-                        Actualizar
-                        </>
-                    )}
-                </button>
-            </div>
-        )}
       </div>
 
       {/* ISSUES LIST (CHIPS STYLE) */}

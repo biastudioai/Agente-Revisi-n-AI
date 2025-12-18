@@ -1,29 +1,11 @@
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { SYSTEM_PROMPT } from "../constants";
 import { AnalysisReport, ExtractedData, ScoringRule } from "../types";
 import { calculateScore, reEvaluateScore, DEFAULT_SCORING_RULES } from "./scoring-engine";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-const MODEL_NAME = "gemini-2.5-flash";
-
-function extractJson(text: string): any {
-  try {
-    const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/);
-    if (jsonMatch && jsonMatch[1]) {
-      return JSON.parse(jsonMatch[1]);
-    }
-    const firstBrace = text.indexOf('{');
-    const lastBrace = text.lastIndexOf('}');
-    if (firstBrace !== -1 && lastBrace !== -1) {
-      return JSON.parse(text.substring(firstBrace, lastBrace + 1));
-    }
-    return null;
-  } catch (e) {
-    console.error("Failed to parse JSON from Gemini response", e);
-    return null;
-  }
-}
+const MODEL_NAME = "gemini-3-flash-preview";
 
 export const analyzeReportImage = async (
     base64Data: string, 
@@ -31,7 +13,6 @@ export const analyzeReportImage = async (
     rules: ScoringRule[] = DEFAULT_SCORING_RULES
 ): Promise<AnalysisReport> => {
   try {
-    // 1. Gemini performs OCR and structure mapping ONLY
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
       contents: {
@@ -43,24 +24,107 @@ export const analyzeReportImage = async (
               data: base64Data
             }
           },
-          { text: "Extrae los datos." }
+          { text: "Extrae toda la información siguiendo el esquema JSON. Asegúrate de identificar si es METLIFE o GNP. Valida el código CIE-10." }
         ]
       },
       config: {
-        temperature: 0.0, // Zero temperature for maximum determinism in extraction
+        temperature: 0.1,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            extracted: {
+              type: Type.OBJECT,
+              properties: {
+                provider: { type: Type.STRING, description: "METLIFE, GNP o UNKNOWN" },
+                identificacion: {
+                  type: Type.OBJECT,
+                  properties: {
+                    nombres: { type: Type.STRING },
+                    edad: { type: Type.STRING },
+                    sexo: { type: Type.STRING },
+                    peso: { type: Type.STRING },
+                    talla: { type: Type.STRING },
+                    fecha_primera_atencion: { type: Type.STRING }
+                  }
+                },
+                antecedentes: {
+                  type: Type.OBJECT,
+                  properties: {
+                    historia_clinica_breve: { type: Type.STRING },
+                    gineco_g: { type: Type.STRING },
+                    gineco_p: { type: Type.STRING },
+                    gineco_a: { type: Type.STRING },
+                    gineco_c: { type: Type.STRING },
+                    personales_patologicos: { type: Type.STRING }
+                  }
+                },
+                padecimiento_actual: {
+                  type: Type.OBJECT,
+                  properties: {
+                    descripcion: { type: Type.STRING },
+                    fecha_inicio: { type: Type.STRING },
+                    tipo_padecimiento: { type: Type.STRING },
+                    causa_etiologia: { type: Type.STRING }
+                  }
+                },
+                diagnostico: {
+                  type: Type.OBJECT,
+                  properties: {
+                    diagnostico_definitivo: { type: Type.STRING },
+                    codigo_cie: { type: Type.STRING },
+                    fecha_diagnostico: { type: Type.STRING },
+                    fecha_inicio_tratamiento: { type: Type.STRING },
+                    cie_coherente_con_texto: { type: Type.BOOLEAN },
+                    explicacion_incoherencia_cie: { type: Type.STRING }
+                  }
+                },
+                hospital: {
+                  type: Type.OBJECT,
+                  properties: {
+                    nombre_hospital: { type: Type.STRING },
+                    ciudad: { type: Type.STRING },
+                    estado: { type: Type.STRING },
+                    fecha_ingreso: { type: Type.STRING },
+                    fecha_intervencion: { type: Type.STRING },
+                    fecha_egreso: { type: Type.STRING }
+                  }
+                },
+                medico_tratante: {
+                  type: Type.OBJECT,
+                  properties: {
+                    nombres: { type: Type.STRING },
+                    especialidad: { type: Type.STRING },
+                    rfc: { type: Type.STRING },
+                    cedula_profesional: { type: Type.STRING },
+                    honorarios_cirujano: { type: Type.STRING },
+                    se_ajusta_tabulador: { type: Type.BOOLEAN }
+                  }
+                },
+                firma: {
+                  type: Type.OBJECT,
+                  properties: {
+                    lugar: { type: Type.STRING },
+                    fecha: { type: Type.STRING },
+                    nombre_firma: { type: Type.STRING }
+                  }
+                }
+              },
+              required: ["provider"]
+            }
+          },
+          required: ["extracted"]
+        }
       }
     });
 
-    const text = response.text || "";
-    const jsonData = extractJson(text);
+    const text = response.text;
+    if (!text) throw new Error("Empty response from AI");
     
-    if (!jsonData || !jsonData.extracted) {
-      throw new Error("No valid JSON found in response");
-    }
-    
+    const jsonData = JSON.parse(text);
     const extractedData: ExtractedData = jsonData.extracted;
 
-    // 2. JavaScript Engine calculates score deterministically
+    // Calcular score usando el motor determinístico
     const scoringResult = calculateScore(extractedData, undefined, rules);
 
     return {
@@ -81,7 +145,6 @@ export const reEvaluateReport = async (
   updatedData: ExtractedData,
   rules: ScoringRule[] = DEFAULT_SCORING_RULES
 ): Promise<AnalysisReport> => {
-    // 1. JavaScript Engine recalculates score immediately (Sync)
     const newScoringResult = reEvaluateScore(
         updatedData, 
         previousReport.score.finalScore,

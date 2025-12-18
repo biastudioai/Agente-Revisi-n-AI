@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Loader2, PenTool, Type, Stamp, Save, X, MousePointer2, RefreshCw, ArrowRight, Move, Crosshair } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Loader2, PenTool, Type, Stamp, Save, X, MousePointer2, RefreshCw, ArrowRight, Move, Crosshair, Maximize } from 'lucide-react';
 
 // Resolve the correct module object (handle ESM default export wrapping)
 const pdfjs: any = (pdfjsLib as any).default || pdfjsLib;
@@ -46,6 +46,8 @@ const FIELD_MAPPINGS: Record<string, string[]> = {
 const PdfViewer: React.FC<PdfViewerProps> = ({ base64Data, approvalStatus, pendingChanges = {} }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const renderTaskRef = useRef<any>(null); // Track active render task to handle cancellations
+  
   const [pdfDoc, setPdfDoc] = useState<any>(null);
   const [pageNum, setPageNum] = useState(1);
   const [pageCount, setPageCount] = useState(0);
@@ -53,6 +55,9 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ base64Data, approvalStatus, pendi
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  // State to track if we are in "Auto Fit" mode or "Manual Zoom" mode
+  const [isAutoZoomed, setIsAutoZoomed] = useState(true);
+
   // Editing State
   const [isEditMode, setIsEditMode] = useState(false);
   const [activeTool, setActiveTool] = useState<'cursor' | 'text' | 'placer'>('cursor');
@@ -74,6 +79,7 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ base64Data, approvalStatus, pendi
         setLoading(true);
         setError(null);
         setAnnotations([]); // Reset annotations on new file
+        setIsAutoZoomed(true); // Reset auto-zoom state on new file
         
         if (!base64Data) return;
 
@@ -100,9 +106,87 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ base64Data, approvalStatus, pendi
     loadPdf();
   }, [base64Data]);
 
+  // Auto-fit function
+  const fitToPage = async () => {
+    if (!pdfDoc || !containerRef.current) return;
+    try {
+      const page = await pdfDoc.getPage(pageNum);
+      const viewport = page.getViewport({ scale: 1.0 });
+      const container = containerRef.current;
+      
+      // Safety check: If container is too small (e.g. during animation or closed), abort
+      if (container.clientWidth < 100 || container.clientHeight < 100) return;
+
+      // Account for padding (p-8 = 32px * 2 = 64px)
+      const hPadding = 64;
+      const vPadding = 64;
+      
+      const availableWidth = container.clientWidth - hPadding;
+      const availableHeight = container.clientHeight - vPadding;
+
+      if (availableWidth <= 0 || availableHeight <= 0) return;
+
+      const scaleW = availableWidth / viewport.width;
+      const scaleH = availableHeight / viewport.height;
+      
+      // Fit fully visible (min of both)
+      const optimalScale = Math.min(scaleW, scaleH);
+      
+      // Floor to 2 decimals, but ensure a reasonable min (e.g. 20%)
+      const finalScale = Math.max(0.2, Math.floor(optimalScale * 100) / 100);
+      
+      // Only update if difference is significant to avoid loop (scrollbar jitter)
+      setScale(prev => {
+          if (Math.abs(prev - finalScale) < 0.02) return prev;
+          return finalScale;
+      });
+
+    } catch (e) {
+      console.error("Error calculating fit", e);
+    }
+  };
+
+  useEffect(() => {
+    if (!containerRef.current || !pdfDoc) return;
+
+    // 1. Initial Fit with Delay (Wait for Panel Slide Animation 500ms)
+    const initialTimer = setTimeout(() => {
+        fitToPage();
+    }, 600);
+
+    // 2. Resize Observer for Window changes
+    // Only fit to page if the user hasn't manually zoomed (isAutoZoomed === true)
+    let timeoutId: any;
+    const observer = new ResizeObserver(() => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        if (isAutoZoomed) {
+            fitToPage();
+        }
+      }, 400); 
+    });
+
+    observer.observe(containerRef.current);
+
+    return () => {
+      clearTimeout(initialTimer);
+      clearTimeout(timeoutId);
+      observer.disconnect();
+    };
+  }, [pdfDoc, pageNum, isAutoZoomed]); // Re-bind observer if isAutoZoomed changes
+
   useEffect(() => {
     const renderPage = async () => {
       if (!pdfDoc || !canvasRef.current) return;
+
+      // Cancel previous render task if it exists to avoid "Same canvas" error
+      if (renderTaskRef.current) {
+        try {
+            renderTaskRef.current.cancel();
+        } catch(e) {
+            // Ignore potential errors during cancellation
+        }
+      }
 
       try {
         const page = await pdfDoc.getPage(pageNum);
@@ -137,18 +221,51 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ base64Data, approvalStatus, pendi
           transform: transform || undefined
         };
         
-        await page.render(renderContext).promise;
-      } catch (err) {
+        const renderTask = page.render(renderContext);
+        renderTaskRef.current = renderTask;
+
+        await renderTask.promise;
+        renderTaskRef.current = null;
+      } catch (err: any) {
+        if (err.name === 'RenderingCancelledException') {
+            // Expected when cancelling previous task
+            return;
+        }
         console.error("Error rendering page:", err);
       }
     };
 
     renderPage();
+
+    return () => {
+        if (renderTaskRef.current) {
+            try {
+                renderTaskRef.current.cancel();
+            } catch(e) {}
+        }
+    };
   }, [pdfDoc, pageNum, scale]);
 
   const changePage = (offset: number) => {
     setPageNum(prev => Math.min(Math.max(1, prev + offset), pageCount));
   };
+
+  // Zoom helpers
+  const handleZoomIn = () => {
+      setIsAutoZoomed(false);
+      setScale(s => Math.min(3.0, s + 0.1));
+  };
+
+  const handleZoomOut = () => {
+      setIsAutoZoomed(false);
+      setScale(s => Math.max(0.1, s - 0.1));
+  };
+
+  const handleFitToPage = () => {
+      setIsAutoZoomed(true);
+      fitToPage();
+  };
+
 
   // --- PANEL DRAGGING LOGIC ---
   const handlePanelMouseDown = (e: React.MouseEvent) => {
@@ -658,7 +775,7 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ base64Data, approvalStatus, pendi
 
           <div className="flex items-center gap-1">
              <button 
-              onClick={() => setScale(s => Math.max(0.5, s - 0.2))}
+              onClick={handleZoomOut}
               className="p-1.5 rounded-full hover:bg-slate-700 text-slate-300 transition-colors"
             >
               <ZoomOut className="w-3.5 h-3.5" />
@@ -667,10 +784,18 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ base64Data, approvalStatus, pendi
               {Math.round(scale * 100)}%
             </span>
              <button 
-              onClick={() => setScale(s => Math.min(3.0, s + 0.2))}
+              onClick={handleZoomIn}
               className="p-1.5 rounded-full hover:bg-slate-700 text-slate-300 transition-colors"
             >
               <ZoomIn className="w-3.5 h-3.5" />
+            </button>
+            <div className="w-px h-4 bg-slate-600 mx-1"></div>
+            <button 
+              onClick={handleFitToPage}
+              className={`p-1.5 rounded-full transition-colors ${isAutoZoomed ? 'bg-slate-700 text-white' : 'hover:bg-slate-700 text-slate-300'}`}
+              title="Ajustar a Pantalla (Auto)"
+            >
+              <Maximize className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
