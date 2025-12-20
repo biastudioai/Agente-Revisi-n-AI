@@ -1,0 +1,99 @@
+Lugar y Fecha
+Lugar y fecha: Blank (that space is meant only for lugar)
+Fecha (with Día Mes Año fields for date breakdown).
+Datos del Paciente
+Nombre completo: Blank
+Sexo: Options - Masculino ☐, Femenino ☐, Otro ☐ (Blank)
+Edad: Blank
+Causa de reclamación: Options - Accidente ☐, Enfermedad ☐, Embarazo ☐, Segunda valoración ☐ (Blank)
+Peso: Blank
+Talla: Blank
+Fecha en que atendió por primera vez al paciente por motivo de esta enfermedad / accidente / embarazo: Día Mes Año (Blank)
+Antecedentes Clínicos de Importancia
+Historia clínica breve: Blank
+Antecedentes personales patológicos: Blank
+Antecedentes quirúrgicos: Blank
+Antecedentes gineco-obstétricos (especificar si ha recibido tratamiento para infertilidad): G ☐ P ☐ A ☐ C ☐ (Blank)
+Mencione las afecciones más importantes que padezca el paciente aunque no tenga relación con la presente reclamación: Blank
+Padecimiento Actual
+Principales signos, síntomas y detalle de la evolución: Blank
+Fecha de inicio de principales signos y síntomas: Día Mes Año (Blank)
+Tipo de padecimiento: Options - Congénito ☐, Adquirido ☐, Agudo ☐, Crónico ☐ (Blank)
+Tiempo de evolución: Blank
+Causa / etiología del padecimiento (en caso de accidente, describa tiempo, modo y lugar donde ocurrió la lesión): Blank
+Exploración física, estudios de laboratorio y gabinete practicados (anexar interpretaciones que confirmen diagnóstico): Blank
+Detallar resultados de exploración física, estudios de laboratorio y/o gabinete que demuestren el diagnóstico referido: Blank
+Diagnóstico etiológico definitivo: Blank
+Código CIE (Blank)
+Fecha de diagnóstico: Día Mes Año (Blank)
+Fecha de inicio de tratamiento: Día Mes Año (Blank)
+¿Se ha relacionado con algún otro padecimiento, enfermedad o accidente?: Options - Sí ☐, No ☐ (Blank)
+¿Cuál?: Blank
+Indicar el tratamiento y/o intervención quirúrgica (especificar CPT, sólo como referencia): Blank
+Descripción de la técnica: Blank
+¿Utilizó equipo especial para el procedimiento?: Options - Sí ☐, No ☐ (Blank)
+Detallar: Blank
+¿Utilizó insumos y/o materiales para el procedimiento?: Options - Sí ☐, No ☐ (Blank)
+Detallar: Blank
+En caso de presentarse complicaciones, indicar cuáles fueron: Blank
+Estado actual del paciente: Blank
+¿El paciente seguirá recibiendo tratamiento?: Options - Sí ☐, No ☐ (Blank)
+Describir tratamiento y duración del mismo: Blank
+Fecha probable de alta o prealta: Día Mes Año (Blank)
+En Caso de Hospitalización
+Nombre de hospital: Blank
+Tipo de ingreso: Options - Urgencia ☐, Ingreso hospitalario ☐, Corta estancia / ambulatoria ☐ (Blank)
+Fecha de ingreso: Día Mes Año (Blank)
+Fecha de intervención: Día Mes Año (Blank)
+Fecha de egreso: Día Mes Año (Blank)
+Observaciones Adicionales
+En caso de tener observaciones o comentarios adicionales, agregarla: Blank
+Equipo Quirurgico
+En caso de procedimiento que requiera participación de otros profesionales de la salud, detallar. (Note)
+Anestesiólogo
+Nombre completo: Blank
+Cédula profesional especialidad: Blank
+Número celular: Blank
+Registro Federal de Contribuyentes: Blank
+Correo electrónico: Blank
+Primer Ayudante
+Nombre completo: Blank
+Cédula profesional especialidad: Blank
+Número celular: Blank
+Registro Federal de Contribuyentes: Blank
+Correo electrónico: Blank
+Otro (especificar tipo de participación)
+Especialidad: Blank
+Nombre completo: Blank
+Cédula profesional especialidad: Blank
+Número celular: Blank
+Registro Federal de Contribuyentes: Blank
+Correo electrónico: Blank
+Otro (especificar tipo de participación)
+Especialidad: Blank
+Nombre completo: Blank
+Cédula profesional especialidad: Blank
+Número celular: Blank
+Registro Federal de Contribuyentes: Blank
+Correo electrónico: Blank
+Datos del Médico
+Especificar tipo atención al paciente: Options - Médico tratante ☐, Cirujano principal ☐, Interconsultante ☐, Equipo quirúrgico ☐, Segunda valoración ☐ (Blank)
+Nombre completo: Blank
+Especialidad: Blank
+Domicilio consultorio: Blank
+Teléfono del consultorio: Blank
+Cédula profesional especialidad: Blank
+Número celular: Blank
+Registro Federal de Contribuyentes: Blank
+Correo electrónico: Blank
+Acepto que ante cualquier duda o requerimiento de información sobre este paciente me sea contactado inclusive por medios digitales. (Fixed statement, non-editable)
+Tiene convenio con la aseguradora (campo obligatorio): Options - Sí ☐, No ☐ (Blank)
+Los honorarios médicos de los profesionales que pertenezcan al Grupo Médico Asociado... (Fixed statement, non-editable)
+Acepto los tabuladores de pago directo de MetLife... : Options - Sí ☐, No ☐ (Blank)
+Presupuesto de honorarios por tratamiento médico o quirúrgico: $ __________ (for Cirujano, Anestesiólogo, Primer ayudante, Otro, Otro) (Blank)
+Como médico tratante autorizo... (Fixed authorization text, non-editable)
+Con la firma del presente... (Fixed statement, non-editable)
+La aseguradora se reserva... (Fixed statement, non-editable)
+Nombre completo y firma autógrafa del médico tratante: Blank
+Sección Final (Aviso de Privacidad)
+Aviso de privacidad de MetLife México, S.A. de C.V. (Fixed long text on privacy policy, non-editable fields)

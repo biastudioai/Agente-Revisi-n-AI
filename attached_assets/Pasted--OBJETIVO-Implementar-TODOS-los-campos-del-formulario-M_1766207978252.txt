@@ -1,0 +1,122 @@
+🎯 OBJETIVO
+Implementar TODOS los campos del formulario MetLife organizados en las 7 secciones oficiales del documento, utilizando el Sistema Config-Driven ya establecido en el codebase.
+
+📄 CONTEXTO DEL CÓDIGO ACTUAL
+Archivos Clave:
+types.ts: Define interfaces TypeScript para ExtractedData con campos parciales de MetLife
+constants.ts: Contiene SYSTEM_PROMPT con instrucciones para Gemini AI
+geminiService.ts: Configura el responseSchema que Gemini usa para extraer datos
+Dashboard.tsx: Renderiza la UI con tabs por sección (actualmente solo muestra campos básicos)
+scoring-engine.ts: Reglas de validación con soporte para providerTarget: 'METLIFE'
+Estado Actual:
+✅ Sistema de identificación de proveedor (GNP vs METLIFE) funcionando
+✅ Tabs dinámicos con secciones numeradas para MetLife (1-7)
+✅ Validación CIE-10 semántica implementada
+⚠️ FALTA: ~50 campos del documento MetLife completo
+📊 CAMPOS FALTANTES POR SECCIÓN
+SECCIÓN 1 - DATOS DEL PACIENTE (Faltan 2 campos):
+causa_reclamacion: Opciones - Accidente ☐, Enfermedad ☐, Embarazo ☐, Segunda valoración ☐
+SECCIÓN 2 - ANTECEDENTES (Faltan 3 campos):
+antecedentes_quirurgicos: Texto libre
+gineco_tratamiento_infertilidad: Texto (si aplica)
+otras_afecciones_importantes: Texto (sin relación con reclamación actual)
+SECCIÓN 3 - PADECIMIENTO ACTUAL (Faltan 12 campos):
+tiempo_evolucion: Texto
+exploracion_fisica_resultados: Texto detallado
+estudios_laboratorio_gabinete: Texto combinado
+relacionado_otro_padecimiento: Boolean
+cual_padecimiento_relacionado: Texto
+tratamiento_intervencion_qx: Texto descripción
+tecnica_quirurgica_descripcion: Texto
+utilizo_equipo_especial: Boolean
+detalle_equipo_especial: Texto
+utilizo_insumos: Boolean
+detalle_insumos: Texto
+complicaciones_descripcion: Texto
+SECCIÓN 4 - HOSPITALIZACIÓN (Falta 1 campo):
+tipo_ingreso: Opciones - Urgencia ☐, Hospitalario ☐, Corta estancia ☐
+SECCIÓN 5 - OBSERVACIONES (Ya existe como info_adicional.descripcion)
+SECCIÓN 6 - EQUIPO QUIRÚRGICO (Estructura completa faltante):
+equipo_quirurgico_metlife: {
+  anestesiologo: { nombre, cedula_especialidad, celular, rfc, email }
+  primer_ayudante: { nombre, cedula_especialidad, celular, rfc, email }
+  otro_1: { nombre, cedula_especialidad, celular, rfc, email, especialidad }
+  otro_2: { nombre, cedula_especialidad, celular, rfc, email, especialidad }
+}
+SECCIÓN 6 - DATOS DEL MÉDICO (Faltan 8 campos):
+tipo_atencion: Opciones (Consulta Externa, Hospitalización, Urgencias, Cirugía, Revisión)
+domicilio_consultorio: Texto
+tiene_convenio: Boolean
+se_ajusta_tabulador: Boolean
+honorarios_otro_1: String (moneda)
+honorarios_otro_2: String (moneda)
+SECCIÓN 7 - FIRMA (Estructura ya existe, pero falta validación)
+🛠️ PLAN DE IMPLEMENTACIÓN
+PASO 1: Actualizar types.ts (~30 líneas nuevas)
+Agregar campos faltantes a interfaces existentes
+Crear EquipoQuirurgicoMetLife completo con 4 profesionales
+Agregar propiedades opcionales para mantener compatibilidad con GNP
+PASO 2: Expandir constants.ts SYSTEM_PROMPT (~20 líneas)
+Agregar instrucciones específicas para nuevos campos
+Incluir ejemplos de extracción para campos complejos (Equipo Qx)
+Detallar validaciones (ej: "Si dice 'NO' en equipo especial, dejar vacío el detalle")
+PASO 3: Ampliar geminiService.ts responseSchema (~40 líneas)
+Agregar propiedades al schema JSON para todos los nuevos campos
+Mantener tipos correctos (STRING, BOOLEAN, etc.)
+Agregar descriptions para guiar a Gemini
+PASO 4: Actualizar Dashboard.tsx renderizado (~100 líneas)
+Crear sección expandida para Equipo Quirúrgico con 4 cards
+Agregar inputs condicionales (ej: mostrar "Detalle Equipo" solo si checkbox marcado)
+Implementar grid responsivo para campos relacionados
+PASO 5: Agregar reglas a scoring-engine.ts (~6 reglas nuevas)
+Ejemplos:
+
+{
+  id: 'metlife_equipo_qx',
+  name: 'Equipo Quirúrgico Incompleto',
+  level: 'IMPORTANTE',
+  points: 12,
+  providerTarget: 'METLIFE',
+  validator: (data) => {
+    const eq = data.equipo_quirurgico_metlife;
+    return !eq?.anestesiologo?.nombre || !eq?.primer_ayudante?.nombre;
+  },
+  affectedFields: ['equipo_quirurgico_metlife']
+}
+PASO 6 (OPCIONAL): Crear providerConfigs.ts (~80 líneas)
+Sistema centralizado para configurar campos por proveedor:
+
+export const METLIFE_FIELDS = {
+  seccion1: ['nombres', 'edad', 'sexo', 'peso', 'talla', ...],
+  seccion2: [...],
+  // ...
+};
+⚠️ CONSIDERACIONES TÉCNICAS
+Límites Conocidos:
+Gemini Schema Size: Actualmente ~2KB, máximo 10KB (tenemos margen)
+UI Performance: Con 80+ campos, usar React.memo en componentes pesados
+Prompt Length: SYSTEM_PROMPT actualmente ~1500 tokens, máximo ~4000
+Validaciones Críticas:
+Si utilizo_equipo_especial = false, validar que detalle_equipo_especial esté vacío
+Si relacionado_otro_padecimiento = true, requerir cual_padecimiento_relacionado
+RFC debe seguir formato mexicano (13 caracteres alfanuméricos)
+🎨 MEJORAS OPCIONALES
+Si el agente detecta formas más eficientes, tiene LIBERTAD para:
+
+Refactorizar componentes (ej: crear MetLifeSection.tsx reutilizable)
+Usar librerías de validación como zod en lugar de funciones manuales
+Implementar lazy loading para secciones con muchos campos
+Agregar animaciones en tabs con framer-motion (si mejora UX)
+✅ CRITERIOS DE ÉXITO
+Al finalizar, el sistema debe:
+
+✅ Extraer TODOS los campos del PDF MetLife adjunto
+✅ Mostrar campos organizados en las 7 secciones oficiales
+✅ Validar coherencia (ej: CIE-10, RFC, fechas)
+✅ Mantener compatibilidad con informes GNP existentes
+✅ No romper funcionalidad actual (scoring, re-evaluación, modal de revisión)
+📎 ARCHIVO DE REFERENCIA
+Documento adjunto: Informe_medico_Metlife_1766206666755.pdf
+Campos textuales: Ver Pasted-Lugar-y-Fecha-Lugar-y-fecha-Blank-that-space-is-meant-o_1766207632128.txt
+
+NOTA FINAL: Este prompt es una sugerencia estructurada. Si el agente identifica un approach más óptimo (ej: usar un form builder como react-hook-form con schema validation), tiene total autonomía para implementarlo. El objetivo es completar el mapeo MetLife manteniendo la calidad del código.

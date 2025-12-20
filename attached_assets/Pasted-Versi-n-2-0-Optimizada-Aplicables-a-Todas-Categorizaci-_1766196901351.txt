@@ -1,0 +1,75 @@
+Versión 2.0 Optimizada (Aplicables a Todas)
+Categorización por Tipo (para debugging/UI):
+
+IDENTIDAD (8 reglas): Paciente, médico, póliza, cédula.
+TEMPORAL (7 reglas): Fechas incoherentes.
+CLÍNICO (12 reglas): Diagnóstico, CIE-10, signos vitales.
+FINANCIERO (6 reglas): Honorarios, desglose.
+CONTEXTUAL (8 reglas): Sexo/edad/CIE-10.
+DOCUMENTACIÓN (14 reglas): Exploración, estudios, antecedentes (reduje uno por unificación).
+
+Score General: Suma puntos negativos; umbral para rechazo: >200 pts total o cualquier CRÍTICO. Pesos diferenciados por criticidad interna.
+CRÍTICAS (Bloquean: score = 0%; 15 reglas; 100 pts c/u) [Priorizadas por impacto; eliminé duplicado #15, integrado en #11]
+
+Número de póliza faltante/inválido (IDENTIDAD; affectedFields: ['poliza.numero']; message: "Ingrese número de póliza válido para identificar la reclamación").
+Diagnóstico definitivo faltante (texto <10 chars) (CLÍNICO; affectedFields: ['diagnostico.definitivo']; message: "Complete el diagnóstico definitivo con al menos 10 caracteres descriptivos").
+Nombre completo del paciente faltante o inválido (len(nombre + apellidos) <10 o solo iniciales via regex) (IDENTIDAD; affectedFields: ['paciente.nombre', 'paciente.apellido_paterno', 'paciente.apellido_materno']; message: "Complete nombre y apellidos del paciente (mínimo 10 caracteres en total)").
+Nombre completo médico tratante faltante/inválido (len(nombre + apellidos) <10) (IDENTIDAD; affectedFields: ['medico.nombre', 'medico.apellido_paterno', 'medico.apellido_materno']; message: "Complete nombre y apellidos del médico tratante (mínimo 10 caracteres en total)").
+Fecha de nacimiento o edad faltante/inválida (<0 o >120) (IDENTIDAD; affectedFields: ['paciente.fecha_nacimiento', 'paciente.edad']; message: "Ingrese fecha de nacimiento o edad válida (entre 0 y 120 años)").
+Sexo faltante ('M', 'F', 'O') (IDENTIDAD; affectedFields: ['paciente.sexo']; message: "Seleccione sexo del paciente ('M', 'F' o 'O')").
+Cédula profesional faltante/inválida (no 7-8 dígitos) (IDENTIDAD; affectedFields: ['medico.cedula']; message: "Ingrese cédula profesional válida (7-8 dígitos numéricos)").
+Especialidad del médico tratante faltante (IDENTIDAD; affectedFields: ['medico.especialidad']; message: "Especifique la especialidad del médico tratante").
+Firma médico tratante faltante (DOCUMENTACIÓN; affectedFields: ['medico.firma']; message: "Adjunte o confirme la firma del médico tratante").
+Tipo de atención faltante (ambulatorio/hospitalario/urgencias) (TEMPORAL; affectedFields: ['atencion.tipo']; message: "Seleccione tipo de atención (ambulatorio, hospitalario o urgencias)").
+Fecha ingreso faltante o > actual si hospitalización declarada (tipo_atencion IN ['hospitalaria', 'urgencias'] O cirugía/anestesia == true) (TEMPORAL; affectedFields: ['fecha.ingreso']; message: "Ingrese fecha de ingreso válida (no futura) si aplica hospitalización/urgencias/cirugía/anestesia").
+Fecha egreso < ingreso (si ingreso declarado) (TEMPORAL; affectedFields: ['fecha.egreso', 'fecha.ingreso']; message: "Corrija fecha de egreso (debe ser posterior a ingreso)").
+Fecha cirugía < ingreso o > egreso (si declarada) (TEMPORAL; affectedFields: ['fecha.cirugia', 'fecha.ingreso', 'fecha.egreso']; message: "Corrija fecha de cirugía (debe estar entre ingreso y egreso)").
+Fecha diagnóstico > actual (TEMPORAL; affectedFields: ['fecha.diagnostico']; message: "Corrija fecha de diagnóstico (no puede ser futura)").
+Hospital/clínica nombre faltante si tipo_atencion == 'hospitalario' (DOCUMENTACIÓN; affectedFields: ['hospital.nombre']; message: "Ingrese nombre del hospital/clínica si atención es hospitalaria").
+
+IMPORTANTES (Inconsistencias graves: 16 reglas; pesos 30-50 pts) [Unifiqué signos vitales en #3 con sub-niveles; priorizadas]
+
+CIE-10 principal faltante/inválido (no en catálogo SSA) (CLÍNICO; affectedFields: ['cie10.principal']; message: "Ingrese CIE-10 principal válido según catálogo SSA"; 50 pts).
+CIE-10 incoherente con diagnóstico textual (CLÍNICO; affectedFields: ['cie10.principal', 'diagnostico.texto']; message: "Ajuste CIE-10 para que coincida con descripción del diagnóstico"; 50 pts).
+Signos vitales anormales (CLÍNICO; affectedFields: ['signos_vitales.temp', 'signos_vitales.pa', 'signos_vitales.fc']; message: "Revise signos vitales anormales"; 50 pts extremo / 40 pts zona peligro / 30 pts alerta; subValidations: [{range: 'extremo', temp: '<35 || >42', pa: '<60 || >220', fc: '<40 || >200', points: 50}, {range: 'zona_peligro', temp: '35-36 || 41-42', pa: '60-90 || 160-220', fc: '40-90 || 160-200', points: 40}, {range: 'alerta', temp: '<36 || >39', pa: '<90 || >160', fc: '<90 || >160', points: 30}]).
+Sexo incompatible con diagnóstico (e.g., O00-O99 en 'M') (CONTEXTUAL; affectedFields: ['paciente.sexo', 'diagnostico']; message: "Verifique compatibilidad de sexo con diagnóstico (e.g., no embarazo en hombre)"; 50 pts).
+Cirugía declarada pero fecha faltante (TEMPORAL; affectedFields: ['cirugia.declarada', 'fecha.cirugia']; message: "Ingrese fecha de cirugía si declarada"; 45 pts).
+Personal médico declarado pero sin honorarios (honorarios_X ==0/null) (FINANCIERO; affectedFields: ['personal.medico', 'honorarios']; message: "Asigne honorarios a personal declarado (e.g., anestesiólogo/ayudantes)"; 45 pts).
+Honorarios de X declarados pero X no en equipo (inversa) (FINANCIERO; affectedFields: ['honorarios', 'personal.medico']; message: "Declare personal correspondiente a honorarios asignados"; 45 pts).
+Complicaciones 'SÍ' pero descripción <10 chars (CLÍNICO; affectedFields: ['complicaciones', 'complicaciones.descripcion']; message: "Describa complicaciones con al menos 10 caracteres si declaradas"; 40 pts).
+Tratamiento futuro 'SÍ' pero plan vacío (CLÍNICO; affectedFields: ['tratamiento.futuro', 'tratamiento.plan']; message: "Describa plan de tratamiento futuro si declarado"; 40 pts).
+Fecha egreso < diagnóstico (TEMPORAL; affectedFields: ['fecha.egreso', 'fecha.diagnostico']; message: "Corrija fecha de egreso (debe ser posterior a diagnóstico)"; 40 pts).
+Edad incompatible con diagnóstico (e.g., pediátrico >18 sin justificación) (CONTEXTUAL; affectedFields: ['paciente.edad', 'diagnostico']; message: "Justifique diagnóstico incompatible con edad (e.g., pediátrico en adulto)"; 40 pts).
+Anestesia declarada pero tipo vacío (general/regional/local) (DOCUMENTACIÓN; affectedFields: ['anestesia.declarada', 'anestesia.tipo']; message: "Especifique tipo de anestesia si declarada"; 35 pts).
+Edad gestacional faltante si CIE-10 en O00-O99 (CONTEXTUAL; affectedFields: ['edad.gestacional', 'cie10']; message: "Ingrese edad gestacional si diagnóstico es obstétrico"; 35 pts).
+Honorarios totales ==0 si cirugía/anestesia declarada (omisión de costos) (FINANCIERO; affectedFields: ['honorarios.total', 'cirugia.declarada', 'anestesia.declarada']; message: "Asigne honorarios totales si cirugía/anestesia declarada"; 30 pts).
+
+MODERADAS (Alertas no bloqueantes: 14 reglas; 10-20 pts c/u) [Priorizadas; mensajes accionables]
+
+Padecimiento actual vacío/<20 chars (CLÍNICO; affectedFields: ['padecimiento.actual']; message: "Describa padecimiento actual con al menos 20 caracteres"; 20 pts).
+Exploración física faltante (DOCUMENTACIÓN; affectedFields: ['exploracion.fisica']; message: "Complete sección de exploración física"; 20 pts).
+Estudios laboratorio faltantes si cirugía (DOCUMENTACIÓN; affectedFields: ['estudios.laboratorio', 'cirugia.declarada']; message: "Adjunte estudios de laboratorio si cirugía declarada"; 20 pts).
+Honorarios declarados pero desglose.length <1 (FINANCIERO; affectedFields: ['honorarios.desglose']; message: "Proporcione desglose detallado de honorarios"; 15 pts).
+Equipo especial 'SÍ' pero descripción vacío (DOCUMENTACIÓN; affectedFields: ['equipo.especial', 'equipo.descripcion']; message: "Describa equipo especial si declarado"; 15 pts).
+Antecedentes no patológicos vacíos (DOCUMENTACIÓN; affectedFields: ['antecedentes.no_patologicos']; message: "Complete antecedentes no patológicos (hábitos, alergias)"; 15 pts).
+Estudios gabinete faltantes si diagnóstico requiere (por CIE-10) (DOCUMENTACIÓN; affectedFields: ['estudios.gabinete', 'cie10']; message: "Adjunte estudios de gabinete si requeridos por diagnóstico"; 15 pts).
+Recetas sin fecha/cantidad si farmacológico (DOCUMENTACIÓN; affectedFields: ['recetas.fecha', 'recetas.cantidad']; message: "Especifique fecha y cantidad en recetas si tratamiento farmacológico"; 10 pts).
+Honorarios total > sum(desglose) (FINANCIERO; affectedFields: ['honorarios.total', 'honorarios.desglose']; message: "Corrija total de honorarios (debe igualar suma de desglose)"; 10 pts).
+Fecha ingreso > actual -365 días (TEMPORAL; affectedFields: ['fecha.ingreso']; message: "Verifique antigüedad de fecha de ingreso (no mayor a 1 año)"; 10 pts).
+Diagnóstico secundario faltante si complicaciones 'SÍ' (CLÍNICO; affectedFields: ['diagnostico.secundario', 'complicaciones']; message: "Ingrese diagnóstico secundario si complicaciones declaradas"; 10 pts).
+Antecedentes patológicos vacíos si edad >40 Y diagnóstico crónico (CIE-10 en I00-I99, etc.) (DOCUMENTACIÓN; affectedFields: ['antecedentes.patologicos', 'paciente.edad', 'cie10']; message: "Complete antecedentes patológicos si paciente >40 años y diagnóstico crónico"; 10 pts).
+Días estancia >30 Y justificación <10 chars (DOCUMENTACIÓN; affectedFields: ['estancia.dias', 'estancia.justificacion']; message: "Justifique estancia >30 días con al menos 10 caracteres"; 10 pts).
+Estudios preoperatorios faltantes si cirugía programada (DOCUMENTACIÓN; affectedFields: ['estudios.preoperatorios', 'cirugia.programada']; message: "Adjunte estudios preoperatorios si cirugía programada"; 10 pts).
+
+DISCRETAS (Sugerencias: resta 0-10%; 10 reglas; 5 pts c/u) [Mensajes sugerentes]
+
+Peso/talla faltantes (DOCUMENTACIÓN; affectedFields: ['paciente.peso', 'paciente.talla']; message: "Considere agregar peso y talla del paciente para mayor detalle").
+Teléfono/correo médico faltante (DOCUMENTACIÓN; affectedFields: ['medico.telefono', 'medico.correo']; message: "Agregue teléfono o correo del médico para contacto").
+Antecedentes gineco-obstétricos faltantes en 'F' (15-50 años) (DOCUMENTACIÓN; affectedFields: ['antecedentes.gineco_obstetricos', 'paciente.sexo', 'paciente.edad']; message: "Considere completar antecedentes gineco-obstétricos si paciente mujer en edad reproductiva").
+Antecedentes familiares vacíos (DOCUMENTACIÓN; affectedFields: ['antecedentes.familiares']; message: "Agregue antecedentes familiares para contexto adicional").
+Notas evolución diaria faltantes en hospitalizaciones >3 días (DOCUMENTACIÓN; affectedFields: ['notas.evolucion', 'estancia.dias']; message: "Incluya notas de evolución diaria si hospitalización >3 días").
+RFC médico faltante (si no requerido por aseguradora) (IDENTIDAD; affectedFields: ['medico.rfc']; message: "Considere agregar RFC del médico si aplica").
+Dirección hospital faltante (DOCUMENTACIÓN; affectedFields: ['hospital.direccion']; message: "Agregue dirección completa del hospital para verificación").
+Alergias no declaradas (DOCUMENTACIÓN; affectedFields: ['alergias']; message: "Declare alergias conocidas para seguridad clínica").
+Grupo sanguíneo faltante si cirugía mayor (anestesia general/regional) (DOCUMENTACIÓN; affectedFields: ['grupo.sanguineo', 'anestesia.tipo']; message: "Considere agregar grupo sanguíneo si cirugía mayor").
+Fecha cirugía == egreso (nota informativa para cirugía ambulatoria) (TEMPORAL; affectedFields: ['fecha.cirugia', 'fecha.egreso']; message: "Nota: Cirugía ambulatoria detectada (fechas iguales), verifique si aplica estancia cero").

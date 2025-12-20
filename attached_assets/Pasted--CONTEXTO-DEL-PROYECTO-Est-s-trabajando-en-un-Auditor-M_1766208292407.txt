@@ -1,0 +1,167 @@
+📋 CONTEXTO DEL PROYECTO
+Estás trabajando en un Auditor Médico IA que procesa informes médicos de dos aseguradoras mexicanas: GNP y MetLife. Cada aseguradora tiene formatos y requisitos diferentes.
+
+Estado Actual del Sistema:
+✅ Extracción básica funcionando con Gemini AI
+✅ Sistema de scoring con reglas generales
+✅ UI adaptativa que detecta el proveedor (provider: 'GNP' | 'METLIFE')
+⚠️ PENDIENTE: Arquitectura config-driven centralizada
+🎯 OBJETIVO PRINCIPAL
+Implementar una arquitectura ProviderRegistry centralizada que permita:
+
+Configuración por proveedor (schemas, campos, reglas) en un solo lugar
+Escalabilidad para agregar nuevas aseguradoras sin tocar múltiples archivos
+Mantener el flujo existente: ProviderRegistry → geminiService → scoring-engine → Dashboard
+📐 ARQUITECTURA PROPUESTA (YA DISCUTIDA)
+Estructura de Archivos:
+services/
+├── providerConfigs.ts  ← NUEVO: Registro central
+├── geminiService.ts    ← Consume providerConfigs
+└── scoring-engine.ts   ← Consume providerConfigs
+Flujo de Datos:
+PDF Upload → Detectar Provider → ProviderRegistry[provider]
+→ geminiService (usa schema del provider)
+→ scoring-engine (usa reglas del provider)
+→ Dashboard (renderiza campos del provider)
+🗂️ CAMPOS FALTANTES DE METLIFE
+Según el documento corregido compartido, faltan estos campos específicos de MetLife:
+
+Sección 2 (Antecedentes):
+antecedentes.otras_afecciones (string)
+Sección 3 (Padecimiento Actual):
+exploracion_fisica.resultados (string detallado)
+diagnostico.relacionado_con_otro (boolean)
+diagnostico.especifique_cual (string)
+intervencion_qx.tecnica (string - descripción técnica quirúrgica)
+intervencion_qx.utilizo_equipo_especial (boolean)
+intervencion_qx.detalle_equipo_especial (string)
+intervencion_qx.utilizo_insumos (boolean)
+intervencion_qx.detalle_insumos (string)
+complicaciones.descripcion (string - ya existe, solo asegurar mapeo)
+padecimiento_actual.estado_actual (string)
+padecimiento_actual.seguira_tratamiento (boolean)
+padecimiento_actual.plan_tratamiento (string)
+padecimiento_actual.fecha_probable_alta (string)
+Sección 4 (Hospitalización):
+hospital.tipo_estancia (string: "Urgencia" | "Hospitalario" | "Corta estancia")
+Sección 6 (Equipo Quirúrgico):
+Ya existe equipo_quirurgico_metlife con 4 profesionales, pero asegurar:
+
+PersonalQuirurgico.especialidad (para los campos "Otro 1" y "Otro 2")
+Sección 6 (Datos del Médico):
+medico_tratante.tipo_atencion (string: "Tratante" | "Cirujano" | "Anestesiólogo" | "Ayudante" | "Otro")
+medico_tratante.domicilio_consultorio (string)
+medico_tratante.convenio_aseguradora (boolean - ya existe)
+medico_tratante.se_ajusta_tabulador (boolean - ya existe)
+Presupuesto desglosado (ya existente pero validar):
+honorarios_cirujano
+honorarios_anestesiologo
+honorarios_ayudante
+honorarios_otro_1
+honorarios_otro_2
+Sección 7 (Firma):
+Ya existe fragmentado: firma.lugar, firma.fecha, firma.nombre_firma
+🛠️ PLAN DE IMPLEMENTACIÓN
+PASO 1: Crear services/providerConfigs.ts
+Archivo NUEVO que contendrá:
+
+// ESTRUCTURA ESPERADA (no copies esto literalmente, adáptalo):
+interface ProviderConfig {
+  id: 'GNP' | 'METLIFE';
+  name: string;
+  theme: { primary, secondary, border, light, accent };
+  requiredFields: string[]; // Paths obligatorios
+  geminiSchema: GeminiSchemaType; // Schema específico para Gemini
+  scoringRules: ScoringRule[]; // Reglas específicas
+  uiSections: UISection[]; // Tabs y campos para renderizar
+}
+export const PROVIDER_REGISTRY: Record<'GNP' | 'METLIFE', ProviderConfig>;
+Contenido detallado:
+
+GNP Config: Campos actuales + signos vitales específicos
+MetLife Config: TODOS los 50+ campos del formulario oficial (Secciones 1-7)
+PASO 2: Actualizar types.ts
+Agregar SOLO los campos nuevos identificados arriba (aprox. ~15 campos).
+
+NO elimines campos existentes, solo expande las interfaces:
+
+AntecedentesData → agregar otras_afecciones
+IntervencionQxData → agregar booleanos y detalles de equipo/insumos
+PadecimientoActualData → agregar plan de tratamiento y fecha alta
+HospitalData → agregar tipo_estancia
+MedicoTratanteData → agregar tipo_atencion, domicilio_consultorio
+PASO 3: Actualizar geminiService.ts
+Cambio clave: En lugar de un responseSchema hardcoded, consumir desde providerConfigs:
+
+// EJEMPLO CONCEPTUAL (no copies literal):
+import { PROVIDER_REGISTRY } from './providerConfigs';
+export const analyzeReportImage = async (base64Data, mimeType, detectedProvider) => {
+  const config = PROVIDER_REGISTRY[detectedProvider];
+  
+  const response = await ai.models.generateContent({
+    // ...
+    responseSchema: config.geminiSchema // <-- Schema dinámico
+  });
+}
+PASO 4: Actualizar scoring-engine.ts
+Expandir DEFAULT_SCORING_RULES con reglas específicas de MetLife:
+
+Nuevas reglas sugeridas:
+
+metlife_equipo_qx_incompleto (20 pts) → Valida que haya al menos Cirujano + Anestesiólogo con RFC
+metlife_plan_tratamiento (10 pts) → Si seguira_tratamiento=true, debe haber plan_tratamiento
+metlife_tipo_estancia (5 pts) → Campo obligatorio en hospitalización
+PASO 5: Actualizar Dashboard.tsx
+Renderizado dinámico por secciones usando providerConfigs:
+
+// EJEMPLO CONCEPTUAL:
+import { PROVIDER_REGISTRY } from '../services/providerConfigs';
+const Dashboard = ({ report }) => {
+  const config = PROVIDER_REGISTRY[report.extracted.provider];
+  
+  return (
+    <div>
+      {config.uiSections.map(section => (
+        <SectionRenderer key={section.id} fields={section.fields} />
+      ))}
+    </div>
+  );
+}
+Nuevas secciones específicas a agregar:
+
+Tab "Equipo Qx": Renderizar los 4 profesionales (Anestesiólogo, Ayudante, Otros)
+Tab "Padecimiento": Agregar checkboxes de equipo especial, insumos, seguimiento
+Tab "Hospital": Select para tipo de estancia
+PASO 6: Actualizar constants.ts
+Expandir SYSTEM_PROMPT con instrucciones más detalladas para MetLife:
+
+Agregar secciones:
+
+Cómo extraer campos de intervención quirúrgica (equipo/insumos)
+Cómo mapear el equipo quirúrgico completo (4 profesionales)
+Validación de completitud por sección
+✅ CRITERIOS DE ACEPTACIÓN
+ProviderRegistry funcional: Un solo archivo controla schemas, reglas y UI
+50+ campos MetLife: Todos mapeados en types.ts y geminiService.ts
+UI adaptativa: Dashboard renderiza campos según providerConfigs
+Scoring específico: Reglas de MetLife validan RFC, equipo Qx, etc.
+Sin romper GNP: Los informes GNP siguen funcionando igual
+🚨 RESTRICCIONES IMPORTANTES
+NO elimines código existente que funciona para GNP
+NO hagas cambios arquitectónicos fuera de lo descrito
+SÍ mantén compatibilidad con el sistema actual de scoring
+SÍ usa TypeScript estricto para evitar errores en runtime
+💡 LIBERTAD DE IMPLEMENTACIÓN
+Si tienes una forma más óptima o eficiente de lograr esto, tienes total libertad de implementarla. El plan anterior es una sugerencia basada en nuestra discusión, pero si encuentras un camino más limpio que:
+
+Centralice configuraciones por proveedor
+Mantenga el flujo ProviderRegistry → Services → UI
+Escale fácilmente para agregar nuevas aseguradoras
+¡Adelante! Propón tu solución. 🚀
+
+📎 ARCHIVOS DE REFERENCIA
+types.ts → Interfaces base (expandir)
+geminiService.ts → Consumir schemas del registry
+scoring-engine.ts → Agregar reglas MetLife
+Dashboard.tsx → Renderizado dinámico
+constants.ts → Prompt de extracción

@@ -1,0 +1,69 @@
+Reglas Generales Actualizadas (Aplicables a Todas)
+Cada regla sigue siendo auditable en JSON (e.g., "condition": "fecha_ingreso > fecha_actual").
+CRÍTICAS (Bloquean: score = 0%; 16 reglas)
+
+Nombre completo del paciente faltante o inválido (len(nombre + apellidos) <10 o solo iniciales via regex).
+Fecha de nacimiento o edad faltante/inválida (<0 o >120).
+Sexo faltante ('M', 'F', 'O').
+Diagnóstico definitivo faltante (texto <10 chars).
+Firma médico tratante faltante.
+Cédula profesional faltante/inválida (no 7-8 dígitos).
+Nombre completo médico tratante faltante/inválido (len(nombre + apellidos) <10).
+Fecha egreso < ingreso (si ingreso declarado).
+Fecha cirugía < ingreso o > egreso (si declarada).
+Fecha diagnóstico > actual.
+Fecha ingreso faltante solo si hospitalización declarada (tipo_atencion IN ['hospitalaria', 'urgencias'] O cirugía/anestesia == true).
+Tipo de atención faltante (ambulatorio/hospitalario/urgencias).
+Hospital/clínica nombre faltante si tipo_atencion == 'hospitalario'.
+Especialidad del médico tratante faltante.
+Fecha de ingreso > fecha actual (error de captura).
+Número de póliza faltante/inválido (esencial para identificar asegurado).
+
+IMPORTANTES (Inconsistencias graves: resta 30-50%; 16 reglas)
+
+CIE-10 principal faltante/inválido (no en catálogo SSA).
+CIE-10 incoherente con diagnóstico textual.
+Signos vitales fuera rangos vitales: Temp <35>42; PA <60>220; FC <40>200.
+Sexo incompatible con diagnóstico (e.g., O00-O99 en 'M').
+Cirugía declarada pero fecha faltante.
+Personal médico declarado (anestesiólogo/ayudantes/médicos) pero sin honorarios (honorarios_X ==0/null).
+Honorarios de X declarados pero X no en equipo (inversa).
+Complicaciones 'SÍ' pero descripción <10 chars.
+Tratamiento futuro 'SÍ' pero plan vacío.
+Fecha egreso < diagnóstico.
+Edad incompatible con diagnóstico (e.g., pediátrico >18 sin justificación).
+Signos vitales cercanos: Temp <36>39; PA <90>160 (rangos de alerta moderada, no superpone con #3).
+Anestesia declarada pero tipo vacío (general/regional/local).
+Edad gestacional faltante si CIE-10 en O00-O99.
+Signos vitales cercanos a límites vitales (±1, e.g., temp 35-36>41-42 – ajustado para no superponer con #12).
+Honorarios totales ==0 si cirugía/anestesia declarada (omisión de costos).
+
+MODERADAS (Alertas no bloqueantes: resta 10-20%; 14 reglas)
+
+Padecimiento actual vacío/<20 chars.
+Exploración física faltante.
+Estudios laboratorio faltantes si cirugía.
+Honorarios declarados pero desglose.length <1.
+Equipo especial 'SÍ' pero descripción vacío.
+Antecedentes no patológicos vacíos.
+Estudios gabinete faltantes si diagnóstico requiere (por CIE-10).
+Recetas sin fecha/cantidad si farmacológico.
+Honorarios total > sum(desglose).
+Fecha ingreso > actual -365 días.
+Diagnóstico secundario faltante si complicaciones 'SÍ'.
+Antecedentes patológicos vacíos si edad >40 Y diagnóstico crónico (CIE-10 en I00-I99, etc.).
+Días estancia >30 Y justificación <10 chars.
+Estudios preoperatorios faltantes si cirugía programada.
+
+DISCRETAS (Sugerencias: resta 0-10%; 10 reglas)
+
+Peso/talla faltantes.
+Teléfono/correo médico faltante.
+Antecedentes gineco-obstétricos faltantes en 'F' (15-50 años).
+Antecedentes familiares vacíos.
+Notas evolución diaria faltantes en hospitalizaciones >3 días.
+RFC médico faltante (si no requerido por aseguradora).
+Dirección hospital faltante.
+Alergias no declaradas.
+Grupo sanguíneo faltante si cirugía mayor (anestesia general/regional).
+Fecha cirugía == egreso (nota informativa para cirugía ambulatoria).

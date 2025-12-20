@@ -1,0 +1,53 @@
+CRÍTICAS (Bloquean: score = 0%)
+
+Nombre completo del paciente faltante o inválido: Si campos separados, verificar "nombre" >=5 chars Y "apellido_paterno" >=5 chars (o combinado "nombre + apellidos" >=10 chars si en un solo campo). Ignora iniciales solas (e.g., regex no matches "^[A-Z].$").
+Fecha de nacimiento o edad del paciente faltante o inválida (edad <0 o >120).
+Sexo del paciente faltante ('M', 'F', 'O').
+Diagnóstico definitivo faltante (texto >=10 chars).
+Firma del médico tratante faltante (campo ausente).
+Cédula profesional del médico tratante faltante o inválida (no 7-8 dígitos numéricos).
+Nombre completo del médico tratante faltante o inválido: Similar al paciente, "nombre" >=5 chars Y "apellido_paterno" >=5 chars (o combinado >=10).
+Fecha de egreso anterior a fecha de ingreso (si ingreso declarado).
+Fecha de cirugía (si declarada) anterior a ingreso o posterior a egreso.
+Fecha de diagnóstico > fecha actual.
+Fecha de ingreso hospitalario faltante solo si hospitalización declarada (e.g., si campo "tipo_atencion" == 'hospitalaria' O cirugía/anestesia marcada).
+
+IMPORTANTES (Inconsistencias graves: resta 30-50%)
+
+Código CIE-10 principal faltante o inválido (no en catálogo SSA) – bajado de crítico, como sugeriste, ya que no siempre es exigido pero ayuda a coherencia.
+CIE-10 incoherente con diagnóstico textual (matching básico vs. catálogo).
+Signos vitales fuera de rangos vitales: Temp <35°C o >42°C; PA sistólica <60 o >220; FC <40 o >200.
+Sexo incompatible con diagnóstico (e.g., O00-O99 en 'M').
+Cirugía declarada pero fecha intervención faltante.
+Personal médico declarado (anestesiólogo, ayudante1, ayudante2, médico1, etc.) pero sin honorarios asociados (honorarios_X ==0 o null) – expandido como pediste.
+Complicaciones 'SÍ' pero descripción <10 chars.
+Tratamiento futuro 'SÍ' pero plan vacío.
+Fecha egreso < diagnóstico.
+Edad incompatible con diagnóstico (e.g., pediátrico en >18 sin justificación).
+Signos vitales cercanos a límites (±1 unidad, e.g., temp 35-36°C).
+
+MODERADAS (Alertas no bloqueantes: resta 10-20%)
+
+Padecimiento actual vacío o <20 chars.
+Exploración física faltante.
+Estudios laboratorio faltantes si cirugía.
+Honorarios declarados pero desglose.length <1.
+Equipo especial 'SÍ' pero descripción vacío.
+Antecedentes no patológicos vacíos.
+Estudios gabinete faltantes si diagnóstico requiere (por CIE-10 categorías).
+Recetas sin fecha/cantidad si farmacológico.
+Honorarios total > sum(desglose).
+Fecha ingreso > fecha actual -365 días.
+Diagnóstico secundario faltante si complicaciones 'SÍ'.
+Antecedentes patológicos vacíos si edad >40 y diagnóstico crónico – movido a moderado, como sugeriste.
+
+DISCRETAS (Sugerencias: resta 0-10%)
+
+Peso/talla faltantes.
+Teléfono/correo médico faltante.
+Antecedentes gineco-obstétricos faltantes en 'F' (15-50 años).
+Antecedentes familiares vacíos.
+Notas evolución diaria faltantes en hospitalizaciones >3 días.
+RFC médico faltante (si no requerido por aseguradora).
+Dirección hospital faltante.
+(Eliminé fotografías y firmas de testigos/familiares, como pediste, ya que no son estándar en informes escritos sin anexos y no siempre requeridos por norma – solo médico/paciente en consentimientos básicos.)
