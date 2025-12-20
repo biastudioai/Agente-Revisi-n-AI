@@ -1,0 +1,98 @@
+Trámite
+Seleccione el trámite que el Asegurado solicita: Options - Reembolso ☐, Programación de cirugía ☐, Programación de medicamentos ☐, Programación de servicios ☐, Indemnización ☐, Reporte hospitalario ☐ (Blank)
+Lugar y Fecha
+Lugar y fecha: Blank (appears at the end of the form, after declaration and privacy notice).
+Datos del Paciente
+Número de Póliza: Blank
+Primer apellido: Blank
+Segundo apellido: Blank
+Nombre(s): Blank
+Sexo: Options - F ☐, M ☐ (Blank)
+Edad: Blank
+Causa de atención: Options - Accidente ☐, Enfermedad ☐, Embarazo ☐ (Blank)
+Historia Clínica 
+Antecedentes personales patológicos: Blank (especificar tiempo de evolución, incluir fechas de inicio dd/mm/aa aunque no relacionados con diagnóstico)
+Antecedentes personales no patológicos: Blank
+Antecedentes gineco-obstétricos (descripción anatómica): Blank
+Antecedentes perinatales: Blank
+Padecimiento actual: Blank (De acuerdo a la historia clínica y evolución natural de la enfermedad, indispensable la fecha de inicio)
+Fecha de inicio: dd/mm/aa (Blank)
+Diagnóstico(s) definitivo(s): Blank
+Fecha de diagnóstico: dd/mm/aa (Blank)
+Tipo de padecimiento: Options - Congénito ☐, Adquirido ☐, Agudo ☐, Crónico ☐ (Seleccione una opción) (Blank)
+¿Se ha relacionado con algún otro padecimiento?: Options - Sí ☐, No ☐ (Blank)
+Especifique cuál padecimiento: (Si no existe padecimiento, indicar “ninguno”) (Blank)
+Signos vitales y medidas antropométricas del paciente:
+Pulso (x minuto): Blank
+Respiración (x minuto): Blank
+Temperatura (°C): Blank
+Presión arterial (mm Hg): Blank
+Peso (kg): Blank
+Altura (m): Blank
+Resultados de exploración física realizada el día del diagnóstico: Blank
+Estudios realizados (anexar interpretaciones que confirmen diagnóstico): (Indique los estudios y en caso de que no se llevaron a cabo, especificar que no se realizaron) (Blank)
+Complicaciones: Indique y describa si se presentaron complicaciones (Blank)
+Sí/No (for complicaciones): Options - Sí ☐, No ☐ (Blank)
+Fecha de inicio (for complicaciones): dd/mm/aa (Blank)
+Tratamiento: Detallar los tratamientos, procedimientos y técnica quirúrgica especificando las fechas (dd/mm/aa). En caso de medicamentos mencionar posología completa (Blank)
+Fecha de inicio (for tratamiento): dd/mm/aa (Blank)
+En caso de intervención quirúrgica, ¿qué equipo específico se utilizará?: Especificar las fechas (dd/mm/aa). Ejemplo: equipo de laparoscopía, equipo de fluoroscopía, etc. (Blank)
+Información adicional: Blank
+Hospital / Clínica
+Nombre del hospital o clínica donde ingresará el paciente: Blank
+Ciudad: Blank
+Estado: Blank
+Tipo de estancia: Options - Urgencia ☐, Hospitalaria ☐, Corta estancia / ambulatoria ☐ (Blank)
+Fecha de ingreso: dd/mm/aa (Blank)
+Datos del Médico Tratante
+Primer apellido: Blank
+Segundo apellido: Blank
+Nombre(s): Blank
+Especialidad: Blank
+Cédula profesional: Blank
+Cédula de especialidad: Blank
+¿Está en convenio con GNP?: Options - Sí ☐, No ☐ (Blank)
+Se ajusta al tabulador: Options - Sí ☐, No ☐ (Blank)
+Ppto. de honorarios: Blank
+Teléfono consultorio: Blank
+Celular: Blank
+Correo electrónico: Blank
+Tipo de participación: Options - Tratante ☐, Cirujano ☐, Otra ¿Cuál? Blank (Blank)
+¿Hubo interconsulta?: Options - Sí ☐ (capture los datos en la siguiente sección), No ☐ (Blank)
+Datos de Médicos Interconsultantes o Participantes en la Intervención:
+
+Médico 1
+Tipo de participación: Options - Interconsultante ☐, Cirujano ☐, Anestesiólogo ☐, Ayudantía ☐, Otra ¿Cuál? Blank (Blank)
+Primer apellido: Blank
+Segundo apellido: Blank
+Nombre(s): Blank
+Especialidad: Blank
+Cédula profesional: Blank
+Cédula de especialidad: Blank
+Presupuesto de honorarios: Blank
+
+Médico 2
+Tipo de participación: Options - Interconsultante ☐, Cirujano ☐, Anestesiólogo ☐, Ayudantía ☐, Otra ¿Cuál? Blank (Blank)
+Primer apellido: Blank
+Segundo apellido: Blank
+Nombre(s): Blank
+Especialidad: Blank
+Cédula profesional: Blank
+Cédula de especialidad: Blank
+Presupuesto de honorarios: Blank
+
+Médico 3
+Tipo de participación: Options - Interconsultante ☐, Cirujano ☐, Anestesiólogo ☐, Ayudantía ☐, Otra ¿Cuál? Blank (Blank)
+Primer apellido: Blank
+Segundo apellido: Blank
+Nombre(s): Blank
+Especialidad: Blank
+Cédula profesional: Blank
+Cédula de especialidad: Blank
+Presupuesto de honorarios: Blank
+
+Declaración
+Declaro bajo protesta de decir verdad que la información asentada en este documento es verídica ya que es proporcionada conforme a la evolución médica que he brindado al paciente y conforme al conocimiento y los estudios médicos que le he realizado o solicitado bajo mi responsabilidad, asimismo por la referencias del propio paciente o de sus familiares. (Fixed declaration text, non-editable)
+Datos Personales (Aviso de Privacidad)
+Reconozco que previo a proporcionar los datos personales, se ha puesto a mi disposición el Aviso de Privacidad Integral de Grupo Nacional Provincial, S.A.B. (en lo sucesivo GNP), el cual he leído y comprendido, por lo que tengo conocimiento de (i) la identidad y domicilio de GNP; (ii) los datos personales que serán sujetos a tratamiento; (iii) las finalidades primarias y secundarias del tratamiento, así como las transferencias que van a efectuarse; (iv) los medios habilitados para limitar el uso o divulgación de los datos personales y/o revocar el consentimiento, así como para ejercer derechos de acceso, rectificación, cancelación y oposición. Asimismo manifiesto tener conocimiento que se puede consultar el Aviso de Privacidad Integral y sus actualizaciones en cualquier momento en la página gnp.com.mx. En caso de haber proporcionado datos personales de otros titulares, reconozco haber cumplido con mi obligación de informarles sobre su entrega, haber obtenido de forma previa el consentimiento de éstos para su tratamiento o de quien(es) ostente(n) la patria potestad y/o debida representación legal o tutela, así como haberles informado los lugares en los que se encuentra disponible el Aviso de Privacidad Integral para su consulta. (Fixed privacy notice text, non-editable)
+Nombre y firma del médico tratante: Blank
