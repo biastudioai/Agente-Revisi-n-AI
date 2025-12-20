@@ -1,0 +1,89 @@
+# Evaluador Médico IA
+
+## Overview
+
+This is an AI-powered medical report evaluator for Mexican insurance companies (GNP and MetLife). The application uses Google's Gemini AI to extract data from medical report images/PDFs, validate the extracted information against configurable scoring rules, and provide pre-approval recommendations for insurance claims.
+
+The system processes medical forms by:
+1. Detecting the insurance provider (GNP or MetLife) based on document formatting
+2. Extracting structured data fields (patient info, diagnosis, treatment, hospitalization, etc.)
+3. Validating extracted data against provider-specific and general scoring rules
+4. Generating a compliance score with detailed flags for issues found
+5. Allowing manual corrections with real-time re-evaluation
+
+## User Preferences
+
+Preferred communication style: Simple, everyday language.
+
+## System Architecture
+
+### Frontend Architecture
+- **Framework**: React 19 with TypeScript
+- **Styling**: Tailwind CSS (loaded via CDN in index.html)
+- **Icons**: Lucide React for consistent iconography
+- **Build Tool**: Vite with React plugin
+
+### Core Components
+- `App.tsx` - Main application orchestrator managing state for file uploads, analysis results, and rule configuration
+- `Dashboard.tsx` - Multi-tab form interface displaying extracted data organized by medical sections (patient ID, history, diagnosis, hospitalization, etc.)
+- `FileUpload.tsx` - Handles PDF/image uploads with drag-and-drop support
+- `PdfViewer.tsx` - PDF rendering with annotation capabilities using pdf.js and pdf-lib
+- `ScoreCard.tsx` - Visual scoring display with categorized issue flags
+- `RuleConfigurator.tsx` - Modal for adjusting scoring rule weights and levels
+
+### Provider Registry Pattern
+The application uses a config-driven architecture for multi-provider support:
+
+- `providers/index.ts` - Central registry combining provider configurations
+- `providers/types.ts` - TypeScript interfaces for provider configs, themes, and schemas
+- `providers/metlife.config.ts` - MetLife-specific extraction instructions and Gemini schema
+- `providers/gnp.config.ts` - GNP-specific extraction instructions and Gemini schema
+
+This pattern allows adding new insurance providers by creating a new config file without modifying core logic.
+
+### AI Integration
+- `services/geminiService.ts` - Interfaces with Google Gemini AI for document analysis
+- Uses structured JSON output with provider-specific response schemas
+- Temperature set to 0.1 for consistent extractions
+- Supports re-evaluation with updated data
+
+### Scoring Engine
+- `services/scoring-engine.ts` - Rule-based validation system
+- Rules categorized by severity: CRÍTICO, IMPORTANTE, MODERADO, NOTA
+- Provider-targeted rules (ALL, METLIFE, GNP)
+- Calculates final score based on rule violations
+- Returns detailed flags with affected fields for UI highlighting
+
+### Data Flow
+```
+PDF/Image Upload → Provider Detection → Gemini Extraction 
+→ Scoring Engine → Dashboard Display → Manual Edits → Re-evaluation
+```
+
+### Type System
+- `types.ts` - Comprehensive TypeScript interfaces for:
+  - ExtractedData (all medical form fields)
+  - ScoringRule and ScoringResult
+  - Provider-specific structures (TramiteData, IdentificacionData, etc.)
+  - AnalysisReport combining extraction + scoring
+
+## External Dependencies
+
+### AI/ML Services
+- **Google Gemini AI** (`@google/genai`) - Document analysis and structured data extraction
+  - Requires `GEMINI_API_KEY` environment variable
+  - Uses model `gemini-3-flash-preview`
+
+### PDF Processing
+- **pdf.js** (`pdfjs-dist@3.11.174`) - PDF rendering in browser
+  - Worker loaded from CDN
+- **pdf-lib** (`pdf-lib@1.17.1`) - PDF modification and annotation
+
+### UI Dependencies
+- **React** (`react@19.2.0`, `react-dom@19.2.0`) - Core UI framework
+- **Lucide React** (`lucide-react@0.554.0`) - Icon library
+- **Tailwind CSS** - Loaded via CDN, not as npm dependency
+
+### Development
+- **Vite** - Build tool and dev server (port 5000)
+- **TypeScript** - Type checking with bundler module resolution
