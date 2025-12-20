@@ -137,7 +137,8 @@ SECCIÓN 7 - FIRMA:
             properties: {
               lugar: { type: Type.STRING, description: "Lugar de la firma (cabecera)" },
               fecha: { type: Type.STRING, description: "Fecha en formato DD/MM/AAAA" },
-              nombre_firma: { type: Type.STRING, description: "Nombre completo del médico que firma" }
+              nombre_firma: { type: Type.STRING, description: "Nombre completo del médico que firma" },
+              firma_autografa_detectada: { type: Type.BOOLEAN, description: "¿Se detectó una firma autógrafa (no solo nombre impreso)?" }
             }
           },
 
@@ -164,6 +165,7 @@ SECCIÓN 7 - FIRMA:
               gineco_p: { type: Type.STRING, description: "Partos" },
               gineco_a: { type: Type.STRING, description: "Abortos" },
               gineco_c: { type: Type.STRING, description: "Cesáreas" },
+              gineco_descripcion: { type: Type.STRING, description: "Descripción adicional gineco-obstétrica" },
               otras_afecciones: { type: Type.STRING, description: "Otras afecciones sin relación con reclamación" }
             }
           },

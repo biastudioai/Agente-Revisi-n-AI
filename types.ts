@@ -35,6 +35,7 @@ export interface AntecedentesData {
   gineco_p?: string | number;
   gineco_a?: string | number;
   gineco_c?: string | number;
+  gineco_descripcion?: string; // Descripción adicional gineco-obstétrica
   
   perinatales?: string;
   historia_clinica_breve?: string;
@@ -191,6 +192,7 @@ export interface FirmaData {
   lugar?: string; // MetLife Split Header
   fecha?: string; // MetLife Split Header
   nombre_firma?: string; // MetLife Section 7
+  firma_autografa_detectada?: boolean; // ¿Se detectó una firma autógrafa?
 }
 
 export interface ExtractedMetadata {
