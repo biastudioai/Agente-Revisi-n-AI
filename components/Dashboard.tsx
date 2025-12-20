@@ -298,7 +298,7 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                                                 <input type="checkbox" checked={formData.padecimiento_actual?.seguira_tratamiento || false} onChange={(e) => handleInputChange('padecimiento_actual.seguira_tratamiento', e.target.checked)} className="w-4 h-4 rounded" />
                                                 <label className="text-xs text-slate-600">¿El paciente seguirá recibiendo tratamiento?</label>
                                             </div>
-                                            {formData.padecimiento_actual?.seguira_tratamiento && (
+                                            {(formData.padecimiento_actual?.seguira_tratamiento || formData.padecimiento_actual?.plan_tratamiento || formData.padecimiento_actual?.fecha_probable_alta) && (
                                                 <>
                                                     {renderInput("Plan de Tratamiento y Duración", formData.padecimiento_actual?.plan_tratamiento, 'padecimiento_actual.plan_tratamiento', 'textarea')}
                                                     <DateInput label="Fecha Probable de Alta" value={formData.padecimiento_actual?.fecha_probable_alta} path="padecimiento_actual.fecha_probable_alta" isModified={!!modifiedFields['padecimiento_actual.fecha_probable_alta']} isHighlighted={highlightedField === 'padecimiento_actual.fecha_probable_alta'} onChange={handleInputChange} />
