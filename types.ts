@@ -153,9 +153,9 @@ export interface MedicoTratanteData {
   especialidad?: string;
   cedula_profesional?: string;
   cedula_especialidad?: string;
-  convenio_gnp?: boolean; // Legacy GNP
+  convenio_gnp?: boolean; // GNP: ¿Está en convenio con GNP?
   convenio_aseguradora?: boolean; // MetLife
-  se_ajusta_tabulador?: boolean;
+  se_ajusta_tabulador?: boolean; // GNP: ¿Se ajusta al tabulador?
   
   // Honorarios MetLife Breakdown
   honorarios_cirujano?: string;
@@ -164,27 +164,29 @@ export interface MedicoTratanteData {
   honorarios_otro_1?: string;
   honorarios_otro_2?: string;
   
-  ppto_honorarios?: string; // Legacy / Fallback
+  ppto_honorarios?: string; // GNP / Fallback
 
   telefono_consultorio?: string;
   domicilio_consultorio?: string; // MetLife
   celular?: string;
   correo_electronico?: string;
   rfc?: string; // MetLife
-  tipo_participacion?: string; // Tratante, Cirujano, etc.
-  hubo_interconsulta?: boolean;
+  tipo_participacion?: string; // GNP: Tratante, Cirujano, Otra
+  tipo_participacion_otra?: string; // GNP: Si es Otra, especificar cuál
+  hubo_interconsulta?: boolean; // GNP
   tipo_atencion?: string; // MetLife selection
 }
 
 export interface MedicoInterconsultanteData {
-  tipo_participacion?: string;
+  tipo_participacion?: string; // GNP: Interconsultante, Cirujano, Anestesiólogo, Ayudantía, Otra
+  tipo_participacion_otra?: string; // GNP: Si es Otra, especificar cuál
   primer_apellido?: string;
   segundo_apellido?: string;
   nombres?: string;
   especialidad?: string;
   cedula_profesional?: string;
   cedula_especialidad?: string;
-  ppto_honorarios?: string;
+  ppto_honorarios?: string; // GNP: Presupuesto de honorarios
 }
 
 export interface FirmaData {
