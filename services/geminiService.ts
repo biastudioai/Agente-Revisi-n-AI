@@ -4,7 +4,7 @@ import { calculateScore, reEvaluateScore, DEFAULT_SCORING_RULES } from "./scorin
 import { buildCombinedGeminiSchema, buildSystemPrompt } from "../providers";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-const MODEL_NAME = "gemini-2.5-flash";
+const MODEL_NAME = "gemini-2.5-flash-preview-05-20";
 
 export const analyzeReportImage = async (
     base64Data: string, 

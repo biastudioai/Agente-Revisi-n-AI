@@ -140,47 +140,47 @@ FIRMA:
           tramite: {
             type: Type.OBJECT,
             properties: {
-              reembolso: { type: Type.BOOLEAN, description: "Casilla Reembolso marcada" },
-              programacion_cirugia: { type: Type.BOOLEAN, description: "Casilla Programación de cirugía marcada" },
-              programacion_medicamentos: { type: Type.BOOLEAN, description: "Casilla Programación de medicamentos marcada" },
-              programacion_servicios: { type: Type.BOOLEAN, description: "Casilla Programación de servicios marcada" },
-              indemnizacion: { type: Type.BOOLEAN, description: "Casilla Indemnización marcada" },
-              reporte_hospitalario: { type: Type.BOOLEAN, description: "Casilla Reporte hospitalario marcada" },
-              numero_poliza: { type: Type.STRING, description: "Número de póliza" }
+              reembolso: { type: Type.BOOLEAN },
+              programacion_cirugia: { type: Type.BOOLEAN },
+              programacion_medicamentos: { type: Type.BOOLEAN },
+              programacion_servicios: { type: Type.BOOLEAN },
+              indemnizacion: { type: Type.BOOLEAN },
+              reporte_hospitalario: { type: Type.BOOLEAN },
+              numero_poliza: { type: Type.STRING }
             }
           },
 
           identificacion: {
             type: Type.OBJECT,
             properties: {
-              primer_apellido: { type: Type.STRING, description: "Primer apellido del paciente" },
-              segundo_apellido: { type: Type.STRING, description: "Segundo apellido del paciente" },
-              nombres: { type: Type.STRING, description: "Nombre(s) del paciente" },
-              edad: { type: Type.STRING, description: "Edad del paciente" },
-              sexo: { type: Type.STRING, description: "Sexo: F o M" },
-              causa_atencion: { type: Type.STRING, description: "Accidente, Enfermedad o Embarazo" }
+              primer_apellido: { type: Type.STRING },
+              segundo_apellido: { type: Type.STRING },
+              nombres: { type: Type.STRING },
+              edad: { type: Type.STRING },
+              sexo: { type: Type.STRING },
+              causa_atencion: { type: Type.STRING }
             }
           },
 
           antecedentes: {
             type: Type.OBJECT,
             properties: {
-              personales_patologicos: { type: Type.STRING, description: "Antecedentes personales patológicos con fechas" },
-              personales_no_patologicos: { type: Type.STRING, description: "Antecedentes personales no patológicos" },
-              gineco_obstetricos: { type: Type.STRING, description: "Antecedentes gineco-obstétricos (descripción anatómica)" },
-              perinatales: { type: Type.STRING, description: "Antecedentes perinatales" }
+              personales_patologicos: { type: Type.STRING },
+              personales_no_patologicos: { type: Type.STRING },
+              gineco_obstetricos: { type: Type.STRING },
+              perinatales: { type: Type.STRING }
             }
           },
 
           signos_vitales: {
             type: Type.OBJECT,
             properties: {
-              pulso: { type: Type.STRING, description: "Pulso (x minuto)" },
-              respiracion: { type: Type.STRING, description: "Respiración (x minuto)" },
-              temperatura: { type: Type.STRING, description: "Temperatura (°C)" },
-              presion_arterial: { type: Type.STRING, description: "Presión arterial (mm Hg)" },
-              peso: { type: Type.STRING, description: "Peso (kg)" },
-              altura: { type: Type.STRING, description: "Altura (m)" }
+              pulso: { type: Type.STRING },
+              respiracion: { type: Type.STRING },
+              temperatura: { type: Type.STRING },
+              presion_arterial: { type: Type.STRING },
+              peso: { type: Type.STRING },
+              altura: { type: Type.STRING }
             }
           },
 
@@ -267,41 +267,27 @@ FIRMA:
           medico_tratante: {
             type: Type.OBJECT,
             properties: {
-              primer_apellido: { type: Type.STRING, description: "Primer apellido del médico" },
-              segundo_apellido: { type: Type.STRING, description: "Segundo apellido del médico" },
-              nombres: { type: Type.STRING, description: "Nombre(s) del médico" },
-              especialidad: { type: Type.STRING, description: "Especialidad médica" },
-              cedula_profesional: { type: Type.STRING, description: "Cédula profesional" },
-              cedula_especialidad: { type: Type.STRING, description: "Cédula de especialidad" },
-              convenio_gnp: { type: Type.BOOLEAN, description: "¿Está en convenio con GNP?" },
-              se_ajusta_tabulador: { type: Type.BOOLEAN, description: "¿Se ajusta al tabulador?" },
-              ppto_honorarios: { type: Type.STRING, description: "Presupuesto de honorarios" },
-              telefono_consultorio: { type: Type.STRING, description: "Teléfono del consultorio" },
-              celular: { type: Type.STRING, description: "Celular del médico" },
-              correo_electronico: { type: Type.STRING, description: "Correo electrónico" },
-              tipo_participacion: { type: Type.STRING, description: "Tratante, Cirujano, u Otra" },
-              tipo_participacion_otra: { type: Type.STRING, description: "Si es Otra, especificar cuál" },
-              hubo_interconsulta: { type: Type.BOOLEAN, description: "¿Hubo interconsulta?" }
+              primer_apellido: { type: Type.STRING },
+              segundo_apellido: { type: Type.STRING },
+              nombres: { type: Type.STRING },
+              especialidad: { type: Type.STRING },
+              cedula_profesional: { type: Type.STRING },
+              cedula_especialidad: { type: Type.STRING },
+              convenio_gnp: { type: Type.BOOLEAN },
+              se_ajusta_tabulador: { type: Type.BOOLEAN },
+              ppto_honorarios: { type: Type.STRING },
+              telefono_consultorio: { type: Type.STRING },
+              celular: { type: Type.STRING },
+              correo_electronico: { type: Type.STRING },
+              tipo_participacion: { type: Type.STRING },
+              tipo_participacion_otra: { type: Type.STRING },
+              hubo_interconsulta: { type: Type.BOOLEAN }
             }
           },
 
-          otros_medicos: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                tipo_participacion: { type: Type.STRING, description: "Interconsultante, Cirujano, Anestesiólogo, Ayudantía, u Otra" },
-                tipo_participacion_otra: { type: Type.STRING, description: "Si es Otra, especificar cuál" },
-                primer_apellido: { type: Type.STRING },
-                segundo_apellido: { type: Type.STRING },
-                nombres: { type: Type.STRING },
-                especialidad: { type: Type.STRING },
-                cedula_profesional: { type: Type.STRING },
-                cedula_especialidad: { type: Type.STRING },
-                ppto_honorarios: { type: Type.STRING, description: "Presupuesto de honorarios" }
-              }
-            },
-            description: "Lista de hasta 3 médicos interconsultantes o participantes"
+          otros_medicos_texto: {
+            type: Type.STRING,
+            description: "Datos de médicos interconsultantes en formato: Nombre|Especialidad|Cédula|Honorarios separados por punto y coma"
           },
 
           firma: {
