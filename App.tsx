@@ -3,10 +3,12 @@ import FileUpload from './components/FileUpload';
 import Dashboard from './components/Dashboard';
 import RuleConfigurator from './components/RuleConfigurator';
 import PdfViewer from './components/PdfViewer';
+import ProviderSelector, { ProviderOption } from './components/ProviderSelector';
 import { analyzeReportImage, reEvaluateReport } from './services/geminiService';
 import { DEFAULT_SCORING_RULES } from './services/scoring-engine';
 import { AnalysisReport, AnalysisStatus, ExtractedData, ScoringRule } from './types';
-import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw, AlignLeft, Image as ImageIcon } from 'lucide-react';
+import { detectProviderFromPdf, DetectedProvider } from './services/providerDetection';
+import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw, AlignLeft, Image as ImageIcon, Loader2 } from 'lucide-react';
 
 const App: React.FC = () => {
   const [status, setStatus] = useState<AnalysisStatus>('idle');
@@ -19,6 +21,13 @@ const App: React.FC = () => {
   // State for Rules
   const [rules, setRules] = useState<ScoringRule[]>(DEFAULT_SCORING_RULES);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
+
+  // State for Provider Selection
+  const [selectedProvider, setSelectedProvider] = useState<ProviderOption>('UNKNOWN');
+  const [detectedProvider, setDetectedProvider] = useState<DetectedProvider | undefined>();
+  const [detectionConfidence, setDetectionConfidence] = useState<'high' | 'medium' | 'low'>('low');
+  const [pendingFile, setPendingFile] = useState<{data: string, type: string} | null>(null);
+  const [isDetecting, setIsDetecting] = useState(false);
 
   // State for Pending Changes (Sync Form -> PDF)
   const [pendingChanges, setPendingChanges] = useState<Record<string, { old: any, new: any }>>({});
@@ -53,19 +62,63 @@ const App: React.FC = () => {
   }, [filePreview]);
 
   const handleFileSelected = async (base64Data: string, mimeType: string) => {
+    setError(null);
+    setPendingChanges({});
+    setLeftPanelView('visual');
+    
+    // Store the file for later processing
+    setPendingFile({ data: base64Data, type: mimeType });
+    setFilePreview({ data: base64Data, type: mimeType });
+    
+    // Reset provider selection for new file
+    setSelectedProvider('UNKNOWN');
+    
+    // Try to detect provider automatically for PDFs
+    if (mimeType === 'application/pdf') {
+      setIsDetecting(true);
+      try {
+        const detection = await detectProviderFromPdf(base64Data);
+        setDetectedProvider(detection.provider);
+        setDetectionConfidence(detection.confidence);
+        if (detection.provider !== 'UNKNOWN') {
+          setSelectedProvider(detection.provider);
+        }
+      } catch (err) {
+        console.error('Detection failed:', err);
+        setDetectedProvider('UNKNOWN');
+        setSelectedProvider('UNKNOWN');
+      }
+      setIsDetecting(false);
+    } else {
+      // For images, require manual selection
+      setDetectedProvider('UNKNOWN');
+      setDetectionConfidence('low');
+      setSelectedProvider('UNKNOWN');
+    }
+    
+    setStatus('provider_selection');
+  };
+
+  const handleStartAnalysis = async () => {
+    if (!pendingFile || selectedProvider === 'UNKNOWN') return;
+    
     setStatus('analyzing');
     setError(null);
-    setFilePreview({ data: base64Data, type: mimeType });
-    setPendingChanges({});
-    setLeftPanelView('visual'); // Reset to visual on new file
     
     try {
-      const data = await analyzeReportImage(base64Data, mimeType, rules);
+      const data = await analyzeReportImage(pendingFile.data, pendingFile.type, selectedProvider, rules);
       setReport(data);
       setStatus('complete');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError("Error al procesar el documento. Asegúrate de usar una API Key válida o intenta con una imagen más clara.");
+      const errorMessage = err?.message || '';
+      if (errorMessage.includes('404')) {
+        setError("Error: Modelo de IA no disponible. Contacta soporte.");
+      } else if (errorMessage.includes('400')) {
+        setError("Error en la configuración. Intenta con otra aseguradora.");
+      } else {
+        setError("Error al procesar el documento. Asegúrate de usar una API Key válida o intenta con una imagen más clara.");
+      }
       setStatus('error');
     }
   };
@@ -315,7 +368,155 @@ const App: React.FC = () => {
     );
   }
 
-  // Render: UPLOAD SCREEN (Default)
+  // Render: PROVIDER SELECTION SCREEN
+  if (status === 'provider_selection') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex flex-col font-sans text-slate-900">
+        <main className="flex-grow flex flex-col items-center justify-center p-6 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+            <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-brand-100/50 rounded-full blur-3xl opacity-60"></div>
+            <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-accent-100/40 rounded-full blur-3xl opacity-60"></div>
+          </div>
+
+          <div className="text-center mb-8 max-w-xl animate-slide-up relative z-10">
+            <div className="inline-flex items-center justify-center p-1.5 bg-white rounded-2xl shadow-xl shadow-slate-200/60 mb-6 ring-1 ring-slate-100">
+              <div className="px-4 py-2 bg-slate-50 rounded-xl flex items-center gap-3">
+                <div className="p-1.5 bg-brand-600 rounded-lg">
+                  <FileText className="h-4 w-4 text-white" />
+                </div>
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Documento Cargado</span>
+              </div>
+            </div>
+            
+            <h2 className="text-3xl font-bold text-slate-900 mb-4">
+              Confirma la Aseguradora
+            </h2>
+            <p className="text-slate-500">
+              Selecciona o confirma la aseguradora para procesar el documento correctamente.
+            </p>
+          </div>
+
+          <div className="w-full max-w-md relative z-10 space-y-6">
+            {isDetecting ? (
+              <div className="bg-white border border-slate-200 rounded-xl p-6 text-center">
+                <Loader2 className="w-8 h-8 text-brand-600 animate-spin mx-auto mb-3" />
+                <p className="text-slate-600">Detectando aseguradora...</p>
+              </div>
+            ) : (
+              <>
+                <ProviderSelector
+                  selectedProvider={selectedProvider}
+                  onProviderChange={setSelectedProvider}
+                  detectedProvider={detectedProvider}
+                  confidence={detectionConfidence}
+                  disabled={status === 'analyzing'}
+                />
+
+                <button
+                  onClick={handleStartAnalysis}
+                  disabled={selectedProvider === 'UNKNOWN'}
+                  className={`w-full py-4 rounded-xl font-semibold text-white transition-all shadow-lg ${
+                    selectedProvider === 'UNKNOWN'
+                      ? 'bg-slate-300 cursor-not-allowed'
+                      : 'bg-brand-600 hover:bg-brand-700 shadow-brand-500/30 hover:shadow-brand-500/50'
+                  }`}
+                >
+                  Analizar Documento
+                </button>
+
+                <button
+                  onClick={() => {
+                    setStatus('idle');
+                    setPendingFile(null);
+                    setFilePreview(null);
+                    setDetectedProvider(undefined);
+                  }}
+                  className="w-full py-3 text-slate-500 hover:text-slate-700 text-sm transition-colors"
+                >
+                  Cancelar y subir otro archivo
+                </button>
+              </>
+            )}
+          </div>
+
+          {error && (
+            <div className="mt-8 p-4 bg-red-50 text-red-700 rounded-xl border border-red-100 shadow-sm flex items-center max-w-md animate-fade-in relative z-10">
+              <div className="mr-3 bg-red-100 p-2 rounded-full"><ShieldCheck className="w-4 h-4" /></div>
+              <p className="text-sm font-medium">{error}</p>
+            </div>
+          )}
+        </main>
+      </div>
+    );
+  }
+
+  // Render: ANALYZING SCREEN
+  if (status === 'analyzing') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex flex-col font-sans text-slate-900">
+        <main className="flex-grow flex flex-col items-center justify-center p-6 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+            <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-brand-100/50 rounded-full blur-3xl opacity-60"></div>
+            <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-accent-100/40 rounded-full blur-3xl opacity-60"></div>
+          </div>
+
+          <div className="text-center relative z-10">
+            <Loader2 className="w-16 h-16 text-brand-600 animate-spin mx-auto mb-6" />
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">Analizando Documento</h2>
+            <p className="text-slate-500">Extrayendo datos con IA de {selectedProvider}...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Render: ERROR SCREEN
+  if (status === 'error') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex flex-col font-sans text-slate-900">
+        <main className="flex-grow flex flex-col items-center justify-center p-6 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+            <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-red-100/50 rounded-full blur-3xl opacity-60"></div>
+            <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-accent-100/40 rounded-full blur-3xl opacity-60"></div>
+          </div>
+
+          <div className="text-center max-w-md relative z-10">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <ShieldCheck className="w-8 h-8 text-red-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-4">Error al Procesar</h2>
+            <p className="text-slate-500 mb-6">{error}</p>
+            
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  setStatus('provider_selection');
+                  setError(null);
+                }}
+                className="w-full py-3 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 transition-colors"
+              >
+                Intentar con otra aseguradora
+              </button>
+              <button
+                onClick={() => {
+                  setStatus('idle');
+                  setPendingFile(null);
+                  setFilePreview(null);
+                  setDetectedProvider(undefined);
+                  setError(null);
+                }}
+                className="w-full py-3 text-slate-500 hover:text-slate-700 text-sm transition-colors"
+              >
+                Subir otro archivo
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Render: UPLOAD SCREEN (Default - idle)
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex flex-col font-sans text-slate-900">
       <main className="flex-grow flex flex-col items-center justify-center p-6 relative overflow-hidden">
@@ -349,16 +550,9 @@ const App: React.FC = () => {
         <div className="w-full max-w-xl animate-fade-in delay-100 relative z-10">
           <FileUpload 
             onFileSelected={handleFileSelected} 
-            isProcessing={status === 'analyzing'}
+            isProcessing={false}
           />
         </div>
-
-        {error && (
-          <div className="mt-8 p-4 bg-red-50 text-red-700 rounded-xl border border-red-100 shadow-sm flex items-center max-w-md animate-fade-in relative z-10">
-             <div className="mr-3 bg-red-100 p-2 rounded-full"><ShieldCheck className="w-4 h-4" /></div>
-             <p className="text-sm font-medium">{error}</p>
-          </div>
-        )}
         
         <div className="mt-auto pt-16 flex gap-8 text-slate-300 relative z-10">
              {/* Simulated Logos */}

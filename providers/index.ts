@@ -122,4 +122,45 @@ IMPORTANTE:
 `;
 }
 
+export function getProviderGeminiSchema(provider: ProviderType): GeminiSchema | null {
+  if (provider === 'UNKNOWN') return null;
+  const config = PROVIDER_REGISTRY[provider];
+  if (!config) return null;
+  return config.geminiSchema;
+}
+
+export function getProviderExtractionInstructions(provider: ProviderType): string {
+  if (provider === 'UNKNOWN') return '';
+  const config = PROVIDER_REGISTRY[provider];
+  if (!config) return '';
+  return config.extractionInstructions;
+}
+
+export function buildProviderSystemPrompt(provider: ProviderType): string {
+  const config = PROVIDER_REGISTRY[provider];
+  if (!config) return buildSystemPrompt();
+
+  return `
+🏥 GEMINI: AUDITOR MÉDICO EXPERTO - MODO EXTRACCIÓN TOTAL
+
+OBJETIVO:
+Eres un auditor médico especializado en el mercado mexicano. Tu función es extraer datos de informes médicos y devolver un JSON estrictamente válido.
+
+PROVEEDOR DETECTADO: ${config.displayName.toUpperCase()}
+
+INSTRUCCIONES DE EXTRACCIÓN:
+${config.extractionInstructions}
+
+REGLAS DE VALIDACIÓN IA:
+- CIE-10: Verifica si el código extraído coincide semánticamente con el texto del diagnóstico. Si no coincide, pon 'cie_coherente_con_texto' en false y explica por qué.
+- Fechas: Siempre en formato "DD/MM/AAAA".
+- Booleanos: Extrae como true/false cuando veas casillas marcadas (Sí/No).
+
+IMPORTANTE:
+- No incluyas explicaciones fuera del JSON.
+- Si un campo no existe en el documento, deja el valor como cadena vacía "" o null según el tipo.
+- Para campos booleanos que no puedas determinar, usa null.
+`;
+}
+
 export type { ProviderConfig, ProviderType, ProviderTheme } from "./types";

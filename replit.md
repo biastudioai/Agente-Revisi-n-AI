@@ -56,9 +56,23 @@ This pattern allows adding new insurance providers by creating a new config file
 
 ### Data Flow
 ```
-PDF/Image Upload → Provider Detection → Gemini Extraction 
-→ Scoring Engine → Dashboard Display → Manual Edits → Re-evaluation
+PDF/Image Upload → Provider Detection (PDF text extraction) → User Confirmation
+→ Gemini Extraction (provider-specific schema) → Scoring Engine 
+→ Dashboard Display → Manual Edits → Re-evaluation
 ```
+
+### Provider Detection
+- `services/providerDetection.ts` - Automatic provider detection from PDF text
+  - Extracts text from first 2 pages using pdf.js
+  - Searches for provider keywords (e.g., "MetLife", "GNP", "Grupo Nacional Provincial")
+  - Returns confidence level (high/medium/low)
+  - Falls back to manual selection for images or undetected providers
+
+### Provider Selection UI
+- `components/ProviderSelector.tsx` - Manual/automatic provider selection
+  - Dynamically loads providers from PROVIDER_REGISTRY
+  - Shows detection confidence when automatic detection succeeds
+  - Requires explicit selection before analysis begins
 
 ### Type System
 - `types.ts` - Comprehensive TypeScript interfaces for:
@@ -71,8 +85,9 @@ PDF/Image Upload → Provider Detection → Gemini Extraction
 
 ### AI/ML Services
 - **Google Gemini AI** (`@google/genai`) - Document analysis and structured data extraction
-  - Requires `GEMINI_API_KEY` environment variable
-  - Uses model `gemini-3-flash-preview`
+  - Requires `API_KEY` environment variable (Gemini API key)
+  - Uses model `gemini-2.5-flash` (stable version)
+  - Provider-specific schemas loaded dynamically to avoid schema size limits
 
 ### PDF Processing
 - **pdf.js** (`pdfjs-dist@3.11.174`) - PDF rendering in browser

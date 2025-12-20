@@ -1,21 +1,28 @@
 import { GoogleGenAI } from "@google/genai";
 import { AnalysisReport, ExtractedData, ScoringRule } from "../types";
 import { calculateScore, reEvaluateScore, DEFAULT_SCORING_RULES } from "./scoring-engine";
-import { buildCombinedGeminiSchema, buildSystemPrompt } from "../providers";
+import { getProviderGeminiSchema, buildProviderSystemPrompt, ProviderType } from "../providers";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-const MODEL_NAME = "gemini-3-flash";
+const MODEL_NAME = "gemini-2.5-flash";
 
 export const analyzeReportImage = async (
     base64Data: string, 
     mimeType: string,
+    provider: ProviderType,
     rules: ScoringRule[] = DEFAULT_SCORING_RULES
 ): Promise<AnalysisReport> => {
   try {
     console.log("Starting analysis with model:", MODEL_NAME);
-    const systemPrompt = buildSystemPrompt();
-    const responseSchema = buildCombinedGeminiSchema();
-    console.log("Schema built, sending request to Gemini...");
+    console.log("Selected provider:", provider);
+    
+    const responseSchema = getProviderGeminiSchema(provider);
+    if (!responseSchema) {
+      throw new Error(`No schema available for provider: ${provider}`);
+    }
+    
+    const systemPrompt = buildProviderSystemPrompt(provider);
+    console.log("Schema built for provider:", provider, "sending request to Gemini...");
 
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
@@ -28,7 +35,7 @@ export const analyzeReportImage = async (
               data: base64Data
             }
           },
-          { text: "Extrae toda la información siguiendo el esquema JSON. Identifica primero si es METLIFE o GNP basándote en el logotipo y formato del documento. Valida el código CIE-10 contra el diagnóstico." }
+          { text: `Extrae toda la información del documento siguiendo el esquema JSON. Este es un documento de ${provider}. Valida el código CIE-10 contra el diagnóstico.` }
         ]
       },
       config: {
@@ -44,8 +51,8 @@ export const analyzeReportImage = async (
     
     console.log("Parsing JSON response...");
     const jsonData = JSON.parse(text);
-    const extractedData: ExtractedData = jsonData.extracted;
-    console.log("Detected provider:", extractedData.provider);
+    const extractedData: ExtractedData = { ...jsonData.extracted, provider };
+    console.log("Provider:", extractedData.provider);
 
     const scoringResult = calculateScore(extractedData, undefined, rules);
 

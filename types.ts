@@ -266,4 +266,4 @@ export interface AnalysisReport {
   raw_response?: string;
 }
 
-export type AnalysisStatus = 'idle' | 'analyzing' | 're-evaluating' | 'complete' | 'error';
+export type AnalysisStatus = 'idle' | 'provider_selection' | 'analyzing' | 're-evaluating' | 'complete' | 'error';
