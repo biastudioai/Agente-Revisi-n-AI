@@ -29,6 +29,24 @@ export const GNP_CONFIG: ProviderConfig = {
 - Extrae SOLO lo que esté explícitamente escrito
 - Si hay duda sobre un valor → déjalo vacío
 
+🚨 REGLA CRÍTICA UNIVERSAL PARA CASILLAS Y CHECKBOXES:
+
+PARA CUALQUIER CAMPO QUE DEPENDA DE UNA CASILLA MARCADA:
+- ✅ Solo extrae/marca como true SI VES una marca visual clara (X, ✓, relleno, sombreado)
+- ❌ NO asumas valores basándote en el contexto del documento
+- ❌ NO inferieras el valor porque "tiene sentido clínicamente"
+- ❌ NO completes automáticamente basándote en otros campos
+- 🔹 Si la casilla está VACÍA → el campo debe quedar false/""/null según su tipo
+- 🔹 Si hay DUDA sobre si está marcada → déjalo VACÍO
+
+Ejemplos de inferencias PROHIBIDAS:
+- "El diagnóstico menciona diabetes → causa_atencion = 'Enfermedad'" ❌
+- "Hay trauma → causa_atencion = 'Accidente'" ❌
+- "Es cirugía → tramite.programacion_cirugia = true" ❌
+- "Menciona embarazo → causa_atencion = 'Embarazo'" ❌
+
+SOLO extrae lo que VISUALMENTE esté marcado en el documento.
+
 INSTRUCCIONES DE EXTRACCIÓN PARA GNP:
 
 SECCIÓN TRÁMITE:
