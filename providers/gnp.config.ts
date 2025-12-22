@@ -47,6 +47,13 @@ Ejemplos de inferencias PROHIBIDAS:
 
 SOLO extrae lo que VISUALMENTE esté marcado en el documento.
 
+⚠️ EXCEPCIÓN PARA TIPO DE PADECIMIENTO:
+- Este campo PERMITE múltiples casillas marcadas simultáneamente
+- Extrae TODAS las casillas que estén visualmente marcadas
+- Formato de salida: separar con comas (ejemplo: "Congénito, Agudo" o "Adquirido, Crónico")
+- SIGUE LA REGLA: Solo extrae lo que VES marcado, no inferieras combinaciones
+- Si NINGUNA casilla está marcada → dejar vacío ""
+
 INSTRUCCIONES DE EXTRACCIÓN PARA GNP:
 
 SECCIÓN TRÁMITE:
