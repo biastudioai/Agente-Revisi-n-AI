@@ -22,11 +22,18 @@ export const METLIFE_CONFIG: ProviderConfig = {
   ],
 
   extractionInstructions: `
+⚠️ REGLA FUNDAMENTAL: NO INFERIR NUNCA
+- Si un campo NO está visible en el documento → déjalo vacío ("" o null)
+- NO asumas valores basados en otros campos
+- NO completes información faltante automáticamente
+- Extrae SOLO lo que esté explícitamente escrito
+- Si hay duda sobre un valor → déjalo vacío
+
 INSTRUCCIONES DE EXTRACCIÓN PARA METLIFE (ALTA PRIORIDAD):
 
 CABECERA (Lugar y Fecha):
-- Extrae "Lugar" del campo de lugar
-- Combina las casillas de Día, Mes y Año en formato "DD/MM/AAAA" para "fecha"
+- Extrae "Lugar" del campo de lugar SOLO si está escrito
+- Combina las casillas de Día, Mes y Año en formato "DD/MM/AAAA" para "fecha" SOLO si las casillas tienen valores
 
 SECCIÓN 1 - DATOS DEL PACIENTE:
 - nombre_completo: Nombre completo del paciente

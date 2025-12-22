@@ -22,11 +22,19 @@ export const GNP_CONFIG: ProviderConfig = {
   ],
 
   extractionInstructions: `
+⚠️ REGLA FUNDAMENTAL: NO INFERIR NUNCA
+- Si un campo NO está visible en el documento → déjalo vacío ("" o null)
+- NO asumas valores basados en otros campos
+- NO completes información faltante automáticamente
+- Extrae SOLO lo que esté explícitamente escrito
+- Si hay duda sobre un valor → déjalo vacío
+
 INSTRUCCIONES DE EXTRACCIÓN PARA GNP:
 
 SECCIÓN TRÁMITE:
-- Identifica cuáles opciones están marcadas: Reembolso, Programación de cirugía, Programación de medicamentos, Programación de servicios, Indemnización, Reporte hospitalario
+- Identifica cuáles opciones están marcadas VISIBLEMENTE: Reembolso, Programación de cirugía, Programación de medicamentos, Programación de servicios, Indemnización, Reporte hospitalario
 - Pueden estar marcadas múltiples opciones
+- Si ninguna está marcada → dejar todos en false/null
 
 FICHA DE IDENTIFICACIÓN DEL ASEGURADO:
 - numero_poliza: Número de póliza del asegurado
