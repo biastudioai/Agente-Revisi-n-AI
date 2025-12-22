@@ -153,10 +153,19 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
     );
   };
 
-  const renderCheckboxGroup = (label: string, value: string | undefined, path: string, options: string[]) => {
+  const renderCheckboxGroup = (label: string, value: string | string[] | undefined, path: string, options: string[]) => {
     const isModified = modifiedFields[path] !== undefined;
     const isHighlighted = highlightedField === path;
-    const selectedValues = value ? value.split(',').map(v => v.trim().toLowerCase()) : [];
+    
+    // Manejar tanto arrays como strings separados por comas (backward compatibility)
+    let selectedValues: string[];
+    if (Array.isArray(value)) {
+      selectedValues = value.map(v => v.toLowerCase());
+    } else if (typeof value === 'string' && value) {
+      selectedValues = value.split(',').map(v => v.trim().toLowerCase());
+    } else {
+      selectedValues = [];
+    }
 
     const handleToggle = (option: string) => {
       const optionLower = option.toLowerCase();
@@ -166,7 +175,8 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
       } else {
         newValues = [...selectedValues, option];
       }
-      handleInputChange(path, newValues.join(', '));
+      // Guardar como array de strings
+      handleInputChange(path, newValues);
     };
 
     return (

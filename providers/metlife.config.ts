@@ -36,23 +36,66 @@ PARA CUALQUIER CAMPO QUE DEPENDA DE UNA CASILLA MARCADA:
 - ❌ NO asumas valores basándote en el contexto del documento
 - ❌ NO inferieras el valor porque "tiene sentido clínicamente"
 - ❌ NO completes automáticamente basándote en otros campos
-- 🔹 Si la casilla está VACÍA → el campo debe quedar false/""/null según su tipo
+- 🔹 Si la casilla está VACÍA → el campo debe quedar false/""/null/[] según su tipo
 - 🔹 Si hay DUDA sobre si está marcada → déjalo VACÍO
 
-Ejemplos de inferencias PROHIBIDAS:
-- "El diagnóstico menciona diabetes → causa_atencion = 'Enfermedad'" ❌
-- "Hay trauma → causa_atencion = 'Accidente'" ❌
-- "Es cirugía → utilizo_equipo_especial = true" ❌
-- "Menciona complicaciones → presento_complicaciones = true" ❌
+⚠️ EJEMPLOS VISUALES DE LO QUE NO DEBES HACER:
 
-SOLO extrae lo que VISUALMENTE esté marcado en el documento.
+🚫 CAUSA DE ATENCIÓN - Ejemplos de inferencias PROHIBIDAS:
+❌ "El diagnóstico menciona diabetes" → causa_atencion = "Enfermedad" 
+❌ "Hay trauma en el texto" → causa_atencion = "Accidente"
+❌ "Menciona embarazo en antecedentes" → causa_atencion = "Embarazo"
+❌ "Es un informe quirúrgico" → causa_atencion = "Enfermedad"
 
-⚠️ EXCEPCIÓN PARA TIPO DE PADECIMIENTO:
-- Este campo PERMITE múltiples casillas marcadas simultáneamente
-- Extrae TODAS las casillas que estén visualmente marcadas
-- Formato de salida: separar con comas (ejemplo: "Congénito, Agudo" o "Adquirido, Crónico")
-- SIGUE LA REGLA: Solo extrae lo que VES marcado, no inferieras combinaciones
-- Si NINGUNA casilla está marcada → dejar vacío ""
+✅ CORRECTO: Solo marca SI VES esto en el documento:
+   ☑ Accidente    ☐ Enfermedad    ☐ Embarazo    ☐ Segunda valoración
+   → causa_atencion = "Accidente"
+
+🚫 OTROS CAMPOS - Ejemplos de inferencias PROHIBIDAS:
+❌ "Es cirugía" → utilizo_equipo_especial = true
+❌ "Menciona dolor postoperatorio" → presento_complicaciones = true
+❌ "Dice 'se realizó laparoscopía'" → utilizo_equipo_especial = true
+
+✅ SOLO extrae lo que VISUALMENTE esté marcado en casillas/checkboxes.
+
+⚠️ EXCEPCIÓN ESPECIAL: TIPO DE PADECIMIENTO (PERMITE MÚLTIPLES VALORES)
+
+Este es el ÚNICO campo que acepta múltiples casillas marcadas:
+
+📋 EJEMPLO VISUAL 1:
+SI VES ESTO en el documento:
+   ☑ Congénito    ☐ Adquirido
+   ☑ Agudo        ☐ Crónico
+
+✅ ENTONCES extrae: ["Congénito", "Agudo"]
+
+📋 EJEMPLO VISUAL 2:
+SI VES ESTO:
+   ☐ Congénito    ☑ Adquirido
+   ☐ Agudo        ☑ Crónico
+
+✅ ENTONCES extrae: ["Adquirido", "Crónico"]
+
+📋 EJEMPLO VISUAL 3:
+SI VES ESTO:
+   ☑ Congénito    ☐ Adquirido
+   ☐ Agudo        ☐ Crónico
+
+✅ ENTONCES extrae: ["Congénito"]
+
+📋 EJEMPLO VISUAL 4:
+SI VES ESTO (ninguna marcada):
+   ☐ Congénito    ☐ Adquirido
+   ☐ Agudo        ☐ Crónico
+
+✅ ENTONCES extrae: [] (array vacío)
+
+🚫 NO HAGAS ESTO:
+❌ Ver "Congénito, Agudo" marcados → extraer solo ["Congénito"]
+❌ Ver solo "Adquirido" marcado → inferir ["Adquirido", "Crónico"]
+❌ Ver ninguna marcada → inferir basándote en el diagnóstico
+
+RECUERDA: tipo_padecimiento es un ARRAY de strings, NO un string separado por comas.
 
 INSTRUCCIONES DE EXTRACCIÓN PARA METLIFE (ALTA PRIORIDAD):
 
@@ -207,7 +250,11 @@ SECCIÓN 7 - FIRMA:
             properties: {
               descripcion: { type: Type.STRING, description: "Signos, síntomas y evolución" },
               fecha_inicio: { type: Type.STRING, description: "Fecha inicio síntomas DD/MM/AAAA" },
-              tipo_padecimiento: { type: Type.STRING, description: "Congénito, Adquirido, Agudo o Crónico" },
+              tipo_padecimiento: { 
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+                description: "Array de valores extraídos de casillas marcadas: puede contener ['Congénito', 'Adquirido', 'Agudo', 'Crónico']. SOLO extrae los valores que VES marcados visualmente. Si ninguna casilla está marcada, devuelve array vacío []."
+              },
               tiempo_evolucion: { type: Type.STRING, description: "Tiempo de evolución" },
               causa_etiologia: { type: Type.STRING, description: "Causa/etiología del padecimiento" },
               estado_actual: { type: Type.STRING, description: "Estado actual del paciente" },
