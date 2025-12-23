@@ -238,8 +238,8 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
      { id: 'padecimiento', label: 'Padecimiento', icon: HeartPulse, metlifeSection: '3' },
      { id: 'hospital', label: 'Hospital', icon: Hospital, metlifeSection: '4' },
      { id: 'observaciones', label: 'Observaciones', icon: ClipboardList, metlifeSection: '5' },
-     { id: 'equipo_qx', label: 'Equipo Qx', icon: Users, metlifeSection: '6' },
      { id: 'medico', label: 'Médico', icon: Activity, metlifeSection: '6' },
+     { id: 'equipo_qx', label: 'Otros Médicos', icon: Users, metlifeSection: '6' },
      { id: 'validacion', label: 'Firma', icon: PenTool, metlifeSection: '7' },
   ];
 
