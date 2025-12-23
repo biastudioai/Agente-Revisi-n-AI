@@ -41,6 +41,19 @@ const DateInput: React.FC<DateInputProps> = ({
       onChange(path, `${d}/${m}/${y}`);
   };
 
+  // Fallback for browsers that don't respond to transparent overlay clicks
+  const handleContainerClick = () => {
+    if (dateInputRef.current) {
+      try {
+        // Try showPicker first (modern browsers)
+        (dateInputRef.current as any).showPicker?.();
+      } catch {
+        // Fallback to focus
+        dateInputRef.current.focus();
+      }
+    }
+  };
+
   const isEmpty = value === null || value === undefined || value === '';
   
   let confidenceDot = "bg-emerald-400"; 
@@ -75,13 +88,16 @@ const DateInput: React.FC<DateInputProps> = ({
          )}
       </div>
       
-      <div className="relative transition-all duration-200 transform origin-left">
+      <div 
+        className="relative transition-all duration-200 transform origin-left cursor-pointer"
+        onClick={handleContainerClick}
+      >
           <input
             type="text"
             value={value || ''}
             placeholder="DD/MM/AAAA"
             autoComplete="off"
-            className={`${baseClasses} ${stateClasses} pr-10 cursor-pointer`}
+            className={`${baseClasses} ${stateClasses} pr-10 cursor-pointer pointer-events-none`}
             readOnly
           />
           
@@ -90,13 +106,13 @@ const DateInput: React.FC<DateInputProps> = ({
               <Calendar className="w-5 h-5 text-slate-400 group-hover:text-brand-600 transition-colors" />
           </div>
 
-          {/* Native Date Picker (invisible overlay that captures clicks) */}
+          {/* Native Date Picker (invisible but receives focus for picker) */}
           <input 
               ref={dateInputRef}
               type="date"
               value={getPickerValue(value)}
               onChange={handleDatePick}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
               title="Seleccionar fecha"
           />
       </div>
