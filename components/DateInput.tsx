@@ -38,6 +38,31 @@ const DateInput: React.FC<DateInputProps> = ({
       onChange(path, `${d}/${m}/${y}`);
   };
 
+  const formatDateInput = (inputValue: string) => {
+      // Extract only numbers
+      const numbers = inputValue.replace(/\D/g, '');
+      
+      // Limit to 8 digits (DDMMYYYY)
+      const limited = numbers.slice(0, 8);
+      
+      // If empty, return empty string
+      if (limited.length === 0) return '';
+      
+      // Format as DD/MM/YYYY
+      if (limited.length <= 2) {
+          return limited;
+      } else if (limited.length <= 4) {
+          return `${limited.slice(0, 2)}/${limited.slice(2)}`;
+      } else {
+          return `${limited.slice(0, 2)}/${limited.slice(2, 4)}/${limited.slice(4)}`;
+      }
+  };
+
+  const handleTextInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const formatted = formatDateInput(e.target.value);
+      onChange(path, formatted);
+  };
+
   const isEmpty = value === null || value === undefined || value === '';
   
   let confidenceDot = "bg-emerald-400"; 
@@ -76,9 +101,10 @@ const DateInput: React.FC<DateInputProps> = ({
           <input
             type="text"
             value={value || ''}
-            onChange={(e) => onChange(path, e.target.value)}
+            onChange={handleTextInputChange}
             placeholder="DD/MM/AAAA"
             autoComplete="off"
+            inputMode="numeric"
             className={`${baseClasses} ${stateClasses} pr-10`}
           />
           
