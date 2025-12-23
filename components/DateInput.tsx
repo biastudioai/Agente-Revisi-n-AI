@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Calendar } from 'lucide-react';
 
@@ -19,8 +18,6 @@ const DateInput: React.FC<DateInputProps> = ({
   isHighlighted,
   onChange
 }) => {
-  const dateInputRef = React.useRef<HTMLInputElement>(null);
-
   // Logic to sync text input (DD/MM/YYYY) with native date picker (YYYY-MM-DD)
   const getPickerValue = (val: string) => {
       if (!val || typeof val !== 'string') return '';
@@ -39,19 +36,6 @@ const DateInput: React.FC<DateInputProps> = ({
       const [y, m, d] = val.split('-');
       // Convert back to DD/MM/YYYY for the text input
       onChange(path, `${d}/${m}/${y}`);
-  };
-
-  // Fallback for browsers that don't respond to transparent overlay clicks
-  const handleContainerClick = () => {
-    if (dateInputRef.current) {
-      try {
-        // Try showPicker first (modern browsers)
-        (dateInputRef.current as any).showPicker?.();
-      } catch {
-        // Fallback to focus
-        dateInputRef.current.focus();
-      }
-    }
   };
 
   const isEmpty = value === null || value === undefined || value === '';
@@ -88,33 +72,28 @@ const DateInput: React.FC<DateInputProps> = ({
          )}
       </div>
       
-      <div 
-        className="relative transition-all duration-200 transform origin-left cursor-pointer"
-        onClick={handleContainerClick}
-      >
+      <div className="relative transition-all duration-200 transform origin-left">
           <input
             type="text"
             value={value || ''}
+            onChange={(e) => onChange(path, e.target.value)}
             placeholder="DD/MM/AAAA"
             autoComplete="off"
-            className={`${baseClasses} ${stateClasses} pr-10 cursor-pointer pointer-events-none`}
-            readOnly
+            className={`${baseClasses} ${stateClasses} pr-10`}
           />
           
-          {/* Calendar Icon */}
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-              <Calendar className="w-5 h-5 text-slate-400 group-hover:text-brand-600 transition-colors" />
+          {/* Native Date Picker Overlay */}
+          <div className="absolute right-0 top-0 h-full w-10 flex items-center justify-center z-10 cursor-pointer">
+              <Calendar className="w-5 h-5 text-slate-400 group-hover:text-brand-600 transition-colors pointer-events-none" />
+              <input 
+                  type="date"
+                  value={getPickerValue(value)}
+                  onChange={handleDatePick}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  tabIndex={-1}
+                  title="Seleccionar fecha"
+              />
           </div>
-
-          {/* Native Date Picker (invisible but receives focus for picker) */}
-          <input 
-              ref={dateInputRef}
-              type="date"
-              value={getPickerValue(value)}
-              onChange={handleDatePick}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
-              title="Seleccionar fecha"
-          />
       </div>
     </div>
   );
