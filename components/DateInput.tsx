@@ -41,10 +41,6 @@ const DateInput: React.FC<DateInputProps> = ({
       onChange(path, `${d}/${m}/${y}`);
   };
 
-  const handleFieldClick = () => {
-    dateInputRef.current?.click();
-  };
-
   const isEmpty = value === null || value === undefined || value === '';
   
   let confidenceDot = "bg-emerald-400"; 
@@ -80,13 +76,11 @@ const DateInput: React.FC<DateInputProps> = ({
       </div>
       
       <div className="relative transition-all duration-200 transform origin-left">
-          {/* Display Text Input (shows DD/MM/YYYY format) */}
           <input
             type="text"
             value={value || ''}
             placeholder="DD/MM/AAAA"
             autoComplete="off"
-            onClick={handleFieldClick}
             className={`${baseClasses} ${stateClasses} pr-10 cursor-pointer`}
             readOnly
           />
@@ -96,13 +90,13 @@ const DateInput: React.FC<DateInputProps> = ({
               <Calendar className="w-5 h-5 text-slate-400 group-hover:text-brand-600 transition-colors" />
           </div>
 
-          {/* Native Date Picker (hidden but functional) */}
+          {/* Native Date Picker (invisible overlay that captures clicks) */}
           <input 
               ref={dateInputRef}
               type="date"
               value={getPickerValue(value)}
               onChange={handleDatePick}
-              className="hidden"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               title="Seleccionar fecha"
           />
       </div>
