@@ -63,6 +63,12 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
         for (const key of path) { if (originalValue) originalValue = originalValue[key]; }
     } catch (e) { originalValue = undefined; }
 
+    // Convertir "Sí"/"No" a booleano para campos específicos
+    let processedValue = value;
+    if (pathString === 'complicaciones.presento_complicaciones') {
+      processedValue = value === 'Sí' ? true : value === 'No' ? false : value;
+    }
+
     setFormData(prevData => {
         let newData = { ...prevData };
         let current: any = newData;
@@ -70,12 +76,12 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
             current[path[i]] = { ...current[path[i]] };
             current = current[path[i]];
         }
-        current[path[path.length - 1]] = value;
+        current[path[path.length - 1]] = processedValue;
         return newData;
     });
 
-    if (String(originalValue) !== String(value)) {
-      setModifiedFields(prev => ({ ...prev, [pathString]: { old: originalValue, new: value } }));
+    if (String(originalValue) !== String(processedValue)) {
+      setModifiedFields(prev => ({ ...prev, [pathString]: { old: originalValue, new: processedValue } }));
     }
   };
 
@@ -503,10 +509,17 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
 
                                 <div className="p-4 bg-red-50 rounded-xl border border-red-200">
                                     <h4 className="text-xs font-black mb-3 text-red-600">COMPLICACIONES</h4>
-                                    <div className="flex items-center gap-4 mb-3">
-                                        {renderRadioGroup("¿Se presentaron complicaciones?", formData.complicaciones?.presento_complicaciones ? 'Sí' : (formData.complicaciones?.presento_complicaciones === false ? 'No' : undefined), 'complicaciones.presento_complicaciones_radio', ['Sí', 'No'])}
+                                    <div className="mb-3">
+                                        {renderRadioGroup(
+                                            "¿Se presentaron complicaciones?", 
+                                            formData.complicaciones?.presento_complicaciones === true ? 'Sí' : 
+                                            formData.complicaciones?.presento_complicaciones === false ? 'No' : 
+                                            undefined, 
+                                            'complicaciones.presento_complicaciones', 
+                                            ['Sí', 'No']
+                                        )}
                                     </div>
-                                    {(formData.complicaciones?.presento_complicaciones || formData.complicaciones?.descripcion) && (
+                                    {formData.complicaciones?.presento_complicaciones === true && (
                                         <>
                                             {renderInput("Descripción de Complicaciones", formData.complicaciones?.descripcion, 'complicaciones.descripcion', 'textarea')}
                                             <DateInput label="Fecha de Inicio de Complicaciones" value={formData.complicaciones?.fecha_inicio} path="complicaciones.fecha_inicio" isModified={!!modifiedFields['complicaciones.fecha_inicio']} isHighlighted={highlightedField === 'complicaciones.fecha_inicio'} onChange={handleInputChange} />
