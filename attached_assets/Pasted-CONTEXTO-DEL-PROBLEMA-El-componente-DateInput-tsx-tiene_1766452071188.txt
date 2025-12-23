@@ -1,0 +1,75 @@
+CONTEXTO DEL PROBLEMA
+El componente DateInput.tsx tiene un comportamiento defectuoso con el selector de fechas:
+
+Problemas actuales:
+
+❌ Al hacer clic en el campo, NO se abre el calendario del navegador
+❌ Se puede escribir números directamente pero aparecen fechas aleatorias/incorrectas
+❌ La sincronización entre el input visible (DD/MM/YYYY) y el date picker nativo (YYYY-MM-DD) está fallando
+Código actual problemático (DateInput.tsx):
+
+Tiene un input de texto readOnly que llama a showPicker() al hacer clic
+Tiene un input de tipo date invisible superpuesto
+La función showPicker() puede no estar disponible en todos los navegadores
+El campo es readOnly pero aún permite escritura de alguna forma
+SOLUCIÓN REQUERIDA
+Necesito que implementes un Date Input funcional y robusto que:
+
+✅ Requisitos Funcionales:
+Al hacer clic en cualquier parte del campo → Debe abrirse el calendario nativo del navegador
+El campo NO debe permitir escritura manual → Solo selección vía calendario
+Formato visible: DD/MM/YYYY (formato legible)
+Sincronización perfecta entre lo que ve el usuario y el valor interno
+🎯 Comportamiento Esperado:
+Usuario hace clic → Se abre calendario nativo
+Usuario selecciona fecha → Se muestra en formato DD/MM/YYYY
+El valor se guarda correctamente en el estado del formulario
+No debe haber "fechas aleatorias" al escribir
+🔧 Estrategia de Implementación Sugerida:
+OPCIÓN 1 (Recomendada): Input Date Nativo Estilizado
+
+Usar solo el <input type="date"> nativo
+Estilizarlo para que se vea como el diseño actual
+Convertir el valor de YYYY-MM-DD a DD/MM/YYYY solo para MOSTRAR
+Mantener el formato nativo internamente
+OPCIÓN 2: Input Date con Overlay Clickeable
+
+Input de texto NO editable que muestra DD/MM/YYYY
+Input date invisible que cubre TODO el campo (no solo el ícono)
+Click en cualquier parte activa el date picker
+Eliminar completamente showPicker() ya que no es confiable cross-browser
+OPCIÓN 3: Librería de Date Picker (si las anteriores fallan)
+
+Si necesitas algo más robusto, considera usar react-datepicker o similar
+Pero intenta primero con soluciones nativas
+📋 Archivos a Modificar:
+components/DateInput.tsx (archivo principal a arreglar)
+🚨 Puntos Críticos a Considerar:
+Eliminar readOnly del input de texto si vas a permitir que el date picker lo actualice
+NO usar showPicker() → No tiene buen soporte cross-browser
+El input invisible debe cubrir TODO el campo (no solo 10px de ancho)
+La función getPickerValue debe manejar correctamente valores vacíos y formatos incorrectos
+Testear que el ícono del calendario sea clickeable
+🔍 Debugging Necesario:
+Por favor verifica:
+
+Console.log cuando se hace click en el campo
+Console.log del valor antes y después de la conversión DD/MM/YYYY ↔ YYYY-MM-DD
+Que el z-index del input invisible esté bien configurado
+INTENTOS PREVIOS (Contexto de lo que NO funcionó)
+Intento 1: Input invisible solo en el ícono
+❌ Problema: Área de clic muy pequeña (10px)
+❌ Resultado: No se abría el calendario
+Intento 2: showPicker() al hacer clic
+❌ Problema: Método no disponible en todos los navegadores
+❌ Resultado: No hace nada al hacer clic
+Intento 3: Input de texto readOnly + input date superpuesto
+❌ Problema: Sigue permitiendo escritura manual de alguna forma
+❌ Resultado: Fechas aleatorias aparecen
+NOTAS FINALES
+Si encuentras una forma más óptima o eficiente de resolver esto, tienes total libertad de implementarla
+Lo importante es que funcione correctamente en Chrome, Firefox y Safari
+El diseño visual debe mantenerse igual (colores, estilos, animaciones)
+No modifiques otros componentes, solo DateInput.tsx
+Prioridad: ALTA 🔴
+Impacto: Afecta a TODOS los campos de fecha en el formulario
