@@ -280,6 +280,11 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                 <>
                     <div className="flex flex-wrap gap-1 mb-6 bg-slate-100/50 p-1.5 rounded-xl border border-slate-200 shadow-inner">
                         {tabs.map((tab) => {
+                            // Ocultar pestaña "Observaciones" solo para GNP
+                            if (tab.id === 'observaciones' && provider === 'GNP') {
+                                return null;
+                            }
+                            
                             const Icon = tab.icon;
                             const isActive = activeTab === tab.id;
                             const isMetLife = provider === 'METLIFE';
