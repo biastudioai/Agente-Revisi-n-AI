@@ -41,11 +41,6 @@ const DateInput: React.FC<DateInputProps> = ({
       onChange(path, `${d}/${m}/${y}`);
   };
 
-  // Open date picker when clicking anywhere on the field
-  const handleFieldClick = () => {
-    dateInputRef.current?.showPicker?.();
-  };
-
   const isEmpty = value === null || value === undefined || value === '';
   
   let confidenceDot = "bg-emerald-400"; 
@@ -81,32 +76,30 @@ const DateInput: React.FC<DateInputProps> = ({
       </div>
       
       <div className="relative transition-all duration-200 transform origin-left">
-          <input
-            type="text"
-            value={value || ''}
-            onChange={(e) => onChange(path, e.target.value)}
-            onClick={handleFieldClick}
-            placeholder="DD/MM/AAAA"
-            autoComplete="off"
-            className={`${baseClasses} ${stateClasses} pr-10 cursor-pointer`}
-            readOnly
-          />
-          
-          {/* Calendar Icon */}
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-              <Calendar className="w-5 h-5 text-slate-400 group-hover:text-brand-600 transition-colors" />
-          </div>
-
-          {/* Native Date Picker (hidden but functional) */}
+          {/* Native Date Picker (overlays everything for click handling) */}
           <input 
               ref={dateInputRef}
               type="date"
               value={getPickerValue(value)}
               onChange={handleDatePick}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              tabIndex={-1}
+              className={`absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10`}
               title="Seleccionar fecha"
           />
+          
+          {/* Display Text Input (shows DD/MM/YYYY format) */}
+          <input
+            type="text"
+            value={value || ''}
+            placeholder="DD/MM/AAAA"
+            autoComplete="off"
+            className={`${baseClasses} ${stateClasses} pr-10 cursor-pointer relative z-0`}
+            readOnly
+          />
+          
+          {/* Calendar Icon */}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-0">
+              <Calendar className="w-5 h-5 text-slate-400 group-hover:text-brand-600 transition-colors" />
+          </div>
       </div>
     </div>
   );
