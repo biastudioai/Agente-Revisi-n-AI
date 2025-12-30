@@ -1,0 +1,45 @@
+Aquí, ¿qué pasa si no en todos los diferentes informes médicos tienen los mismos campos. Ahí estaría fallando, digamos, la calificación, ya que no todo se maneja de forma igual.
+¿Se te ocurre alguna forma de solucionar esto o dejarlos, o sea, más específicos para diferentes aseguradoras, o dejarlos como en general, específicos, o qué se te ocurre que pueda ser la solución? Ya que se lo di a revisar a alguien más y me comentó esto entre otras cosas. Pero esto es importante porque el objetivo es tener alrededor de diez aseguradoras por lo menos.
+Entonces, tenemos que encontrar una solución para queuno sea general y otras específicas. En este caso, me quiero enfocar en las generales, pero si tienen diferentes nombres en cada informe (sea que pueden llegar a variar unas con otras), ¿cómo lo podemos solucionar?
+Insisto, esto es lo que te estoy diciendo. Aparte, ahorita te voy a adjuntar los comentarios que me hicieron.Show less7:46 PMExcelente punto. Tienes razón: si cada aseguradora tiene campos diferentes (GNP usa fecha_ingreso, MetLife usa hospital.fecha_ingreso, otra usa ingreso_fecha), las reglas se rompen.
+La solución es implementar un mapeo de campos normalizado (como un adaptador) que convierte los diferentes schemas en uno estándar, ANTES de evaluar las reglas.
+Voy a crear una arquitectura de 3 capas:
+
+Capa de Normalización: Mapea campos reales → campos estándar
+Capa de Reglas: Trabaja solo con campos estándar
+Capa de Aseguradora: Config específica por aseguradora
+
+Déjame crear un documento nuevo que solucione esto:Arquitectura de Mapeo de Campos - Sistema Multi-AseguradoraCode /**
+ * ARQUITECTURA DE MAPEO DE CAMPOS
+ * Solución para múltiples aseguradoras con schemas diferentes
+ * 
+ * PRINCIPIO: Las reglas son universales, pero los campos varían.
+ * Solución: Normalizar entrada → Validar con reglas universales → Reportar coPerfecto. Ahora tienes una solución arquitectónica completa. Te explico cómo funciona:
+🏗️ Arquitectura de 3 Capas:
+Capa 1: Normalización (FieldNormalizer)
+
+Toma JSON bruto de cualquier aseguradora
+Lo mapea a un esquema universal estándar (StandardizedMedicalReport)
+Documenta qué campos se mapearon y cuáles faltaban
+
+Capa 2: Reglas Universales
+
+Todas las reglas usan campos estándar (ej: paciente.nombre, fecha.ingreso)
+No importa si la aseguradora llama nombres o nombre_completo
+Una regla = funciona para TODAS las aseguradoras
+
+Capa 3: Config por Aseguradora
+
+MAPEOS_ASEGURADORAS define cómo convertir cada aseguradora
+Fácil agregar una nueva: solo copiar y ajustar los paths
+
+✅ Ventajas:
+ProblemaSoluciónGNP usa medico.cedula, MetLife usa medico.cedula_profesionalMapeo normaliza ambos a medico_tratante.cedula_profesionalGNP usa hospitalizacion.fecha_ingreso, MetLife usa hospitalizacion.fecha_entrada_hospitalMapeo normaliza ambos a fecha.ingresoSignos vitales con campos diferentesNormaliza todos a signos_vitales.temperatura, .frecuencia_cardiaca, .presion_sistolicaAgregar aseguradora #11Solo agregar un nuevo entry en MAPEOS_ASEGURADORAS
+📋 Ahora, con este documento:
+¿Quieres que:
+
+Actualice las reglas para que usen SOLO campos estándar?
+Agregue mapeos para MAPFRE, Zurich, CAJA Popular, etc.?
+Cree un JSON ejecutable con todo integrado?
+
+¿Cuál es tu siguiente paso?

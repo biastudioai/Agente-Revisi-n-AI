@@ -1,0 +1,111 @@
+CONTEXTO DEL PROYECTO
+Estás trabajando en un Auditor Médico IA que procesa informes médicos de diferentes aseguradoras mexicanas (GNP y MetLife). Actualmente, el sistema funciona pero cada aseguradora tiene campos con nombres diferentes para los mismos datos (ej: "nombres" vs "nombre_completo", "medico.cedula" vs "medico.cedula_profesional").
+
+OBJETIVO DE ESTA TAREA
+Implementar ÚNICAMENTE LA FASE 1 del sistema de normalización descrito en el archivo:
+
+attached_assets/Pasted--FASE-1-REVISADA-INFRAESTRUCTURA-BASE-DE-NORMALIZACI-N-_1767060152684.txt
+Esta fase crea la infraestructura base que permite mapear campos de diferentes aseguradoras a un schema estándar, SIN romper el código existente.
+
+RESTRICCIONES CRÍTICAS
+❌ NO MODIFICAR ESTOS ARCHIVOS:
+services/geminiService.ts
+components/Dashboard.tsx
+services/scoring-engine.ts
+types.ts
+constants.ts
+providers/* (GNP/MetLife configs existentes)
+❌ NO MODIFICAR LA UI:
+No cambies layouts
+No agregues secciones nuevas al Dashboard
+No cambies la estructura de formularios
+No modifiques estilos
+✅ SOLO DEBES CREAR ESTOS 5 ARCHIVOS NUEVOS:
+types/standardized-schema.ts
+config/aseguradora-configs.ts
+services/field-mapper.ts
+MIGRATION_GUIDE.md
+services/geminiService.EXAMPLE.ts (solo como referencia futura)
+INSTRUCCIONES DETALLADAS
+1. Lee el archivo de especificaciones
+El archivo attached_assets/Pasted--FASE-1-REVISADA-INFRAESTRUCTURA-BASE-DE-NORMALIZACI-N-_1767060152684.txt contiene:
+
+Interfaces TypeScript completas
+Configs de mapeo para GNP y MetLife
+Clase FieldNormalizer con toda su lógica
+Ejemplos de integración
+Sigue EXACTAMENTE la estructura descrita en ese documento.
+
+2. Validación de paths de mapeo
+Los path en los configs de mapeo (ej: "paciente.nombres", "medico.cedula") DEBEN coincidir con la estructura JSON que Gemini devuelve actualmente.
+
+Ejemplo para GNP:
+
+'paciente.nombre': { path: 'paciente.nombres', ... }
+// Esto significa: el campo estándar "paciente.nombre" 
+// viene del path "paciente.nombres" en el JSON de GNP
+Si el documento usa "medico.cedula" pero el JSON real es "medico.cedula_profesional", usa el path correcto del JSON real.
+
+3. Puntos clave de implementación
+a) types/standardized-schema.ts
+Usa Record<string, string> en lugar de Map (para serialización JSON)
+Todos los campos opcionales deben tener ?
+Incluye _metadata con auditoría completa
+b) config/aseguradora-configs.ts
+Crea CONFIG_GNP y CONFIG_METLIFE exactamente como está en el documento
+Los path deben usar notación de punto (ej: "paciente.apellido_paterno")
+Incluye parser y validador donde sea necesario
+c) services/field-mapper.ts
+Implementa la clase FieldNormalizer completa
+El método normalize() debe retornar AMBOS: raw (datos originales) + datos (normalizados)
+Esto garantiza compatibilidad con código existente
+d) MIGRATION_GUIDE.md
+Copia el contenido del documento tal cual
+Este archivo es solo documentación (no código)
+e) services/geminiService.EXAMPLE.ts
+Este archivo es SOLO referencia para implementación futura
+NO modifica geminiService.ts actual
+Solo muestra cómo se integrará en Fase 2
+4. Validación post-implementación
+Después de crear los archivos, verifica que:
+
+✅ TypeScript compila sin errores
+✅ Los imports están correctos
+✅ No hay referencias a código que no existe
+✅ JSON.stringify() funciona con los objetos (sin Map ni Set)
+
+CAMINOS DE SOLUCIÓN
+OPCIÓN RECOMENDADA:
+Crear los 5 archivos en el orden sugerido:
+
+types/standardized-schema.ts (interfaces base)
+config/aseguradora-configs.ts (configs de mapeo)
+services/field-mapper.ts (lógica de normalización)
+MIGRATION_GUIDE.md (documentación)
+services/geminiService.EXAMPLE.ts (referencia)
+ALTERNATIVA (si encuentras una forma más óptima):
+Si detectas una mejor estructura de carpetas o una optimización que no rompa la compatibilidad, tienes libertad de implementarla, siempre y cuando:
+
+No modifiques archivos existentes (restricción crítica)
+Los paths de mapeo sean correctos
+La API pública de FieldNormalizer sea la misma
+VALIDACIÓN DE ÉXITO
+Al terminar, deberías poder hacer esto SIN errores (aunque no lo ejecutes, solo debe compilar):
+
+import { FieldNormalizer } from './services/field-mapper';
+const normalizer = new FieldNormalizer('GNP');
+const resultado = normalizer.normalize(datosGemini);
+console.log(resultado.exito); // true/false
+console.log(resultado.raw); // Datos originales intactos
+console.log(resultado.datos.paciente.nombre); // Dato normalizado
+RESUMEN EJECUTIVO
+QUÉ HACER:
+Crear 5 archivos nuevos siguiendo el documento de especificaciones
+
+QUÉ NO HACER:
+Modificar código existente, UI, o agregar funcionalidad extra
+
+OBJETIVO:
+Infraestructura lista para normalización, sin afectar sistema actual
+
+Nota final: Este prompt es una sugerencia estructurada. Si encuentras una forma más eficiente de implementar la Fase 1 manteniendo las restricciones críticas, tienes total libertad de ejecutarla. Lo importante es crear la infraestructura de normalización sin romper el código existente.

@@ -1,0 +1,461 @@
+/**
+ * FASE 1 REVISADA: INFRAESTRUCTURA BASE DE NORMALIZACIÓN
+ * 
+ * ⚠️ IMPORTANTE: Esta fase es COMPATIBLE con código existente
+ * 
+ * Cambios principales vs. versión anterior:
+ * 1. Map → Record (serializable con JSON)
+ * 2. Retorna AMBOS: raw + normalized (sin romper Dashboard)
+ * 3. Ejemplos de integración real con Gemini
+ * 4. Migration guide incluido
+ */
+
+// ============================================================================
+// FILE: types/standardized-schema.ts
+// ============================================================================
+
+/**
+ * Schema estándar universal para TODAS las aseguradoras
+ * 
+ * IMPORTANTE: Campos opcionales (?) porque no todas las aseguradoras
+ * tienen los mismos datos. Las reglas deben validar existencia.
+ */
+export interface StandardizedMedicalReport {
+  
+  // IDENTIDAD DEL PACIENTE
+  paciente: {
+    nombre: string;
+    apellido_paterno: string;
+    apellido_materno?: string;
+    edad: number;
+    sexo: 'M' | 'F' | 'O';
+  };
+  
+  // PÓLIZA
+  poliza: {
+    numero: string;
+  };
+  
+  // MÉDICO TRATANTE
+  medico_tratante: {
+    nombre: string;
+    apellido_paterno: string;
+    apellido_materno?: string;
+    cedula_profesional: string;
+    especialidad: string;
+    telefono?: string;
+    correo?: string;
+    domicilio?: string;
+  };
+  
+  // FECHAS
+  fecha: {
+    ingreso?: Date;
+    egreso?: Date;
+    diagnostico?: Date;
+    cirugia?: Date;
+    informe: Date;
+  };
+  
+  // TIPO DE ATENCIÓN
+  atencion: {
+    es_hospitalaria: boolean;
+    es_urgencia: boolean;
+    es_ambulatoria: boolean;
+  };
+  
+  // DIAGNÓSTICO
+  diagnostico: {
+    codigo_cie: string;
+    descripcion: string;
+    codigo_cie_secundario?: string[];
+  };
+  
+  // INTERVENCIÓN QUIRÚRGICA (OPCIONAL)
+  intervencion_qx?: {
+    hubo_cirugia: boolean;
+    tipo_anestesia?: string;
+    descripcion?: string;
+    tecnica?: string;
+  };
+  
+  // SIGNOS VITALES (OPCIONAL)
+  signos_vitales?: {
+    temperatura?: number;
+    frecuencia_cardiaca?: number;
+    presion_sistolica?: number;
+    presion_diastolica?: number;
+    respiracion?: number;
+  };
+  
+  // DOCUMENTACIÓN
+  firma_medico: boolean;
+  sello_hospital?: boolean;
+  
+  // METADATOS (AUDITORÍA)
+  _metadata: {
+    aseguradora: string;
+    fecha_normalizacion: Date;
+    campos_mapeados: Record<string, string>;  // ✅ Record (serializable)
+    campos_faltantes: string[];
+    errores_mapeo: Array<{ campo: string; error: string }>;
+  };
+}
+
+/**
+ * Resultado de normalización - RETORNA AMBOS (raw + normalized)
+ * Esto permite compatibilidad con código existente
+ */
+export interface NormalizationResult {
+  exito: boolean;
+  
+  // ✅ NUEVO: Mantiene datos crudos para compatibilidad
+  raw: any;
+  
+  // Datos normalizados
+  datos: StandardizedMedicalReport;
+  
+  // Diagnóstico del mapeo
+  advertencias: string[];
+  errores: string[];
+}
+
+/**
+ * Config de mapeo para cada aseguradora
+ */
+export interface AseguradoraConfig {
+  codigo: string;
+  nombre_completo: string;
+  
+  mappings: {
+    [campo_estandar: string]: {
+      path: string;
+      opcional?: boolean;
+      parser?: (valor: any) => any;
+      validador?: (valor: any) => boolean;
+    };
+  };
+}
+
+// ============================================================================
+// FILE: config/aseguradora-configs.ts
+// ============================================================================
+
+export const CONFIG_GNP: AseguradoraConfig = {
+  codigo: 'GNP',
+  nombre_completo: 'Grupo Nacional Provinvial',
+  mappings: {
+    'paciente.nombre': { path: 'paciente.nombres', parser: (v) => v?.trim() || '' },
+    'paciente.apellido_paterno': { path: 'paciente.apellido_paterno', parser: (v) => v?.trim() || '' },
+    'paciente.apellido_materno': { path: 'paciente.apellido_materno', opcional: true, parser: (v) => v?.trim() },
+    'paciente.edad': { path: 'paciente.edad', parser: (v) => parseInt(v, 10), validador: (v) => !isNaN(v) && v >= 0 && v <= 120 },
+    'paciente.sexo': { path: 'paciente.sexo', validador: (v) => ['M', 'F', 'O'].includes(v) },
+    
+    'poliza.numero': { path: 'poliza.numero', parser: (v) => v?.trim() || '' },
+    
+    'medico_tratante.nombre': { path: 'medico.nombres', parser: (v) => v?.trim() || '' },
+    'medico_tratante.apellido_paterno': { path: 'medico.apellido_paterno', parser: (v) => v?.trim() || '' },
+    'medico_tratante.apellido_materno': { path: 'medico.apellido_materno', opcional: true, parser: (v) => v?.trim() },
+    'medico_tratante.cedula_profesional': { path: 'medico.cedula', validador: (v) => /^\d{7,8}$/.test(v) },
+    'medico_tratante.especialidad': { path: 'medico.especialidad', parser: (v) => v?.trim() || '' },
+    'medico_tratante.telefono': { path: 'medico.telefono', opcional: true },
+    'medico_tratante.correo': { path: 'medico.email', opcional: true },
+    
+    'fecha.ingreso': { path: 'hospitalizacion.fecha_ingreso', opcional: true, parser: (v) => v ? new Date(v) : undefined },
+    'fecha.egreso': { path: 'hospitalizacion.fecha_egreso', opcional: true, parser: (v) => v ? new Date(v) : undefined },
+    'fecha.diagnostico': { path: 'diagnostico.fecha', opcional: true, parser: (v) => v ? new Date(v) : undefined },
+    'fecha.cirugia': { path: 'cirugia.fecha_cirugia', opcional: true, parser: (v) => v ? new Date(v) : undefined },
+    
+    'diagnostico.codigo_cie': { path: 'diagnostico.codigo_cie10', validador: (v) => /^[A-Z]\d{2}(\.\d{1,2})?$/.test(v) },
+    'diagnostico.descripcion': { path: 'diagnostico.descripcion_texto', parser: (v) => v?.trim() || '' },
+    
+    'intervencion_qx.hubo_cirugia': { path: 'cirugia.realizada', opcional: true, parser: (v) => Boolean(v) },
+    'intervencion_qx.tipo_anestesia': { path: 'cirugia.tipo_anestesia', opcional: true },
+    'intervencion_qx.descripcion': { path: 'cirugia.descripcion_procedimiento', opcional: true },
+    
+    'signos_vitales.temperatura': { path: 'signos_vitales.temperatura', opcional: true, parser: (v) => parseFloat(v) },
+    'signos_vitales.frecuencia_cardiaca': { path: 'signos_vitales.pulso', opcional: true, parser: (v) => parseInt(v, 10) },
+    'signos_vitales.presion_sistolica': { path: 'signos_vitales.presion_sistolica_calculada', opcional: true, parser: (v) => parseInt(v, 10) },
+    
+    'firma_medico': { path: 'medico.firma_presente', parser: (v) => Boolean(v) },
+  },
+};
+
+export const CONFIG_METLIFE: AseguradoraConfig = {
+  codigo: 'METLIFE',
+  nombre_completo: 'MetLife México',
+  mappings: {
+    'paciente.nombre': { path: 'identificacion.nombre_completo', parser: (v) => v?.trim().split(' ')[0] || '' },
+    'paciente.apellido_paterno': { path: 'identificacion.apellido_paterno', parser: (v) => v?.trim() || '' },
+    'paciente.apellido_materno': { path: 'identificacion.apellido_materno', opcional: true, parser: (v) => v?.trim() },
+    'paciente.edad': { path: 'identificacion.edad', parser: (v) => parseInt(v, 10), validador: (v) => !isNaN(v) && v >= 0 && v <= 120 },
+    'paciente.sexo': { path: 'identificacion.sexo', validador: (v) => ['M', 'F', 'O'].includes(v) },
+    
+    'poliza.numero': { path: 'poliza.numero_poliza', parser: (v) => v?.trim() || '' },
+    
+    'medico_tratante.nombre': { path: 'medico.nombre_completo', parser: (v) => v?.trim().split(' ')[0] || '' },
+    'medico_tratante.apellido_paterno': { path: 'medico.apellido_paterno', parser: (v) => v?.trim() || '' },
+    'medico_tratante.cedula_profesional': { path: 'medico.cedula_profesional', validador: (v) => /^\d{7,8}$/.test(v) },
+    'medico_tratante.especialidad': { path: 'medico.especialidad_medica', parser: (v) => v?.trim() || '' },
+    'medico_tratante.telefono': { path: 'medico.telefono_consultorio', opcional: true },
+    'medico_tratante.correo': { path: 'medico.correo_electronico', opcional: true },
+    
+    'fecha.ingreso': { path: 'hospitalizacion.fecha_entrada_hospital', opcional: true, parser: (v) => v ? new Date(v) : undefined },
+    'fecha.egreso': { path: 'hospitalizacion.fecha_salida_hospital', opcional: true, parser: (v) => v ? new Date(v) : undefined },
+    'fecha.diagnostico': { path: 'diagnostico.fecha_diagnostico', opcional: true, parser: (v) => v ? new Date(v) : undefined },
+    'fecha.cirugia': { path: 'procedimiento_quirurgico.fecha_procedimiento', opcional: true, parser: (v) => v ? new Date(v) : undefined },
+    
+    'diagnostico.codigo_cie': { path: 'diagnostico.cie10_principal', validador: (v) => /^[A-Z]\d{2}(\.\d{1,2})?$/.test(v) },
+    'diagnostico.descripcion': { path: 'diagnostico.descripcion_diagnostico', parser: (v) => v?.trim() || '' },
+    
+    'intervencion_qx.hubo_cirugia': { path: 'procedimiento_quirurgico.realizado', opcional: true, parser: (v) => Boolean(v) },
+    'intervencion_qx.tipo_anestesia': { path: 'procedimiento_quirurgico.tipo_anestesia_aplicada', opcional: true },
+    'intervencion_qx.descripcion': { path: 'procedimiento_quirurgico.descripcion_procedimiento', opcional: true },
+    
+    'signos_vitales.temperatura': { path: 'exploracion_fisica.temperatura_corporal', opcional: true, parser: (v) => parseFloat(v) },
+    'signos_vitales.frecuencia_cardiaca': { path: 'exploracion_fisica.frecuencia_cardiaca', opcional: true, parser: (v) => parseInt(v, 10) },
+    'signos_vitales.presion_sistolica': { path: 'exploracion_fisica.presion_arterial_sistolica', opcional: true, parser: (v) => parseInt(v, 10) },
+    
+    'firma_medico': { path: 'documentacion.firma_medico_presente', parser: (v) => Boolean(v) },
+  },
+};
+
+export const ASEGURADORAS_CONFIG: Record<string, AseguradoraConfig> = {
+  'GNP': CONFIG_GNP,
+  'METLIFE': CONFIG_METLIFE,
+};
+
+// ============================================================================
+// FILE: services/field-mapper.ts
+// ============================================================================
+
+export class FieldNormalizer {
+  private config: AseguradoraConfig;
+  
+  constructor(aseguradora: string) {
+    const config = ASEGURADORAS_CONFIG[aseguradora];
+    if (!config) {
+      throw new Error(
+        `Aseguradora '${aseguradora}' no configurada. Disponibles: ${Object.keys(ASEGURADORAS_CONFIG).join(', ')}`
+      );
+    }
+    this.config = config;
+  }
+  
+  private getNestedValue(obj: any, path: string): any {
+    if (!obj || !path) return undefined;
+    const keys = path.split('.');
+    let current = obj;
+    for (const key of keys) {
+      if (current == null) return undefined;
+      current = current[key];
+    }
+    return current;
+  }
+  
+  private setNestedValue(obj: any, path: string, value: any): void {
+    const keys = path.split('.');
+    let current = obj;
+    for (let i = 0; i < keys.length - 1; i++) {
+      const key = keys[i];
+      if (!current[key]) current[key] = {};
+      current = current[key];
+    }
+    current[keys[keys.length - 1]] = value;
+  }
+  
+  /**
+   * Normaliza un JSON bruto
+   * ✅ RETORNA AMBOS: raw (para compatibilidad) + normalized
+   */
+  normalize(rawData: any): NormalizationResult {
+    const resultado: NormalizationResult = {
+      exito: true,
+      raw: rawData,  // ✅ Guarda original para compatibilidad
+      datos: {
+        paciente: { nombre: '', apellido_paterno: '', edad: 0, sexo: 'O' },
+        poliza: { numero: '' },
+        medico_tratante: { nombre: '', apellido_paterno: '', cedula_profesional: '', especialidad: '' },
+        fecha: { informe: new Date() },
+        atencion: { es_hospitalaria: false, es_urgencia: false, es_ambulatoria: false },
+        diagnostico: { codigo_cie: '', descripcion: '' },
+        firma_medico: false,
+        _metadata: {
+          aseguradora: this.config.codigo,
+          fecha_normalizacion: new Date(),
+          campos_mapeados: {},  // ✅ Record, no Map (serializable)
+          campos_faltantes: [],
+          errores_mapeo: [],
+        },
+      },
+      advertencias: [],
+      errores: [],
+    };
+    
+    // Mapear campos
+    for (const [campoEstandar, config] of Object.entries(this.config.mappings)) {
+      const valor = this.getNestedValue(rawData, config.path);
+      
+      try {
+        if (valor === undefined || valor === null || valor === '') {
+          if (!config.opcional) {
+            resultado.errores.push(`Campo obligatorio faltante: ${config.path}`);
+            resultado.exito = false;
+          } else {
+            resultado.datos._metadata.campos_faltantes.push(config.path);
+          }
+          continue;
+        }
+        
+        let valorProcesado = valor;
+        if (config.parser) {
+          valorProcesado = config.parser(valor);
+        }
+        
+        if (config.validador && !config.validador(valorProcesado)) {
+          resultado.errores.push(`Validación falló para ${config.path}: valor="${valor}"`);
+          resultado.exito = false;
+          continue;
+        }
+        
+        this.setNestedValue(resultado.datos, campoEstandar, valorProcesado);
+        resultado.datos._metadata.campos_mapeados[campoEstandar] = config.path;
+        
+      } catch (error: any) {
+        resultado.datos._metadata.errores_mapeo.push({
+          campo: config.path,
+          error: error.message,
+        });
+        resultado.errores.push(`Error procesando ${config.path}: ${error.message}`);
+        resultado.exito = false;
+      }
+    }
+    
+    // Post-procesamiento
+    if (resultado.datos.fecha.ingreso && resultado.datos.fecha.egreso) {
+      resultado.datos.atencion.es_hospitalaria = true;
+    }
+    if (!resultado.datos.fecha.informe) {
+      resultado.datos.fecha.informe = new Date();
+    }
+    
+    return resultado;
+  }
+}
+
+// ============================================================================
+// FILE: services/geminiService.ts.EXAMPLE
+// Cómo integrar sin romper código existente
+// ============================================================================
+
+/**
+ * EJEMPLO: Cómo usar normalización en geminiService
+ * 
+ * IMPORTANTE: Mantiene retorno original + agrega normalized
+ * El Dashboard sigue funcionando sin cambios
+ */
+
+/*
+import { FieldNormalizer } from './field-mapper';
+import type { NormalizationResult } from '@/types/standardized-schema';
+
+interface ExtractedDataWithNormalization {
+  // Estructura existente (Dashboard la usa)
+  paciente?: { nombres?: string; ... };
+  medico?: { ... };
+  diagnostico?: { diagnostico_definitivo?: string; ... };
+  
+  // ✅ NUEVO: Datos normalizados (para reglas nuevas)
+  _normalized?: NormalizationResult;
+}
+
+async function extractMedicalReport(
+  imageBase64: string,
+  selectedProvider: string
+): Promise<ExtractedDataWithNormalization> {
+  
+  const result = await genAI.generateContent([...]);
+  const extractedData = JSON.parse(result.response.text());
+  
+  // ✅ AGREGAR: Normalizar sin afectar datos existentes
+  try {
+    const normalizer = new FieldNormalizer(selectedProvider);
+    const normalized = normalizer.normalize(extractedData);
+    
+    return {
+      ...extractedData,  // Mantiene estructura original
+      _normalized: normalized,  // Agrega datos normalizados
+    };
+  } catch (error) {
+    console.warn('Normalización falló (no crítico):', error);
+    return extractedData;  // Si falla, retorna original
+  }
+}
+*/
+
+// ============================================================================
+// FILE: MIGRATION_GUIDE.md
+// ============================================================================
+
+/*
+# GUÍA DE MIGRACIÓN - Fase 1 a Fase 2+
+
+## Estado Actual (Fase 1)
+- Código existente: 100% funcional
+- Datos normalizados: Disponibles en `_normalized`
+- Dashboard: Sin cambios, usa `data` original
+- Reglas: Usar `data._normalized.datos` si existen
+
+## Timeline de Migración
+
+### Semana 1-2: Validación
+1. Crear Fase 1 (este código)
+2. Ejecutar en ambiente de testing
+3. Comparar scores: reglas antiguas vs nuevas
+4. Validar con 50 documentos de GNP + 50 de MetLife
+
+### Semana 3-4: Migración Gradual
+1. Crear `scoring-engine-v2.ts` que usa campos normalizados
+2. Ejecutar AMBAS en paralelo (v1 y v2)
+3. Reportar ambos scores al Dashboard
+4. QA compara resultados
+
+### Semana 5-6: Cutover
+1. Dashboard muestra ambos scores (legacy + nuevo)
+2. Después de 2 semanas, si todo OK:
+3. Eliminar scoring-v1
+4. Cambiar Dashboard a usar solo scoring-v2
+
+## Checklist de Validación
+
+- [ ] Fase 1 compila sin errores
+- [ ] FieldNormalizer funciona con datos reales GNP
+- [ ] FieldNormalizer funciona con datos reales MetLife
+- [ ] JSON.stringify(normalized) funciona (sin Map)
+- [ ] _metadata.campos_mapeados es Record
+- [ ] raw data se preserva en _normalized.raw
+- [ ] Dashboard NO se rompió
+- [ ] Tests: 50 docs GNP, 50 docs MetLife
+
+## Próximos Pasos
+
+Cuando Fase 1 esté validada:
+1. Crear scoring-engine-v2.ts (usa campos estándar)
+2. Crear reglas duales (v1 + v2)
+3. Actualizar Dashboard para mostrar ambos scores
+4. Deprecate v1 después de 2 semanas
+
+## Preguntas de Auditoría
+
+¿Qué pasa si falla la normalización?
+→ Retorna _normalized.exito = false, usa datos raw
+
+¿Qué pasa si aseguradora nueva no está en config?
+→ Falla limpiamente con error: "Aseguradora no configurada"
+
+¿Cómo agrego una aseguradora nueva?
+→ Agregar 1 entry en ASEGURADORAS_CONFIG
+
+¿Puedo usar Fase 1 en producción?
+→ SÍ, pero solo como "información adicional", no decisión
+*/

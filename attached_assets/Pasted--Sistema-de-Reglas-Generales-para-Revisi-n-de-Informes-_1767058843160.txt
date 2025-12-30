@@ -1,0 +1,1379 @@
+# Sistema de Reglas Generales para Revisión de Informes Médicos
+## Aseguradoras Privadas México - Auditable 100%
+
+**Versión**: 4.0 - Sin Alucinaciones  
+**Fecha**: Diciembre 2024  
+**Principio Core**: IF [condición literal] THEN [resultado específico]. Nada más.
+
+---
+
+## PROPÓSITO
+
+Este sistema proporciona reglas booleanas simples para:
+- ✅ Detectar campos faltantes o con formato inválido
+- ✅ Detectar inconsistencias lógicas entre fechas/números
+- ✅ Generar un score basado en reglas ejecutables
+- ✅ Ser 100% auditable: "¿Por qué falló?" → respuesta directa en el código
+
+**Restricción**: 
+- 🚫 NO hacer búsquedas de mercado
+- 🚫 NO inferir diagnósticos
+- 🚫 NO validar "coherencia clínica" (eso es trabajo del médico)
+- 🚫 NO comparar semánticamente textos
+- 🚫 NO puntuar por falta de datos que no son obligatorios
+
+---
+
+## ESTRUCTURA DE REGLA
+
+```typescript
+interface ScoringRule {
+  id: string;                              // ID único
+  name: string;                            // Descripción legible
+  category: 'IDENTIDAD' | 'TEMPORAL' | 'COMPLETITUD' | 'DOCUMENTACIÓN' | 'COHERENCIA_DATOS';
+  level: 'CRÍTICA' | 'IMPORTANTE' | 'MODERADA' | 'NOTA';
+  points: number;                          // Puntos negativos (siempre ≤ 0)
+  affectedFields: string[];                // Qué campos afecta
+  condition: string;                       // Descripción IF en español legible
+  validator: (data: ExtractedData) => {
+    passed: boolean;                       // true si PASA, false si FALLA
+    reason?: string;                       // Exactamente QUÉ falló
+    evidence?: string;                     // Datos concretos
+  };
+  message: string;                         // Al revisor: "Falta [X]" o "Campo [Y] contiene [Z]"
+  applicableIf?: (data: ExtractedData) => boolean;  // Regla aplica solo si...
+}
+```
+
+---
+
+# CATEGORÍA 1: IDENTIDAD
+
+## Propósito
+Validar que **se pueden identificar** el paciente, médico y póliza.
+
+---
+
+### CRÍTICA 1.1 | `paciente_nombre_minimo`
+```
+IF: (nombres.length < 2) OR (primer_apellido.length < 2)
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `identificacion.nombres`, `identificacion.primer_apellido`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const nombres = data.identificacion?.nombres || '';
+    const apellido1 = data.identificacion?.primer_apellido || '';
+    
+    if (nombres.length < 2 || apellido1.length < 2) {
+      return {
+        passed: false,
+        reason: 'Nombre o apellido demasiado corto',
+        evidence: `Nombres: "${nombres}" (${nombres.length} chars), Apellido1: "${apellido1}" (${apellido1.length} chars)`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Nombre del paciente incompleto. Se requiere mínimo 2 caracteres en nombre Y 2 en primer apellido. Actual: [nombres] [apellido1]"
+- **¿Por qué crítica?**: Sin identidad clara no se puede procesar la póliza.
+
+---
+
+### CRÍTICA 1.2 | `poliza_numero_presente`
+```
+IF: (poliza.numero === NULL OR poliza.numero === '' OR poliza.numero.length < 5)
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `poliza.numero`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const numPoliza = data.poliza?.numero || '';
+    
+    if (!numPoliza || numPoliza.length < 5) {
+      return {
+        passed: false,
+        reason: 'Número de póliza ausente o demasiado corto',
+        evidence: `Póliza: "${numPoliza}" (${numPoliza.length} caracteres)`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Número de póliza faltante o con menos de 5 caracteres. Requerido para validar cobertura."
+- **¿Por qué crítica?**: Sin póliza, no hay contrato.
+
+---
+
+### CRÍTICA 1.3 | `medico_nombres_minimo`
+```
+IF: (nombres.length < 2) OR (primer_apellido.length < 2)
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `medico_tratante.nombres`, `medico_tratante.primer_apellido`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const nombres = data.medico_tratante?.nombres || '';
+    const apellido1 = data.medico_tratante?.primer_apellido || '';
+    
+    if (nombres.length < 2 || apellido1.length < 2) {
+      return {
+        passed: false,
+        reason: 'Nombre del médico incompleto',
+        evidence: `Nombres: "${nombres}" (${nombres.length} chars), Apellido1: "${apellido1}" (${apellido1.length} chars)`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Nombre del médico tratante incompleto. Se requiere mínimo 2 caracteres en nombre Y 2 en primer apellido."
+
+---
+
+### CRÍTICA 1.4 | `cedula_profesional_formato`
+```
+IF: (cedula_profesional === NULL OR cedula_profesional === '' 
+     OR NOT MATCH(/^\d{7,8}$/))
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `medico_tratante.cedula_profesional`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const cedula = data.medico_tratante?.cedula_profesional || '';
+    const pattern = /^\d{7,8}$/;
+    
+    if (!cedula || !pattern.test(cedula)) {
+      return {
+        passed: false,
+        reason: 'Cédula profesional no cumple formato',
+        evidence: `Cédula: "${cedula}". Esperado: 7-8 dígitos numéricos. Actual: ${cedula.length} caracteres`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Cédula profesional del médico inválida. Debe ser 7-8 dígitos numéricos. Actual: [cedula]"
+
+---
+
+### CRÍTICA 1.5 | `especialidad_presente`
+```
+IF: (especialidad === NULL OR especialidad === '')
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `medico_tratante.especialidad`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const especialidad = data.medico_tratante?.especialidad || '';
+    
+    if (!especialidad) {
+      return {
+        passed: false,
+        reason: 'Especialidad del médico no especificada',
+        evidence: `Campo vacío`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Especialidad del médico tratante no especificada. Requerida para validar competencia con procedimiento."
+
+---
+
+### CRÍTICA 1.6 | `firma_medico_presente`
+```
+IF: (firma === NULL OR firma === '')
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `medico_tratante.firma`, `medico_tratante.sello`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const firma = data.medico_tratante?.firma || '';
+    const sello = data.medico_tratante?.sello || '';
+    
+    if (!firma && !sello) {
+      return {
+        passed: false,
+        reason: 'Sin firma o sello del médico',
+        evidence: `Firma: ${firma ? 'presente' : 'ausente'}, Sello: ${sello ? 'presente' : 'ausente'}`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Informe sin firma o sello del médico tratante. Requerido como evidencia de autoría."
+
+---
+
+### CRÍTICA 1.7 | `edad_rango_vital`
+```
+IF: (edad < 0 OR edad > 120 OR edad === NULL)
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `identificacion.edad`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const edad = data.identificacion?.edad;
+    
+    if (edad === null || edad === undefined || edad < 0 || edad > 120) {
+      return {
+        passed: false,
+        reason: 'Edad fuera de rango vital',
+        evidence: `Edad: ${edad}`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Edad del paciente inválida. Debe estar entre 0 y 120 años. Actual: [edad]"
+
+---
+
+### CRÍTICA 1.8 | `sexo_valor_valido`
+```
+IF: (sexo NOT IN ['M', 'F', 'O'] OR sexo === NULL)
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `identificacion.sexo`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const sexo = data.identificacion?.sexo || '';
+    const validos = ['M', 'F', 'O'];
+    
+    if (!validos.includes(sexo)) {
+      return {
+        passed: false,
+        reason: 'Sexo inválido o no especificado',
+        evidence: `Sexo: "${sexo}". Válidos: M, F, O`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Sexo del paciente inválido. Debe ser: M (Masculino), F (Femenino) o O (Otro). Actual: [sexo]"
+
+---
+
+---
+
+# CATEGORÍA 2: TEMPORAL (COHERENCIA DE FECHAS)
+
+## Propósito
+Validar que las fechas tengan **orden lógico**: no se puede egresar antes de ingresar.
+
+---
+
+### CRÍTICA 2.1 | `ingreso_anterior_egreso`
+```
+IF: (fecha.egreso < fecha.ingreso AND ambas existen)
+THEN: FALLA
+Points: -100
+```
+- **Aplicable si**: `atencion.tipo IN ['hospitalaria', 'urgencias']`
+- **Campos afectados**: `fecha.ingreso`, `fecha.egreso`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const ingreso = data.fecha?.ingreso ? new Date(data.fecha.ingreso) : null;
+    const egreso = data.fecha?.egreso ? new Date(data.fecha.egreso) : null;
+    
+    if (ingreso && egreso && egreso < ingreso) {
+      return {
+        passed: false,
+        reason: 'Fecha de egreso anterior a ingreso',
+        evidence: `Ingreso: ${ingreso.toISOString().split('T')[0]}, Egreso: ${egreso.toISOString().split('T')[0]}`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Inconsistencia de fechas: Egreso ([egreso]) es anterior a Ingreso ([ingreso]). Imposible lógicamente."
+
+---
+
+### CRÍTICA 2.2 | `diagnostico_no_futuro`
+```
+IF: (fecha.diagnostico > HOY())
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `diagnostico.fecha`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const diagnosticoFecha = data.diagnostico?.fecha 
+      ? new Date(data.diagnostico.fecha) 
+      : null;
+    const hoy = new Date();
+    
+    if (diagnosticoFecha && diagnosticoFecha > hoy) {
+      return {
+        passed: false,
+        reason: 'Diagnóstico con fecha futura',
+        evidence: `Fecha diagnóstico: ${diagnosticoFecha.toISOString().split('T')[0]}, Hoy: ${hoy.toISOString().split('T')[0]}`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Diagnóstico fechado en el futuro ([fecha]). No es posible diagnosticar algo que aún no ocurre."
+
+---
+
+### CRÍTICA 2.3 | `cirugia_dentro_hospitalizacion`
+```
+IF: (cirugia === TRUE 
+     AND (fecha.cirugia < fecha.ingreso OR fecha.cirugia > fecha.egreso))
+THEN: FALLA
+Points: -100
+```
+- **Aplicable si**: `intervencion_qx.cirugia === TRUE`
+- **Campos afectados**: `intervencion_qx.fecha_cirugia`, `fecha.ingreso`, `fecha.egreso`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    if (!data.intervencion_qx?.cirugia) return { passed: true }; // No aplica
+    
+    const cirugia = data.intervencion_qx.fecha_cirugia 
+      ? new Date(data.intervencion_qx.fecha_cirugia) 
+      : null;
+    const ingreso = data.fecha?.ingreso ? new Date(data.fecha.ingreso) : null;
+    const egreso = data.fecha?.egreso ? new Date(data.fecha.egreso) : null;
+    
+    if (cirugia && ingreso && egreso) {
+      if (cirugia < ingreso || cirugia > egreso) {
+        return {
+          passed: false,
+          reason: 'Cirugía fuera del período de hospitalización',
+          evidence: `Cirugía: ${cirugia.toISOString().split('T')[0]}, Ingreso: ${ingreso.toISOString().split('T')[0]}, Egreso: ${egreso.toISOString().split('T')[0]}`
+        };
+      }
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Fecha de cirugía ([cirugia]) está fuera del período de hospitalización ([ingreso] a [egreso])."
+- **Excepción**: Si es cirugía ambulatoria (estancia = 0), fecha_cirugia puede = fecha_egreso
+
+---
+
+### CRÍTICA 2.4 | `informe_posterior_a_eventos`
+```
+IF: (fecha.informe < MAX(fecha.egreso, fecha.cirugia, fecha.diagnostico))
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `fecha.informe`, `fecha.egreso`, `intervencion_qx.fecha_cirugia`, `diagnostico.fecha`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const informe = data.fecha?.informe ? new Date(data.fecha.informe) : null;
+    const egreso = data.fecha?.egreso ? new Date(data.fecha.egreso) : null;
+    const cirugia = data.intervencion_qx?.fecha_cirugia 
+      ? new Date(data.intervencion_qx.fecha_cirugia) 
+      : null;
+    const diagnostico = data.diagnostico?.fecha 
+      ? new Date(data.diagnostico.fecha) 
+      : null;
+    
+    if (informe) {
+      const eventos = [egreso, cirugia, diagnostico].filter(f => f !== null);
+      const maxEvento = eventos.length > 0 ? new Date(Math.max(...eventos)) : null;
+      
+      if (maxEvento && informe < maxEvento) {
+        return {
+          passed: false,
+          reason: 'Informe anterior a eventos reportados',
+          evidence: `Informe: ${informe.toISOString().split('T')[0]}, Evento máximo: ${maxEvento.toISOString().split('T')[0]}`
+        };
+      }
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "El informe está fechado ([informe]) anterior a eventos en el documento (máximo: [evento]). No es posible escribir sobre algo que ocurrió después."
+
+---
+
+### PRÓXIMA INTEGRACIÓN 2.5 | `poliza_vigencia_valida` (DESACTIVADA)
+```
+NOTA: Regla pendiente de integración cuando se conecte a base de datos del broker.
+Cuando esté activa:
+  IF: (fecha.informe < poliza.vigencia_inicio OR fecha.informe > poliza.vigencia_fin)
+  THEN: FALLA (CRÍTICA)
+  Points: -100
+```
+- **Estado actual**: PENDIENTE
+- **Activación**: Cuando se tenga acceso a tabla de pólizas con vigencia_inicio y vigencia_fin
+- **Mensaje futuro**: "Informe ([fecha]) está fuera de la vigencia de póliza ([inicio] a [fin]). Sin cobertura."
+
+---
+
+### IMPORTANTE 2.6 | `estancia_dias_razonable`
+```
+IF: (estancia.dias < 0)
+THEN: FALLA (crítica)
+Points: -100
+
+IF: (estancia.dias > 365 AND atencion.tipo !== 'crónica')
+THEN: ALERTA
+Points: -30
+```
+- **Aplicable si**: `fecha.ingreso Y fecha.egreso existen`
+- **Campos afectados**: `estancia.dias`, `fecha.ingreso`, `fecha.egreso`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const ingreso = data.fecha?.ingreso ? new Date(data.fecha.ingreso) : null;
+    const egreso = data.fecha?.egreso ? new Date(data.fecha.egreso) : null;
+    
+    if (ingreso && egreso) {
+      const dias = Math.floor((egreso - ingreso) / (1000 * 60 * 60 * 24));
+      
+      if (dias < 0) {
+        return {
+          passed: false,
+          reason: 'Días negativos (egreso antes de ingreso)',
+          evidence: `Cálculo: ${dias} días`
+        };
+      }
+      
+      if (dias > 365 && data.atencion?.tipo !== 'crónica') {
+        return {
+          passed: false,
+          reason: 'Estancia muy prolongada (>365 días)',
+          evidence: `Días calculados: ${dias}`
+        };
+      }
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Estancia muy larga ([dias] días). Si no es caso crónico, requiere justificación."
+
+---
+
+---
+
+# CATEGORÍA 3: COMPLETITUD (CAMPOS OBLIGATORIOS)
+
+## Propósito
+Validar que **información crítica no esté ausente**.
+
+---
+
+### CRÍTICA 3.1 | `diagnostico_principal_presente`
+```
+IF: (diagnostico.definitivo === NULL OR diagnostico.definitivo === '' 
+     OR diagnostico.definitivo.length < 10)
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `diagnostico.definitivo`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const diagnostico = data.diagnostico?.definitivo || '';
+    
+    if (!diagnostico || diagnostico.length < 10) {
+      return {
+        passed: false,
+        reason: 'Diagnóstico insuficiente',
+        evidence: `Diagnóstico: "${diagnostico}" (${diagnostico.length} caracteres). Mínimo: 10`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Diagnóstico principal incompleto. Mínimo 10 caracteres descriptivos. Actual: [diagnostico]"
+
+---
+
+### CRÍTICA 3.2 | `tipo_atencion_presente`
+```
+IF: (atencion.tipo NOT IN ['ambulatoria', 'hospitalaria', 'urgencias', 'crónica', 'preventiva']
+     OR atencion.tipo === NULL)
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `atencion.tipo`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const tipo = data.atencion?.tipo || '';
+    const validos = ['ambulatoria', 'hospitalaria', 'urgencias', 'crónica', 'preventiva'];
+    
+    if (!validos.includes(tipo)) {
+      return {
+        passed: false,
+        reason: 'Tipo de atención no válido o ausente',
+        evidence: `Tipo: "${tipo}". Válidos: ${validos.join(', ')}`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Tipo de atención no especificado o inválido. Seleccionar: Ambulatoria, Hospitalaria, Urgencias, Crónica o Preventiva."
+
+---
+
+### CRÍTICA 3.3 | `codigo_cie10_presente`
+```
+IF: (diagnostico.codigo_cie === NULL OR diagnostico.codigo_cie === '')
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `diagnostico.codigo_cie`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const cie = data.diagnostico?.codigo_cie || '';
+    
+    if (!cie) {
+      return {
+        passed: false,
+        reason: 'Código CIE-10 ausente',
+        evidence: `Campo vacío`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Código CIE-10 no especificado. Requerido para identificar diagnóstico."
+
+---
+
+### IMPORTANTE 3.4 | `cie10_formato_valido`
+```
+IF: (codigo_cie NOT MATCH(/^[A-Z]\d{2}(\.\d{1,2})?$/))
+THEN: ALERTA (nota informativa)
+Points: 0 (solo nota)
+```
+- **Campos afectados**: `diagnostico.codigo_cie`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const cie = data.diagnostico?.codigo_cie || '';
+    const pattern = /^[A-Z]\d{2}(\.\d{1,2})?$/;
+    
+    if (cie && !pattern.test(cie)) {
+      return {
+        passed: false,
+        reason: 'CIE-10 no cumple formato esperado',
+        evidence: `CIE: "${cie}". Esperado: Letra + 2 dígitos [+ punto + 1-2 dígitos]. Ej: J44.9, E10.90`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "NOTA INFORMATIVA: Código CIE-10 '[codigo]' no cumple formato esperado (Letra + 2 dígitos + opcionalmente punto + 1-2 dígitos). Verifique si es error de OCR. Esperado: [formato]"
+- **¿Por qué es nota?**: No es una falla definitiva, pero el revisor debe verificar manualmente
+
+---
+
+### CRÍTICA 3.5 | `hospital_nombre_si_hospitalizacion`
+```
+IF: (atencion.tipo === 'hospitalaria' AND (hospital.nombre === NULL OR hospital.nombre === ''))
+THEN: FALLA
+Points: -100
+```
+- **Aplicable si**: `atencion.tipo === 'hospitalaria'`
+- **Campos afectados**: `hospital.nombre`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    if (data.atencion?.tipo !== 'hospitalaria') return { passed: true };
+    
+    const nombreHospital = data.hospital?.nombre || '';
+    
+    if (!nombreHospital) {
+      return {
+        passed: false,
+        reason: 'Hospital no identificado en hospitalización',
+        evidence: `Campo vacío`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Tipo de atención es 'hospitalaria' pero hospital no está identificado. Ingrese nombre y preferentemente clave COFEPRIS."
+
+---
+
+### IMPORTANTE 3.6 | `reclamacion_monto_presente`
+```
+IF: (reclamacion.monto_solicitado === NULL 
+     OR reclamacion.monto_solicitado === 0
+     OR reclamacion.monto_solicitado < 0)
+THEN: FALLA
+Points: -50
+```
+- **Campos afectados**: `reclamacion.monto_solicitado`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const monto = data.reclamacion?.monto_solicitado;
+    
+    if (monto === null || monto === undefined || monto <= 0) {
+      return {
+        passed: false,
+        reason: 'Monto de reclamación ausente o inválido',
+        evidence: `Monto: ${monto}`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Monto de reclamación no especificado o es cero. Ingrese cantidad a reclamar (>0)."
+
+---
+
+---
+
+# CATEGORÍA 3.5: CORRELACIÓN BIDIRECCIONAL (NUEVO)
+
+## Propósito
+Validar que **si existe una fecha, existe su evento**, y viceversa. No puede haber "fecha de ingreso" sin "tipo de ingreso", ni "ingreso hospitalario" sin "fecha de ingreso".
+
+---
+
+### CRÍTICA 3.7 | `ingreso_declarado_requiere_fecha`
+```
+IF: (atencion.tipo === 'hospitalaria' OR atencion.tipo === 'urgencias')
+    AND (fecha.ingreso === NULL OR fecha.ingreso === '')
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `atencion.tipo`, `fecha.ingreso`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const tipo = data.atencion?.tipo || '';
+    const fechaIngreso = data.fecha?.ingreso || '';
+    
+    // Si declara hospitalización o urgencias, DEBE tener fecha de ingreso
+    if ((tipo === 'hospitalaria' || tipo === 'urgencias') && !fechaIngreso) {
+      return {
+        passed: false,
+        reason: 'Tipo de atención requiere fecha de ingreso',
+        evidence: `Tipo de atención: "${tipo}", Fecha ingreso: "${fechaIngreso}" (vacío)`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Atención '[tipo]' declarada pero sin fecha de ingreso. Si hay hospitalización/urgencias, DEBE especificar cuándo ingresó."
+
+---
+
+### CRÍTICA 3.8 | `fecha_ingreso_requiere_tipo_atencion`
+```
+IF: (fecha.ingreso !== NULL AND fecha.ingreso !== '')
+    AND (atencion.tipo !== 'hospitalaria' AND atencion.tipo !== 'urgencias')
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `fecha.ingreso`, `atencion.tipo`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const fechaIngreso = data.fecha?.ingreso || '';
+    const tipo = data.atencion?.tipo || '';
+    
+    // Si hay fecha de ingreso, DEBE ser hospitalario o urgencias
+    if (fechaIngreso && tipo !== 'hospitalaria' && tipo !== 'urgencias') {
+      return {
+        passed: false,
+        reason: 'Fecha de ingreso sin tipo de atención correspondiente',
+        evidence: `Fecha ingreso: "${fechaIngreso}", Tipo atención: "${tipo}" (esperado: hospitalaria o urgencias)`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Hay fecha de ingreso ([fecha]) pero tipo de atención es '[tipo]'. La fecha de ingreso solo aplica a hospitalización o urgencias."
+
+---
+
+### CRÍTICA 3.9 | `diagnostico_definitivo_requiere_fecha`
+```
+IF: (diagnostico.definitivo !== NULL AND diagnostico.definitivo !== '')
+    AND (diagnostico.fecha === NULL OR diagnostico.fecha === '')
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `diagnostico.definitivo`, `diagnostico.fecha`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const diagnostico = data.diagnostico?.definitivo || '';
+    const fechaDiag = data.diagnostico?.fecha || '';
+    
+    // Si hay diagnóstico definitivo, DEBE tener fecha
+    if (diagnostico && !fechaDiag) {
+      return {
+        passed: false,
+        reason: 'Diagnóstico definitivo sin fecha correspondiente',
+        evidence: `Diagnóstico: "${diagnostico}", Fecha diagnóstico: vacía`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Diagnóstico definitivo especificado pero sin fecha. Todo diagnóstico DEBE tener la fecha en que fue establecido."
+
+---
+
+### CRÍTICA 3.10 | `fecha_diagnostico_requiere_diagnostico`
+```
+IF: (diagnostico.fecha !== NULL AND diagnostico.fecha !== '')
+    AND (diagnostico.definitivo === NULL OR diagnostico.definitivo === '')
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `diagnostico.fecha`, `diagnostico.definitivo`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const fechaDiag = data.diagnostico?.fecha || '';
+    const diagnostico = data.diagnostico?.definitivo || '';
+    
+    // Si hay fecha de diagnóstico, DEBE haber diagnóstico
+    if (fechaDiag && !diagnostico) {
+      return {
+        passed: false,
+        reason: 'Fecha de diagnóstico sin contenido de diagnóstico',
+        evidence: `Fecha diagnóstico: "${fechaDiag}", Diagnóstico: vacío`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Hay fecha de diagnóstico ([fecha]) pero el diagnóstico definitivo está vacío. ¿Datos incompletos?"
+
+---
+
+### CRÍTICA 3.11 | `cirugia_declarada_requiere_fecha`
+```
+IF: (intervencion_qx.cirugia === TRUE)
+    AND (intervencion_qx.fecha_cirugia === NULL OR intervencion_qx.fecha_cirugia === '')
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `intervencion_qx.cirugia`, `intervencion_qx.fecha_cirugia`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const cirugia = data.intervencion_qx?.cirugia;
+    const fechaCirugia = data.intervencion_qx?.fecha_cirugia || '';
+    
+    // Si declara cirugía, DEBE tener fecha
+    if (cirugia === true && !fechaCirugia) {
+      return {
+        passed: false,
+        reason: 'Cirugía declarada sin fecha',
+        evidence: `Cirugía: TRUE, Fecha cirugía: vacía`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Cirugía declarada (SÍ) pero sin fecha. Especifique cuándo se realizó la intervención quirúrgica."
+
+---
+
+### CRÍTICA 3.12 | `fecha_cirugia_requiere_cirugia_declarada`
+```
+IF: (intervencion_qx.fecha_cirugia !== NULL AND intervencion_qx.fecha_cirugia !== '')
+    AND (intervencion_qx.cirugia !== TRUE)
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `intervencion_qx.fecha_cirugia`, `intervencion_qx.cirugia`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const fechaCirugia = data.intervencion_qx?.fecha_cirugia || '';
+    const cirugia = data.intervencion_qx?.cirugia;
+    
+    // Si hay fecha de cirugía, DEBE haber cirugía declarada
+    if (fechaCirugia && cirugia !== true) {
+      return {
+        passed: false,
+        reason: 'Fecha de cirugía sin cirugía declarada',
+        evidence: `Fecha cirugía: "${fechaCirugia}", Cirugía declarada: ${cirugia}`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Hay fecha de cirugía ([fecha]) pero la cirugía no está marcada como declarada. Inconsistencia de datos."
+
+---
+
+### CRÍTICA 3.13 | `tratamiento_futuro_requiere_plan`
+```
+IF: (tratamiento.futuro === 'SÍ')
+    AND (tratamiento.plan === NULL OR tratamiento.plan === '')
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `tratamiento.futuro`, `tratamiento.plan`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const futuro = data.tratamiento?.futuro || '';
+    const plan = data.tratamiento?.plan || '';
+    
+    // Si declara tratamiento futuro, DEBE tener plan
+    if (futuro === 'SÍ' && !plan) {
+      return {
+        passed: false,
+        reason: 'Tratamiento futuro declarado sin plan específico',
+        evidence: `Tratamiento futuro: "SÍ", Plan: vacío`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Tratamiento futuro declarado (SÍ) pero sin plan de tratamiento. Especifique qué tratamiento futuro se recomienda."
+
+---
+
+### CRÍTICA 3.14 | `plan_tratamiento_requiere_declaracion_futuro`
+```
+IF: (tratamiento.plan !== NULL AND tratamiento.plan !== '')
+    AND (tratamiento.futuro !== 'SÍ')
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `tratamiento.plan`, `tratamiento.futuro`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const plan = data.tratamiento?.plan || '';
+    const futuro = data.tratamiento?.futuro || '';
+    
+    // Si hay plan de tratamiento, DEBE haber tratamiento futuro declarado
+    if (plan && futuro !== 'SÍ') {
+      return {
+        passed: false,
+        reason: 'Plan de tratamiento sin declaración de tratamiento futuro',
+        evidence: `Plan: "${plan.substring(0, 50)}...", Tratamiento futuro: "${futuro}" (esperado: SÍ)`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Hay un plan de tratamiento descrito pero no está marcado como 'tratamiento futuro: SÍ'. Inconsistencia lógica."
+
+---
+
+### CRÍTICA 3.15 | `anestesia_declarada_requiere_tipo`
+```
+IF: (intervencion_qx.anestesia_declarada === TRUE)
+    AND (intervencion_qx.anestesia_tipo === NULL OR intervencion_qx.anestesia_tipo === '')
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `intervencion_qx.anestesia_declarada`, `intervencion_qx.anestesia_tipo`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const anestesiaDeclarada = data.intervencion_qx?.anestesia_declarada;
+    const anestesiaTipo = data.intervencion_qx?.anestesia_tipo || '';
+    
+    // Si declara anestesia, DEBE especificar tipo
+    if (anestesiaDeclarada === true && !anestesiaTipo) {
+      return {
+        passed: false,
+        reason: 'Anestesia declarada sin especificar tipo',
+        evidence: `Anestesia declarada: TRUE, Tipo: vacío`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Anestesia declarada pero sin especificar tipo (general, regional, local, sedación). Requerido."
+
+---
+
+### CRÍTICA 3.16 | `tipo_anestesia_requiere_anestesia_declarada`
+```
+IF: (intervencion_qx.anestesia_tipo !== NULL AND intervencion_qx.anestesia_tipo !== '')
+    AND (intervencion_qx.anestesia_declarada !== TRUE)
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `intervencion_qx.anestesia_tipo`, `intervencion_qx.anestesia_declarada`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const anestesiaTipo = data.intervencion_qx?.anestesia_tipo || '';
+    const anestesiaDeclarada = data.intervencion_qx?.anestesia_declarada;
+    
+    // Si especifica tipo de anestesia, DEBE haber anestesia declarada
+    if (anestesiaTipo && anestesiaDeclarada !== true) {
+      return {
+        passed: false,
+        reason: 'Tipo de anestesia especificado sin anestesia declarada',
+        evidence: `Tipo: "${anestesiaTipo}", Anestesia declarada: ${anestesiaDeclarada}`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Hay tipo de anestesia especificado ('[tipo]') pero anestesia no está marcada como declarada. Inconsistencia de datos."
+
+---
+
+---
+
+# CATEGORÍA 4: DOCUMENTACIÓN
+
+## Propósito
+Validar que **documentos probatorios estén presentes**.
+
+---
+
+### NOTA 4.1 | `hospital_sello_presente`
+```
+IF: (atencion.tipo === 'hospitalaria' AND (hospital.sello === NULL OR hospital.sello === ''))
+THEN: NOTA INFORMATIVA (no penaliza)
+Points: 0
+```
+- **Aplicable si**: `atencion.tipo === 'hospitalaria'`
+- **Campos afectados**: `hospital.sello`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    if (data.atencion?.tipo !== 'hospitalaria') return { passed: true };
+    
+    const sello = data.hospital?.sello || '';
+    
+    if (!sello) {
+      return {
+        passed: false,
+        reason: 'Sello del hospital no visible',
+        evidence: `Campo vacío`,
+        isNoteOnly: true  // Información solamente, no penaliza
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "NOTA: Sello del hospital no visible en documento. Considere solicitar copia con sello si es crítico para validación interna."
+- **¿Por qué nota?**: No es requisito obligatorio en esta fase. Se puede solicitar si el revisor lo considera necesario.
+
+---
+
+### NOTA 4.2 | `estudios_laboratorio_mencionados`
+```
+IF: (cirugia === TRUE 
+     AND (estudios.laboratorio === NULL OR estudios.laboratorio === ''))
+THEN: NOTA INFORMATIVA (no penaliza)
+Points: 0
+```
+- **Aplicable si**: `intervencion_qx.cirugia === TRUE`
+- **Campos afectados**: `estudios.laboratorio`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    if (!data.intervencion_qx?.cirugia) return { passed: true };
+    
+    const laboratorio = data.estudios?.laboratorio || '';
+    
+    if (!laboratorio) {
+      return {
+        passed: false,
+        reason: 'Estudios de laboratorio no mencionados en informe',
+        evidence: `Campo vacío`,
+        isNoteOnly: true  // Información solamente, no penaliza
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "NOTA: Cirugía reportada pero estudios de laboratorio no están mencionados en el informe. Si están incluidos, especificar resultados relevantes en el documento."
+- **¿Por qué nota?**: En esta fase se especifican dentro del mismo informe (no como anexo). Si el revisor ve que están documentados en el texto, no hay penalización. Es solo un recordatorio de verificar que estén incluidos.
+
+---
+
+### IMPORTANTE 4.3 | `notas_evolucion_si_hospitalizacion_larga`
+```
+IF: (atencion.tipo === 'hospitalaria' 
+     AND estancia.dias > 3 
+     AND (notas.evolucion === NULL OR notas.evolucion === ''))
+THEN: FALLA
+Points: -40
+```
+- **Aplicable si**: `atencion.tipo === 'hospitalaria' Y estancia.dias > 3`
+- **Campos afectados**: `notas.evolucion`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    if (data.atencion?.tipo !== 'hospitalaria') return { passed: true };
+    
+    const estancia = data.estancia?.dias || 0;
+    if (estancia <= 3) return { passed: true };
+    
+    const notas = data.notas?.evolucion || '';
+    
+    if (!notas) {
+      return {
+        passed: false,
+        reason: 'Notas de evolución ausentes en hospitalización >3 días',
+        evidence: `Estancia: ${estancia} días, Notas: vacío`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Hospitalización de [dias] días sin notas de evolución adjuntas. Requeridas para validar curso clínico."
+
+---
+
+---
+
+# CATEGORÍA 5: COHERENCIA DE DATOS
+
+## Propósito
+Validar que **valores específicos sean lógicamente posibles** (sin interpretar clínica).
+
+---
+
+### CRÍTICA 5.1 | `sexo_compatible_diagnostico_obstetricia`
+```
+IF: (sexo === 'M' AND codigo_cie STARTS WITH 'O')
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `identificacion.sexo`, `diagnostico.codigo_cie`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const sexo = data.identificacion?.sexo || '';
+    const cie = data.diagnostico?.codigo_cie || '';
+    
+    if (sexo === 'M' && cie.startsWith('O')) {
+      return {
+        passed: false,
+        reason: 'Diagnóstico obstétrico en paciente masculino',
+        evidence: `Sexo: M, CIE-10: ${cie} (rango O=Embarazo/parto/puerperio)`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "IMPOSIBILIDAD LÓGICA: Diagnóstico obstétrico '[cie]' en paciente sexo Masculino. Error de datos o de OCR."
+
+---
+
+### CRÍTICA 5.2 | `sexo_compatible_diagnostico_prostatico`
+```
+IF: (sexo === 'F' AND codigo_cie IN ['N40', 'N41', 'N42', 'N43', 'N44', 'N45', 'N46', 'N47', 'N48', 'N49', 'N50', 'N51', 'C61'])
+THEN: FALLA
+Points: -100
+```
+- **Campos afectados**: `identificacion.sexo`, `diagnostico.codigo_cie`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const sexo = data.identificacion?.sexo || '';
+    const cie = data.diagnostico?.codigo_cie || '';
+    
+    const diagnosticosProstatica = ['N40', 'N41', 'N42', 'N43', 'N44', 'N45', 'N46', 'N47', 'N48', 'N49', 'N50', 'N51', 'C61'];
+    const esProstatica = diagnosticosProstatica.some(d => cie.startsWith(d));
+    
+    if (sexo === 'F' && esProstatica) {
+      return {
+        passed: false,
+        reason: 'Diagnóstico de próstata en paciente femenino',
+        evidence: `Sexo: F, CIE-10: ${cie} (afección de próstata)`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "IMPOSIBILIDAD LÓGICA: Diagnóstico de próstata '[cie]' en paciente sexo Femenino. Error de datos o de OCR."
+
+---
+
+### IMPORTANTE 5.3 | `temperatura_rango_extremo`
+```
+IF: (temperatura < 32 OR temperatura > 43)
+THEN: FALLA (crítica como nota)
+Points: -50
+```
+- **Campos afectados**: `signos_vitales.temperatura`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const temp = data.signos_vitales?.temperatura;
+    
+    if (temp !== null && temp !== undefined) {
+      if (temp < 32 || temp > 43) {
+        return {
+          passed: false,
+          reason: 'Temperatura en rango incompatible con vida',
+          evidence: `Temperatura: ${temp}°C. Rango vital: 32-43°C`
+        };
+      }
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Temperatura registrada: [temp]°C. Fuera de rango compatible con vida (32-43°C). ¿Error de OCR?"
+
+---
+
+### IMPORTANTE 5.4 | `frecuencia_cardiaca_rango_extremo`
+```
+IF: (fc < 20 OR fc > 250)
+THEN: FALLA
+Points: -50
+```
+- **Campos afectados**: `signos_vitales.frecuencia_cardiaca`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const fc = data.signos_vitales?.frecuencia_cardiaca;
+    
+    if (fc !== null && fc !== undefined) {
+      if (fc < 20 || fc > 250) {
+        return {
+          passed: false,
+          reason: 'Frecuencia cardíaca en rango extremo',
+          evidence: `FC: ${fc} lpm. Rango vital: 20-250 lpm`
+        };
+      }
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Frecuencia cardíaca registrada: [fc] lpm. Fuera de rango vital (20-250). ¿Error de OCR?"
+
+---
+
+### IMPORTANTE 5.5 | `presion_arterial_sistolica_rango_extremo`
+```
+IF: (pa_sistolica < 50 OR pa_sistolica > 250)
+THEN: FALLA
+Points: -50
+```
+- **Campos afectados**: `signos_vitales.presion_arterial_sistolica`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    const pas = data.signos_vitales?.presion_arterial_sistolica;
+    
+    if (pas !== null && pas !== undefined) {
+      if (pas < 50 || pas > 250) {
+        return {
+          passed: false,
+          reason: 'Presión arterial sistólica en rango extremo',
+          evidence: `PAS: ${pas} mmHg. Rango vital: 50-250 mmHg`
+        };
+      }
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Presión arterial sistólica registrada: [pas] mmHg. Fuera de rango vital (50-250). ¿Error de OCR?"
+
+---
+
+### MODERADA 5.6 | `complicaciones_documentadas_si_declaradas`
+```
+IF: (complicaciones.declaradas === 'SÍ' 
+     AND (complicaciones.descripcion === NULL OR complicaciones.descripcion.length < 10))
+THEN: FALLA
+Points: -20
+```
+- **Aplicable si**: `complicaciones.declaradas === 'SÍ'`
+- **Campos afectados**: `complicaciones.declaradas`, `complicaciones.descripcion`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    if (data.complicaciones?.declaradas !== 'SÍ') return { passed: true };
+    
+    const desc = data.complicaciones?.descripcion || '';
+    
+    if (!desc || desc.length < 10) {
+      return {
+        passed: false,
+        reason: 'Complicaciones declaradas pero insuficientemente descritas',
+        evidence: `Declaradas: SÍ, Descripción: "${desc}" (${desc.length} caracteres, mínimo 10)`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Complicaciones reportadas pero con descripción muy breve. Mínimo 10 caracteres. Actual: [descripcion]"
+
+---
+
+### MODERADA 5.7 | `anestesia_tipo_si_cirugia`
+```
+IF: (cirugia === TRUE 
+     AND (anestesia_tipo === NULL OR anestesia_tipo === ''))
+THEN: FALLA
+Points: -25
+```
+- **Aplicable si**: `intervencion_qx.cirugia === TRUE`
+- **Campos afectados**: `intervencion_qx.anestesia_tipo`
+- **Validator**:
+  ```typescript
+  validator: (data) => {
+    if (!data.intervencion_qx?.cirugia) return { passed: true };
+    
+    const tipo = data.intervencion_qx?.anestesia_tipo || '';
+    
+    if (!tipo) {
+      return {
+        passed: false,
+        reason: 'Cirugía reportada sin especificar tipo de anestesia',
+        evidence: `Campo vacío`
+      };
+    }
+    return { passed: true };
+  }
+  ```
+- **Mensaje al revisor**: "Cirugía declarada pero tipo de anestesia no especificado. Debe indicar: general, regional, local o sedación."
+
+---
+
+---
+
+# CÁLCULO FINAL DE SCORE
+
+## Fórmula Simple
+
+```javascript
+function calculateScore(rules, data) {
+  let totalPoints = 0;
+  let criticalCount = 0;
+  let importantCount = 0;
+  let moderateCount = 0;
+  let noteCount = 0;
+  const failedRules = [];
+  const notes = [];  // Notas informativas por separado
+  
+  rules.forEach(rule => {
+    // Validar si la regla aplica
+    if (rule.applicableIf && !rule.applicableIf(data)) {
+      return; // No aplica esta regla
+    }
+    
+    const result = rule.validator(data);
+    
+    if (!result.passed) {
+      // Si es una nota, no afecta puntos
+      if (rule.level === 'NOTA' || result.isNoteOnly) {
+        notes.push({
+          ruleId: rule.id,
+          name: rule.name,
+          reason: result.reason,
+          evidence: result.evidence,
+          message: rule.message
+        });
+        noteCount++;
+      } else {
+        // Las críticas, importantes y moderadas SÍ restan puntos
+        totalPoints += rule.points;
+        failedRules.push({
+          ruleId: rule.id,
+          name: rule.name,
+          level: rule.level,
+          points: rule.points,
+          reason: result.reason,
+          evidence: result.evidence,
+          message: rule.message
+        });
+        
+        switch(rule.level) {
+          case 'CRÍTICA': criticalCount++; break;
+          case 'IMPORTANTE': importantCount++; break;
+          case 'MODERADA': moderateCount++; break;
+        }
+      }
+    }
+  });
+  
+  // Determinar estado
+  let status = 'APPROVED';
+  if (criticalCount > 0) {
+    status = 'REJECTED';
+  } else if (totalPoints <= -100) {
+    status = 'REJECTED';
+  } else if (totalPoints <= -50) {
+    status = 'REVIEW';
+  }
+  
+  // Aceptación porcentual: 0 puntos = 100%, -200 puntos = 0%
+  const acceptanceProbability = Math.max(0, Math.min(100, 100 + (totalPoints / 2)));
+  
+  return {
+    status,
+    acceptanceProbability: Math.round(acceptanceProbability),
+    totalPoints,
+    criticalIssues: criticalCount,
+    importantIssues: importantCount,
+    moderateIssues: moderateCount,
+    noteIssues: noteCount,
+    failedRules,          // Solo las que penalizan
+    notes,                // Notas informativas (no penalizan)
+    auditTrail: `${criticalCount} críticas, ${importantCount} importantes, ${moderateCount} moderadas, ${noteCount} notas. Puntos: ${totalPoints}`
+  };
+}
+```
+
+## Umbrales de Decisión
+
+| Escenario | Decisión |
+|-----------|----------|
+| Cualquier regla CRÍTICA falla | **RECHAZAR** |
+| Puntos ≤ -100 | **RECHAZAR** |
+| Puntos -99 a -50 | **REVISAR MANUALMENTE** |
+| Puntos -49 a 0 | **APROBAR (con observaciones)** |
+| Puntos > 0 | **APROBAR** |
+
+## Interpretación Porcentual
+
+- **90-100%**: Informe excelente
+- **70-89%**: Informe con observaciones menores
+- **50-69%**: Informe requiere revisión humana
+- **30-49%**: Informe muy problemático
+- **0-29%**: Informe crítico
+
+---
+
+## NOTAS FINALES
+
+✅ **100% Auditable**: Cada regla es IF/THEN con datos concretos  
+✅ **Cero Inferencias**: Sin búsquedas de mercado, sin IA semántica  
+✅ **Cero Alucinaciones**: Solo validaciones de formato y lógica booleana  
+✅ **Transparente**: El revisor humano ve exactamente por qué falló  
+✅ **Defensible**: Cada punto tiene evidencia literal del documento
+
+---
+
+## SIGUIENTE PASO
+
+¿Quieres que cree ahora un **JSON ejecutable** con todas estas reglas en formato TypeScript/JavaScript que puedas integrar directo en tu sistema?
