@@ -18,7 +18,7 @@ export interface IdentificacionData {
   segundo_apellido?: string;
   nombres?: string; // En MetLife este campo contendrá el "Nombre Completo"
   edad?: string | number;
-  sexo?: string; // M, F, Otro
+  sexo?: string; // Masculino, Femenino, Otro (normalizado)
   causa_atencion?: string; // Accidente, Enfermedad, Embarazo, Segunda Valoración
   // MetLife specific
   peso?: string | number;

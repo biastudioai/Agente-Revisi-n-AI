@@ -5,7 +5,7 @@ export interface StandardizedMedicalReport {
     apellido_paterno: string;
     apellido_materno?: string;
     edad: number;
-    sexo: 'M' | 'F' | 'O';
+    sexo: 'Masculino' | 'Femenino' | 'Otro';
   };
   
   poliza: {

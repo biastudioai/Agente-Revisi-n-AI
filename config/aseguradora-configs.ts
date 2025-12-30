@@ -8,7 +8,16 @@ export const CONFIG_GNP: AseguradoraConfig = {
     'paciente.apellido_paterno': { path: 'identificacion.primer_apellido', parser: (v) => v?.trim() || '' },
     'paciente.apellido_materno': { path: 'identificacion.segundo_apellido', opcional: true, parser: (v) => v?.trim() },
     'paciente.edad': { path: 'identificacion.edad', parser: (v) => parseInt(v, 10), validador: (v) => !isNaN(v) && v >= 0 && v <= 120 },
-    'paciente.sexo': { path: 'identificacion.sexo', validador: (v) => ['M', 'F', 'O'].includes(v) },
+    'paciente.sexo': { 
+      path: 'identificacion.sexo', 
+      parser: (v) => {
+        const normalized = v?.toLowerCase().trim();
+        if (normalized === 'm' || normalized === 'masculino') return 'Masculino';
+        if (normalized === 'f' || normalized === 'femenino') return 'Femenino';
+        return 'Otro';
+      },
+      validador: (v) => ['Masculino', 'Femenino', 'Otro'].includes(v)
+    },
     
     'poliza.numero': { path: 'tramite.numero_poliza', parser: (v) => v?.trim() || '' },
     
@@ -48,7 +57,15 @@ export const CONFIG_METLIFE: AseguradoraConfig = {
     'paciente.apellido_paterno': { path: 'identificacion.nombres', parser: (v) => v?.trim().split(' ')[1] || '' },
     'paciente.apellido_materno': { path: 'identificacion.nombres', opcional: true, parser: (v) => v?.trim().split(' ')[2] || '' },
     'paciente.edad': { path: 'identificacion.edad', parser: (v) => parseInt(v, 10), validador: (v) => !isNaN(v) && v >= 0 && v <= 120 },
-    'paciente.sexo': { path: 'identificacion.sexo', parser: (v) => v === 'Masculino' ? 'M' : v === 'Femenino' ? 'F' : 'O' },
+    'paciente.sexo': { 
+      path: 'identificacion.sexo', 
+      parser: (v) => {
+        const normalized = v?.toLowerCase().trim();
+        if (normalized === 'm' || normalized === 'masculino') return 'Masculino';
+        if (normalized === 'f' || normalized === 'femenino') return 'Femenino';
+        return 'Otro';
+      }
+    },
     
     'poliza.numero': { path: 'tramite.numero_poliza', opcional: true, parser: (v) => v?.trim() || '' },
     
