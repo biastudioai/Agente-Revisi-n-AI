@@ -51,6 +51,7 @@ export const analyzeReportImage = async (
     
     console.log("Parsing JSON response...");
     const jsonData = JSON.parse(text);
+    console.log("📦 JSON COMPLETO DE GEMINI:", jsonData);
     const extractedData: ExtractedData = { ...jsonData.extracted, provider };
     console.log("Provider:", extractedData.provider);
 
