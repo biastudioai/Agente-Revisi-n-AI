@@ -236,7 +236,11 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
           {renderInput("RFC", data?.rfc, `${basePath}.rfc`)}
           {renderInput("Celular", data?.celular, `${basePath}.celular`)}
           {renderInput("Email", data?.email, `${basePath}.email`)}
-          {basePath.includes('otro') && renderInput("Especialidad/Participación", data?.especialidad, `${basePath}.especialidad`)}
+          {basePath.includes('otro') && (
+            <div className="col-span-2">
+              {renderInput("Especialidad (ej: Enfermería Quirúrgica, Instrumentista)", data?.especialidad, `${basePath}.especialidad`)}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -248,9 +252,9 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
      { id: 'padecimiento', label: 'Padecimiento', icon: HeartPulse, metlifeSection: '3' },
      { id: 'hospital', label: 'Hospital', icon: Hospital, metlifeSection: '4' },
      { id: 'observaciones', label: 'Observaciones', icon: ClipboardList, metlifeSection: '5' },
-     { id: 'medico', label: 'Médico', icon: Activity, metlifeSection: '6' },
      { id: 'equipo_qx', label: 'Otros Médicos', icon: Users, metlifeSection: '6' },
-     { id: 'validacion', label: 'Firma', icon: PenTool, metlifeSection: '7' },
+     { id: 'medico', label: 'Médico', icon: Activity, metlifeSection: '7' },
+     { id: 'validacion', label: 'Firma', icon: PenTool, metlifeSection: '8' },
   ];
 
   return (
@@ -632,12 +636,12 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
 
                         {activeTab === 'medico' && provider === 'METLIFE' && (
                             <div className="space-y-4">
-                                {renderInput("Tipo de Atención", formData.medico_tratante?.tipo_atencion, 'medico_tratante.tipo_atencion')}
+                                {renderCheckboxGroup("Tipo de Atención", formData.medico_tratante?.tipo_atencion, 'medico_tratante.tipo_atencion', ['Médico tratante', 'Cirujano principal', 'Interconsultante', 'Equipo quirúrgico', 'Segunda valoración'])}
                                 {renderInput("Nombre Médico Tratante", formData.medico_tratante?.nombres, 'medico_tratante.nombres')}
                                 {renderInput("Especialidad", formData.medico_tratante?.especialidad, 'medico_tratante.especialidad')}
                                 <div className="grid grid-cols-2 gap-4">
                                     {renderInput("RFC", formData.medico_tratante?.rfc, 'medico_tratante.rfc')}
-                                    {renderInput("Cédula Profesional", formData.medico_tratante?.cedula_profesional, 'medico_tratante.cedula_profesional')}
+                                    {renderInput("Cédula Profesional de Especialidad", formData.medico_tratante?.cedula_especialidad, 'medico_tratante.cedula_especialidad')}
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     {renderInput("Teléfono Consultorio", formData.medico_tratante?.telefono_consultorio, 'medico_tratante.telefono_consultorio')}
