@@ -4,42 +4,44 @@ export const CONFIG_GNP: AseguradoraConfig = {
   codigo: 'GNP',
   nombre_completo: 'Grupo Nacional Provincial',
   mappings: {
-    'paciente.nombre': { path: 'paciente.nombres', parser: (v) => v?.trim() || '' },
-    'paciente.apellido_paterno': { path: 'paciente.apellido_paterno', parser: (v) => v?.trim() || '' },
-    'paciente.apellido_materno': { path: 'paciente.apellido_materno', opcional: true, parser: (v) => v?.trim() },
-    'paciente.edad': { path: 'paciente.edad', parser: (v) => parseInt(v, 10), validador: (v) => !isNaN(v) && v >= 0 && v <= 120 },
-    'paciente.sexo': { path: 'paciente.sexo', validador: (v) => ['M', 'F', 'O'].includes(v) },
+    'paciente.nombre': { path: 'identificacion.nombres', parser: (v) => v?.trim() || '' },
+    'paciente.apellido_paterno': { path: 'identificacion.primer_apellido', parser: (v) => v?.trim() || '' },
+    'paciente.apellido_materno': { path: 'identificacion.segundo_apellido', opcional: true, parser: (v) => v?.trim() },
+    'paciente.edad': { path: 'identificacion.edad', parser: (v) => parseInt(v, 10), validador: (v) => !isNaN(v) && v >= 0 && v <= 120 },
+    'paciente.sexo': { path: 'identificacion.sexo', validador: (v) => ['M', 'F', 'O'].includes(v) },
     
-    'poliza.numero': { path: 'poliza.numero', parser: (v) => v?.trim() || '' },
+    'poliza.numero': { path: 'tramite.numero_poliza', parser: (v) => v?.trim() || '' },
     
-    'medico_tratante.nombre': { path: 'medico.nombres', parser: (v) => v?.trim() || '' },
-    'medico_tratante.apellido_paterno': { path: 'medico.apellido_paterno', parser: (v) => v?.trim() || '' },
-    'medico_tratante.apellido_materno': { path: 'medico.apellido_materno', opcional: true, parser: (v) => v?.trim() },
-    'medico_tratante.cedula_profesional': { path: 'medico.cedula', validador: (v) => /^\d{7,8}$/.test(v) },
-    'medico_tratante.especialidad': { path: 'medico.especialidad', parser: (v) => v?.trim() || '' },
-    'medico_tratante.telefono': { path: 'medico.telefono', opcional: true },
-    'medico_tratante.correo': { path: 'medico.email', opcional: true },
+    'medico_tratante.nombre': { path: 'medico_tratante.nombres', parser: (v) => v?.trim() || '' },
+    'medico_tratante.apellido_paterno': { path: 'medico_tratante.primer_apellido', parser: (v) => v?.trim() || '' },
+    'medico_tratante.apellido_materno': { path: 'medico_tratante.segundo_apellido', opcional: true, parser: (v) => v?.trim() },
+    'medico_tratante.cedula_profesional': { path: 'medico_tratante.cedula_profesional', validador: (v) => /^\d{7,8}$/.test(v) },
+    'medico_tratante.especialidad': { path: 'medico_tratante.especialidad', parser: (v) => v?.trim() || '' },
+    'medico_tratante.telefono': { path: 'medico_tratante.telefono_consultorio', opcional: true },
+    'medico_tratante.correo': { path: 'medico_tratante.correo_electronico', opcional: true },
     
-    'fecha.ingreso': { path: 'hospitalizacion.fecha_ingreso', opcional: true, parser: (v) => v ? new Date(v) : undefined },
-    'fecha.egreso': { path: 'hospitalizacion.fecha_egreso', opcional: true, parser: (v) => v ? new Date(v) : undefined },
-    'fecha.diagnostico': { path: 'diagnostico.fecha', opcional: true, parser: (v) => v ? new Date(v) : undefined },
-    'fecha.cirugia': { path: 'cirugia.fecha_cirugia', opcional: true, parser: (v) => v ? new Date(v) : undefined },
+    'fecha.ingreso': { path: 'hospital.fecha_ingreso', opcional: true, parser: (v) => v ? new Date(v) : undefined },
+    'fecha.egreso': { path: 'hospital.fecha_egreso', opcional: true, parser: (v) => v ? new Date(v) : undefined },
+    'fecha.diagnostico': { path: 'diagnostico.fecha_diagnostico', opcional: true, parser: (v) => v ? new Date(v) : undefined },
+    'fecha.cirugia': { path: 'intervencion_qx.fechas', opcional: true, parser: (v) => v ? new Date(v) : undefined },
     
-    'diagnostico.codigo_cie': { path: 'diagnostico.codigo_cie10', validador: (v) => /^[A-Z]\d{2}(\.\d{1,2})?$/.test(v) },
-    'diagnostico.descripcion': { path: 'diagnostico.descripcion_texto', parser: (v) => v?.trim() || '' },
+    'diagnostico.codigo_cie': { path: 'diagnostico.diagnostico_definitivo', opcional: true, validador: (v) => typeof v === 'string' && v.length > 0 },
+    'diagnostico.descripcion': { path: 'diagnostico.diagnostico_definitivo', parser: (v) => v?.trim() || '' },
     
-    'intervencion_qx.hubo_cirugia': { path: 'cirugia.realizada', opcional: true, parser: (v) => Boolean(v) },
-    'intervencion_qx.tipo_anestesia': { path: 'cirugia.tipo_anestesia', opcional: true },
-    'intervencion_qx.descripcion': { path: 'cirugia.descripcion_procedimiento', opcional: true },
+    'intervencion_qx.hubo_cirugia': { path: 'intervencion_qx.tecnica', opcional: true, parser: (v) => Boolean(v) },
+    'intervencion_qx.tipo_anestesia': { path: 'intervencion_qx.equipo_especifico', opcional: true },
+    'intervencion_qx.descripcion': { path: 'intervencion_qx.tecnica', opcional: true },
     
     'signos_vitales.temperatura': { path: 'signos_vitales.temperatura', opcional: true, parser: (v) => parseFloat(v) },
-    'signos_vitales.frecuencia_cardiaca': { path: 'signos_vitales.pulso', opcional: true, parser: (v) => parseInt(v, 10) },
-    'signos_vitales.presion_sistolica': { path: 'signos_vitales.presion_sistolica_calculada', opcional: true, parser: (v) => parseInt(v, 10) },
+    'signos_vitales.frecuencia_cardiaca': { path: 'signos_vitales.respiracion', opcional: true, parser: (v) => parseInt(v, 10) },
+    'signos_vitales.presion_sistolica': { path: 'signos_vitales.presion_arterial', opcional: true, parser: (v) => parseInt(v, 10) },
     
-    'firma_medico': { path: 'medico.firma_presente', parser: (v) => Boolean(v) },
+    'firma_medico': { path: 'firma.firma_autografa_detectada', parser: (v) => Boolean(v) },
   },
 };
 
+// TODO: Validar paths con JSON real de MetLife
+// El JSON de prueba está incompleto, necesita validación con documentos reales
 export const CONFIG_METLIFE: AseguradoraConfig = {
   codigo: 'METLIFE',
   nombre_completo: 'MetLife México',
