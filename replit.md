@@ -81,6 +81,30 @@ PDF/Image Upload → Provider Detection (PDF text extraction) → User Confirmat
   - Provider-specific structures (TramiteData, IdentificacionData, etc.)
   - AnalysisReport combining extraction + scoring
 
+### Normalization Layer (Fase 1 - Infraestructura)
+Sistema de normalización para mapear campos de diferentes aseguradoras a un schema estándar:
+
+- `types/standardized-schema.ts` - Interfaces del schema estándar universal:
+  - StandardizedMedicalReport (estructura normalizada)
+  - NormalizationResult (resultado con raw + datos normalizados)
+  - AseguradoraConfig (configuración de mapeo por aseguradora)
+
+- `config/aseguradora-configs.ts` - Configuraciones de mapeo:
+  - CONFIG_GNP: Mapeos de campos GNP → schema estándar
+  - CONFIG_METLIFE: Mapeos de campos MetLife → schema estándar
+  - ASEGURADORAS_CONFIG: Registro central de aseguradoras
+
+- `services/field-mapper.ts` - Clase FieldNormalizer:
+  - Normaliza JSON crudo a schema estándar
+  - Retorna AMBOS: raw (compatibilidad) + datos normalizados
+  - Incluye parsers, validadores y auditoría de mapeo
+
+- `config/PATH_VALIDATION_CHECKLIST.md` - Checklist para validar paths contra documentos reales
+- `MIGRATION_GUIDE.md` - Guía de migración de Fase 1 a Fase 2+
+- `services/geminiService.EXAMPLE.ts` - Referencia para integración futura
+
+**Estado**: Infraestructura lista, pendiente validación con documentos reales
+
 ## External Dependencies
 
 ### AI/ML Services
