@@ -71,9 +71,9 @@ export const CONFIG_METLIFE: AseguradoraConfig = {
     'intervencion_qx.tipo_anestesia': { path: 'intervencion_qx.equipo_especifico', opcional: true },
     'intervencion_qx.descripcion': { path: 'intervencion_qx.tecnica', opcional: true },
     
-    'signos_vitales.temperatura': { path: 'identificacion.talla', opcional: true, parser: (v) => parseFloat(v) },
-    'signos_vitales.frecuencia_cardiaca': { path: 'identificacion.peso', opcional: true, parser: (v) => parseInt(v, 10) },
-    'signos_vitales.presion_sistolica': { path: 'exploracion_fisica.resultados', opcional: true },
+    // NOTA: MetLife NO captura signos vitales clínicos (temperatura, FC, PA) en su formulario estándar
+    // Solo registra peso y talla en identificacion.peso e identificacion.talla
+    // Estos campos NO deben mapearse a signos_vitales por coherencia semántica
     
     'firma_medico': { path: 'firma.firma_autografa_detectada', parser: (v) => Boolean(v) },
   },

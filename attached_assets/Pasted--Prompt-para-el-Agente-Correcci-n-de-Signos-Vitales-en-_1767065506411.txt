@@ -1,0 +1,59 @@
+📋 Prompt para el Agente - Corrección de Signos Vitales en MetLife
+CONTEXTO DEL PROBLEMA:
+En el archivo `config/aseguradora-configs.ts`, la configuración de MetLife tiene mappings INCORRECTOS para signos vitales que causan confusión semántica:
+❌ MAPEOS ACTUALES INCORRECTOS:
+- 'signos_vitales.temperatura' → 'identificacion.talla' (TALLA NO ES TEMPERATURA)
+- 'signos_vitales.frecuencia_cardiaca' → 'identificacion.peso' (PESO NO ES FRECUENCIA CARDÍACA)
+- 'signos_vitales.presion_sistolica' → 'exploracion_fisica.resultados' (RESULTADOS NO ES PRESIÓN)
+RAZÓN DEL ERROR:
+El formulario físico de MetLife NO tiene una sección dedicada de "Signos Vitales" como GNP. Solo captura peso y talla en la sección de identificación del paciente.
+OBJETIVO:
+Eliminar estos mappings incorrectos y documentar que MetLife no captura signos vitales clínicos en su formulario estándar.
+─────────────────────────────────────────────
+INSTRUCCIONES PARA EL AGENTE:
+1. **ELIMINA** los siguientes 3 mappings incorrectos de CONFIG_METLIFE:
+   ```typescript
+   'signos_vitales.temperatura': { path: 'identificacion.talla', opcional: true, parser: (v) => parseFloat(v) },
+   'signos_vitales.frecuencia_cardiaca': { path: 'identificacion.peso', opcional: true, parser: (v) => parseInt(v, 10) },
+   'signos_vitales.presion_sistolica': { path: 'exploracion_fisica.resultados', opcional: true },
+AGREGA un comentario explicativo ANTES de la sección de firma_medico:
+
+// NOTA: MetLife NO captura signos vitales clínicos (temperatura, FC, PA) en su formulario estándar
+// Solo registra peso y talla en identificacion.peso e identificacion.talla
+// Estos campos NO deben mapearse a signos_vitales por coherencia semántica
+VERIFICA que los campos de peso y talla SÍ estén correctamente mapeados en la sección de paciente si es necesario para otros reportes (esto NO es parte de signos vitales).
+
+NO TOQUES ningún otro mapeo de CONFIG_METLIFE.
+
+NO TOQUES CONFIG_GNP (ese sí tiene signos vitales correctamente mapeados).
+
+─────────────────────────────────────────────
+
+ARCHIVO A MODIFICAR:
+✅ config/aseguradora-configs.ts (solo CONFIG_METLIFE)
+
+RESULTADO ESPERADO:
+
+CONFIG_METLIFE ya no tiene campos de signos_vitales
+El comentario documenta claramente por qué
+No hay confusión semántica entre talla/peso y temperatura/frecuencia cardíaca
+El sistema de normalización retornará signos_vitales: undefined para MetLife (correcto)
+VALIDACIÓN POST-CAMBIO:
+Después de hacer los cambios, ejecuta:
+
+npx tsx scripts/validate-paths.ts
+El score de MetLife debería mantenerse en 24/25 (96%), pero ahora sin mappings semánticamente incorrectos.
+
+─────────────────────────────────────────────
+
+RESTRICCIONES:
+❌ NO agregues nuevos campos al schema de MetLife
+❌ NO modifies el schema de StandardizedMedicalReport
+❌ NO toques providers/metlife.config.ts (ese tiene el schema de Gemini correcto)
+❌ NO intentes "arreglar" esto mapeando a otros campos - simplemente ELIMINA
+
+✅ SOLO elimina los 3 mappings incorrectos y agrega el comentario explicativo
+
+─────────────────────────────────────────────
+
+Si tienes una solución más eficiente u óptima, tienes libertad de proponerla, pero asegúrate de mantener la coherencia semántica del sistema.
