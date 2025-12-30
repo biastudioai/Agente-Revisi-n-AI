@@ -178,25 +178,90 @@ Para cada miembro del equipo (Anestesiólogo, Primer Ayudante, Otro 1, Otro 2):
 - email: Correo electrónico
 - especialidad: Solo para "Otro" - tipo de participación/especialidad
 
-SECCIÓN 6 - DATOS DEL MÉDICO:
-- tipo_atencion: Array de checkboxes marcados. Puede contener uno o más de: "Médico tratante", "Cirujano principal", "Interconsultante", "Equipo quirúrgico", "Segunda valoración". SOLO extrae las casillas que VES marcadas visualmente (X, ✓, checkbox relleno). Si TODAS están vacías, devuelve array vacío [].
-- nombres: Nombre completo del médico
-- especialidad: Especialidad médica
-- domicilio_consultorio: Domicilio del consultorio
-- telefono_consultorio: Teléfono del consultorio
-- cedula_profesional: Cédula profesional de especialidad
-- celular: Número celular del médico
-- rfc: RFC del médico
-- correo_electronico: Correo electrónico
-- convenio_aseguradora: ¿Tiene convenio con la aseguradora? (Sí/No)
-- se_ajusta_tabulador: ¿Acepta los tabuladores de pago directo? (Sí/No)
+SECCIÓN 6 - DATOS DEL MÉDICO (ESTRUCTURA VISUAL):
 
-PRESUPUESTO DE HONORARIOS:
+⚠️ IMPORTANTE: Esta sección tiene 8 FILAS con distribución específica. Extrae SOLO lo que esté visible.
+
+📋 FILA 1: TIPO DE ATENCIÓN AL PACIENTE
+Checkboxes horizontales:
+   ☐ Médico tratante    ☐ Cirujano principal    ☐ Interconsultante    ☐ Equipo quirúrgico    ☐ Segunda valoración
+
+Campo a extraer:
+- tipo_atencion: Array de valores marcados. SOLO extrae las casillas con marca visual (X, ✓, relleno). Si todas vacías → []
+
+📋 FILA 2: NOMBRE Y ESPECIALIDAD (DOS COLUMNAS)
+┌──────────────────────────────┬──────────────────────────────┐
+│ Nombre completo (línea)      │ Especialidad (línea)         │
+│ ___________________________  │ ___________________________  │
+└──────────────────────────────┴──────────────────────────────┘
+
+Campos a extraer:
+- nombres: Nombre completo del médico (columna izquierda)
+- especialidad: Especialidad médica (columna derecha)
+
+📋 FILA 3: DOMICILIO Y TELÉFONO (DOS COLUMNAS)
+┌──────────────────────────────┬──────────────────────────────┐
+│ Domicilio consultorio (línea)│ Teléfono consultorio         │
+│ ___________________________  │ [_][_][_][_][_][_][_][_][_] │
+└──────────────────────────────┴──────────────────────────────┘
+
+Campos a extraer:
+- domicilio_consultorio: Dirección del consultorio (columna izquierda, línea continua)
+- telefono_consultorio: Número de teléfono (columna derecha, cuadrículas individuales)
+
+📋 FILA 4: CÉDULA, CELULAR Y RFC (TRES COLUMNAS)
+┌─────────────────┬─────────────────┬─────────────────┐
+│ Cédula prof.    │ Celular         │ RFC             │
+│ (especialidad)  │ (cuadrículas)   │ (cuadrículas)   │
+│ ______________  │ [_][_][_][_]... │ [_][_][_]...    │
+└─────────────────┴─────────────────┴─────────────────┘
+
+Campos a extraer:
+- cedula_profesional: Cédula profesional de especialidad (columna izquierda, línea continua)
+- celular: Número celular (columna centro, cuadrículas individuales)
+- rfc: RFC del médico (columna derecha, cuadrículas individuales)
+
+📋 FILA 5: CORREO ELECTRÓNICO (LÍNEA COMPLETA)
+┌────────────────────────────────────────────────────────────┐
+│ Correo electrónico                                         │
+│ _____________________  @  ___________________________      │
+└────────────────────────────────────────────────────────────┘
+
+Campo a extraer:
+- correo_electronico: Email completo (línea continua separada por @)
+
+📋 FILA 6: CONVENIO CON ASEGURADORA (CHECKBOXES)
+¿Tiene convenio con la aseguradora?    ☐ Sí    ☐ No
+
+Campo a extraer:
+- convenio_aseguradora: true si "Sí" está marcado, false si "No" está marcado, null si ambos vacíos
+
+📋 FILA 7: ACEPTACIÓN DE TABULADORES (CHECKBOXES)
+¿Acepta los tabuladores de pago directo?    ☐ Sí    ☐ No
+
+Campo a extraer:
+- se_ajusta_tabulador: true si "Sí" está marcado, false si "No" está marcado, null si ambos vacíos
+
+📋 FILA 8: PRESUPUESTO DE HONORARIOS (CINCO COLUMNAS NUMÉRICAS)
+┌──────────┬──────────┬──────────┬──────────┬──────────┐
+│ Cirujano │Anestesió.│ Primer   │ Otro 1   │ Otro 2   │
+│          │          │ Ayudante │          │          │
+│ $_______ │ $_______ │ $_______ │ $_______ │ $_______ │
+└──────────┴──────────┴──────────┴──────────┴──────────┘
+
+Campos a extraer:
 - honorarios_cirujano: Presupuesto honorarios cirujano
 - honorarios_anestesiologo: Presupuesto honorarios anestesiólogo
 - honorarios_ayudante: Presupuesto honorarios primer ayudante
 - honorarios_otro_1: Presupuesto honorarios otro 1
 - honorarios_otro_2: Presupuesto honorarios otro 2
+
+⚠️ REGLAS DE EXTRACCIÓN PARA ESTA SECCIÓN:
+1. Respeta la estructura de filas: no mezcles campos de diferentes filas
+2. Para campos con cuadrículas: extrae dígito por dígito si están visibles
+3. Para campos con líneas continuas: extrae el texto completo
+4. Para checkboxes: SOLO marca true si VES una X, ✓ o relleno visual
+5. Si un campo está vacío en el documento → déjalo vacío en el JSON
 
 SECCIÓN 7 - FIRMA:
 - lugar: Lugar de la firma
