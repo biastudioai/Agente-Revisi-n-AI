@@ -39,6 +39,65 @@ PARA CUALQUIER CAMPO QUE DEPENDA DE UNA CASILLA MARCADA:
 - 🔹 Si la casilla está VACÍA → el campo debe quedar false/""/null/[] según su tipo
 - 🔹 Si hay DUDA sobre si está marcada → déjalo VACÍO
 
+📋 JERARQUÍA DE DETECCIÓN - ORDEN DE PRIORIDAD:
+
+🔲 PRIORIDAD 1 - CHECKBOXES/RECUADROS VISIBLES:
+
+Si el documento muestra CLARAMENTE recuadros (☐, ☑, □, ■, [ ], [X]) junto a las opciones:
+- Identifica cuál checkbox tiene marca visual dentro
+- La opción marcada es la que está MÁS CERCA del checkbox marcado
+- Este método es el MÁS CONFIABLE cuando los recuadros son visibles
+
+✅ Ejemplos con recuadros visibles:
+   - "☑ Masculino    ☐ Femenino" → Masculino está seleccionado
+   - "[X] Accidente  [ ] Enfermedad  [ ] Embarazo" → Accidente está seleccionado
+   - "□ Congénito    ■ Adquirido" → Adquirido está seleccionado (■ relleno)
+   - "[ ] Reembolso  [X] Programación de cirugía" → Programación de cirugía
+
+📍 PRIORIDAD 2 - REGLAS VISUALES ALTERNATIVAS (SIN RECUADROS):
+
+Solo aplica estas reglas cuando NO hay recuadros/checkboxes visibles en el documento (formulario sin imprimir o sin cuadros claros):
+
+1️⃣ MARCA A LA IZQUIERDA de la opción:
+   ✅ Ejemplos válidos:
+   - "X Masculino" → Masculino está seleccionado
+   - "● Programación de cirugía" → Programación de cirugía está seleccionada
+   - "✓ Enfermedad" → Enfermedad está seleccionada
+   - "• Reembolso" → Reembolso está seleccionado
+
+2️⃣ MARCA EN ESPACIO INTERMEDIO entre dos opciones:
+   🔹 REGLA: Si la marca está en el espacio ENTRE dos opciones, pertenece a la opción de la DERECHA
+   
+   ✅ Ejemplos:
+   - "Masculino  X  Femenino" → Femenino está seleccionado (X está más cerca de Femenino)
+   - "Accidente  ●  Enfermedad  Embarazo" → Enfermedad está seleccionada
+   - "Congénito    ✓    Adquirido" → Adquirido está seleccionado
+
+3️⃣ MARCADO DIRECTO SOBRE/ENCIMA de la opción:
+   ✅ Ejemplos válidos:
+   - "M̶a̶s̶c̶u̶l̶i̶n̶o̶" (texto tachado) → Masculino está seleccionado
+   - "⭕Masculino⭕" (texto rodeado/encerrado) → Masculino está seleccionado
+   - "**Masculino**" (texto resaltado/marcado) → Masculino está seleccionado
+   - Texto con círculo alrededor → está seleccionado
+   - Cualquier marcado visual directo sobre las letras
+
+4️⃣ SÍMBOLOS COMUNES de marca (cuando NO hay recuadros):
+   - "X" (equis)
+   - "●" (punto/círculo relleno)
+   - "✓" o "✔" (palomita/check)
+   - Cualquier símbolo visual que indique selección
+
+⚠️ CASOS ESPECIALES (solo cuando NO hay recuadros):
+
+📌 Marca MUY PEGADA al texto:
+   - Si ves "XM" o "X" casi fusionada con la "M" de "Masculino" → SÍ está marcado Masculino
+   - Si ves "●F" o punto pegado a "Femenino" → SÍ está marcado Femenino
+   - La marca puede estar VISUALMENTE FUSIONADA con la primera letra de la opción
+
+📌 Múltiples símbolos en la misma línea:
+   - Identifica cuál símbolo corresponde a cuál opción según su POSICIÓN RELATIVA
+   - Usa las reglas 1, 2 y 3 para determinar a qué opción pertenece cada marca
+
 ⚠️ EJEMPLOS VISUALES DE LO QUE NO DEBES HACER:
 
 🚫 CAUSA DE ATENCIÓN - Ejemplos de inferencias PROHIBIDAS:
