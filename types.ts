@@ -174,7 +174,7 @@ export interface MedicoTratanteData {
   tipo_participacion?: string; // GNP: Tratante, Cirujano, Otra
   tipo_participacion_otra?: string; // GNP: Si es Otra, especificar cuál
   hubo_interconsulta?: boolean; // GNP
-  tipo_atencion?: string; // MetLife selection
+  tipo_atencion?: string | string[]; // MetLife: array de checkboxes o string por compatibilidad
 }
 
 export interface MedicoInterconsultanteData {

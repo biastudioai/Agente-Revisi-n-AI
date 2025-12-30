@@ -179,7 +179,7 @@ Para cada miembro del equipo (Anestesiólogo, Primer Ayudante, Otro 1, Otro 2):
 - especialidad: Solo para "Otro" - tipo de participación/especialidad
 
 SECCIÓN 6 - DATOS DEL MÉDICO:
-- tipo_atencion: Médico tratante, Cirujano principal, Interconsultante, Equipo quirúrgico, Segunda valoración
+- tipo_atencion: Array de checkboxes marcados. Puede contener uno o más de: "Médico tratante", "Cirujano principal", "Interconsultante", "Equipo quirúrgico", "Segunda valoración". SOLO extrae las casillas que VES marcadas visualmente (X, ✓, checkbox relleno). Si TODAS están vacías, devuelve array vacío [].
 - nombres: Nombre completo del médico
 - especialidad: Especialidad médica
 - domicilio_consultorio: Domicilio del consultorio
@@ -393,7 +393,11 @@ SECCIÓN 7 - FIRMA:
           medico_tratante: {
             type: Type.OBJECT,
             properties: {
-              tipo_atencion: { type: Type.STRING, description: "Tratante, Cirujano, Interconsultante, Equipo Qx, Segunda valoración" },
+              tipo_atencion: { 
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+                description: "Array de valores extraídos de checkboxes marcados: puede contener ['Médico tratante', 'Cirujano principal', 'Interconsultante', 'Equipo quirúrgico', 'Segunda valoración']. SOLO extrae los valores que VES marcados visualmente. Si ninguna casilla está marcada, devuelve array vacío []."
+              },
               nombres: { type: Type.STRING, description: "Nombre completo del médico" },
               especialidad: { type: Type.STRING, description: "Especialidad médica" },
               domicilio_consultorio: { type: Type.STRING, description: "Domicilio del consultorio" },
