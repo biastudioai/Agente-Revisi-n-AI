@@ -46,10 +46,25 @@ PARA CUALQUIER CAMPO QUE DEPENDA DE UNA CASILLA MARCADA:
 ❌ "Hay trauma en el texto" → causa_atencion = "Accidente"
 ❌ "Menciona embarazo en antecedentes" → causa_atencion = "Embarazo"
 ❌ "Es un informe quirúrgico" → causa_atencion = "Enfermedad"
+❌ "Dice 'Apendicitis Aguda'" → causa_atencion = "Enfermedad"
+❌ "El paciente tiene una enfermedad" → causa_atencion = "Enfermedad"
 
-✅ CORRECTO: Solo marca SI VES esto en el documento:
+⚠️ REGLA VISUAL ESTRICTA PARA "CAUSA DE ATENCIÓN":
+
+📋 SI VES ESTO (todas vacías):
+   ☐ Accidente    ☐ Enfermedad    ☐ Embarazo    ☐ Segunda valoración
+   ✅ ENTONCES: causa_atencion = "" (string vacío)
+
+📋 SI VES ESTO:
    ☑ Accidente    ☐ Enfermedad    ☐ Embarazo    ☐ Segunda valoración
-   → causa_atencion = "Accidente"
+   ✅ ENTONCES: causa_atencion = "Accidente"
+
+📋 SI VES ESTO:
+   ☐ Accidente    ☑ Enfermedad    ☐ Embarazo    ☐ Segunda valoración
+   ✅ ENTONCES: causa_atencion = "Enfermedad"
+
+🚫 NO IMPORTA QUÉ DIGA EL DIAGNÓSTICO O EL CONTEXTO CLÍNICO.
+🚫 SI NO VES UNA MARCA VISUAL CLARA (X, ✓, relleno), DEJA EL CAMPO VACÍO.
 
 🚫 OTROS CAMPOS - Ejemplos de inferencias PROHIBIDAS:
 ❌ "Es cirugía" → utilizo_equipo_especial = true
@@ -223,7 +238,10 @@ SECCIÓN 7 - FIRMA:
               nombres: { type: Type.STRING, description: "Nombre completo del paciente" },
               sexo: { type: Type.STRING, description: "Masculino, Femenino u Otro" },
               edad: { type: Type.STRING, description: "Edad del paciente" },
-              causa_atencion: { type: Type.STRING, description: "Accidente, Enfermedad, Embarazo o Segunda valoración" },
+              causa_atencion: { 
+                type: Type.STRING, 
+                description: "SOLO extrae 'Accidente', 'Enfermedad', 'Embarazo' o 'Segunda valoración' SI VES una marca visual clara (X, ✓, checkbox relleno) en la casilla correspondiente. Si TODAS las casillas están vacías, devuelve string vacío ''. NO INFERIR basándote en el diagnóstico o contexto clínico." 
+              },
               peso: { type: Type.STRING, description: "Peso del paciente en kg" },
               talla: { type: Type.STRING, description: "Talla/altura del paciente" },
               fecha_primera_atencion: { type: Type.STRING, description: "Fecha de primera atención DD/MM/AAAA" }
