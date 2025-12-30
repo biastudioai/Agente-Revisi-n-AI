@@ -11,7 +11,9 @@
   "ts-node": {
     "compilerOptions": {
       "module": "CommonJS"
-    }
+    },
+    "transpileOnly": true,
+    "esm": false
   },
   "include": [
     "scripts/**/*"
