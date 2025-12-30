@@ -1,0 +1,36 @@
+2- en el tipo de atención del médico principal o datos del médico, no quiero que lo escribas sino que me lo pongas igual que como viene en el documento original, que sería modo checkbox, y que se seleccionen exactamente los mismos checkboxes que vienen en el documento original. Te ajunto imágenes y además te lo estoy seleccionando en el mapeo de extracción.
+
+BS
+
+proyectos6
+Assistant
+just now
+Explicación de lo que me estás pidiendo
+Entiendo que quieres que el campo "Tipo de atención" del médico tratante (en METLIFE) se muestre como checkboxes múltiples en lugar de un campo de texto simple.
+
+Actualmente, según veo en el código:
+
+El campo medico_tratante.tipo_atencion se extrae como un string que dice "Cirujano principal"
+En la interfaz (Dashboard.tsx) se muestra como un input de texto editable
+Lo que necesitas es:
+
+Extraer los checkboxes marcados en el PDF original (pueden ser múltiples)
+Mostrarlos en la interfaz como checkboxes con las opciones: "Médico tratante", "Cirujano principal", "Interconsultante", "Equipo quirúrgico", "Segunda valoración"
+Marcar exactamente los mismos que aparecen en el documento original
+Porcentaje de confianza
+95% de confianza en poder implementar esto correctamente.
+
+Ya tengo experiencia implementando checkboxes para otros campos (como tipo_padecimiento), y el patrón es claro. Solo necesito:
+
+Cambiar el tipo de dato en el schema de Gemini de STRING a ARRAY
+Actualizar las instrucciones de extracción para que Gemini extraiga todos los checkboxes marcados
+Modificar el renderizado en Dashboard.tsx para mostrar checkboxes en lugar de un input de texto
+¿Asistente o Agente?
+Mejor con el ASISTENTE porque:
+
+Es un cambio específico y acotado (modificar schema, instrucciones y UI)
+No requiere experimentación compleja
+Puedo hacer los cambios de forma precisa en los archivos necesarios
+Archivos que necesito modificar
+providers/metlife.config.ts - Cambiar schema y agregar instrucciones de extracción para checkboxes
+components/Dashboard.tsx - Cambiar el renderizado de input de texto a checkboxes múltiples
