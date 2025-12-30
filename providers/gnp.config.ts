@@ -257,9 +257,15 @@ Para cada médico que SÍ esté registrado extraer:
 - ppto_honorarios: Presupuesto de honorarios (ejemplo: "$18,000")
 
 FIRMA:
-- lugar_fecha: Lugar y fecha de la firma
+- lugar: Lugar donde se firma (ejemplo: "Ciudad de México", "Guadalajara", etc.)
+- fecha: Fecha de la firma en formato DD/MM/AAAA (extraer SOLO la fecha del campo "Lugar y fecha")
 - nombre_firma: Nombre del médico que firma
 - firma_autografa_detectada: true si se ve una firma manuscrita real, false si solo hay nombre impreso
+
+⚠️ IMPORTANTE PARA "LUGAR Y FECHA":
+Si ves algo como "Ciudad de México 04/12/2025", debes separarlo en:
+- lugar: "Ciudad de México"
+- fecha: "04/12/2025"
 `,
 
   requiredFields: [
@@ -454,7 +460,8 @@ FIRMA:
           firma: {
             type: Type.OBJECT,
             properties: {
-              lugar_fecha: { type: Type.STRING, description: "Lugar y fecha de la firma" },
+              lugar: { type: Type.STRING, description: "Lugar donde se firma (ciudad, estado)" },
+              fecha: { type: Type.STRING, description: "Fecha de la firma en formato DD/MM/AAAA" },
               nombre_firma: { type: Type.STRING, description: "Nombre del médico que firma" },
               firma_autografa_detectada: { type: Type.BOOLEAN, description: "¿Se detectó firma manuscrita real?" }
             }

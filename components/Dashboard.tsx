@@ -718,7 +718,21 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                             <div className="p-10 border-4 border-dashed border-slate-100 rounded-3xl text-center">
                                 <ShieldCheck className="w-12 h-12 text-slate-200 mx-auto mb-4" />
                                 <h3 className="text-sm font-bold text-slate-400 mb-4 uppercase tracking-widest">Validación de Autorización</h3>
+                                
+                                <div className="grid grid-cols-2 gap-4 mb-4">
+                                    {renderInput("Lugar de Firma", formData.firma?.lugar, 'firma.lugar')}
+                                    <DateInput 
+                                        label="Fecha de Firma" 
+                                        value={formData.firma?.fecha} 
+                                        path="firma.fecha" 
+                                        isModified={!!modifiedFields['firma.fecha']} 
+                                        isHighlighted={highlightedField === 'firma.fecha'} 
+                                        onChange={handleInputChange} 
+                                    />
+                                </div>
+                                
                                 {renderInput("Nombre Firma Autógrafa", formData.firma?.nombre_firma, 'firma.nombre_firma')}
+                                
                                 <div className="mt-4 flex items-center justify-center gap-2 p-3 bg-slate-50 rounded-lg">
                                     <input 
                                         type="checkbox" 
@@ -727,10 +741,6 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                                         className="w-5 h-5 rounded text-emerald-600"
                                     />
                                     <label className="text-xs font-medium text-slate-600">Se detectó firma autógrafa (no solo nombre impreso)</label>
-                                </div>
-                                <div className="mt-4 flex justify-center gap-4">
-                                     <div className="px-4 py-2 bg-slate-50 rounded-lg text-[10px] font-bold text-slate-400">Lugar: {formData.firma?.lugar || formData.firma?.lugar_fecha || 'S/D'}</div>
-                                     <div className="px-4 py-2 bg-slate-50 rounded-lg text-[10px] font-bold text-slate-400">Fecha: {formData.firma?.fecha || 'S/D'}</div>
                                 </div>
                             </div>
                         )}
