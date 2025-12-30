@@ -1,0 +1,55 @@
+PROCEDE CON LOS PATHS DEL DOCUMENTO, pero con esta salvedad:
+Los paths están basados en las especificaciones TEÓRICAS de GNP y MetLife.
+Sin embargo, la estructura JSON REAL que devuelve Gemini puede variar
+ligeramente dependiendo de cómo se definieron los schemas en:
+- providers/gnp.config.ts 
+- providers/metlife.config.ts
+Estrategia recomendada:
+1. ✅ Crea TODA la infraestructura de Fase 1 con los paths del documento
+2. ✅ Al final, compila y verifica que no haya errores de TypeScript
+3. ⚠️ ANTES de marcar como "completo", crea un archivo de referencia:
+   - config/PATH_VALIDATION_CHECKLIST.md
+   - Que liste TODOS los paths usados
+   - Con instrucciones para validarlos contra documentos reales
+Esto permite:
+- Implementar la infraestructura completa AHORA
+- Validar paths después con documentos reales de prueba
+- Ajustar solo aseguradora-configs.ts si hay discrepancias
+Confirma si procedo con esta estrategia.
+Mi Nivel de Confianza
+75-80% de que los paths funcionarán directamente, porque:
+
+✅ A favor:
+
+Los paths siguen convenciones estándar (paciente.nombres, medico.cedula)
+Los schemas de gnp.config.ts y metlife.config.ts probablemente usan esos nombres
+El documento fue creado con conocimiento del sistema existente
+⚠️ Riesgos:
+
+Puede haber variaciones (medico.nombre vs medico.nombres)
+Campos anidados pueden tener niveles extra (hospitalizacion.datos.fecha_ingreso vs hospitalizacion.fecha_ingreso)
+Gemini podría usar nombres ligeramente diferentes en su output
+¿Recomiendo Asistente o Agente?
+AGENTE (Build mode) - Pero con validación post-implementación:
+
+Razón:
+
+La infraestructura es grande (5 archivos, ~500 líneas de código)
+Si hay errores de paths, son fáciles de corregir (solo editar aseguradora-configs.ts)
+El Agente puede crear todo rápidamente
+Después puedes probar con documentos reales y ajustar
+Proceso sugerido:
+
+[Agente crea toda la Fase 1]
+  ↓
+[Compila sin errores TypeScript]
+  ↓
+[Pruebas con documento real GNP]
+  ↓
+[Si falla mapeo] → Ajustar config/aseguradora-configs.ts
+  ↓
+[Pruebas con documento real MetLife]
+  ↓
+[Validación completa]
+¿Qué prefieres?
+A) Dile al Agente que proceda → Usa el prompt que te preparé antes + esta aclaración sobre paths
