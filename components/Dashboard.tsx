@@ -131,7 +131,17 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
   const renderRadioGroup = (label: string, value: string | undefined, path: string, options: string[]) => {
     const isModified = modifiedFields[path] !== undefined;
     const isHighlighted = highlightedField === path;
-    const currentValue = value?.toLowerCase();
+    
+    // Normalizar valores abreviados (F/M) a formato completo
+    const normalizeValue = (val: string | undefined): string => {
+      if (!val) return '';
+      const lower = val.toLowerCase().trim();
+      if (lower === 'f') return 'femenino';
+      if (lower === 'm') return 'masculino';
+      return lower;
+    };
+    
+    const currentValue = normalizeValue(value);
 
     return (
       <div id={`field-${path}`} className={`mb-4 transition-all duration-300 ${isHighlighted ? `p-3 ${theme.light} ring-2 ring-yellow-400 rounded-lg shadow-md` : ''}`}>

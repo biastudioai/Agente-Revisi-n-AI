@@ -167,7 +167,7 @@ FICHA DE IDENTIFICACIÓN DEL ASEGURADO:
 - primer_apellido: Primer apellido del paciente
 - segundo_apellido: Segundo apellido del paciente  
 - nombres: Nombre(s) del paciente
-- sexo: F (Femenino) o M (Masculino)
+- sexo: Extrae EXACTAMENTE la letra que veas marcada: "F" o "M" (NO escribas "Femenino" o "Masculino", solo la letra)
 - edad: Edad del paciente
 - causa_atencion: Accidente, Enfermedad o Embarazo (cuál está marcada)
 
