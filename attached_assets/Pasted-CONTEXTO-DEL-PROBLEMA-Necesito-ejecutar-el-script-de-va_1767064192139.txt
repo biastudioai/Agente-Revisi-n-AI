@@ -1,0 +1,54 @@
+CONTEXTO DEL PROBLEMA:
+Necesito ejecutar el script de validación de paths ubicado en `scripts/validate-paths.ts` para verificar que las configuraciones en `config/aseguradora-configs.ts` coincidan con los JSONs reales que devuelve Gemini.
+PROBLEMA ACTUAL:
+- El comando `npx ts-node --project tsconfig.node.json scripts/validate-paths.ts` falla con error "Unknown file extension .ts"
+- Esto ocurre porque el proyecto usa `"type": "module"` en package.json (ESM) pero el script necesita ejecutarse en modo CommonJS
+- Ya se intentó ajustar `tsconfig.node.json` sin éxito
+- La solución más confiable es usar `tsx` en lugar de `ts-node`
+OBJETIVO:
+Hacer que el script `scripts/validate-paths.ts` se ejecute correctamente y muestre el reporte de validación en consola.
+PLAN DE EJECUCIÓN SUGERIDO:
+PASO 1: Instalar tsx
+- Ejecutar: npm install --save-dev tsx
+- Verificar que se agregó a package.json en devDependencies
+PASO 2: Ejecutar el script de validación
+- Ejecutar: npx tsx scripts/validate-paths.ts
+- Verificar que NO arroje errores de "Unknown file extension"
+PASO 3: Verificar el output
+- Debe aparecer en consola un reporte con formato:
+  ============================================================
+  📋 VALIDACIÓN DE PATHS - GNP
+  ============================================================
+  ✅ paciente.nombre → identificacion.nombres
+  ❌ paciente.apellido_paterno → paciente.apellido_paterno (NO EXISTE)
+  ...
+- Si aparece el reporte = éxito
+- Si hay errores = reportar qué salió mal
+ALTERNATIVA (solo si tsx falla):
+- Intentar: npx ts-node --esm scripts/validate-paths.ts
+- O: node --loader ts-node/esm scripts/validate-paths.ts
+ARCHIVOS INVOLUCRADOS:
+- scripts/validate-paths.ts (NO MODIFICAR - ya está completo)
+- tsconfig.node.json (puede necesitar ajustes solo si es estrictamente necesario)
+- package.json (solo para instalar tsx)
+RESTRICCIONES CRÍTICAS - NO HACER CAMBIOS EN:
+❌ App.tsx
+❌ Cualquier archivo en /components/
+❌ Cualquier archivo en /providers/
+❌ Cualquier archivo en /services/
+❌ config/aseguradora-configs.ts (todavía no, primero necesitamos ver el reporte)
+❌ types/ o cualquier archivo de tipos
+❌ vite.config.ts
+❌ .replit
+❌ index.html, index.tsx
+SOLO PUEDES MODIFICAR:
+✅ package.json (solo para agregar tsx en devDependencies)
+✅ tsconfig.node.json (solo si es técnicamente necesario para que funcione)
+RESULTADO ESPERADO:
+Que al ejecutar `npx tsx scripts/validate-paths.ts`, aparezca en consola el reporte de validación completo mostrando qué paths del checklist existen en el JSON real y cuáles no.
+IMPORTANTE:
+- Si tienes una forma más óptima o eficiente de resolver esto, tienes total libertad para implementarla
+- El objetivo final es ejecutar el script exitosamente, no importa el método exacto
+- NO toques ningún código de la aplicación principal (React/UI)
+- Este es un script de desarrollo/utilidad, no afecta el funcionamiento de la app
+- La aplicación debe seguir corriendo en puerto 5000 sin interrupciones
