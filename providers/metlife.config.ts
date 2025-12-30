@@ -176,10 +176,10 @@ Para cada miembro del equipo (Anestesiólogo, Primer Ayudante, Otro 1, Otro 2):
 - celular: Número celular
 - rfc: Registro Federal de Contribuyentes
 - email: Correo electrónico
-- especialidad: Solo para "Otro Profesional 1" y "Otro Profesional 2" - extraer la especialidad escrita (ej: "Enfermería Quirúrgica", "Instrumentista", etc.)
+- especialidad: Solo para "Otro" - tipo de participación/especialidad
 
-SECCIÓN 7 - DATOS DEL MÉDICO:
-- tipo_atencion: Extrae TODAS las casillas marcadas visualmente. Puede ser uno o múltiples valores de: "Médico tratante", "Cirujano principal", "Interconsultante", "Equipo quirúrgico", "Segunda valoración". Si varias están marcadas, separa con comas.
+SECCIÓN 6 - DATOS DEL MÉDICO:
+- tipo_atencion: Médico tratante, Cirujano principal, Interconsultante, Equipo quirúrgico, Segunda valoración
 - nombres: Nombre completo del médico
 - especialidad: Especialidad médica
 - domicilio_consultorio: Domicilio del consultorio
@@ -398,7 +398,8 @@ SECCIÓN 7 - FIRMA:
               especialidad: { type: Type.STRING, description: "Especialidad médica" },
               domicilio_consultorio: { type: Type.STRING, description: "Domicilio del consultorio" },
               telefono_consultorio: { type: Type.STRING, description: "Teléfono del consultorio" },
-              cedula_especialidad: { type: Type.STRING, description: "Cédula profesional de especialidad" },
+              cedula_profesional: { type: Type.STRING, description: "Cédula profesional" },
+              cedula_especialidad: { type: Type.STRING, description: "Cédula de especialidad" },
               celular: { type: Type.STRING, description: "Número celular" },
               rfc: { type: Type.STRING, description: "RFC del médico" },
               correo_electronico: { type: Type.STRING, description: "Correo electrónico" },
