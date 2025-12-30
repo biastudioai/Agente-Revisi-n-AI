@@ -1,0 +1,54 @@
+Entendimiento del problema:
+Estás viendo que en el PDF de GNP, la sección "Lugar y Fecha" al final del documento muestra:
+
+En el documento manuscrito:
+
+Ciudad de México 04/12/2025
+Lugar y fecha (etiqueta del campo)
+Lo que Gemini está extrayendo actualmente:
+
+lugar_fecha: "Ciudad de México 04/12/2025" (todo junto)
+fecha: "S/D" (sin dato)
+Tu pregunta es:
+¿Debo mantener un solo campo unificado (lugar_fecha) tal como está en el PDF, o separar en dos campos (lugar y fecha) y hacer que Gemini los divida automáticamente?
+
+Mi recomendación:
+Confianza: 92%
+
+✅ Recomiendo SEPARAR en dos campos distintos:
+Razones:
+📊 Normalización de datos: Para el schema estandarizado, necesitas fecha como campo individual para validaciones, comparaciones y reportes.
+
+🔄 Coherencia con otras fechas: Ya tienes campos de fecha separados en todo el documento (fecha_diagnostico, fecha_ingreso, etc.). Mantener consistencia es clave.
+
+🤖 Gemini puede hacerlo fácilmente: Con instrucciones claras, Gemini puede dividir "Ciudad de México 04/12/2025" en:
+
+lugar: "Ciudad de México"
+fecha_firma: "04/12/2025"
+✅ Mejor validación: Puedes validar que la fecha esté en formato correcto y usar el componente DateInput que ya tienes.
+
+📋 Implementación propuesta:
+Modificaré 2 archivos:
+
+gnp.config.ts → Actualizar instrucciones y schema para separar lugar y fecha
+Dashboard.tsx → Mostrar dos campos separados en la UI (Lugar de Firma + Fecha de Firma)
+El flujo será:
+
+PDF: "Ciudad de México 04/12/2025"
+      ↓
+Gemini extrae:
+- lugar_firma: "Ciudad de México"  
+- fecha_firma: "04/12/2025"
+      ↓
+UI muestra dos campos editables separados
+¿Es mejor Asistente o Agente?
+✅ ASISTENTE - Son cambios específicos en archivos conocidos.
+
+¿Procedo con separar el campo "Lugar y Fecha" en dos campos distintos (lugar_firma y fecha_firma) tanto en el schema de Gemini como en la UI del Dashboard?
+
+Esto te dará:
+
+✅ Datos más estructurados
+✅ Mejor validación de fechas
+✅ Coherencia con el resto del sistema
+✅ Facilidad para editar/corregir cada campo individualmente
