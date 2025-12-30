@@ -239,13 +239,22 @@ DATOS DEL MÉDICO TRATANTE:
 - tipo_participacion: Tratante, Cirujano, u Otra (especificar cuál)
 - hubo_interconsulta: ¿Hubo interconsulta? (Sí/No)
 
-MÉDICOS INTERCONSULTANTES O PARTICIPANTES (hasta 3):
-Para cada médico extraer:
-- tipo_participacion: Interconsultante, Cirujano, Anestesiólogo, Ayudantía, u Otra
-- primer_apellido, segundo_apellido, nombres
-- especialidad
-- cedula_profesional, cedula_especialidad
-- ppto_honorarios: Presupuesto de honorarios
+MÉDICOS INTERCONSULTANTES O PARTICIPANTES:
+⚠️ REGLA CRÍTICA: SOLO extrae médicos que estén EXPLÍCITAMENTE registrados en el documento
+- NO inventes médicos basándote en el contexto clínico
+- Si NO hay médicos interconsultantes registrados → devuelve array vacío []
+- Pueden haber de 0 hasta 3 médicos registrados
+
+Para cada médico que SÍ esté registrado extraer:
+- tipo_participacion: Interconsultante, Cirujano, Anestesiólogo, Ayudantía, u Otra (cuál está marcada)
+- tipo_participacion_otra: Si es "Otra", especificar cuál tipo
+- primer_apellido: Primer apellido del médico
+- segundo_apellido: Segundo apellido del médico
+- nombres: Nombre(s) del médico
+- especialidad: Especialidad médica
+- cedula_profesional: Cédula profesional
+- cedula_especialidad: Cédula de especialidad (si está disponible)
+- ppto_honorarios: Presupuesto de honorarios (ejemplo: "$18,000")
 
 FIRMA:
 - lugar_fecha: Lugar y fecha de la firma
@@ -423,9 +432,23 @@ FIRMA:
             }
           },
 
-          otros_medicos_texto: {
-            type: Type.STRING,
-            description: "Datos de médicos interconsultantes en formato: Nombre|Especialidad|Cédula|Honorarios separados por punto y coma"
+          otros_medicos: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                tipo_participacion: { type: Type.STRING, description: "Interconsultante, Cirujano, Anestesiólogo, Ayudantía, u Otra" },
+                tipo_participacion_otra: { type: Type.STRING, description: "Si es Otra, especificar cuál" },
+                primer_apellido: { type: Type.STRING, description: "Primer apellido del médico" },
+                segundo_apellido: { type: Type.STRING, description: "Segundo apellido del médico" },
+                nombres: { type: Type.STRING, description: "Nombre(s) del médico" },
+                especialidad: { type: Type.STRING, description: "Especialidad médica" },
+                cedula_profesional: { type: Type.STRING, description: "Cédula profesional" },
+                cedula_especialidad: { type: Type.STRING, description: "Cédula de especialidad" },
+                ppto_honorarios: { type: Type.STRING, description: "Presupuesto de honorarios" }
+              }
+            },
+            description: "Array de médicos interconsultantes o participantes (hasta 3). SOLO extrae médicos que estén VISIBLEMENTE registrados en el documento."
           },
 
           firma: {
