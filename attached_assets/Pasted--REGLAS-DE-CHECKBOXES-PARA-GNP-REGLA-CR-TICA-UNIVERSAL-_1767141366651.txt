@@ -1,0 +1,135 @@
+📋 REGLAS DE CHECKBOXES PARA GNP
+🚨 REGLA CRÍTICA UNIVERSAL PARA CASILLAS Y CHECKBOXES
+Aplicable a TODOS los campos que dependan de casillas marcadas:
+
+✅ Solo extrae/marca como true SI VES una marca visual clara (X, ✓, relleno, sombreado)
+❌ NO asumas valores basándote en el contexto del documento
+❌ NO inferieras el valor porque "tiene sentido clínicamente"
+❌ NO completes automáticamente basándote en otros campos
+🔹 Si la casilla está VACÍA → el campo debe quedar false/""/null/[] según su tipo
+🔹 Si hay DUDA sobre si está marcada → déjalo VACÍO
+📍 JERARQUÍA DE DETECCIÓN - ORDEN DE PRIORIDAD
+🔲 PRIORIDAD 1 - CHECKBOXES/RECUADROS VISIBLES
+Si el documento muestra CLARAMENTE recuadros (☐, ☑, □, ■, [ ], [X]) junto a las opciones:
+
+Identifica cuál checkbox tiene marca visual dentro
+La opción marcada es la que está MÁS CERCA del checkbox marcado
+Este método es el MÁS CONFIABLE cuando los recuadros son visibles
+Ejemplos:
+
+☑ Masculino    ☐ Femenino → Masculino está seleccionado
+[X] Accidente  [ ] Enfermedad  [ ] Embarazo → Accidente está seleccionado
+□ Congénito    ■ Adquirido → Adquirido está seleccionado (■ relleno)
+[ ] Reembolso  [X] Programación de cirugía → Programación de cirugía
+📍 PRIORIDAD 2 - REGLAS VISUALES ALTERNATIVAS (SIN RECUADROS)
+Solo aplica cuando NO hay recuadros/checkboxes visibles en el documento:
+
+1️⃣ MARCA A LA IZQUIERDA de la opción:
+
+X Masculino → Masculino está seleccionado
+● Programación de cirugía → Programación de cirugía está seleccionada
+✓ Enfermedad → Enfermedad está seleccionada
+• Reembolso → Reembolso está seleccionado
+2️⃣ MARCA EN ESPACIO INTERMEDIO entre dos opciones:
+
+🔹 REGLA: Si la marca está ENTRE dos opciones, pertenece a la opción de la DERECHA
+Masculino  X  Femenino → Femenino está seleccionado
+Accidente  ●  Enfermedad  Embarazo → Enfermedad está seleccionada
+Congénito    ✓    Adquirido → Adquirido está seleccionado
+3️⃣ MARCADO DIRECTO SOBRE/ENCIMA de la opción:
+
+M̶a̶s̶c̶u̶l̶i̶n̶o̶ (texto tachado) → Masculino está seleccionado
+⭕Masculino⭕ (texto rodeado/encerrado) → Masculino está seleccionado
+**Masculino** (texto resaltado/marcado) → Masculino está seleccionado
+4️⃣ SÍMBOLOS COMUNES de marca:
+
+X (equis)
+● (punto/círculo relleno)
+✓ o ✔ (palomita/check)
+Cualquier símbolo visual que indique selección
+⚠️ CASOS ESPECIALES
+📌 Marca MUY PEGADA al texto:
+
+Si ves XM o X casi fusionada con la M de Masculino → SÍ está marcado Masculino
+Si ves ●F o punto pegado a Femenino → SÍ está marcado Femenino
+La marca puede estar VISUALMENTE FUSIONADA con la primera letra de la opción
+📌 Múltiples símbolos en la misma línea:
+
+Identifica cuál símbolo corresponde a cuál opción según su POSICIÓN RELATIVA
+Usa las reglas 1, 2 y 3 para determinar a qué opción pertenece cada marca
+⚠️ EXCEPCIÓN ESPECIAL: TIPO DE PADECIMIENTO (PERMITE MÚLTIPLES VALORES)
+Este es el ÚNICO campo que acepta múltiples casillas marcadas:
+
+📋 Ejemplos:
+
+SI VES ESTO:
+   ☑ Congénito    ☐ Adquirido
+   ☑ Agudo        ☐ Crónico
+✅ ENTONCES extrae: ["Congénito", "Agudo"]
+SI VES ESTO:
+   ☐ Congénito    ☑ Adquirido
+   ☐ Agudo        ☑ Crónico
+✅ ENTONCES extrae: ["Adquirido", "Crónico"]
+SI VES ESTO:
+   ☑ Congénito    ☐ Adquirido
+   ☐ Agudo        ☐ Crónico
+✅ ENTONCES extrae: ["Congénito"]
+SI VES ESTO (ninguna marcada):
+   ☐ Congénito    ☐ Adquirido
+   ☐ Agudo        ☐ Crónico
+✅ ENTONCES extrae: [] (array vacío)
+🚫 NO HAGAS ESTO:
+
+❌ Ver "Congénito, Agudo" marcados → extraer solo ["Congénito"]
+❌ Ver solo "Adquirido" marcado → inferir ["Adquirido", "Crónico"]
+❌ Ver ninguna marcada → inferir basándote en el diagnóstico
+⚠️ IMPORTANTE: tipo_padecimiento es un ARRAY de strings, NO un string separado por comas.
+
+🚫 EJEMPLOS DE LO QUE NO DEBES HACER
+CAUSA DE ATENCIÓN - Ejemplos de inferencias PROHIBIDAS:
+
+❌ "El diagnóstico menciona diabetes" → causa_atencion = "Enfermedad" 
+❌ "Hay trauma en el texto" → causa_atencion = "Accidente"
+❌ "Menciona embarazo en antecedentes" → causa_atencion = "Embarazo"
+✅ CORRECTO: Solo marca SI VES esto en el documento:
+   ☑ Accidente    ☐ Enfermedad    ☐ Embarazo
+   → causa_atencion = "Accidente"
+TRÁMITE - Ejemplos de inferencias PROHIBIDAS:
+
+❌ "Es cirugía" → tramite.programacion_cirugia = true
+❌ "Menciona medicamentos" → tramite.programacion_medicamentos = true
+❌ "Habla de reembolso en el texto" → tramite.reembolso = true
+✅ SOLO extrae lo que VISUALMENTE esté marcado en casillas/checkboxes.
+📋 CAMPOS ESPECÍFICOS DE GNP QUE USAN CHECKBOXES
+TRÁMITE (múltiples opciones permitidas):
+
+Reembolso
+Programación de cirugía
+Programación de medicamentos
+Programación de servicios
+Indemnización
+Reporte hospitalario
+SEXO (una sola opción):
+
+F / M (extrae EXACTAMENTE la letra, NO "Femenino"/"Masculino")
+CAUSA DE ATENCIÓN (una sola opción):
+
+Accidente
+Enfermedad
+Embarazo
+TIPO DE PADECIMIENTO (múltiples valores permitidos - EXCEPCIÓN):
+
+Congénito
+Adquirido
+Agudo
+Crónico
+TIPO DE ESTANCIA (una sola opción):
+
+Urgencia
+Hospitalaria
+Corta estancia / ambulatoria
+MÉDICO TRATANTE:
+
+convenio_gnp (Sí/No)
+se_ajusta_tabulador (Sí/No)
+hubo_interconsulta (Sí/No)
