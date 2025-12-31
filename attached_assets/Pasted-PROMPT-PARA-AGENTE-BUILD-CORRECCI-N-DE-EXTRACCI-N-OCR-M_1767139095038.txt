@@ -1,0 +1,64 @@
+PROMPT PARA AGENTE BUILD - CORRECCIÓN DE EXTRACCIÓN OCR METLIFE
+📋 CONTEXTO DEL PROBLEMA
+Estoy trabajando en un auditor médico que usa Gemini para extraer datos de formularios MetLife. He identificado 3 errores específicos en la Sección 6 (Datos del Médico) que Gemini extrae incorrectamente:
+
+Documento de referencia: Formulario MetLife con estructura visual de 8 FILAS en Sección 6.
+
+🚨 ERRORES IDENTIFICADOS (CON EVIDENCIA)
+ERROR 1: Checkboxes fantasma en "Tipo de Atención"
+Path afectado: medico_tratante.tipo_atencion
+Comportamiento actual: Gemini marca ["Médico tratante", "Cirujano principal", "Interconsultante"]
+Comportamiento esperado: Solo ["Médico tratante", "Cirujano principal"] (Interconsultante NO está marcado visualmente)
+Causa probable: Inferencia basada en contexto quirúrgico en lugar de lectura visual estricta de checkboxes
+ERROR 2: Cédula Profesional vacía cuando tiene valor
+Path afectado: medico_tratante.cedula_profesional
+Comportamiento actual: Retorna ""
+Comportamiento esperado: Debe extraer el valor visible (probablemente confundido con cedula_especialidad: "9876543")
+Causa probable: Confusión entre FILA 2 (nombre/especialidad) y FILA 4 (cédula profesional/celular/RFC)
+ERROR 3: Números mezclados entre filas
+Path afectado: medico_tratante.telefono_consultorio
+Comportamiento actual: Retorna "9876543" (que es la cédula de especialidad de FILA 4)
+Comportamiento esperado: Debe extraer el teléfono de FILA 3, NO de FILA 4
+Causa probable: No respeta la estructura vertical de filas. Mezcla datos de FILA 3 (teléfono consultorio) con FILA 4 (cédula/celular/RFC)
+📂 ARCHIVO A MODIFICAR
+Archivo: providers/metlife.config.ts
+Sección específica: extractionInstructions → "SECCIÓN 6 - DATOS DEL MÉDICO"
+
+✅ SOLUCIÓN REQUERIDA
+Necesito que refuerces las instrucciones visuales en extractionInstructions para que Gemini:
+
+Para checkboxes: SOLO marque valores si VE una marca visual (X, ✓, relleno). NO inferir por contexto clínico.
+Para estructura de filas: Entienda que cada FILA tiene campos SEPARADOS físicamente:
+FILA 3: domicilio_consultorio (izquierda) + telefono_consultorio (derecha, cuadrículas)
+FILA 4: cedula_profesional (izquierda) + celular (centro) + rfc (derecha)
+NO mezclar valores entre diferentes filas (ej: no poner el valor de FILA 4 en campos de FILA 3)
+🎨 OPCIONES DE SOLUCIÓN SUGERIDAS
+Opción A (Recomendada): Agregar ejemplos visuales ASCII en las instrucciones mostrando la separación física de filas:
+
+📋 FILA 3: DOMICILIO Y TELÉFONO (DOS COLUMNAS)
+┌──────────────────────────────┬──────────────────────────────┐
+│ Domicilio consultorio        │ Teléfono consultorio         │
+│ ___________________________  │ [_][_][_][_][_][_][_][_][_] │
+└──────────────────────────────┴──────────────────────────────┘
+Opción B: Agregar reglas de validación post-extracción que alerten si:
+
+telefono_consultorio tiene formato de cédula (7 dígitos)
+cedula_profesional está vacío pero cedula_especialidad tiene valor
+Opción C: Reforzar la advertencia anti-inferencia con ejemplos negativos:
+
+❌ "Veo 'Apendicectomía Laparoscópica'" → NO marques "Interconsultante"
+❌ "El documento menciona cirugía" → NO marques "Interconsultante"
+✅ SOLO marca si VES físicamente una X, ✓ o casilla rellena
+🔧 LIBERTAD CREATIVA
+Nota importante: Estas son sugerencias basadas en el análisis del problema. Si tienes una forma más óptima o eficiente de resolver estos 3 errores (por ejemplo, ajustando el schema de Gemini, usando validadores post-procesamiento, o modificando la temperatura del modelo), tienes libertad total para implementarla.
+
+Lo crítico es que los 3 errores queden resueltos:
+
+✅ Checkboxes solo marcados si tienen marca visual
+✅ Cédula profesional extraída correctamente (no confundida con especialidad)
+✅ Teléfono consultorio de FILA 3, no mezclado con datos de FILA 4
+📦 ENTREGABLE ESPERADO
+Modificaciones en providers/metlife.config.ts (o archivos relacionados si propones otra solución)
+Breve explicación de qué estrategia elegiste y por qué
+Si es posible, un mini-test con el JSON de ejemplo que te mostré para verificar que los 3 campos ahora se extraen correctamente
+¿Necesitas que te aclare algo más sobre los errores o el comportamiento esperado?

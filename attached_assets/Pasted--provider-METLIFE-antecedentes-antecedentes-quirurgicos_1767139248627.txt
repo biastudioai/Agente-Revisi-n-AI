@@ -1,0 +1,133 @@
+{
+  "provider": "METLIFE",
+  "antecedentes": {
+    "antecedentes_quirurgicos": "Ninguno",
+    "gineco_a": "",
+    "gineco_c": "",
+    "gineco_descripcion": "",
+    "gineco_g": "",
+    "gineco_p": "",
+    "historia_clinica_breve": "Dolor abdominal intenso en cuadrante inferior derecho, con náuseas y Fiebre.",
+    "otras_afecciones": "",
+    "personales_patologicos": "Hipertensión controlada con medicamento"
+  },
+  "complicaciones": {
+    "descripcion": "Ninguna",
+    "presento_complicaciones": false
+  },
+  "diagnostico": {
+    "cie_coherente_con_texto": true,
+    "codigo_cie": "K36",
+    "diagnostico_definitivo": "Apendicitis Aguda",
+    "especifique_cual": "",
+    "explicacion_incoherencia_cie": "",
+    "fecha_diagnostico": "11/12/25",
+    "fecha_inicio_tratamiento": "11/12/2025",
+    "relacionado_con_otro": false
+  },
+  "equipo_quirurgico_metlife": {
+    "anestesiologo": {
+      "cedula_especialidad": "1234567",
+      "celular": "5551234567",
+      "email": "ana.lopez@hospitalabc.mx",
+      "nombre": "Any Lopez Garcia",
+      "rfc": "LOGA800IUIABC"
+    },
+    "otro_1": {
+      "cedula_especialidad": "1122334",
+      "celular": "5554567890",
+      "email": "Laura@gmail.com",
+      "especialidad": "Instrumentista",
+      "nombre": "Laura Mendoza Ruiz",
+      "rfc": "MERL900303GHI"
+    },
+    "otro_2": {
+      "cedula_especialidad": "",
+      "celular": "",
+      "email": "",
+      "especialidad": "N/A",
+      "nombre": "",
+      "rfc": ""
+    },
+    "primer_ayudante": {
+      "cedula_especialidad": "7654321",
+      "celular": "5559876543",
+      "email": "carlos@hospitalabc.mx",
+      "nombre": "Carlos Ramirez Soto",
+      "rfc": "RASC8502021EF"
+    }
+  },
+  "exploracion_fisica": {
+    "estudios_laboratorio_gabinete": "",
+    "resultados": "Rebote positivo en fosa ilíaca derecha. Labs: Leucocitosis 15,000/mm². Gabinete: Ultrasonido abdominal confirma apéndice inflamado."
+  },
+  "firma": {
+    "fecha": "18/12/2025",
+    "firma_autografa_detectada": true,
+    "lugar": "Ciudad de México",
+    "nombre_firma": "María Gonzalez Henrra"
+  },
+  "hospital": {
+    "fecha_egreso": "15/12/2025",
+    "fecha_ingreso": "11/12/2025",
+    "fecha_intervencion": "10/12/2025",
+    "nombre_hospital": "Hospital ABC México",
+    "tipo_estancia": "Ingreso hospitalario"
+  },
+  "identificacion": {
+    "causa_atencion": "Enfermedad",
+    "edad": "35",
+    "fecha_primera_atencion": "10/12/25",
+    "nombres": "Juan Pérez Lopez",
+    "peso": "80",
+    "sexo": "Masculino",
+    "talla": "175"
+  },
+  "info_adicional": {
+    "descripcion": "Ninguna"
+  },
+  "intervencion_qx": {
+    "detalle_equipo_especial": "Laparoscópico y Trócar",
+    "detalle_insumos": "Grapas y Suturas absorbibles",
+    "equipo_especifico": "Apendicectomía Laparoscópica (CPT: 44950)",
+    "tecnica": "Incisiones mínimas, extracción de apéndice inflamado vía Laparoscópica",
+    "utilizo_equipo_especial": true,
+    "utilizo_insumos": true
+  },
+  "medico_tratante": {
+    "cedula_especialidad": "9876543",
+    "cedula_profesional": "",
+    "celular": "5551112222",
+    "convenio_aseguradora": true,
+    "correo_electronico": "maria.gonzalez@hospitalabc.mx",
+    "domicilio_consultorio": "Av. Insurgentes",
+    "especialidad": "Cirugía General",
+    "honorarios_anestesiologo": "7,000",
+    "honorarios_ayudante": "4,000",
+    "honorarios_cirujano": "15,000",
+    "honorarios_otro_1": "2,000",
+    "honorarios_otro_2": "",
+    "nombres": "María Gonzalez Henrra",
+    "rfc": "GOHM750404JKL",
+    "se_ajusta_tabulador": true,
+    "telefono_consultorio": "9876543",
+    "tipo_atencion": [
+      "Médico tratante",
+      "Cirujano principal",
+      "Interconsultante"
+    ]
+  },
+  "padecimiento_actual": {
+    "causa_etiologia": "Infección Bacteriana en apéndice",
+    "descripcion": "Dolor abdominal agudo, Fiebre 38.5°C, vomito; evolucionó rápidamente a peritonitis localizada",
+    "estado_actual": "Recuperado, sin dolor",
+    "fecha_inicio": "10/12/2025",
+    "fecha_probable_alta": "15/12/2025",
+    "plan_tratamiento": "",
+    "seguira_tratamiento": false,
+    "tiempo_evolucion": "5 días",
+    "tipo_padecimiento": [
+      "Agudo"
+    ]
+  }
+}
