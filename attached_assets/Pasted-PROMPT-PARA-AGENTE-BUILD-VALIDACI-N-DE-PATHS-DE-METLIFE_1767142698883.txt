@@ -1,0 +1,84 @@
+PROMPT PARA AGENTE BUILD: VALIDACIÓN DE PATHS DE METLIFE
+CONTEXTO DEL PROYECTO
+Estás trabajando en un Auditor Médico IA que procesa PDFs de informes médicos de diferentes aseguradoras (GNP y METLIFE). El sistema usa Gemini para extraer datos y luego normaliza esos datos usando configuraciones de mapeo en config/aseguradora-configs.ts.
+
+OBJETIVO
+Necesito que ejecutes el script de validación de paths (scripts/validate-paths.ts) para verificar que la configuración de METLIFE en aseguradora-configs.ts coincida con la estructura JSON real que devuelve Gemini.
+
+ESTADO ACTUAL
+✅ Ya actualicé el archivo scripts/validate-paths.ts con el JSON real completo de METLIFE que obtuve al procesar un documento.
+
+❌ No pude ejecutar el script por limitaciones del modo Plan.
+
+ARCHIVO CLAVE: scripts/validate-paths.ts
+El script ya contiene:
+
+metlifeRealJson: JSON real procesado por Gemini (ya actualizado con todos los campos, incluyendo equipo_quirurgico_metlife, tipo_atencion_audit, tipo_padecimiento_audit)
+Funciones de validación que comparan paths de CONFIG_METLIFE con el JSON real
+Reporte visual que muestra:
+✅ Paths correctos (existen en JSON y config)
+❌ Paths incorrectos (configurados pero no existen en JSON)
+⚠️ Campos sin mapear (existen en JSON pero no están en config)
+TU TAREA
+1️⃣ EJECUTAR EL SCRIPT
+npx ts-node scripts/validate-paths.ts
+2️⃣ ANALIZAR LA SALIDA
+El script mostrará dos secciones:
+
+A) VALIDACIÓN DE GNP (puedes ignorarla por ahora)
+
+B) VALIDACIÓN DE METLIFE ← FOCO AQUÍ
+
+Busca en la salida:
+
+📋 VALIDACIÓN DE PATHS - METLIFE
+============================================================
+🔍 PATHS DEL CHECKLIST:
+✅ paciente.nombre → identificacion.nombres
+❌ paciente.sexo → identificacion.sexo (NO EXISTE)  ← ESTO ES UN ERROR
+...
+⚠️ CAMPOS EN JSON REAL QUE NO ESTÁN MAPEADOS:
+   • equipo_quirurgico_metlife.anestesiologo.nombre
+   • medico_tratante.tipo_atencion_audit.medico_tratante_marcado
+   ...
+3️⃣ REPORTAR HALLAZGOS
+Muéstrame la salida completa del script y luego identifica:
+
+❌ ERRORES CRÍTICOS (Paths que NO existen en el JSON real):
+¿Qué paths están configurados en aseguradora-configs.ts pero NO existen en el JSON?
+Ejemplo: Si el config dice identificacion.apellido_paterno pero el JSON solo tiene identificacion.nombres, eso es un error.
+⚠️ CAMPOS SIN MAPEAR (Existen en JSON pero no están en config):
+¿Qué campos están en el JSON real pero NO se están mapeando?
+Campos importantes que probablemente falten:
+equipo_quirurgico_metlife.* (todo el equipo quirúrgico)
+medico_tratante.tipo_atencion_audit.* (auditoría de checkboxes)
+padecimiento_actual.tipo_padecimiento_audit.* (auditoría de tipo de padecimiento)
+medico_tratante.domicilio_consultorio
+medico_tratante.honorarios_* (todos los honorarios)
+4️⃣ PROPONER CORRECCIONES EN aseguradora-configs.ts
+Basándote en los hallazgos, propón las correcciones necesarias en config/aseguradora-configs.ts para:
+
+Corregir paths incorrectos (los que marcaron ❌)
+Agregar campos faltantes importantes (especialmente equipo_quirurgico_metlife, auditorías de checkboxes, honorarios)
+EJEMPLO DE LO QUE ESPERO VER
+Salida del script:
+
+❌ medico_tratante.apellido_paterno → medico_tratante.nombres (NO EXISTE)
+⚠️ CAMPOS SIN MAPEAR:
+   • equipo_quirurgico_metlife.anestesiologo.nombre
+   • medico_tratante.tipo_atencion_audit.medico_tratante_marcado
+Tu respuesta:
+
+ERRORES ENCONTRADOS:
+1. medico_tratante.apellido_paterno → El JSON tiene nombres completo, no separado
+2. Falta mapear equipo_quirurgico_metlife completo
+3. Falta mapear tipo_atencion_audit
+CORRECCIONES PROPUESTAS:
+- Cambiar parser de apellido_paterno para extraer del campo nombres
+- Agregar mappings para equipo_quirurgico_metlife
+- Agregar mappings para auditorías
+NOTAS IMPORTANTES
+NO modifiques scripts/validate-paths.ts (el JSON ya está actualizado)
+SOLO ejecuta y analiza los resultados
+Si el agente tiene una forma más óptima de validar o corregir los paths, tiene libertad de implementarla
+Prioriza los campos críticos que bloquean la funcionalidad (nombres, cédulas, fechas, diagnóstico)
