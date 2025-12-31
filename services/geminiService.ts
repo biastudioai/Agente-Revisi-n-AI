@@ -52,6 +52,28 @@ export const analyzeReportImage = async (
     console.log("Parsing JSON response...");
     const jsonData = JSON.parse(text);
     console.log("📦 JSON COMPLETO DE GEMINI:", jsonData);
+    
+    // Post-procesamiento para MetLife: validar tipo_atencion con tipo_atencion_audit
+    if (provider === 'METLIFE' && jsonData.extracted?.medico_tratante?.tipo_atencion_audit) {
+      const audit = jsonData.extracted.medico_tratante.tipo_atencion_audit;
+      const correctedTipoAtencion: string[] = [];
+      
+      if (audit.medico_tratante_marcado === true) correctedTipoAtencion.push("Médico tratante");
+      if (audit.cirujano_principal_marcado === true) correctedTipoAtencion.push("Cirujano principal");
+      if (audit.interconsultante_marcado === true) correctedTipoAtencion.push("Interconsultante");
+      if (audit.equipo_quirurgico_marcado === true) correctedTipoAtencion.push("Equipo quirúrgico");
+      if (audit.segunda_valoracion_marcado === true) correctedTipoAtencion.push("Segunda valoración");
+      
+      // Comparar con lo que Gemini puso en tipo_atencion
+      const originalTipoAtencion = jsonData.extracted.medico_tratante.tipo_atencion || [];
+      if (JSON.stringify(originalTipoAtencion.sort()) !== JSON.stringify(correctedTipoAtencion.sort())) {
+        console.log("⚠️ CORRECCIÓN tipo_atencion:");
+        console.log("  Original de Gemini:", originalTipoAtencion);
+        console.log("  Corregido por audit:", correctedTipoAtencion);
+        jsonData.extracted.medico_tratante.tipo_atencion = correctedTipoAtencion;
+      }
+    }
+    
     const extractedData: ExtractedData = { ...jsonData.extracted, provider };
     console.log("Provider:", extractedData.provider);
 

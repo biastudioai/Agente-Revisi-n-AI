@@ -182,35 +182,44 @@ SECCIÓN 6 - DATOS DEL MÉDICO (ESTRUCTURA VISUAL):
 
 ⚠️ IMPORTANTE: Esta sección tiene 8 FILAS con distribución específica. Extrae SOLO lo que esté visible.
 
-🔴🔴🔴 PASO OBLIGATORIO: AUDITORÍA VISUAL DE CHECKBOXES 🔴🔴🔴
+🔴🔴🔴 PASO OBLIGATORIO: AUDITORÍA VISUAL DE CHECKBOXES (OBJETO tipo_atencion_audit) 🔴🔴🔴
 
-ANTES de llenar tipo_atencion, DEBES hacer esta verificación visual para CADA checkbox:
+DEBES llenar el objeto tipo_atencion_audit ANTES de construir el array tipo_atencion.
 
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│ CHECKBOX             │ ¿VEO marca visual (X/✓/relleno)? │ INCLUIR EN ARRAY?     │
-├─────────────────────────────────────────────────────────────────────────────────┤
-│ Médico tratante      │ ¿Sí o No?                        │ Solo si "Sí"          │
-│ Cirujano principal   │ ¿Sí o No?                        │ Solo si "Sí"          │
-│ Interconsultante     │ ¿Sí o No?                        │ Solo si "Sí"          │
-│ Equipo quirúrgico    │ ¿Sí o No?                        │ Solo si "Sí"          │
-│ Segunda valoración   │ ¿Sí o No?                        │ Solo si "Sí"          │
-└─────────────────────────────────────────────────────────────────────────────────┘
+Para CADA checkbox, responde la pregunta: "¿VEO una marca visual en esta casilla específica?"
 
-🚨 REGLA ABSOLUTA: Si la casilla de "Interconsultante" está VACÍA → NO incluir "Interconsultante" en el array.
-NO IMPORTA que el documento mencione cirugía, múltiples médicos, o procedimientos complejos.
-SOLO cuenta la marca visual en ESA casilla específica.
-
-EJEMPLO CORRECTO:
-- Si VEO: Médico tratante ☒  Cirujano principal ☒  Interconsultante ☐
-- ENTONCES: tipo_atencion = ["Médico tratante", "Cirujano principal"]
-- Interconsultante está VACÍO → NO lo incluyo
-
-📋 FILA 1: TIPO DE ATENCIÓN AL PACIENTE (CHECKBOXES A LA DERECHA DEL TEXTO)
-En el formulario MetLife, el checkbox está A LA DERECHA de cada opción:
+ESTRUCTURA DEL DOCUMENTO METLIFE - CHECKBOXES A LA DERECHA:
    "Médico tratante" [☐]    "Cirujano principal" [☐]    "Interconsultante" [☐]    "Equipo quirúrgico" [☐]    "Segunda valoración" [☐]
+                     ↑                          ↑                         ↑                        ↑                          ↑
+               (checkbox)                 (checkbox)                 (checkbox)              (checkbox)                  (checkbox)
 
-Campo a extraer:
-- tipo_atencion: Array SOLO con los valores cuyo checkbox tiene marca visual. Casilla vacía = NO incluir.
+CÓMO LLENAR tipo_atencion_audit:
+1. medico_tratante_marcado: ¿Veo X/✓/relleno en el checkbox de "Médico tratante"? → true/false
+2. cirujano_principal_marcado: ¿Veo X/✓/relleno en el checkbox de "Cirujano principal"? → true/false
+3. interconsultante_marcado: ¿Veo X/✓/relleno en el checkbox de "Interconsultante"? → true/false
+   🚨 Si la casilla está VACÍA → DEBE ser false. El contexto clínico NO cuenta.
+4. equipo_quirurgico_marcado: ¿Veo X/✓/relleno en el checkbox de "Equipo quirúrgico"? → true/false
+5. segunda_valoracion_marcado: ¿Veo X/✓/relleno en el checkbox de "Segunda valoración"? → true/false
+
+CÓMO CONSTRUIR tipo_atencion A PARTIR DE tipo_atencion_audit:
+- Si medico_tratante_marcado = true → incluir "Médico tratante"
+- Si cirujano_principal_marcado = true → incluir "Cirujano principal"
+- Si interconsultante_marcado = true → incluir "Interconsultante"
+- Si interconsultante_marcado = false → NO incluir "Interconsultante"
+- (igual para los demás)
+
+EJEMPLO:
+Si veo en el documento: Médico tratante ☒  Cirujano principal ☒  Interconsultante ☐
+
+tipo_atencion_audit = {
+  medico_tratante_marcado: true,
+  cirujano_principal_marcado: true,
+  interconsultante_marcado: false,  ← casilla vacía
+  equipo_quirurgico_marcado: false,
+  segunda_valoracion_marcado: false
+}
+
+tipo_atencion = ["Médico tratante", "Cirujano principal"]  ← SIN Interconsultante
 
 📋 FILA 2: NOMBRE Y ESPECIALIDAD (DOS COLUMNAS)
 ┌──────────────────────────────┬──────────────────────────────┐
@@ -506,10 +515,36 @@ SECCIÓN 7 - FIRMA:
           medico_tratante: {
             type: Type.OBJECT,
             properties: {
+              tipo_atencion_audit: {
+                type: Type.OBJECT,
+                description: "🔴 OBLIGATORIO: Antes de llenar tipo_atencion, DEBES verificar CADA checkbox individualmente. Para cada uno, responde: ¿VEO una marca visual (X, ✓, relleno) EN EL CHECKBOX que está A LA DERECHA de este texto? Responde true SOLO si la casilla tiene marca visible. En MetLife los checkboxes están A LA DERECHA del texto.",
+                properties: {
+                  medico_tratante_marcado: { 
+                    type: Type.BOOLEAN, 
+                    description: "¿El checkbox A LA DERECHA de 'Médico tratante' tiene una marca visual (X/✓/relleno)? true = SÍ veo marca, false = NO veo marca o casilla vacía" 
+                  },
+                  cirujano_principal_marcado: { 
+                    type: Type.BOOLEAN, 
+                    description: "¿El checkbox A LA DERECHA de 'Cirujano principal' tiene una marca visual (X/✓/relleno)? true = SÍ veo marca, false = NO veo marca o casilla vacía" 
+                  },
+                  interconsultante_marcado: { 
+                    type: Type.BOOLEAN, 
+                    description: "🚨 CRÍTICO: ¿El checkbox A LA DERECHA de 'Interconsultante' tiene una marca visual? Si la casilla está VACÍA → false. El hecho de que sea cirugía NO significa que esté marcado. SOLO true si VES físicamente una X, ✓ o relleno EN ESA casilla específica." 
+                  },
+                  equipo_quirurgico_marcado: { 
+                    type: Type.BOOLEAN, 
+                    description: "¿El checkbox A LA DERECHA de 'Equipo quirúrgico' tiene una marca visual (X/✓/relleno)? true = SÍ veo marca, false = NO veo marca o casilla vacía" 
+                  },
+                  segunda_valoracion_marcado: { 
+                    type: Type.BOOLEAN, 
+                    description: "¿El checkbox A LA DERECHA de 'Segunda valoración' tiene una marca visual (X/✓/relleno)? true = SÍ veo marca, false = NO veo marca o casilla vacía" 
+                  }
+                }
+              },
               tipo_atencion: { 
                 type: Type.ARRAY,
                 items: { type: Type.STRING },
-                description: "AUDITORÍA VISUAL OBLIGATORIA: Para CADA opción (Médico tratante, Cirujano principal, Interconsultante, Equipo quirúrgico, Segunda valoración), verifica si su checkbox tiene marca visual. SOLO incluye en el array los que tienen marca (X/✓/relleno). Si Interconsultante tiene casilla VACÍA → NO incluirlo. El contexto clínico (cirugía, procedimientos) NO es evidencia de checkbox marcado."
+                description: "Array construido a partir de tipo_atencion_audit: SOLO incluye los valores donde el campo _marcado correspondiente es true. Si interconsultante_marcado es false → NO incluir 'Interconsultante' en este array."
               },
               nombres: { type: Type.STRING, description: "FILA 2 - Buscar etiqueta 'Nombre completo' - Nombre del médico" },
               especialidad: { type: Type.STRING, description: "FILA 2 - Buscar etiqueta 'Especialidad' - Especialidad médica" },
