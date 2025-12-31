@@ -73,44 +73,62 @@ PARA CUALQUIER CAMPO QUE DEPENDA DE UNA CASILLA MARCADA:
 
 ✅ SOLO extrae lo que VISUALMENTE esté marcado en casillas/checkboxes.
 
-⚠️ EXCEPCIÓN ESPECIAL: TIPO DE PADECIMIENTO (PERMITE MÚLTIPLES VALORES)
+🔴🔴🔴 TIPO DE PADECIMIENTO - AUDITORÍA VISUAL OBLIGATORIA (OBJETO tipo_padecimiento_audit) 🔴🔴🔴
 
-Este es el ÚNICO campo que acepta múltiples casillas marcadas:
+Este campo acepta MÚLTIPLES casillas marcadas. DEBES llenar tipo_padecimiento_audit ANTES de construir el array.
 
-📋 EJEMPLO VISUAL 1:
-SI VES ESTO en el documento:
-   ☑ Congénito    ☐ Adquirido
-   ☑ Agudo        ☐ Crónico
+ESTRUCTURA DEL DOCUMENTO METLIFE - CHECKBOXES A LA DERECHA:
+   "Congénito" [☐]      "Adquirido" [☐]
+   "Agudo" [☐]          "Crónico" [☐]
+              ↑                    ↑
+        (checkbox)           (checkbox)
 
-✅ ENTONCES extrae: ["Congénito", "Agudo"]
+CÓMO LLENAR tipo_padecimiento_audit:
+1. congenito_marcado: ¿Veo X/✓/relleno en el checkbox de "Congénito"? → true/false
+2. adquirido_marcado: ¿Veo X/✓/relleno en el checkbox de "Adquirido"? → true/false
+3. agudo_marcado: ¿Veo X/✓/relleno en el checkbox de "Agudo"? → true/false
+4. cronico_marcado: ¿Veo X/✓/relleno en el checkbox de "Crónico"? → true/false
 
-📋 EJEMPLO VISUAL 2:
-SI VES ESTO:
-   ☐ Congénito    ☑ Adquirido
-   ☐ Agudo        ☑ Crónico
+CÓMO CONSTRUIR tipo_padecimiento A PARTIR DE tipo_padecimiento_audit:
+- Si congenito_marcado = true → incluir "Congénito"
+- Si adquirido_marcado = true → incluir "Adquirido"
+- Si agudo_marcado = true → incluir "Agudo"
+- Si cronico_marcado = true → incluir "Crónico"
 
-✅ ENTONCES extrae: ["Adquirido", "Crónico"]
+📋 EJEMPLO 1 - DOS CASILLAS MARCADAS:
+Si veo en el documento: Congénito ☐  Adquirido ☒  Agudo ☒  Crónico ☐
 
-📋 EJEMPLO VISUAL 3:
-SI VES ESTO:
-   ☑ Congénito    ☐ Adquirido
-   ☐ Agudo        ☐ Crónico
+tipo_padecimiento_audit = {
+  congenito_marcado: false,
+  adquirido_marcado: true,   ← tiene marca
+  agudo_marcado: true,       ← tiene marca
+  cronico_marcado: false
+}
 
-✅ ENTONCES extrae: ["Congénito"]
+tipo_padecimiento = ["Adquirido", "Agudo"]  ← AMBOS incluidos
 
-📋 EJEMPLO VISUAL 4:
-SI VES ESTO (ninguna marcada):
-   ☐ Congénito    ☐ Adquirido
-   ☐ Agudo        ☐ Crónico
+📋 EJEMPLO 2 - UNA CASILLA MARCADA:
+Si veo: Congénito ☒  Adquirido ☐  Agudo ☐  Crónico ☐
 
-✅ ENTONCES extrae: [] (array vacío)
+tipo_padecimiento_audit = {
+  congenito_marcado: true,
+  adquirido_marcado: false,
+  agudo_marcado: false,
+  cronico_marcado: false
+}
 
-🚫 NO HAGAS ESTO:
-❌ Ver "Congénito, Agudo" marcados → extraer solo ["Congénito"]
-❌ Ver solo "Adquirido" marcado → inferir ["Adquirido", "Crónico"]
-❌ Ver ninguna marcada → inferir basándote en el diagnóstico
+tipo_padecimiento = ["Congénito"]
 
-RECUERDA: tipo_padecimiento es un ARRAY de strings, NO un string separado por comas.
+📋 EJEMPLO 3 - NINGUNA MARCADA:
+tipo_padecimiento_audit = { congenito_marcado: false, adquirido_marcado: false, agudo_marcado: false, cronico_marcado: false }
+tipo_padecimiento = []
+
+🚫 ERRORES COMUNES A EVITAR:
+❌ Ver Adquirido ☒ y Agudo ☒ → extraer solo ["Agudo"] ← INCORRECTO, FALTA "Adquirido"
+❌ Ver solo Adquirido ☒ → inferir ["Adquirido", "Crónico"] ← INCORRECTO, NO INFERIR
+❌ Ignorar una de las marcas porque "no tiene sentido clínicamente" ← INCORRECTO
+
+RECUERDA: tipo_padecimiento es un ARRAY que puede tener 0, 1, 2, 3 o 4 elementos según cuántas casillas estén marcadas.
 
 INSTRUCCIONES DE EXTRACCIÓN PARA METLIFE (ALTA PRIORIDAD):
 
@@ -390,10 +408,32 @@ SECCIÓN 7 - FIRMA:
             properties: {
               descripcion: { type: Type.STRING, description: "Signos, síntomas y evolución" },
               fecha_inicio: { type: Type.STRING, description: "Fecha inicio síntomas DD/MM/AAAA" },
+              tipo_padecimiento_audit: {
+                type: Type.OBJECT,
+                description: "🔴 OBLIGATORIO: Antes de llenar tipo_padecimiento, DEBES verificar CADA checkbox individualmente. En MetLife, los checkboxes están A LA DERECHA del texto. Responde true SOLO si VES una marca visual (X, ✓, relleno) EN ESA casilla específica.",
+                properties: {
+                  congenito_marcado: { 
+                    type: Type.BOOLEAN, 
+                    description: "¿El checkbox A LA DERECHA de 'Congénito' tiene una marca visual (X/✓/relleno)? true = SÍ veo marca, false = NO veo marca o casilla vacía" 
+                  },
+                  adquirido_marcado: { 
+                    type: Type.BOOLEAN, 
+                    description: "¿El checkbox A LA DERECHA de 'Adquirido' tiene una marca visual (X/✓/relleno)? true = SÍ veo marca, false = NO veo marca o casilla vacía" 
+                  },
+                  agudo_marcado: { 
+                    type: Type.BOOLEAN, 
+                    description: "¿El checkbox A LA DERECHA de 'Agudo' tiene una marca visual (X/✓/relleno)? true = SÍ veo marca, false = NO veo marca o casilla vacía" 
+                  },
+                  cronico_marcado: { 
+                    type: Type.BOOLEAN, 
+                    description: "¿El checkbox A LA DERECHA de 'Crónico' tiene una marca visual (X/✓/relleno)? true = SÍ veo marca, false = NO veo marca o casilla vacía" 
+                  }
+                }
+              },
               tipo_padecimiento: { 
                 type: Type.ARRAY,
                 items: { type: Type.STRING },
-                description: "Array de valores extraídos de casillas marcadas: puede contener ['Congénito', 'Adquirido', 'Agudo', 'Crónico']. SOLO extrae los valores que VES marcados visualmente. Si ninguna casilla está marcada, devuelve array vacío []."
+                description: "Array construido a partir de tipo_padecimiento_audit: SOLO incluye los valores donde el campo _marcado correspondiente es true. Si adquirido_marcado=true y agudo_marcado=true → ['Adquirido', 'Agudo']"
               },
               tiempo_evolucion: { type: Type.STRING, description: "Tiempo de evolución" },
               causa_etiologia: { type: Type.STRING, description: "Causa/etiología del padecimiento" },
