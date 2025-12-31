@@ -127,7 +127,7 @@ const metlifeRealJson = {
             "gineco_descripcion": "",
             "gineco_g": "",
             "gineco_p": "",
-            "historia_clinica_breve": "Dolor abdominal intenso en cuadrante inferior derecho con náuseas y Fiebre.",
+            "historia_clinica_breve": "Dolor abdominal intenso en cuadrante inferior derecho, con náuseas y Fiebre.",
             "otras_afecciones": "",
             "personales_patologicos": "Hipertensión controlada con medicamento"
         },
@@ -141,7 +141,7 @@ const metlifeRealJson = {
             "diagnostico_definitivo": "Apendicitis Aguda",
             "especifique_cual": "",
             "explicacion_incoherencia_cie": "",
-            "fecha_diagnostico": "11/12/2025",
+            "fecha_diagnostico": "11/12/25",
             "fecha_inicio_tratamiento": "11/12/2025",
             "relacionado_con_otro": false
         },
@@ -156,9 +156,9 @@ const metlifeRealJson = {
             "otro_1": {
                 "cedula_especialidad": "1122334",
                 "celular": "5554567890",
-                "email": "Laura@gmail.com",
-                "especialidad": "Enfermería quirúrgica",
-                "nombre": "Cacra Mendoza Ruiz",
+                "email": "laura@gmail.com",
+                "especialidad": "Instrumentista",
+                "nombre": "Laura Mendoza Ruiz",
                 "rfc": "MERL900303GHI"
             },
             "otro_2": {
@@ -170,22 +170,22 @@ const metlifeRealJson = {
                 "rfc": ""
             },
             "primer_ayudante": {
-                "cedula_especialidad": "7654321 Cirugia General",
+                "cedula_especialidad": "7654321",
                 "celular": "5559876543",
                 "email": "carlos@hospitalabc.mx",
                 "nombre": "Carlos Ramiver Soto",
-                "rfc": "RASC8502021EF"
+                "rfc": "RASC850202UEF"
             }
         },
         "exploracion_fisica": {
-            "estudios_laboratorio_gabinete": "Rebote positivo en fosa ilíaca derecha, Labs: Leucocitosis 15,000/mm². Gabinete: Ultrasonido abdominal confirma apéndice inflamado",
-            "resultados": "Rebote positivo en fosa ilíaca derecha, Labs: Leucocitosis 15,000/mm². Gabinete: Ultrasonido abdominal confirma apéndice inflamado"
+            "estudios_laboratorio_gabinete": "Rebote positivo en fosa iliaca derecha. Labs: Leucocitosis 15,000/mm². Gabinete: Ultrasonido abdominal confirma apéndice inflamado.",
+            "resultados": "Rebote positivo en fosa iliaca derecha. Labs: Leucocitosis 15,000/mm². Gabinete: Ultrasonido abdominal confirma apéndice inflamado."
         },
         "firma": {
             "fecha": "18/12/2025",
             "firma_autografa_detectada": true,
-            "lugar": "Godad de México",
-            "nombre_firma": "María Gonzder Heera"
+            "lugar": "Ciudad de México",
+            "nombre_firma": "María Gonzalez Henrra"
         },
         "hospital": {
             "fecha_egreso": "15/12/2025",
@@ -197,7 +197,7 @@ const metlifeRealJson = {
         "identificacion": {
             "causa_atencion": "",
             "edad": "35",
-            "fecha_primera_atencion": "10/12/2025",
+            "fecha_primera_atencion": "10/12/25",
             "nombres": "Juan Pérez Lopez",
             "peso": "80",
             "sexo": "Masculino",
@@ -215,36 +215,53 @@ const metlifeRealJson = {
             "utilizo_insumos": true
         },
         "medico_tratante": {
-            "cedula_especialidad": "5551112222",
-            "cedula_profesional": "5551112222",
-            "celular": "",
+            "cedula_especialidad": "9876543",
+            "cedula_profesional": "9876543",
+            "celular": "5551112222",
             "convenio_aseguradora": true,
             "correo_electronico": "maria.gonzalez@hospitalabc.mx",
             "domicilio_consultorio": "Av. Insurgentes",
-            "especialidad": "Cirugia General",
-            "honorarios_anestesiologo": "7000",
-            "honorarios_ayudante": "4000",
-            "honorarios_cirujano": "15000",
-            "honorarios_otro_1": "2000",
+            "especialidad": "Cirugía General",
+            "honorarios_anestesiologo": "7,000",
+            "honorarios_ayudante": "4,000",
+            "honorarios_cirujano": "15,000",
+            "honorarios_otro_1": "2,000",
             "honorarios_otro_2": "",
             "nombres": "María Gonzalez Henrra",
             "rfc": "GOHM750404JKL",
             "se_ajusta_tabulador": true,
-            "telefono_consultorio": "9876543",
-            "tipo_atencion": "Tratante, Cirujano"
+            "telefono_consultorio": "",
+            "tipo_atencion": [
+                "Cirujano principal",
+                "Médico tratante"
+            ],
+            "tipo_atencion_audit": {
+                "cirujano_principal_marcado": true,
+                "equipo_quirurgico_marcado": false,
+                "interconsultante_marcado": false,
+                "medico_tratante_marcado": true,
+                "segunda_valoracion_marcado": false
+            }
         },
         "padecimiento_actual": {
-            "causa_etiologia": "Infección Bacteriana apéndice",
-            "descripcion": "Dolor abdominal agudo, Fiebre 38.5C, vomito; evolucionó rápidamente a peritonitis localizada",
+            "causa_etiologia": "Infección Bacteriana en apéndice",
+            "descripcion": "Dolor abdominal agudo, Fiebre 38.5°C, vomito; evolucionó rápidamente a peritonitis localizada",
             "estado_actual": "Recuperado, sin dolor",
             "fecha_inicio": "10/12/2025",
             "fecha_probable_alta": "15/12/2025",
             "plan_tratamiento": "",
             "seguira_tratamiento": false,
-            "tiempo_evolucion": "5 dias",
+            "tiempo_evolucion": "5 días",
             "tipo_padecimiento": [
+                "Adquirido",
                 "Agudo"
-            ]
+            ],
+            "tipo_padecimiento_audit": {
+                "adquirido_marcado": true,
+                "agudo_marcado": true,
+                "congenito_marcado": false,
+                "cronico_marcado": false
+            }
         }
     }
 };
