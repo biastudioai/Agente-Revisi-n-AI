@@ -74,6 +74,26 @@ export const analyzeReportImage = async (
       }
     }
     
+    // Post-procesamiento para MetLife: validar tipo_padecimiento con tipo_padecimiento_audit
+    if (provider === 'METLIFE' && jsonData.extracted?.padecimiento_actual?.tipo_padecimiento_audit) {
+      const audit = jsonData.extracted.padecimiento_actual.tipo_padecimiento_audit;
+      const correctedTipoPadecimiento: string[] = [];
+      
+      if (audit.congenito_marcado === true) correctedTipoPadecimiento.push("Congénito");
+      if (audit.adquirido_marcado === true) correctedTipoPadecimiento.push("Adquirido");
+      if (audit.agudo_marcado === true) correctedTipoPadecimiento.push("Agudo");
+      if (audit.cronico_marcado === true) correctedTipoPadecimiento.push("Crónico");
+      
+      // Comparar con lo que Gemini puso en tipo_padecimiento
+      const originalTipoPadecimiento = jsonData.extracted.padecimiento_actual.tipo_padecimiento || [];
+      if (JSON.stringify(originalTipoPadecimiento.sort()) !== JSON.stringify(correctedTipoPadecimiento.sort())) {
+        console.log("⚠️ CORRECCIÓN tipo_padecimiento:");
+        console.log("  Original de Gemini:", originalTipoPadecimiento);
+        console.log("  Corregido por audit:", correctedTipoPadecimiento);
+        jsonData.extracted.padecimiento_actual.tipo_padecimiento = correctedTipoPadecimiento;
+      }
+    }
+    
     const extractedData: ExtractedData = { ...jsonData.extracted, provider };
     console.log("Provider:", extractedData.provider);
 
