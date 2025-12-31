@@ -182,24 +182,35 @@ SECCIÓN 6 - DATOS DEL MÉDICO (ESTRUCTURA VISUAL):
 
 ⚠️ IMPORTANTE: Esta sección tiene 8 FILAS con distribución específica. Extrae SOLO lo que esté visible.
 
-🚨 REGLA CRÍTICA PARA CHECKBOXES EN METLIFE:
-En los formularios MetLife, el checkbox/casilla está SIEMPRE A LA DERECHA del texto de la opción.
-Ejemplo visual real: "Médico tratante ☒" significa que PRIMERO viene el texto, LUEGO la casilla a la derecha.
+🔴🔴🔴 PASO OBLIGATORIO: AUDITORÍA VISUAL DE CHECKBOXES 🔴🔴🔴
+
+ANTES de llenar tipo_atencion, DEBES hacer esta verificación visual para CADA checkbox:
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ CHECKBOX             │ ¿VEO marca visual (X/✓/relleno)? │ INCLUIR EN ARRAY?     │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│ Médico tratante      │ ¿Sí o No?                        │ Solo si "Sí"          │
+│ Cirujano principal   │ ¿Sí o No?                        │ Solo si "Sí"          │
+│ Interconsultante     │ ¿Sí o No?                        │ Solo si "Sí"          │
+│ Equipo quirúrgico    │ ¿Sí o No?                        │ Solo si "Sí"          │
+│ Segunda valoración   │ ¿Sí o No?                        │ Solo si "Sí"          │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+🚨 REGLA ABSOLUTA: Si la casilla de "Interconsultante" está VACÍA → NO incluir "Interconsultante" en el array.
+NO IMPORTA que el documento mencione cirugía, múltiples médicos, o procedimientos complejos.
+SOLO cuenta la marca visual en ESA casilla específica.
+
+EJEMPLO CORRECTO:
+- Si VEO: Médico tratante ☒  Cirujano principal ☒  Interconsultante ☐
+- ENTONCES: tipo_atencion = ["Médico tratante", "Cirujano principal"]
+- Interconsultante está VACÍO → NO lo incluyo
 
 📋 FILA 1: TIPO DE ATENCIÓN AL PACIENTE (CHECKBOXES A LA DERECHA DEL TEXTO)
-Estructura visual REAL del formulario MetLife:
-   Médico tratante ☐    Cirujano principal ☐    Interconsultante ☐    Equipo quirúrgico ☐    Segunda valoración ☐
-                   ↑                       ↑                    ↑                      ↑                        ↑
-            (checkbox)              (checkbox)            (checkbox)            (checkbox)              (checkbox)
-
-🚨 REGLA ANTI-INFERENCIA PARA tipo_atencion:
-❌ "El documento menciona cirugía/apendicectomía" → NO marques automáticamente "Interconsultante"
-❌ "Es un caso quirúrgico complejo" → NO marques automáticamente todos los roles
-❌ "Hay equipo quirúrgico en otra sección" → NO marques "Equipo quirúrgico" a menos que VEA la casilla marcada
-✅ SOLO marca un valor si VES físicamente una X, ✓ o casilla rellena EN ESA POSICIÓN ESPECÍFICA
+En el formulario MetLife, el checkbox está A LA DERECHA de cada opción:
+   "Médico tratante" [☐]    "Cirujano principal" [☐]    "Interconsultante" [☐]    "Equipo quirúrgico" [☐]    "Segunda valoración" [☐]
 
 Campo a extraer:
-- tipo_atencion: Array de valores marcados. SOLO extrae las casillas con marca visual (X, ✓, relleno). Si todas vacías → []
+- tipo_atencion: Array SOLO con los valores cuyo checkbox tiene marca visual. Casilla vacía = NO incluir.
 
 📋 FILA 2: NOMBRE Y ESPECIALIDAD (DOS COLUMNAS)
 ┌──────────────────────────────┬──────────────────────────────┐
@@ -211,47 +222,52 @@ Campos a extraer:
 - nombres: Nombre completo del médico (columna izquierda)
 - especialidad: Especialidad médica (columna derecha)
 
-📋 FILA 3: DOMICILIO Y TELÉFONO CONSULTORIO (DOS COLUMNAS SEPARADAS)
+🔴🔴🔴 PASO OBLIGATORIO: EXTRACCIÓN SECUENCIAL POR ETIQUETA 🔴🔴🔴
+
+Para evitar confusión entre campos, DEBES seguir las ETIQUETAS del formulario EN ORDEN:
+
+PASO 1 - Busca la etiqueta "Domicilio consultorio" → extrae el texto de esa línea → domicilio_consultorio
+PASO 2 - Busca la etiqueta "Teléfono del consultorio" → extrae las cuadrículas de ESA MISMA FILA → telefono_consultorio
+         ⚠️ Si las cuadrículas están vacías o no tienen dígitos → telefono_consultorio = ""
+PASO 3 - Busca la etiqueta "Cédula profesional especialidad" → extrae el número → cedula_profesional  
+PASO 4 - Busca la etiqueta "Número celular" → extrae las cuadrículas de ESA FILA → celular
+PASO 5 - Busca la etiqueta "Registro Federal de Contribuyentes" → extrae las cuadrículas → rfc
+
+📋 FILA 3: DOMICILIO Y TELÉFONO CONSULTORIO
 ┌─────────────────────────────────────┬──────────────────────────────────────┐
-│ Domicilio consultorio               │ Teléfono del consultorio             │
-│ (LÍNEA CONTINUA para escribir)      │ (CUADRÍCULAS NUMÉRICAS: 10 dígitos)  │
-│ Ej: "Av. Insurgentes"               │ Ej: [5][5][5][1][1][1][2][2][2][2]   │
+│ ETIQUETA: "Domicilio consultorio"   │ ETIQUETA: "Teléfono del consultorio" │
+│ (línea para escribir texto)         │ (cuadrículas - pueden estar VACÍAS)  │
+│ Ej: "Av. Insurgentes"               │ Ej: [_][_][_][_][_][_][_][_][_][_]   │
 └─────────────────────────────────────┴──────────────────────────────────────┘
 
-⚠️ IMPORTANTE FILA 3:
-- telefono_consultorio: Está en la COLUMNA DERECHA de esta fila. Son cuadrículas individuales para cada dígito.
-- El formato esperado es un número de 10 dígitos (teléfono mexicano).
-- NO confundir con campos de otras filas.
+Campos de FILA 3:
+- domicilio_consultorio: Texto bajo "Domicilio consultorio"
+- telefono_consultorio: Dígitos bajo "Teléfono del consultorio". Si cuadrículas vacías → ""
 
-Campos a extraer:
-- domicilio_consultorio: Dirección del consultorio (columna izquierda, línea continua para texto)
-- telefono_consultorio: Número de teléfono del consultorio (columna derecha, cuadrículas de 10 dígitos)
+📋 FILA 4: CÉDULA, CELULAR Y RFC (ES UNA FILA DIFERENTE, MÁS ABAJO)
+┌────────────────────────────────┬────────────────────────────────┬────────────────────────────────┐
+│ ETIQUETA: "Cédula profesional  │ ETIQUETA: "Número celular"     │ ETIQUETA: "Registro Federal    │
+│ especialidad"                  │                                │ de Contribuyentes"             │
+│ (7-8 dígitos, línea continua)  │ (10 dígitos en cuadrículas)    │ (13 caracteres alfanuméricos)  │
+│ Ej: "9876543"                  │ Ej: [5][5][5][1][1][1][2][2]...│ Ej: [G][O][H][M][7][5][0]...   │
+└────────────────────────────────┴────────────────────────────────┴────────────────────────────────┘
 
-📋 FILA 4: CÉDULA PROFESIONAL DE ESPECIALIDAD, NÚMERO CELULAR Y RFC (TRES COLUMNAS SEPARADAS)
-┌──────────────────────────┬──────────────────────────┬──────────────────────────┐
-│ Cédula profesional       │ Número celular           │ Registro Federal de      │
-│ especialidad             │                          │ Contribuyentes           │
-│ (LÍNEA CONTINUA:         │ (CUADRÍCULAS NUMÉRICAS:  │ (CUADRÍCULAS             │
-│  7-8 dígitos)            │  10 dígitos)             │  ALFANUMÉRICAS: 13 car.) │
-│ Ej: "9876543"            │ Ej: [5][5][5][1][1][1]...│ Ej: [G][O][H][M]...      │
-└──────────────────────────┴──────────────────────────┴──────────────────────────┘
+Campos de FILA 4:
+- cedula_profesional: Número bajo "Cédula profesional especialidad" (7-8 dígitos)
+- celular: Dígitos bajo "Número celular" (10 dígitos en cuadrículas)
+- rfc: Caracteres bajo "Registro Federal de Contribuyentes" (13 caracteres)
 
-⚠️ IMPORTANTE FILA 4:
-- cedula_profesional: Campo de la COLUMNA IZQUIERDA. Es la cédula de especialidad (7-8 dígitos).
-- celular: Campo de la COLUMNA CENTRAL. Cuadrículas para número de 10 dígitos.
-- rfc: Campo de la COLUMNA DERECHA. Cuadrículas alfanuméricas (13 caracteres).
+🚨🚨🚨 ERROR CRÍTICO QUE DEBES EVITAR 🚨🚨🚨
 
-🚨 ERROR COMÚN A EVITAR:
-❌ NO pongas el valor de cedula_profesional (ej: "9876543") en telefono_consultorio
-❌ NO pongas el valor de telefono_consultorio (ej: "5551112222") en cedula_profesional
-✅ Respeta la FILA donde está cada campo:
-   - FILA 3 = domicilio + teléfono consultorio
-   - FILA 4 = cédula profesional especialidad + celular + RFC
+❌ INCORRECTO: Poner el valor de "Número celular" (5551112222) en telefono_consultorio
+❌ INCORRECTO: Dejar celular vacío cuando hay dígitos bajo "Número celular"
 
-Campos a extraer:
-- cedula_profesional: Cédula profesional de especialidad (FILA 4, columna izquierda, línea continua, ~7-8 dígitos)
-- celular: Número celular (FILA 4, columna centro, cuadrículas individuales, 10 dígitos)
-- rfc: RFC del médico (FILA 4, columna derecha, cuadrículas alfanuméricas, 13 caracteres)
+✅ CORRECTO: 
+- Si "Teléfono del consultorio" (FILA 3) está vacío → telefono_consultorio = ""
+- Si "Número celular" (FILA 4) tiene dígitos (5551112222) → celular = "5551112222"
+
+RECUERDA: "Teléfono del consultorio" y "Número celular" son DOS CAMPOS DIFERENTES en FILAS DIFERENTES.
+Sigue las ETIQUETAS, no asumas qué valor va en qué campo.
 
 📋 FILA 5: CORREO ELECTRÓNICO (LÍNEA COMPLETA)
 ┌────────────────────────────────────────────────────────────┐
@@ -493,16 +509,16 @@ SECCIÓN 7 - FIRMA:
               tipo_atencion: { 
                 type: Type.ARRAY,
                 items: { type: Type.STRING },
-                description: "FILA 1 - Array de checkboxes marcados. REGLA ESTRICTA: SOLO incluye un valor si VES físicamente una marca (X, ✓, relleno) en el checkbox que está A LA DERECHA de ese texto. NO inferir por contexto clínico. Ej: Si solo 'Médico tratante' y 'Cirujano principal' tienen marca visual → ['Médico tratante', 'Cirujano principal']. Si 'Interconsultante' NO tiene marca visual → NO lo incluyas aunque sea un caso quirúrgico."
+                description: "AUDITORÍA VISUAL OBLIGATORIA: Para CADA opción (Médico tratante, Cirujano principal, Interconsultante, Equipo quirúrgico, Segunda valoración), verifica si su checkbox tiene marca visual. SOLO incluye en el array los que tienen marca (X/✓/relleno). Si Interconsultante tiene casilla VACÍA → NO incluirlo. El contexto clínico (cirugía, procedimientos) NO es evidencia de checkbox marcado."
               },
-              nombres: { type: Type.STRING, description: "FILA 2 izquierda - Nombre completo del médico" },
-              especialidad: { type: Type.STRING, description: "FILA 2 derecha - Especialidad médica" },
-              domicilio_consultorio: { type: Type.STRING, description: "FILA 3 izquierda - Domicilio del consultorio (línea continua de texto)" },
-              telefono_consultorio: { type: Type.STRING, description: "FILA 3 derecha - Teléfono del consultorio (cuadrículas numéricas, 10 dígitos). NO confundir con cédula profesional que está en FILA 4." },
-              cedula_profesional: { type: Type.STRING, description: "FILA 4 izquierda - Cédula profesional de especialidad (línea continua, 7-8 dígitos). Este es el campo 'Cédula profesional especialidad' del formulario." },
-              cedula_especialidad: { type: Type.STRING, description: "Alias de cedula_profesional - usar el mismo valor que cedula_profesional" },
-              celular: { type: Type.STRING, description: "FILA 4 centro - Número celular (cuadrículas numéricas, 10 dígitos)" },
-              rfc: { type: Type.STRING, description: "FILA 4 derecha - RFC del médico (cuadrículas alfanuméricas, 13 caracteres)" },
+              nombres: { type: Type.STRING, description: "FILA 2 - Buscar etiqueta 'Nombre completo' - Nombre del médico" },
+              especialidad: { type: Type.STRING, description: "FILA 2 - Buscar etiqueta 'Especialidad' - Especialidad médica" },
+              domicilio_consultorio: { type: Type.STRING, description: "FILA 3 - Buscar etiqueta 'Domicilio consultorio' - Dirección del consultorio" },
+              telefono_consultorio: { type: Type.STRING, description: "FILA 3 - Buscar etiqueta 'Teléfono del consultorio' - Cuadrículas en la MISMA fila que domicilio. Si cuadrículas vacías → ''. NO CONFUNDIR con 'Número celular' que está en FILA 4." },
+              cedula_profesional: { type: Type.STRING, description: "FILA 4 - Buscar etiqueta 'Cédula profesional especialidad' - Número de 7-8 dígitos" },
+              cedula_especialidad: { type: Type.STRING, description: "Mismo valor que cedula_profesional" },
+              celular: { type: Type.STRING, description: "FILA 4 - Buscar etiqueta 'Número celular' - Cuadrículas de 10 dígitos (ej: 5551112222). Este es DIFERENTE de 'Teléfono del consultorio'. Si hay dígitos bajo esta etiqueta → extraerlos aquí." },
+              rfc: { type: Type.STRING, description: "FILA 4 - Buscar etiqueta 'Registro Federal de Contribuyentes' - 13 caracteres alfanuméricos" },
               correo_electronico: { type: Type.STRING, description: "Correo electrónico" },
               convenio_aseguradora: { type: Type.BOOLEAN, description: "¿Tiene convenio con aseguradora?" },
               se_ajusta_tabulador: { type: Type.BOOLEAN, description: "¿Acepta tabuladores de pago?" },
