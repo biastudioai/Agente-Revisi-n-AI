@@ -9,7 +9,7 @@ export const REGLAS_GNP: ScoringRule[] = [
     description: 'GNP requiere signos vitales (Presión/Temperatura) para el dictamen.',
     providerTarget: 'GNP',
     validator: (data) => !data.signos_vitales?.presion_arterial || !data.signos_vitales?.temperatura,
-    affectedFields: ['signos_vitales.presion_arterial']
+    affectedFields: ['signos_vitales.presion_arterial', 'signos_vitales.temperatura']
   },
   {
     id: 'gnp_cedula',
@@ -37,6 +37,6 @@ export const REGLAS_GNP: ScoringRule[] = [
       if (!esHospitalario) return false;
       return !data.hospital?.fecha_ingreso || !data.hospital?.fecha_egreso;
     },
-    affectedFields: ['hospital.fecha_ingreso', 'hospital.fecha_egreso']
+    affectedFields: ['hospital.fecha_ingreso', 'hospital.fecha_egreso', 'hospital.tipo_estancia']
   }
 ];

@@ -19,7 +19,7 @@ export const REGLAS_METLIFE: ScoringRule[] = [
     description: 'Faltan datos en secciones clave (Antecedentes o Padecimiento).',
     providerTarget: 'METLIFE',
     validator: (data) => !data.antecedentes?.historia_clinica_breve?.trim() || !data.padecimiento_actual?.descripcion?.trim(),
-    affectedFields: ['antecedentes.historia_clinica_breve']
+    affectedFields: ['antecedentes.historia_clinica_breve', 'padecimiento_actual.descripcion']
   },
   {
     id: 'metlife_codigo_cie',

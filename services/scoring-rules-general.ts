@@ -19,7 +19,7 @@ export const REGLAS_GENERALES: ScoringRule[] = [
     description: 'El código CIE-10 no corresponde al diagnóstico escrito.',
     providerTarget: 'ALL',
     validator: (data) => data.diagnostico?.cie_coherente_con_texto === false,
-    affectedFields: ['diagnostico.codigo_cie']
+    affectedFields: ['diagnostico.codigo_cie', 'diagnostico.diagnostico_definitivo']
   },
   {
     id: 'firma_faltante',
@@ -29,6 +29,6 @@ export const REGLAS_GENERALES: ScoringRule[] = [
     description: 'El informe debe contener la firma autógrafa del médico tratante.',
     providerTarget: 'ALL',
     validator: (data) => !data.firma?.firma_autografa_detectada,
-    affectedFields: ['firma.firma_autografa_detectada']
+    affectedFields: ['firma.firma_autografa_detectada', 'firma.nombre_firma']
   }
 ];
