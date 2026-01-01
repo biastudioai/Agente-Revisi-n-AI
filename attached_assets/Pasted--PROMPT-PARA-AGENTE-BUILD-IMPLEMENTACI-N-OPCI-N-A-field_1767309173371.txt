@@ -1,0 +1,229 @@
+📋 PROMPT PARA AGENTE BUILD: IMPLEMENTACIÓN OPCIÓN A (fieldMappings)
+🎯 OBJETIVO
+Implementar el sistema de mapeo manual por aseguradora (Opción A) que permite:
+
+Una regla puede aplicar a múltiples aseguradoras
+Cada aseguradora puede tener paths diferentes para el mismo campo
+Definición manual de fieldMappings por aseguradora en la UI
+📊 CONTEXTO DEL CÓDIGO ACTUAL
+Estado Actual de las Reglas
+✅ Las reglas hardcoded YA fueron migradas a conditions
+✅ Existe estructura ScoringRule con providerTarget (string único)
+✅ Existe rule-validator.ts que evalúa condiciones
+❌ NO soporta múltiples aseguradoras en una sola regla
+❌ NO existe mapeo de paths por aseguradora
+Archivos Involucrados
+types.ts - Definición de ScoringRule
+services/rule-validator.ts - Lógica de validación
+components/RuleEditor.tsx - UI para crear/editar reglas
+components/RuleConfigurator.tsx - Lista de reglas
+🔧 CAMBIOS NECESARIOS
+1️⃣ ACTUALIZAR types.ts (CRÍTICO)
+Cambiar:
+
+providerTarget: 'ALL' | 'GNP' | 'METLIFE';
+Por:
+
+providerTargets: string[]; // ['GNP', 'METLIFE', 'AXA']
+fieldMappings?: { 
+  [provider: string]: string[]; // { GNP: ['signos_vitales.peso'], METLIFE: ['identificacion.peso'] }
+};
+IMPORTANTE: Mantener retrocompatibilidad con reglas antiguas que usen providerTarget (migrarlas automáticamente en runtime).
+
+2️⃣ ACTUALIZAR rule-validator.ts
+Modificar validateCondition() para usar fieldMappings:
+
+// PSEUDOCÓDIGO - TÚ implementas la versión final
+export function validateCondition(
+  cond: RuleCondition, 
+  data: ExtractedData,
+  fieldMappings?: { [provider: string]: string[] } // NUEVO parámetro
+): boolean {
+  // 1. Determinar qué path usar según la aseguradora
+  let fieldPath = cond.field; // Default
+  
+  if (fieldMappings && data.provider && fieldMappings[data.provider]) {
+    // Usar el path específico de la aseguradora
+    fieldPath = fieldMappings[data.provider][0]; // Primer path del mapeo
+  }
+  
+  // 2. Extraer valor usando el path correcto
+  const fieldValue = getNestedField(data, fieldPath);
+  
+  // 3. Evaluar operador (igual que antes)
+  switch (cond.operator) {
+    case 'IS_EMPTY': return isEmpty(fieldValue);
+    // ... resto de operadores
+  }
+}
+Modificar validateRule() para pasar fieldMappings:
+
+export function validateRule(rule: ScoringRule, data: ExtractedData): boolean {
+  // ... código existente ...
+  
+  const results = rule.conditions.map(cond => 
+    validateCondition(cond, data, rule.fieldMappings) // NUEVO parámetro
+  );
+  
+  // ... resto igual ...
+}
+3️⃣ ACTUALIZAR RuleEditor.tsx (UI)
+Agregar sección de selección de aseguradoras:
+
+// Estado para aseguradoras seleccionadas
+const [selectedProviders, setSelectedProviders] = useState<string[]>(['ALL']);
+const [fieldMappingsState, setFieldMappingsState] = useState<{ [provider: string]: string[] }>({});
+// Checkboxes para seleccionar aseguradoras
+<div className="col-span-2">
+  <label className="block text-xs font-bold text-slate-600 mb-1.5">
+    Aplica a Aseguradoras (selecciona múltiples)
+  </label>
+  <div className="flex flex-wrap gap-2">
+    {['ALL', 'GNP', 'METLIFE'].map((provider) => (
+      <label key={provider} className="flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer hover:bg-slate-50">
+        <input
+          type="checkbox"
+          checked={selectedProviders.includes(provider)}
+          onChange={(e) => {
+            if (e.target.checked) {
+              setSelectedProviders([...selectedProviders, provider]);
+            } else {
+              setSelectedProviders(selectedProviders.filter(p => p !== provider));
+            }
+          }}
+        />
+        <span className="text-sm font-medium">{provider}</span>
+      </label>
+    ))}
+  </div>
+</div>
+Agregar sección de mapeo de paths (SOLO si hay múltiples aseguradoras seleccionadas):
+
+{selectedProviders.length > 1 && selectedProviders[0] !== 'ALL' && (
+  <div className="col-span-2 border-t pt-4">
+    <h4 className="text-sm font-bold text-slate-700 mb-3">
+      Paths por Aseguradora
+    </h4>
+    <p className="text-xs text-slate-500 mb-3">
+      Define dónde buscar el campo en cada aseguradora seleccionada
+    </p>
+    
+    {selectedProviders.map(provider => (
+      <div key={provider} className="mb-3">
+        <label className="block text-xs font-bold text-slate-600 mb-1">
+          {provider}
+        </label>
+        <input
+          type="text"
+          value={fieldMappingsState[provider]?.[0] || ''}
+          onChange={(e) => {
+            setFieldMappingsState({
+              ...fieldMappingsState,
+              [provider]: [e.target.value]
+            });
+          }}
+          placeholder={`ej: signos_vitales.peso`}
+          className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+        />
+      </div>
+    ))}
+  </div>
+)}
+Al guardar la regla:
+
+const newRule: ScoringRule = {
+  // ... campos existentes ...
+  providerTargets: selectedProviders,
+  fieldMappings: selectedProviders.length > 1 ? fieldMappingsState : undefined,
+  // ...
+};
+4️⃣ ACTUALIZAR RuleConfigurator.tsx
+Modificar el filtro de reglas para soportar arrays:
+
+const filteredRules = useMemo(() => {
+  if (activeTab === 'generales') {
+    return rules.filter(r => 
+      r.providerTargets?.includes('ALL') || r.providerTarget === 'ALL'
+    );
+  } else {
+    return rules.filter(r => 
+      r.providerTargets?.includes(selectedProvider) || r.providerTarget === selectedProvider
+    );
+  }
+}, [rules, activeTab, selectedProvider]);
+Actualizar badge de aseguradora para mostrar múltiples:
+
+const getProviderBadge = (rule: ScoringRule) => {
+  const targets = rule.providerTargets || [rule.providerTarget];
+  
+  if (targets.includes('ALL')) {
+    return <span className="...">GENERAL</span>;
+  }
+  
+  // Mostrar múltiples badges si aplica a varias aseguradoras
+  return (
+    <div className="flex gap-1 flex-wrap">
+      {targets.map(target => (
+        <span key={target} className="px-2 py-0.5 text-[10px] font-bold rounded-full ...">
+          {target}
+        </span>
+      ))}
+    </div>
+  );
+};
+✅ CRITERIOS DE ÉXITO
+✅ Al crear una regla, puedes seleccionar múltiples aseguradoras con checkboxes
+✅ Si seleccionas múltiples, aparece sección para definir paths por aseguradora
+✅ La regla se guarda con providerTargets: string[] y fieldMappings
+✅ El validador usa el path correcto según data.provider
+✅ En RuleConfigurator, las reglas multi-aseguradora muestran múltiples badges
+✅ El sistema es retrocompatible con reglas antiguas (providerTarget único)
+🚨 CONSIDERACIONES IMPORTANTES
+Retrocompatibilidad
+Las reglas antiguas con providerTarget (string) deben seguir funcionando
+Convierte providerTarget a providerTargets: [providerTarget] en runtime si es necesario
+UX/UI Sencilla
+NO mostrar la sección de fieldMappings si solo hay 1 aseguradora seleccionada
+Si seleccionan 'ALL', desmarcar las demás automáticamente
+Validación
+Si fieldMappings está definido pero falta un provider seleccionado, mostrar error
+Validar que los paths en fieldMappings existan en AVAILABLE_FIELDS
+📝 MEJORES PRÁCTICAS
+Simplicidad primero: No sobre-ingenierizar, implementa lo mínimo viable
+Feedback visual: Muestra claramente qué aseguradoras están seleccionadas
+Autocomplete: Usa el mismo sistema de búsqueda de campos que ya existe
+Preview funcional: El preview debe usar el path correcto según la aseguradora del reporte cargado
+🎯 RESULTADO ESPERADO
+Ejemplo de regla creada:
+
+{
+  id: 'peso_faltante',
+  name: 'Peso del Paciente Faltante',
+  level: 'IMPORTANTE',
+  points: 10,
+  description: 'El peso es necesario para cálculo de dosis',
+  providerTargets: ['GNP', 'METLIFE'], // Array de aseguradoras
+  fieldMappings: {
+    GNP: ['signos_vitales.peso'],
+    METLIFE: ['identificacion.peso']
+  },
+  conditions: [
+    { id: 'cond_1', field: 'placeholder', operator: 'IS_EMPTY' }
+  ],
+  logicOperator: 'AND',
+  affectedFields: ['signos_vitales.peso', 'identificacion.peso'],
+  isCustom: true
+}
+Cuando se evalúa en un informe GNP:
+
+El sistema busca en informe.signos_vitales.peso
+Cuando se evalúa en un informe METLIFE:
+
+El sistema busca en informe.identificacion.peso
+💬 NOTA FINAL PARA EL AGENTE
+Este sistema está diseñado para escalar a 10+ aseguradoras. Si tienes una forma más óptima o eficiente de implementarlo, tienes total libertad para proponer mejoras. Lo importante es que:
+
+✅ Soporte múltiples aseguradoras en una regla
+✅ Permita paths diferentes por aseguradora
+✅ Sea retrocompatible
+✅ La UI sea sencilla y clara

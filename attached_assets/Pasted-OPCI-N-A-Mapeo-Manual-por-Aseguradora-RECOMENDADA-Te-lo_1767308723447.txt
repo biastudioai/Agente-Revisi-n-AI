@@ -1,0 +1,118 @@
+OPCIÓN A: Mapeo Manual por Aseguradora (RECOMENDADA)
+Te lo explico con un ejemplo concreto:
+
+1. Creas una regla desde la UI:
+
+Nombre: "Peso del Paciente Faltante"
+Aplica a: [GNP, METLIFE, AXA]
+2. El sistema te pide que definas dónde buscar el peso para cada aseguradora:
+
+{
+  id: 'peso_faltante',
+  name: 'Peso del Paciente Faltante',
+  providerTargets: ['GNP', 'METLIFE', 'AXA'], // Array, no solo una
+  
+  // NUEVO: Mapeo específico por aseguradora
+  fieldMappings: {
+    GNP: ['signos_vitales.peso'],
+    METLIFE: ['identificacion.peso'],
+    AXA: ['datos_paciente.peso_kg']
+  }
+}
+3. Cuando el sistema evalúa la regla:
+
+// Pseudocódigo simplificado
+function evaluarRegla(regla, informe) {
+  const aseguradora = informe.provider; // "GNP"
+  
+  // Busca el path correcto para esa aseguradora
+  const pathsParaBuscar = regla.fieldMappings[aseguradora];
+  // pathsParaBuscar = ['signos_vitales.peso']
+  
+  // Valida usando el path correcto
+  const pesoExiste = informe.signos_vitales?.peso;
+  
+  if (!pesoExiste) {
+    return { falla: true, mensaje: "Falta el peso" };
+  }
+}
+🖥️ Cómo Se Vería en la UI (RuleEditor)
+Cuando creas/editas una regla con múltiples aseguradoras, aparecería algo así:
+
+┌─────────────────────────────────────────────┐
+│ Aplica a Aseguradora:                       │
+│ [✓] GNP  [✓] METLIFE  [✓] AXA  [ ] MAPFRE  │
+└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│ Paths por Aseguradora:                      │
+├─────────────────────────────────────────────┤
+│ GNP:      signos_vitales.peso               │
+│ METLIFE:  identificacion.peso               │
+│ AXA:      datos_paciente.peso_kg            │
+└─────────────────────────────────────────────┘
+Tú defines manualmente dónde buscar el campo en cada aseguradora. El sistema no "adivina", tú le dices explícitamente.
+
+⚖️ Pros y Contras
+✅ PROS:
+Total flexibilidad: Funciona con 10+ aseguradoras, aunque todas usen paths diferentes
+Control total: Tú decides exactamente qué validar en cada aseguradora
+Reutilización: Una sola regla sirve para múltiples aseguradoras
+Mantenible: Si una aseguradora cambia su formato, solo actualizas el path en esa regla
+❌ CONTRAS:
+Configuración inicial manual: Al crear una regla para 3 aseguradoras, tienes que definir 3 paths
+Más campos en la UI: El editor de reglas será más complejo (pero manejable)
+No funcionan las reglas antiguas: Las reglas hardcoded actuales (validator functions) necesitan migración
+🚀 ¿Es Técnicamente Viable? SÍ, 100%
+Impacto en Rendimiento:
+
+✅ MÍNIMO: Solo es un lookup en un objeto JavaScript
+✅ El sistema NO se vuelve más lento
+✅ La lógica de validación sigue siendo igual de rápida
+Cambios necesarios:
+
+types.ts: Cambiar providerTarget a providerTargets: string[] y agregar fieldMappings
+RuleEditor.tsx: Agregar UI para definir paths por aseguradora
+rule-validator.ts: Actualizar validateRule() para usar fieldMappings
+RuleConfigurator.tsx: Actualizar badges para mostrar múltiples aseguradoras
+📊 Comparación de Opciones
+Aspecto	OPCIÓN A (fieldMappings)	OPCIÓN B (solo paths iguales)
+Flexibilidad	✅ Total	❌ Limitada
+Paths diferentes	✅ Soporta	❌ No soporta
+Configuración	⚠️ Manual	✅ Automática
+10+ aseguradoras	✅ Escalable	❌ Crea muchas reglas
+Mantenimiento	✅ Fácil	⚠️ Duplicación
+💡 Mi Recomendación Final
+IMPLEMENTAR OPCIÓN A porque:
+
+✅ Resuelve tu caso real: 10 aseguradoras con paths diferentes
+✅ No afecta rendimiento: Es solo un objeto de lookup
+✅ Escalable: Agregar una aseguradora nueva es fácil
+✅ Mantenible: Cambiar un path es editar un solo lugar
+Ejemplo práctico de uso:
+
+// Creas UNA regla que aplica a 3 aseguradoras
+{
+  name: "RFC Médico Faltante",
+  providerTargets: ['GNP', 'METLIFE', 'AXA'],
+  fieldMappings: {
+    GNP: ['medico_tratante.rfc'],
+    METLIFE: ['medico_tratante.rfc'],
+    AXA: ['medico.rfc_tratante']
+  }
+}
+// En vez de crear 3 reglas separadas:
+// - "RFC Médico Faltante (GNP)"
+// - "RFC Médico Faltante (METLIFE)"
+// - "RFC Médico Faltante (AXA)"
+🎯 Respuesta a tus Preguntas Específicas
+1. ¿El sistema seguiría siendo sencillo?
+✅ Sí, solo agregas un campo más al crear reglas.
+
+2. ¿Se haría más lento?
+✅ No, el impacto es imperceptible (< 1ms).
+
+3. ¿Qué está cambiando?
+Solo la estructura de datos de las reglas. La lógica de validación sigue igual.
+
+4. ¿Es viable con 10 aseguradoras?
+✅ Sí, perfectamente. De hecho, está diseñado para ese escenario.
