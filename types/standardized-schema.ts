@@ -6,10 +6,13 @@ export interface StandardizedMedicalReport {
     apellido_materno?: string;
     edad: number;
     sexo: 'Masculino' | 'Femenino' | 'Otro';
+    fecha_nacimiento?: Date;
   };
   
   poliza: {
     numero: string;
+    certificado?: string;
+    asegurado_titular?: boolean;
   };
   
   medico_tratante: {
@@ -21,6 +24,7 @@ export interface StandardizedMedicalReport {
     telefono?: string;
     correo?: string;
     domicilio?: string;
+    rfc?: string;
   };
   
   fecha: {
@@ -28,7 +32,7 @@ export interface StandardizedMedicalReport {
     egreso?: Date;
     diagnostico?: Date;
     cirugia?: Date;
-    informe: Date;
+    informe?: Date;
   };
   
   atencion: {
