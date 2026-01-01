@@ -17,6 +17,7 @@ const App: React.FC = () => {
   const [filePreview, setFilePreview] = useState<{data: string, type: string} | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(true);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [savedReports, setSavedReports] = useState<SavedReport[]>([]);
   
   // State for Rules
   const [rules, setRules] = useState<ScoringRule[]>(() => {
@@ -45,6 +46,19 @@ const App: React.FC = () => {
 
   // State for Left Panel View Mode (Visual vs Text)
   const [leftPanelView, setLeftPanelView] = useState<'visual' | 'text'>('visual');
+
+  // Cargar reportes guardados de localStorage al montar
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('saved-reports');
+      if (saved) {
+        const parsed = JSON.parse(saved) as SavedReport[];
+        setSavedReports(parsed.sort((a, b) => b.timestamp - a.timestamp)); // Más reciente primero
+      }
+    } catch (e) {
+      console.error('Error loading saved reports:', e);
+    }
+  }, []);
 
   // Convert Base64 to Blob URL for download link
   useEffect(() => {
@@ -174,6 +188,58 @@ const App: React.FC = () => {
 
   const handleSyncChanges = (changes: Record<string, { old: any, new: any }>) => {
       setPendingChanges(changes);
+  };
+
+  // Guardar reporte actual en localStorage
+  const handleSaveReport = () => {
+    if (!report) return;
+    
+    const newReport: SavedReport = {
+      id: `report_${Date.now()}`,
+      timestamp: Date.now(),
+      fileName: 'Informe Médico', // Podrías guardar nombre real del archivo si lo tienes
+      provider: report.extracted.provider,
+      extractedData: report.extracted,
+      score: report.score,
+      flags: report.flags
+    };
+
+    try {
+      const updated = [newReport, ...savedReports];
+      localStorage.setItem('saved-reports', JSON.stringify(updated));
+      setSavedReports(updated);
+      alert('✅ Reporte guardado exitosamente');
+    } catch (e) {
+      console.error('Error saving report:', e);
+      alert('❌ Error al guardar reporte');
+    }
+  };
+
+  // Cargar reporte desde historial
+  const handleLoadReport = (saved: SavedReport) => {
+    const loadedReport: AnalysisReport = {
+      extracted: saved.extractedData,
+      score: saved.score,
+      flags: saved.flags
+    };
+    
+    setReport(loadedReport);
+    setFilePreview(null); // No hay PDF/imagen disponible
+    setStatus('complete');
+    setPendingChanges({});
+  };
+
+  // Eliminar reporte del historial
+  const handleDeleteReport = (id: string) => {
+    if (!confirm('¿Eliminar este reporte del historial?')) return;
+    
+    try {
+      const updated = savedReports.filter(r => r.id !== id);
+      localStorage.setItem('saved-reports', JSON.stringify(updated));
+      setSavedReports(updated);
+    } catch (e) {
+      console.error('Error deleting report:', e);
+    }
   };
 
   // Determine approval status
@@ -325,9 +391,10 @@ const App: React.FC = () => {
                     </div>
                     )
                 ) : (
-                    <div className="text-slate-500 flex flex-col items-center animate-pulse">
+                    <div className="text-slate-500 flex flex-col items-center">
                         <FileText className="w-10 h-10 mb-2 opacity-50" />
-                        <span className="text-xs">Cargando documento...</span>
+                        <span className="text-xs">Reporte cargado del historial</span>
+                        <span className="text-[10px] text-slate-400 mt-1">Documento original no disponible</span>
                     </div>
                 )
               ) : (
@@ -372,6 +439,7 @@ const App: React.FC = () => {
                   onReevaluate={handleReevaluate} 
                   isReevaluating={status === 're-evaluating'}
                   onSyncChanges={handleSyncChanges}
+                  onSaveReport={handleSaveReport}
                 />
              )}
           </div>
@@ -572,6 +640,16 @@ const App: React.FC = () => {
           <FileUpload 
             onFileSelected={handleFileSelected} 
             isProcessing={false}
+            savedReports={savedReports.map(r => ({
+              id: r.id,
+              timestamp: r.timestamp,
+              fileName: r.fileName,
+              provider: r.provider
+            }))}
+            onLoadReport={(id) => {
+              const saved = savedReports.find(r => r.id === id);
+              if (saved) handleLoadReport(saved);
+            }}
           />
         </div>
         

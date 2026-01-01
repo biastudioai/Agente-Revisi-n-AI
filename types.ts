@@ -316,3 +316,14 @@ export interface AnalysisReport {
 }
 
 export type AnalysisStatus = 'idle' | 'provider_selection' | 'analyzing' | 're-evaluating' | 'complete' | 'error';
+
+// Interfaz para reportes guardados en localStorage
+export interface SavedReport {
+  id: string;                    // UUID único
+  timestamp: number;             // Fecha de guardado (ms)
+  fileName: string;              // Nombre del archivo original
+  provider: ProviderType;        // GNP/METLIFE
+  extractedData: ExtractedData;  // Datos FINALES (con ediciones del usuario)
+  score: ScoringResult;          // Score final
+  flags: Flag[];                 // Flags finales
+}

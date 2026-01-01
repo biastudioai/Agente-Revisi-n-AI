@@ -4,9 +4,16 @@ import { Upload, FileText, Loader2, AlertCircle } from 'lucide-react';
 interface FileUploadProps {
   onFileSelected: (base64: string, mimeType: string) => void;
   isProcessing: boolean;
+  savedReports?: Array<{
+    id: string;
+    timestamp: number;
+    fileName: string;
+    provider: string;
+  }>;
+  onLoadReport?: (id: string) => void;
 }
 
-const FileUpload: React.FC<FileUploadProps> = ({ onFileSelected, isProcessing }) => {
+const FileUpload: React.FC<FileUploadProps> = ({ onFileSelected, isProcessing, savedReports = [], onLoadReport }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,6 +85,43 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileSelected, isProcessing })
         <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center text-red-700">
           <AlertCircle className="w-5 h-5 mr-2" />
           {error}
+        </div>
+      )}
+
+      {/* Lista de reportes guardados */}
+      {savedReports.length > 0 && onLoadReport && (
+        <div className="mt-8">
+          <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            Últimos Reportes Guardados
+          </h3>
+          <div className="space-y-2">
+            {savedReports.slice(0, 5).map((report) => (
+              <button
+                key={report.id}
+                onClick={() => onLoadReport(report.id)}
+                className="w-full p-3 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-left"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-slate-900">{report.fileName}</p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {report.provider} • {new Date(report.timestamp).toLocaleDateString('es-MX', { 
+                        day: 'numeric', 
+                        month: 'short', 
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                  <div className="text-brand-600">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
