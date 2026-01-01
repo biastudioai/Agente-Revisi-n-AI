@@ -62,7 +62,32 @@ This pattern allows adding new insurance providers by creating a new config file
 - `components/RuleConfigurator.tsx` - Modal mejorado con:
   - Tabs para alternar entre "Generales" y "Específicas"
   - Dropdown para seleccionar aseguradora (GNP/METLIFE) en tab Específicas
-  - Badges visuales mostrando categoría de cada regla (GENERAL/GNP/METLIFE)
+  - Badges visuales mostrando categoría de cada regla (GENERAL/GNP/METLIFE/CUSTOM)
+  - Botón "Crear Nueva Regla" para agregar reglas personalizadas
+  - Botones de editar/eliminar para reglas personalizadas (CUSTOM)
+
+### Editable Rules System (NEW)
+Sistema de reglas editables que permite crear y modificar reglas de validación desde la UI:
+
+- `services/rule-validator.ts` - Motor de validación con:
+  - 21 operadores agrupados en 5 categorías:
+    - **Existencia**: IS_EMPTY, IS_NOT_EMPTY, REQUIRES, IF_THEN
+    - **Comparación**: EQUALS, NOT_EQUALS, GREATER_THAN, LESS_THAN
+    - **Fechas**: DATE_MISSING, DATE_INVALID, IS_DATE, DATE_BEFORE, DATE_AFTER
+    - **Formatos**: IS_NUMBER, IS_EMAIL, IS_RFC, IS_PHONE, REGEX
+    - **Multi-campo**: MUTUALLY_EXCLUSIVE, ONE_OF_REQUIRED, ALL_REQUIRED
+  - Todos los operadores retornan `true` cuando detectan un PROBLEMA
+  - Soporte para lógica AND/OR simple (sin anidamiento)
+  - Preview en tiempo real contra datos actuales
+
+- `components/RuleEditor.tsx` - Modal de edición con:
+  - Campos de metadatos (nombre, descripción, nivel, penalización)
+  - Constructor visual de condiciones
+  - Selector de operador lógico (AND/OR)
+  - Panel de preview con indicadores ⚠️ DETECTADO / ✓ OK
+
+- **Persistencia**: Reglas personalizadas guardadas en localStorage
+- **Compatibilidad**: Sistema híbrido que soporta reglas legacy (validator function) y nuevas (conditions array)
 
 ### Data Flow
 ```
