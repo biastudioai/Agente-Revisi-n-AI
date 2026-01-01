@@ -640,12 +640,7 @@ const App: React.FC = () => {
           <FileUpload 
             onFileSelected={handleFileSelected} 
             isProcessing={false}
-            savedReports={savedReports.map(r => ({
-              id: r.id,
-              timestamp: r.timestamp,
-              fileName: r.fileName,
-              provider: r.provider
-            }))}
+            savedReports={savedReports}
             onLoadReport={(id) => {
               const saved = savedReports.find(r => r.id === id);
               if (saved) handleLoadReport(saved);
