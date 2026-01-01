@@ -1,19 +1,23 @@
 import React, { useState, useMemo } from 'react';
-import { ScoringRule, ProviderType } from '../types';
-import { Settings, AlertTriangle, ShieldAlert, AlertCircle, Info, X, ChevronDown } from 'lucide-react';
+import { ScoringRule, ProviderType, ExtractedData } from '../types';
+import { Settings, AlertTriangle, ShieldAlert, AlertCircle, Info, X, ChevronDown, Plus, Pencil, Trash2 } from 'lucide-react';
+import RuleEditor from './RuleEditor';
 
 interface RuleConfiguratorProps {
   isOpen: boolean;
   onClose: () => void;
   rules: ScoringRule[];
   onUpdateRules: (newRules: ScoringRule[]) => void;
+  currentReport?: ExtractedData | null;
 }
 
 type TabType = 'generales' | 'especificas';
 
-const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, rules, onUpdateRules }) => {
+const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, rules, onUpdateRules, currentReport }) => {
   const [activeTab, setActiveTab] = useState<TabType>('generales');
   const [selectedProvider, setSelectedProvider] = useState<ProviderType>('GNP');
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editingRule, setEditingRule] = useState<ScoringRule | undefined>(undefined);
 
   const filteredRules = useMemo(() => {
     if (activeTab === 'generales') {
@@ -38,6 +42,24 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
       r.id === ruleId ? { ...r, points: points } : r
     );
     onUpdateRules(updatedRules);
+  };
+
+  const handleDeleteRule = (ruleId: string) => {
+    if (confirm('¿Estás seguro de eliminar esta regla personalizada?')) {
+      const updatedRules = rules.filter(r => r.id !== ruleId);
+      onUpdateRules(updatedRules);
+    }
+  };
+
+  const handleSaveRule = (newRule: ScoringRule) => {
+    if (editingRule) {
+      const updatedRules = rules.map(r => r.id === editingRule.id ? newRule : r);
+      onUpdateRules(updatedRules);
+    } else {
+      onUpdateRules([...rules, newRule]);
+    }
+    setIsEditorOpen(false);
+    setEditingRule(undefined);
   };
 
   const getLevelColor = (level: string) => {
@@ -138,12 +160,26 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 bg-slate-50/50">
-           <div className="grid grid-cols-12 gap-4 mb-4 px-4 py-2 font-bold text-xs uppercase text-slate-400 tracking-wider">
-               <div className="col-span-5">Regla y Criterio</div>
-               <div className="col-span-3">Nivel de Impacto</div>
+           <div className="flex justify-between items-center mb-4">
+             <div className="grid grid-cols-12 gap-4 flex-1 px-4 py-2 font-bold text-xs uppercase text-slate-400 tracking-wider">
+               <div className="col-span-4">Regla y Criterio</div>
+               <div className="col-span-2">Nivel de Impacto</div>
                <div className="col-span-2 text-center">Peso (Puntos)</div>
                <div className="col-span-2 text-center">Categoría</div>
+               <div className="col-span-2 text-center">Acciones</div>
+             </div>
            </div>
+           
+           <button
+             onClick={() => {
+               setEditingRule(undefined);
+               setIsEditorOpen(true);
+             }}
+             className="w-full mb-4 py-3 border-2 border-dashed border-brand-200 rounded-xl text-brand-600 hover:border-brand-400 hover:bg-brand-50 transition-all flex items-center justify-center gap-2 font-medium"
+           >
+             <Plus className="w-4 h-4" />
+             Crear Nueva Regla
+           </button>
 
            {filteredRules.length === 0 ? (
              <div className="text-center py-12 text-slate-500">
@@ -155,25 +191,34 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
                   <div key={rule.id} className="grid grid-cols-12 gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm items-center hover:shadow-md transition-shadow">
                       
                       {/* Description */}
-                      <div className="col-span-5">
-                          <h4 className="font-bold text-sm text-slate-800">{rule.name}</h4>
-                          <p className="text-xs text-slate-500 mt-1 leading-relaxed">{rule.description}</p>
+                      <div className="col-span-4">
+                          <div className="flex items-start gap-2">
+                            <div className="flex-1">
+                              <h4 className="font-bold text-sm text-slate-800">{rule.name}</h4>
+                              <p className="text-xs text-slate-500 mt-1 leading-relaxed">{rule.description}</p>
+                            </div>
+                            {rule.isCustom && (
+                              <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-brand-100 text-brand-600 shrink-0">
+                                CUSTOM
+                              </span>
+                            )}
+                          </div>
                       </div>
 
                       {/* Level Selector */}
-                      <div className="col-span-3">
+                      <div className="col-span-2">
                            <div className="relative">
                               <select 
                                   value={rule.level}
                                   onChange={(e) => handleLevelChange(rule.id, e.target.value as ScoringRule['level'])}
-                                  className={`w-full appearance-none pl-9 pr-8 py-2 text-xs font-bold rounded-lg border focus:ring-2 focus:ring-brand-200 outline-none cursor-pointer transition-colors ${getLevelColor(rule.level)}`}
+                                  className={`w-full appearance-none pl-7 pr-6 py-2 text-xs font-bold rounded-lg border focus:ring-2 focus:ring-brand-200 outline-none cursor-pointer transition-colors ${getLevelColor(rule.level)}`}
                               >
                                   <option value="CRÍTICO">CRÍTICO</option>
                                   <option value="IMPORTANTE">IMPORTANTE</option>
                                   <option value="MODERADO">MODERADO</option>
-                                  <option value="DISCRETO">DISCRETO / NOTA</option>
+                                  <option value="DISCRETO">DISCRETO</option>
                               </select>
-                              <div className={`absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none ${rule.level === 'CRÍTICO' ? 'text-red-700' : rule.level === 'IMPORTANTE' ? 'text-amber-700' : 'text-slate-700'}`}>
+                              <div className={`absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none ${rule.level === 'CRÍTICO' ? 'text-red-700' : rule.level === 'IMPORTANTE' ? 'text-amber-700' : 'text-slate-700'}`}>
                                   {getLevelIcon(rule.level)}
                               </div>
                           </div>
@@ -181,22 +226,44 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
 
                       {/* Points Input */}
                       <div className="col-span-2 flex justify-center">
-                          <div className="relative w-20">
+                          <div className="relative w-16">
                                <input 
                                   type="number" 
                                   min="0" 
                                   max="100"
                                   value={rule.points}
                                   onChange={(e) => handlePointsChange(rule.id, e.target.value)}
-                                  className="w-full text-center font-mono font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-lg py-2 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"
+                                  className="w-full text-center font-mono font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-lg py-2 text-xs focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"
                               />
-                              <span className="absolute right-[-1.5rem] top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">pts</span>
                           </div>
                       </div>
 
                        {/* Provider Badge */}
                        <div className="col-span-2 flex justify-center">
                           {getProviderBadge(rule.providerTarget)}
+                       </div>
+                       
+                       {/* Actions */}
+                       <div className="col-span-2 flex justify-center gap-1">
+                          <button
+                            onClick={() => {
+                              setEditingRule(rule);
+                              setIsEditorOpen(true);
+                            }}
+                            className="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
+                            title="Editar regla"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          {rule.isCustom && (
+                            <button
+                              onClick={() => handleDeleteRule(rule.id)}
+                              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Eliminar regla"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                        </div>
                   </div>
                ))}
@@ -215,6 +282,17 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
         </div>
 
       </div>
+      
+      <RuleEditor
+        isOpen={isEditorOpen}
+        onClose={() => {
+          setIsEditorOpen(false);
+          setEditingRule(undefined);
+        }}
+        rule={editingRule}
+        onSave={handleSaveRule}
+        currentReport={currentReport}
+      />
     </div>
   );
 };

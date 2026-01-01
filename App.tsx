@@ -19,7 +19,18 @@ const App: React.FC = () => {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   
   // State for Rules
-  const [rules, setRules] = useState<ScoringRule[]>(DEFAULT_SCORING_RULES);
+  const [rules, setRules] = useState<ScoringRule[]>(() => {
+    try {
+      const savedRules = localStorage.getItem('custom-rules');
+      if (savedRules) {
+        const parsed = JSON.parse(savedRules) as ScoringRule[];
+        return [...DEFAULT_SCORING_RULES, ...parsed];
+      }
+    } catch (e) {
+      console.error('Error loading custom rules from localStorage:', e);
+    }
+    return DEFAULT_SCORING_RULES;
+  });
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
 
   // State for Provider Selection
@@ -141,6 +152,15 @@ const App: React.FC = () => {
   // When rules update, re-run score calculation against current data if available
   const handleRulesUpdate = async (newRules: ScoringRule[]) => {
       setRules(newRules);
+      
+      // Save custom rules to localStorage
+      const customRules = newRules.filter(r => r.isCustom);
+      try {
+        localStorage.setItem('custom-rules', JSON.stringify(customRules));
+      } catch (e) {
+        console.error('Error saving custom rules to localStorage:', e);
+      }
+      
       if (report && status === 'complete') {
           // Trigger immediate re-calc without "loading" state if it's just local rule change
           try {
@@ -363,6 +383,7 @@ const App: React.FC = () => {
             onClose={() => setIsRulesModalOpen(false)}
             rules={rules}
             onUpdateRules={handleRulesUpdate}
+            currentReport={report?.extracted}
         />
       </div>
     );

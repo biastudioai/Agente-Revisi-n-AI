@@ -224,6 +224,46 @@ export interface ExtractedData {
   metadata?: ExtractedMetadata;
 }
 
+// Rule Condition Operators (21 total)
+export type RuleOperator = 
+  // Grupo 1: Validación de Existencia (4)
+  | 'IS_EMPTY'           // Campo vacío
+  | 'IS_NOT_EMPTY'       // Campo tiene valor
+  | 'REQUIRES'           // Bidireccional: Si A existe, B debe existir Y viceversa
+  | 'IF_THEN'            // Unidireccional: Si A existe, entonces B debe existir
+  // Grupo 2: Comparación de Valores (4)
+  | 'EQUALS'             // Igual a valor específico
+  | 'NOT_EQUALS'         // Diferente a valor
+  | 'GREATER_THAN'       // Mayor que (numérico)
+  | 'LESS_THAN'          // Menor que (numérico)
+  // Grupo 3: Fechas (5)
+  | 'DATE_MISSING'       // Fecha faltante
+  | 'DATE_INVALID'       // Formato de fecha inválido
+  | 'IS_DATE'            // Valida que sea fecha válida
+  | 'DATE_BEFORE'        // Fecha A debe ser antes que Fecha B
+  | 'DATE_AFTER'         // Fecha A debe ser después que Fecha B
+  // Grupo 4: Formatos Específicos (5)
+  | 'IS_NUMBER'          // Es numérico
+  | 'IS_EMAIL'           // Formato email válido
+  | 'IS_RFC'             // Formato RFC mexicano (13 caracteres alfanuméricos)
+  | 'IS_PHONE'           // Formato teléfono (10 dígitos)
+  | 'REGEX'              // Patrón regex custom
+  // Grupo 5: Lógica Múltiple (3)
+  | 'MUTUALLY_EXCLUSIVE' // Solo A o B puede existir, no ambos
+  | 'ONE_OF_REQUIRED'    // Al menos 1 campo de una lista debe tener valor
+  | 'ALL_REQUIRED';      // Todos los campos de una lista deben tener valor
+
+export type LogicOperator = 'AND' | 'OR';
+
+export interface RuleCondition {
+  id: string;
+  field: string;                    // ej: "diagnostico.diagnostico_definitivo"
+  operator: RuleOperator;
+  value?: string | number;          // Para operadores como EQUALS, GREATER_THAN, REGEX
+  compareField?: string;            // Para operadores como DATE_BEFORE (comparar 2 campos)
+  additionalFields?: string[];      // Para operadores como ONE_OF_REQUIRED, ALL_REQUIRED
+}
+
 // Scoring Types
 export interface ScoringRule {
   id: string;
@@ -231,9 +271,18 @@ export interface ScoringRule {
   level: 'CRÍTICO' | 'IMPORTANTE' | 'MODERADO' | 'DISCRETO';
   points: number;
   description: string;
-  providerTarget: 'ALL' | 'GNP' | 'METLIFE'; // NEW: Target specific provider
-  validator: (data: ExtractedData) => boolean;
+  providerTarget: 'ALL' | 'GNP' | 'METLIFE';
+  
+  // Nueva estructura de condiciones (para reglas creadas desde UI)
+  conditions?: RuleCondition[];
+  logicOperator?: LogicOperator;
+  
+  // Compatibilidad con reglas antiguas (hardcoded)
+  validator?: (data: ExtractedData) => boolean;
   affectedFields: string[];
+  
+  // Flag para identificar reglas personalizadas
+  isCustom?: boolean;
 }
 
 export interface ScoringDeduction {

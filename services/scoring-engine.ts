@@ -2,6 +2,7 @@ import { ExtractedData, ScoringRule, ScoringResult, ProviderType } from "../type
 import { REGLAS_GENERALES } from './scoring-rules-general';
 import { REGLAS_GNP } from './scoring-rules-gnp';
 import { REGLAS_METLIFE } from './scoring-rules-metlife';
+import { validateRule } from './rule-validator';
 
 export function getReglasParaAseguradora(provider: ProviderType | 'ALL'): ScoringRule[] {
   if (provider === 'GNP') {
@@ -32,8 +33,10 @@ export function calculateScore(
 
     let fails = false;
     try {
-        fails = rule.validator(data);
-    } catch (e) { fails = false; }
+      fails = validateRule(rule, data);
+    } catch (e) { 
+      fails = false; 
+    }
     
     deductions.push({ rule, failed: fails });
 
