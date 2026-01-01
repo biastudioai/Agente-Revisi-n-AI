@@ -48,11 +48,21 @@ This pattern allows adding new insurance providers by creating a new config file
 - Supports re-evaluation with updated data
 
 ### Scoring Engine
-- `services/scoring-engine.ts` - Rule-based validation system
-- Rules categorized by severity: CRÍTICO, IMPORTANTE, MODERADO, NOTA
+- `services/scoring-engine.ts` - Rule-based validation system with `getReglasParaAseguradora()` function
+- Rules organized in separate files:
+  - `services/scoring-rules-general.ts` - REGLAS_GENERALES (3 reglas para todas las aseguradoras)
+  - `services/scoring-rules-gnp.ts` - REGLAS_GNP (3 reglas específicas GNP)
+  - `services/scoring-rules-metlife.ts` - REGLAS_METLIFE (3 reglas específicas MetLife)
+- Rules categorized by severity: CRÍTICO, IMPORTANTE, MODERADO, DISCRETO
 - Provider-targeted rules (ALL, METLIFE, GNP)
 - Calculates final score based on rule violations
 - Returns detailed flags with affected fields for UI highlighting
+
+### Rule Configuration UI
+- `components/RuleConfigurator.tsx` - Modal mejorado con:
+  - Tabs para alternar entre "Generales" y "Específicas"
+  - Dropdown para seleccionar aseguradora (GNP/METLIFE) en tab Específicas
+  - Badges visuales mostrando categoría de cada regla (GENERAL/GNP/METLIFE)
 
 ### Data Flow
 ```
