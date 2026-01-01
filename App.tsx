@@ -608,6 +608,17 @@ const App: React.FC = () => {
   // Render: UPLOAD SCREEN (Default - idle)
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex flex-col font-sans text-slate-900">
+      {/* Header con botón de Auditoría */}
+      <header className="absolute top-0 right-0 p-6 z-20">
+        <button 
+          onClick={() => setIsRulesModalOpen(true)}
+          className="text-xs text-brand-700 bg-white/90 backdrop-blur border border-brand-200 hover:bg-brand-50 hover:border-brand-300 font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20"
+        >
+          <Settings className="w-4 h-4" />
+          Auditoría de reglas
+        </button>
+      </header>
+
       <main className="flex-grow flex flex-col items-center justify-center p-6 relative overflow-hidden">
         
         {/* Background Elements */}
@@ -656,6 +667,15 @@ const App: React.FC = () => {
              <div className="h-6 w-20 bg-current rounded opacity-40"></div>
         </div>
       </main>
+
+      {/* Rules Configurator Modal */}
+      <RuleConfigurator 
+        isOpen={isRulesModalOpen}
+        onClose={() => setIsRulesModalOpen(false)}
+        rules={rules}
+        onUpdateRules={handleRulesUpdate}
+        currentReport={null}
+      />
     </div>
   );
 };
