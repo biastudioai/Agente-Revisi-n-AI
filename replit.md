@@ -87,7 +87,9 @@ Sistema de reglas editables que permite crear y modificar reglas de validación 
   - Panel de preview con indicadores ⚠️ DETECTADO / ✓ OK
 
 - **Persistencia**: Reglas personalizadas guardadas en localStorage
-- **Compatibilidad**: Sistema híbrido que soporta reglas legacy (validator function) y nuevas (conditions array)
+- **Migración Completada**: Todas las 9 reglas del sistema (3 generales + 3 GNP + 3 MetLife) han sido migradas de funciones `validator` hardcodeadas a arrays de `conditions` editables
+- **Badges**: Reglas del sistema muestran badge "SISTEMA", reglas personalizadas muestran "CUSTOM"
+- **Edición Universal**: Todas las reglas (sistema y custom) pueden ser editadas desde la UI
 
 ### Data Flow
 ```
