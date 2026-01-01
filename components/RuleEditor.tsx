@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { 
   ScoringRule, RuleCondition, RuleOperator, LogicOperator, 
-  ExtractedData, ProviderType 
+  ExtractedData, ProviderType, FieldMappings 
 } from '../types';
 import {
   AVAILABLE_FIELDS,
@@ -39,7 +39,8 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
   const [description, setDescription] = useState('');
   const [level, setLevel] = useState<ScoringRule['level']>('MODERADO');
   const [points, setPoints] = useState(10);
-  const [providerTarget, setProviderTarget] = useState<'ALL' | ProviderType>('ALL');
+  const [providerTargets, setProviderTargets] = useState<string[]>(['ALL']);
+  const [fieldMappings, setFieldMappings] = useState<FieldMappings>({});
   const [conditions, setConditions] = useState<RuleCondition[]>([]);
   const [logicOperator, setLogicOperator] = useState<LogicOperator>('AND');
   const [fieldSearch, setFieldSearch] = useState<Record<string, string>>({});
@@ -52,7 +53,9 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
         setDescription(rule.description);
         setLevel(rule.level);
         setPoints(rule.points);
-        setProviderTarget(rule.providerTarget);
+        const targets = rule.providerTargets || (rule.providerTarget ? [rule.providerTarget] : ['ALL']);
+        setProviderTargets(targets);
+        setFieldMappings(rule.fieldMappings || {});
         setConditions(rule.conditions || []);
         setLogicOperator(rule.logicOperator || 'AND');
       } else {
@@ -60,7 +63,8 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
         setDescription('');
         setLevel('MODERADO');
         setPoints(10);
-        setProviderTarget('ALL');
+        setProviderTargets(['ALL']);
+        setFieldMappings({});
         setConditions([{
           id: generateConditionId(),
           field: '',
@@ -76,10 +80,11 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
   const preview = useMemo(() => {
     const partialRule: Partial<ScoringRule> = {
       conditions,
-      logicOperator
+      logicOperator,
+      fieldMappings: Object.keys(fieldMappings).length > 0 ? fieldMappings : undefined
     };
     return getPreviewResult(partialRule, currentReport || null);
-  }, [conditions, logicOperator, currentReport]);
+  }, [conditions, logicOperator, currentReport, fieldMappings]);
 
   const addCondition = () => {
     setConditions([...conditions, {
@@ -145,13 +150,31 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
       .concat(conditions.filter(c => c.compareField).map(c => c.compareField as string))
       .concat(conditions.flatMap(c => c.additionalFields || []));
     
+    Object.values(fieldMappings).forEach((paths: string[]) => {
+      paths.forEach((path: string) => {
+        if (path && !affectedFields.includes(path)) {
+          affectedFields.push(path);
+        }
+      });
+    });
+    
+    const finalTargets = providerTargets.length === 0 ? ['ALL'] : providerTargets;
+    const hasMultipleProviders = finalTargets.length > 1 && !finalTargets.includes('ALL');
+    const singleTarget = finalTargets.length === 1 ? finalTargets[0] : undefined;
+    
+    const hasMappings = Object.keys(fieldMappings).some(k => 
+      fieldMappings[k] && fieldMappings[k].length > 0 && fieldMappings[k][0]
+    );
+    
     const newRule: ScoringRule = {
       id: rule?.id || generateId(),
       name: name.trim(),
       description: description.trim(),
       level,
       points,
-      providerTarget,
+      providerTargets: finalTargets,
+      providerTarget: singleTarget as 'ALL' | 'GNP' | 'METLIFE' | undefined,
+      fieldMappings: (hasMultipleProviders && hasMappings) ? fieldMappings : undefined,
       conditions,
       logicOperator,
       affectedFields: [...new Set(affectedFields)],
@@ -264,29 +287,94 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
             
             <div className="col-span-2">
               <label className="block text-xs font-bold text-slate-600 mb-1.5">
-                Aplica a Aseguradora
+                Aplica a Aseguradoras (selecciona múltiples)
               </label>
-              <div className="flex gap-2">
-                {(['ALL', 'GNP', 'METLIFE'] as const).map((target) => (
-                  <button
-                    key={target}
-                    type="button"
-                    onClick={() => setProviderTarget(target)}
-                    className={`px-4 py-2 text-xs font-bold rounded-lg border transition-all ${
-                      providerTarget === target
-                        ? target === 'ALL' 
-                          ? 'bg-purple-100 text-purple-700 border-purple-300'
-                          : target === 'GNP'
-                          ? 'bg-blue-100 text-blue-700 border-blue-300'
-                          : 'bg-green-100 text-green-700 border-green-300'
-                        : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
-                    }`}
-                  >
-                    {target === 'ALL' ? 'TODAS' : target}
-                  </button>
-                ))}
+              <div className="flex flex-wrap gap-2">
+                {(['ALL', 'GNP', 'METLIFE'] as const).map((target) => {
+                  const isSelected = providerTargets.includes(target);
+                  const handleToggle = () => {
+                    if (target === 'ALL') {
+                      setProviderTargets(['ALL']);
+                      setFieldMappings({});
+                    } else {
+                      if (isSelected) {
+                        const newTargets = providerTargets.filter(p => p !== target);
+                        setProviderTargets(newTargets.length > 0 ? newTargets : ['ALL']);
+                        const newMappings = { ...fieldMappings };
+                        delete newMappings[target];
+                        setFieldMappings(newMappings);
+                      } else {
+                        const newTargets = providerTargets.filter(p => p !== 'ALL');
+                        setProviderTargets([...newTargets, target]);
+                      }
+                    }
+                  };
+                  
+                  return (
+                    <label
+                      key={target}
+                      className={`flex items-center gap-2 px-4 py-2 border rounded-lg cursor-pointer transition-all ${
+                        isSelected
+                          ? target === 'ALL' 
+                            ? 'bg-purple-100 text-purple-700 border-purple-300'
+                            : target === 'GNP'
+                            ? 'bg-blue-100 text-blue-700 border-blue-300'
+                            : 'bg-green-100 text-green-700 border-green-300'
+                          : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={handleToggle}
+                        className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                      />
+                      <span className="text-xs font-bold">
+                        {target === 'ALL' ? 'TODAS' : target}
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
+
+            {providerTargets.length > 1 && !providerTargets.includes('ALL') && (
+              <div className="col-span-2 border border-slate-200 rounded-xl p-4 bg-slate-50">
+                <h4 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                  <Info className="w-4 h-4 text-brand-600" />
+                  Paths por Aseguradora
+                </h4>
+                <p className="text-xs text-slate-500 mb-3">
+                  Define dónde buscar el campo en cada aseguradora. Si el path es diferente por aseguradora, configúralo aquí.
+                </p>
+                
+                <div className="space-y-3">
+                  {providerTargets.map(provider => (
+                    <div key={provider} className="flex items-center gap-3">
+                      <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
+                        provider === 'GNP' 
+                          ? 'bg-blue-100 text-blue-700' 
+                          : 'bg-green-100 text-green-700'
+                      }`}>
+                        {provider}
+                      </span>
+                      <input
+                        type="text"
+                        value={fieldMappings[provider]?.[0] || ''}
+                        onChange={(e) => {
+                          setFieldMappings({
+                            ...fieldMappings,
+                            [provider]: e.target.value ? [e.target.value] : []
+                          });
+                        }}
+                        placeholder={`ej: signos_vitales.peso`}
+                        className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-200 outline-none"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="border-t pt-5">

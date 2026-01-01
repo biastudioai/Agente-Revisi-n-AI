@@ -1,4 +1,4 @@
-import { ExtractedData, ScoringRule, RuleCondition, RuleOperator } from "../types";
+import { ExtractedData, ScoringRule, RuleCondition, RuleOperator, FieldMappings } from "../types";
 
 function getNestedField(obj: any, path: string): any {
   if (!path) return undefined;
@@ -56,8 +56,18 @@ function isNumeric(value: any): boolean {
   return !isNaN(Number(value));
 }
 
-export function validateCondition(cond: RuleCondition, data: ExtractedData): boolean {
-  const fieldValue = getNestedField(data, cond.field);
+export function validateCondition(
+  cond: RuleCondition, 
+  data: ExtractedData,
+  fieldMappings?: FieldMappings
+): boolean {
+  let fieldPath = cond.field;
+  
+  if (fieldMappings && data.provider && fieldMappings[data.provider]) {
+    fieldPath = fieldMappings[data.provider][0] || cond.field;
+  }
+  
+  const fieldValue = getNestedField(data, fieldPath);
   
   switch (cond.operator) {
     case 'IS_EMPTY':
@@ -187,7 +197,9 @@ export function validateRule(rule: ScoringRule, data: ExtractedData): boolean {
     return false;
   }
   
-  const results = rule.conditions.map(cond => validateCondition(cond, data));
+  const results = rule.conditions.map(cond => 
+    validateCondition(cond, data, rule.fieldMappings)
+  );
   
   if (rule.logicOperator === 'OR') {
     return results.some(r => r);
@@ -219,10 +231,16 @@ export function getPreviewResult(rule: Partial<ScoringRule>, data: ExtractedData
   
   const details: string[] = [];
   const conditionResults = rule.conditions.map(cond => {
-    const result = validateCondition(cond, data);
-    const fieldValue = getNestedField(data, cond.field);
+    const result = validateCondition(cond, data, rule.fieldMappings);
+    
+    let fieldPath = cond.field;
+    if (rule.fieldMappings && data.provider && rule.fieldMappings[data.provider]) {
+      fieldPath = rule.fieldMappings[data.provider][0] || cond.field;
+    }
+    
+    const fieldValue = getNestedField(data, fieldPath);
     const displayValue = isEmpty(fieldValue) ? '(vacío)' : String(fieldValue).substring(0, 50);
-    details.push(`${cond.field}: ${displayValue} → ${result ? '⚠️ DETECTADO' : '✓ OK'}`);
+    details.push(`${fieldPath}: ${displayValue} → ${result ? '⚠️ DETECTADO' : '✓ OK'}`);
     return result;
   });
   

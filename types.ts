@@ -264,6 +264,11 @@ export interface RuleCondition {
   additionalFields?: string[];      // Para operadores como ONE_OF_REQUIRED, ALL_REQUIRED
 }
 
+// Tipo para mapeo de paths por aseguradora
+export interface FieldMappings {
+  [provider: string]: string[];
+}
+
 // Scoring Types
 export interface ScoringRule {
   id: string;
@@ -271,7 +276,13 @@ export interface ScoringRule {
   level: 'CRÍTICO' | 'IMPORTANTE' | 'MODERADO' | 'DISCRETO';
   points: number;
   description: string;
-  providerTarget: 'ALL' | 'GNP' | 'METLIFE';
+  
+  // Sistema de múltiples aseguradoras (nuevo)
+  providerTargets?: string[];
+  fieldMappings?: FieldMappings;
+  
+  // Retrocompatibilidad con reglas antiguas (único provider)
+  providerTarget?: 'ALL' | 'GNP' | 'METLIFE';
   
   // Nueva estructura de condiciones (para reglas creadas desde UI)
   conditions?: RuleCondition[];

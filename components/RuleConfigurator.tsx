@@ -19,11 +19,15 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<ScoringRule | undefined>(undefined);
 
+  const getProviderTargets = (rule: ScoringRule): string[] => {
+    return rule.providerTargets || (rule.providerTarget ? [rule.providerTarget] : ['ALL']);
+  };
+
   const filteredRules = useMemo(() => {
     if (activeTab === 'generales') {
-      return rules.filter(r => r.providerTarget === 'ALL');
+      return rules.filter(r => getProviderTargets(r).includes('ALL'));
     } else {
-      return rules.filter(r => r.providerTarget === selectedProvider);
+      return rules.filter(r => getProviderTargets(r).includes(selectedProvider));
     }
   }, [rules, activeTab, selectedProvider]);
 
@@ -80,17 +84,31 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
     }
   };
 
-  const getProviderBadge = (target: ScoringRule['providerTarget']) => {
+  const getSingleProviderBadge = (target: string) => {
     switch (target) {
       case 'ALL':
-        return <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-purple-100 text-purple-700 border border-purple-200">GENERAL</span>;
+        return <span key={target} className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-purple-100 text-purple-700 border border-purple-200">GENERAL</span>;
       case 'GNP':
-        return <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700 border border-blue-200">GNP</span>;
+        return <span key={target} className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700 border border-blue-200">GNP</span>;
       case 'METLIFE':
-        return <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-green-100 text-green-700 border border-green-200">METLIFE</span>;
+        return <span key={target} className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-green-100 text-green-700 border border-green-200">METLIFE</span>;
       default:
-        return null;
+        return <span key={target} className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-100 text-slate-700 border border-slate-200">{target}</span>;
     }
+  };
+
+  const getProviderBadges = (rule: ScoringRule) => {
+    const targets = getProviderTargets(rule);
+    
+    if (targets.includes('ALL')) {
+      return getSingleProviderBadge('ALL');
+    }
+    
+    return (
+      <div className="flex gap-1 flex-wrap">
+        {targets.map(target => getSingleProviderBadge(target))}
+      </div>
+    );
   };
 
   return (
@@ -246,7 +264,7 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
 
                        {/* Provider Badge */}
                        <div className="col-span-2 flex justify-center">
-                          {getProviderBadge(rule.providerTarget)}
+                          {getProviderBadges(rule)}
                        </div>
                        
                        {/* Actions */}
