@@ -8,7 +8,15 @@ export const REGLAS_METLIFE: ScoringRule[] = [
     points: 20,
     description: 'MetLife requiere el RFC para validación de honorarios.',
     providerTarget: 'METLIFE',
-    validator: (data) => !data.medico_tratante?.rfc?.trim(),
+    isCustom: false,
+    conditions: [
+      {
+        id: 'cond_metlife_rfc_1',
+        field: 'medico_tratante.rfc',
+        operator: 'IS_EMPTY'
+      }
+    ],
+    logicOperator: 'AND',
     affectedFields: ['medico_tratante.rfc']
   },
   {
@@ -18,7 +26,20 @@ export const REGLAS_METLIFE: ScoringRule[] = [
     points: 10,
     description: 'Faltan datos en secciones clave (Antecedentes o Padecimiento).',
     providerTarget: 'METLIFE',
-    validator: (data) => !data.antecedentes?.historia_clinica_breve?.trim() || !data.padecimiento_actual?.descripcion?.trim(),
+    isCustom: false,
+    conditions: [
+      {
+        id: 'cond_metlife_secciones_1',
+        field: 'antecedentes.historia_clinica_breve',
+        operator: 'IS_EMPTY'
+      },
+      {
+        id: 'cond_metlife_secciones_2',
+        field: 'padecimiento_actual.descripcion',
+        operator: 'IS_EMPTY'
+      }
+    ],
+    logicOperator: 'OR',
     affectedFields: ['antecedentes.historia_clinica_breve', 'padecimiento_actual.descripcion']
   },
   {
@@ -28,11 +49,21 @@ export const REGLAS_METLIFE: ScoringRule[] = [
     points: 12,
     description: 'MetLife requiere código CIE-10 en formato válido (ej: A00.0).',
     providerTarget: 'METLIFE',
-    validator: (data) => {
-      const codigo = data.diagnostico?.codigo_cie;
-      if (!codigo) return true;
-      return !/^[A-Z]\d{2}(\.\d{1,2})?$/.test(codigo);
-    },
+    isCustom: false,
+    conditions: [
+      {
+        id: 'cond_metlife_cie_1',
+        field: 'diagnostico.codigo_cie',
+        operator: 'IS_EMPTY'
+      },
+      {
+        id: 'cond_metlife_cie_2',
+        field: 'diagnostico.codigo_cie',
+        operator: 'REGEX',
+        value: '^[A-Z]\\d{2}(\\.\\d{1,2})?$'
+      }
+    ],
+    logicOperator: 'OR',
     affectedFields: ['diagnostico.codigo_cie']
   }
 ];

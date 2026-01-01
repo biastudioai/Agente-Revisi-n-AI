@@ -8,7 +8,15 @@ export const REGLAS_GENERALES: ScoringRule[] = [
     points: 25,
     description: 'El diagnóstico definitivo es la base de la reclamación.',
     providerTarget: 'ALL',
-    validator: (data) => !data.diagnostico?.diagnostico_definitivo?.trim(),
+    isCustom: false,
+    conditions: [
+      {
+        id: 'cond_diag_falta_1',
+        field: 'diagnostico.diagnostico_definitivo',
+        operator: 'IS_EMPTY'
+      }
+    ],
+    logicOperator: 'AND',
     affectedFields: ['diagnostico.diagnostico_definitivo']
   },
   {
@@ -18,7 +26,16 @@ export const REGLAS_GENERALES: ScoringRule[] = [
     points: 15,
     description: 'El código CIE-10 no corresponde al diagnóstico escrito.',
     providerTarget: 'ALL',
-    validator: (data) => data.diagnostico?.cie_coherente_con_texto === false,
+    isCustom: false,
+    conditions: [
+      {
+        id: 'cond_cie_incoherencia_1',
+        field: 'diagnostico.cie_coherente_con_texto',
+        operator: 'EQUALS',
+        value: 'false'
+      }
+    ],
+    logicOperator: 'AND',
     affectedFields: ['diagnostico.codigo_cie', 'diagnostico.diagnostico_definitivo']
   },
   {
@@ -28,7 +45,21 @@ export const REGLAS_GENERALES: ScoringRule[] = [
     points: 20,
     description: 'El informe debe contener la firma autógrafa del médico tratante.',
     providerTarget: 'ALL',
-    validator: (data) => !data.firma?.firma_autografa_detectada,
+    isCustom: false,
+    conditions: [
+      {
+        id: 'cond_firma_faltante_1',
+        field: 'firma.firma_autografa_detectada',
+        operator: 'IS_EMPTY'
+      },
+      {
+        id: 'cond_firma_faltante_2',
+        field: 'firma.firma_autografa_detectada',
+        operator: 'EQUALS',
+        value: 'false'
+      }
+    ],
+    logicOperator: 'OR',
     affectedFields: ['firma.firma_autografa_detectada', 'firma.nombre_firma']
   }
 ];

@@ -199,9 +199,13 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
                               <h4 className="font-bold text-sm text-slate-800">{rule.name}</h4>
                               <p className="text-xs text-slate-500 mt-1 leading-relaxed">{rule.description}</p>
                             </div>
-                            {rule.isCustom && (
+                            {rule.isCustom ? (
                               <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-brand-100 text-brand-600 shrink-0">
                                 CUSTOM
+                              </span>
+                            ) : (
+                              <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-slate-100 text-slate-600 shrink-0">
+                                SISTEMA
                               </span>
                             )}
                           </div>
