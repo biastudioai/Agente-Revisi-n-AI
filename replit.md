@@ -85,6 +85,23 @@ Sistema de reglas editables que permite crear y modificar reglas de validación 
   - Constructor visual de condiciones
   - Selector de operador lógico (AND/OR)
   - Panel de preview con indicadores ⚠️ DETECTADO / ✓ OK
+  - **Selector de múltiples aseguradoras** (checkboxes para GNP, METLIFE, TODAS)
+  - **Mapeo de paths por aseguradora** (fieldMappings) cuando hay múltiples proveedores seleccionados
+
+### Multi-Provider Field Mapping System (NEW)
+Sistema que permite crear reglas que aplican a múltiples aseguradoras con paths diferentes:
+
+- **providerTargets**: Array de aseguradoras a las que aplica la regla (['GNP', 'METLIFE'])
+- **fieldMappings**: Objeto que mapea cada aseguradora a su path específico
+  ```typescript
+  fieldMappings: {
+    GNP: ['signos_vitales.peso'],
+    METLIFE: ['identificacion.peso']
+  }
+  ```
+- **Retrocompatibilidad**: Las reglas antiguas con `providerTarget` (string único) siguen funcionando
+- **UI mejorada**: Checkboxes para selección múltiple, sección de mapeo de paths visible solo cuando hay múltiples proveedores
+- **Validación inteligente**: El motor de validación usa el path correcto según el `data.provider` del informe
 
 - **Persistencia**: Reglas personalizadas guardadas en localStorage
 - **Migración Completada**: Todas las 9 reglas del sistema (3 generales + 3 GNP + 3 MetLife) han sido migradas de funciones `validator` hardcodeadas a arrays de `conditions` editables
