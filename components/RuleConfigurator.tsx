@@ -94,6 +94,7 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
   };
 
   return (
+    <>
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden border border-slate-200">
         
@@ -282,7 +283,9 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
         </div>
 
       </div>
-      
+    </div>
+    
+    {isEditorOpen && (
       <RuleEditor
         isOpen={isEditorOpen}
         onClose={() => {
@@ -293,7 +296,8 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
         onSave={handleSaveRule}
         currentReport={currentReport}
       />
-    </div>
+    )}
+    </>
   );
 };
 
