@@ -16,6 +16,7 @@ import {
   operatorNeedsAdditionalFields,
   getPreviewResult
 } from '../services/rule-validator';
+import { CONFIG_GNP, CONFIG_METLIFE } from '../config/aseguradora-configs';
 
 interface RuleEditorProps {
   isOpen: boolean;
@@ -44,7 +45,18 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
   const [conditions, setConditions] = useState<RuleCondition[]>([]);
   const [logicOperator, setLogicOperator] = useState<LogicOperator>('AND');
   const [fieldSearch, setFieldSearch] = useState<Record<string, string>>({});
+  const [pathSearch, setPathSearch] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Extraer paths disponibles por aseguradora
+  const pathsByProvider = useMemo(() => {
+    const gnpPaths = Object.values(CONFIG_GNP.mappings).map(m => m.path);
+    const metlifePaths = Object.values(CONFIG_METLIFE.mappings).map(m => m.path);
+    return {
+      GNP: [...new Set(gnpPaths)].sort(),
+      METLIFE: [...new Set(metlifePaths)].sort()
+    };
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -73,6 +85,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
         setLogicOperator('AND');
       }
       setFieldSearch({});
+      setPathSearch({});
       setErrors({});
     }
   }, [isOpen, rule]);
@@ -110,6 +123,14 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
     if (!searchTerm) return AVAILABLE_FIELDS.slice(0, 15);
     return AVAILABLE_FIELDS.filter(f => 
       f.toLowerCase().includes(searchTerm.toLowerCase())
+    ).slice(0, 15);
+  };
+
+  const filteredPaths = (provider: string, searchTerm: string) => {
+    const paths = pathsByProvider[provider as 'GNP' | 'METLIFE'] || [];
+    if (!searchTerm) return paths.slice(0, 15);
+    return paths.filter(p => 
+      p.toLowerCase().includes(searchTerm.toLowerCase())
     ).slice(0, 15);
   };
 
@@ -351,25 +372,72 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                 <div className="space-y-3">
                   {providerTargets.map(provider => (
                     <div key={provider} className="flex items-center gap-3">
-                      <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
+                      <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full shrink-0 ${
                         provider === 'GNP' 
                           ? 'bg-blue-100 text-blue-700' 
                           : 'bg-green-100 text-green-700'
                       }`}>
                         {provider}
                       </span>
-                      <input
-                        type="text"
-                        value={fieldMappings[provider]?.[0] || ''}
-                        onChange={(e) => {
-                          setFieldMappings({
-                            ...fieldMappings,
-                            [provider]: e.target.value ? [e.target.value] : []
-                          });
-                        }}
-                        placeholder={`ej: signos_vitales.peso`}
-                        className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-200 outline-none"
-                      />
+                      <div className="flex-1 relative">
+                        <input
+                          type="text"
+                          id={`path_${provider}`}
+                          value={pathSearch[provider] ?? (fieldMappings[provider]?.[0] || '')}
+                          onChange={(e) => {
+                            setPathSearch({ ...pathSearch, [provider]: e.target.value });
+                            const paths = pathsByProvider[provider as 'GNP' | 'METLIFE'] || [];
+                            if (paths.includes(e.target.value)) {
+                              setFieldMappings({
+                                ...fieldMappings,
+                                [provider]: [e.target.value]
+                              });
+                            }
+                          }}
+                          onFocus={() => {
+                            if (!pathSearch[provider]) {
+                              setPathSearch({ ...pathSearch, [provider]: '' });
+                            }
+                          }}
+                          onBlur={() => {
+                            setTimeout(() => {
+                              setPathSearch({ ...pathSearch, [provider]: '' });
+                            }, 200);
+                          }}
+                          placeholder={`ej: signos_vitales.peso`}
+                          className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-200 outline-none"
+                        />
+                        {(pathSearch[provider] !== undefined && pathSearch[provider] !== null) && (
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-40 overflow-y-auto">
+                            {filteredPaths(provider, pathSearch[provider] || '').map(p => (
+                              <button
+                                key={p}
+                                type="button"
+                                onClick={() => {
+                                  setFieldMappings({
+                                    ...fieldMappings,
+                                    [provider]: [p]
+                                  });
+                                  setPathSearch({ ...pathSearch, [provider]: '' });
+                                }}
+                                className="w-full px-3 py-1.5 text-left text-xs hover:bg-slate-50 border-b border-slate-100 last:border-0 font-mono"
+                              >
+                                {p}
+                              </button>
+                            ))}
+                            {filteredPaths(provider, pathSearch[provider] || '').length === 0 && (
+                              <div className="px-3 py-2 text-xs text-slate-400 italic">
+                                No hay paths disponibles para {provider}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {fieldMappings[provider]?.[0] && !pathSearch[provider] && (
+                          <span className="text-[10px] text-slate-400 mt-0.5 block truncate font-mono">
+                            {fieldMappings[provider][0]}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
