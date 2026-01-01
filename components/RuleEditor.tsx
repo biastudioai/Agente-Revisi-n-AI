@@ -383,58 +383,77 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                         <input
                           type="text"
                           id={`path_${provider}`}
-                          value={pathSearch[provider] ?? (fieldMappings[provider]?.[0] || '')}
+                          value={pathSearch[provider] !== undefined ? pathSearch[provider] : (fieldMappings[provider]?.[0] || '')}
                           onChange={(e) => {
-                            setPathSearch({ ...pathSearch, [provider]: e.target.value });
+                            const newValue = e.target.value;
+                            setPathSearch({ ...pathSearch, [provider]: newValue });
+                            
+                            // Si el valor coincide exactamente con un path válido, guardarlo
                             const paths = pathsByProvider[provider as 'GNP' | 'METLIFE'] || [];
-                            if (paths.includes(e.target.value)) {
+                            if (paths.includes(newValue)) {
                               setFieldMappings({
                                 ...fieldMappings,
-                                [provider]: [e.target.value]
+                                [provider]: [newValue]
                               });
                             }
                           }}
                           onFocus={() => {
-                            if (!pathSearch[provider]) {
+                            // Mostrar dropdown al hacer foco
+                            if (pathSearch[provider] === undefined) {
                               setPathSearch({ ...pathSearch, [provider]: '' });
                             }
                           }}
                           onBlur={() => {
+                            // Ocultar dropdown después de un delay (para permitir clicks)
                             setTimeout(() => {
-                              setPathSearch({ ...pathSearch, [provider]: '' });
+                              const currentSearch = pathSearch[provider];
+                              if (currentSearch !== undefined) {
+                                // Limpiar el search state
+                                const newPathSearch = { ...pathSearch };
+                                delete newPathSearch[provider];
+                                setPathSearch(newPathSearch);
+                              }
                             }, 200);
                           }}
                           placeholder={`ej: signos_vitales.peso`}
-                          className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-200 outline-none"
+                          className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-200 outline-none font-mono"
                         />
-                        {(pathSearch[provider] !== undefined && pathSearch[provider] !== null) && (
-                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-40 overflow-y-auto">
-                            {filteredPaths(provider, pathSearch[provider] || '').map(p => (
-                              <button
-                                key={p}
-                                type="button"
-                                onClick={() => {
-                                  setFieldMappings({
-                                    ...fieldMappings,
-                                    [provider]: [p]
-                                  });
-                                  setPathSearch({ ...pathSearch, [provider]: '' });
-                                }}
-                                className="w-full px-3 py-1.5 text-left text-xs hover:bg-slate-50 border-b border-slate-100 last:border-0 font-mono"
-                              >
-                                {p}
-                              </button>
-                            ))}
-                            {filteredPaths(provider, pathSearch[provider] || '').length === 0 && (
+                        
+                        {/* Dropdown de autocomplete */}
+                        {pathSearch[provider] !== undefined && (
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto custom-scrollbar">
+                            {filteredPaths(provider, pathSearch[provider] || '').length > 0 ? (
+                              filteredPaths(provider, pathSearch[provider] || '').map(p => (
+                                <button
+                                  key={p}
+                                  type="button"
+                                  onClick={() => {
+                                    setFieldMappings({
+                                      ...fieldMappings,
+                                      [provider]: [p]
+                                    });
+                                    // Limpiar el search state
+                                    const newPathSearch = { ...pathSearch };
+                                    delete newPathSearch[provider];
+                                    setPathSearch(newPathSearch);
+                                  }}
+                                  className="w-full px-3 py-2 text-left text-xs hover:bg-brand-50 border-b border-slate-100 last:border-0 font-mono transition-colors"
+                                >
+                                  {p}
+                                </button>
+                              ))
+                            ) : (
                               <div className="px-3 py-2 text-xs text-slate-400 italic">
-                                No hay paths disponibles para {provider}
+                                {pathSearch[provider] ? 'No se encontraron paths' : `Paths disponibles para ${provider}`}
                               </div>
                             )}
                           </div>
                         )}
-                        {fieldMappings[provider]?.[0] && !pathSearch[provider] && (
-                          <span className="text-[10px] text-slate-400 mt-0.5 block truncate font-mono">
-                            {fieldMappings[provider][0]}
+                        
+                        {/* Mostrar path seleccionado cuando no hay búsqueda activa */}
+                        {fieldMappings[provider]?.[0] && pathSearch[provider] === undefined && (
+                          <span className="text-[10px] text-slate-500 mt-0.5 block truncate font-mono">
+                            ✓ {fieldMappings[provider][0]}
                           </span>
                         )}
                       </div>
