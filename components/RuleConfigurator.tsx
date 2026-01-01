@@ -119,68 +119,69 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
 
         {/* Tabs */}
         <div className="px-6 pt-4 bg-slate-50 border-b border-slate-200">
-          <div className="flex items-center gap-4">
-            <div className="flex gap-1 bg-slate-200 p-1 rounded-lg">
-              <button
-                onClick={() => setActiveTab('generales')}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
-                  activeTab === 'generales'
-                    ? 'bg-white text-slate-800 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-800'
-                }`}
-              >
-                Generales
-              </button>
-              <button
-                onClick={() => setActiveTab('especificas')}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
-                  activeTab === 'especificas'
-                    ? 'bg-white text-slate-800 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-800'
-                }`}
-              >
-                Específicas
-              </button>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex gap-1 bg-slate-200 p-1 rounded-lg">
+                <button
+                  onClick={() => setActiveTab('generales')}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                    activeTab === 'generales'
+                      ? 'bg-white text-slate-800 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  Generales
+                </button>
+                <button
+                  onClick={() => setActiveTab('especificas')}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                    activeTab === 'especificas'
+                      ? 'bg-white text-slate-800 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  Específicas
+                </button>
+              </div>
+
+              {activeTab === 'especificas' && (
+                <div className="relative">
+                  <select
+                    value={selectedProvider}
+                    onChange={(e) => setSelectedProvider(e.target.value as ProviderType)}
+                    className="appearance-none pl-4 pr-10 py-2 text-sm font-medium bg-white border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-brand-200 focus:border-brand-500 outline-none cursor-pointer"
+                  >
+                    <option value="GNP">GNP</option>
+                    <option value="METLIFE">METLIFE</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                </div>
+              )}
             </div>
 
-            {activeTab === 'especificas' && (
-              <div className="relative">
-                <select
-                  value={selectedProvider}
-                  onChange={(e) => setSelectedProvider(e.target.value as ProviderType)}
-                  className="appearance-none pl-4 pr-10 py-2 text-sm font-medium bg-white border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-brand-200 focus:border-brand-500 outline-none cursor-pointer"
-                >
-                  <option value="GNP">GNP</option>
-                  <option value="METLIFE">METLIFE</option>
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
-              </div>
-            )}
+            {/* Botón Crear Nueva Regla - Alineado a la derecha */}
+            <button
+              onClick={() => {
+                setEditingRule(undefined);
+                setIsEditorOpen(true);
+              }}
+              className="py-2 px-4 border-2 border-dashed border-brand-200 rounded-xl text-brand-600 hover:border-brand-400 hover:bg-brand-50 transition-all flex items-center gap-2 font-medium text-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Crear Nueva Regla
+            </button>
           </div>
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 bg-slate-50/50">
-           <div className="flex justify-between items-center mb-4">
-             <div className="grid grid-cols-12 gap-4 flex-1 px-4 py-2 font-bold text-xs uppercase text-slate-400 tracking-wider">
-               <div className="col-span-4">Regla y Criterio</div>
-               <div className="col-span-2">Nivel de Impacto</div>
-               <div className="col-span-2 text-center">Peso (Puntos)</div>
-               <div className="col-span-2 text-center">Categoría</div>
-               <div className="col-span-2 text-center">Acciones</div>
-             </div>
+           <div className="grid grid-cols-12 gap-4 px-4 py-2 mb-4 font-bold text-xs uppercase text-slate-400 tracking-wider">
+             <div className="col-span-4">Regla y Criterio</div>
+             <div className="col-span-2">Nivel de Impacto</div>
+             <div className="col-span-2 text-center">Peso (Puntos)</div>
+             <div className="col-span-2 text-center">Categoría</div>
+             <div className="col-span-2 text-center">Acciones</div>
            </div>
-           
-           <button
-             onClick={() => {
-               setEditingRule(undefined);
-               setIsEditorOpen(true);
-             }}
-             className="w-full mb-4 py-3 border-2 border-dashed border-brand-200 rounded-xl text-brand-600 hover:border-brand-400 hover:bg-brand-50 transition-all flex items-center justify-center gap-2 font-medium"
-           >
-             <Plus className="w-4 h-4" />
-             Crear Nueva Regla
-           </button>
 
            {filteredRules.length === 0 ? (
              <div className="text-center py-12 text-slate-500">
