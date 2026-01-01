@@ -1,0 +1,195 @@
+🚀 PROMPT FINAL PARA AGENTE BUILD
+CONTEXTO DEL PROYECTO
+Estás trabajando en un Auditor Médico IA que procesa informes de aseguradoras mexicanas (GNP y METLIFE). El sistema:
+
+Extrae datos de PDFs usando Gemini AI con schemas específicos por aseguradora
+Valida contra reglas de scoring en services/scoring-engine.ts
+Calcula un score de 0-100 basado en cumplimiento de reglas
+Código base relevante:
+
+Normalización (Fase 1): Sistema en services/field-mapper.ts que mapea campos de cada aseguradora a un schema estándar usando configs en config/aseguradora-configs.ts
+Reglas de validación: Actualmente en services/scoring-engine.ts con DEFAULT_SCORING_RULES[]
+UI de configuración: Componente RuleConfigurator.tsx que permite editar severidad/puntos de reglas
+OBJETIVO - IMPLEMENTAR OPCIONES A + B
+✅ OPCIÓN A: Normalizar ~30 Campos Críticos
+Instrucciones:
+
+Completa el mapeo de los siguientes 30 campos críticos en ambas aseguradoras (GNP y METLIFE) dentro de config/aseguradora-configs.ts:
+PACIENTE (6 campos):
+- paciente.nombre
+- paciente.apellido_paterno  
+- paciente.apellido_materno
+- paciente.edad
+- paciente.sexo
+- paciente.fecha_nacimiento (nuevo)
+PÓLIZA (3 campos):
+- poliza.numero
+- poliza.certificado (nuevo)
+- poliza.asegurado_titular (nuevo, booleano)
+MÉDICO TRATANTE (8 campos):
+- medico_tratante.nombre
+- medico_tratante.apellido_paterno
+- medico_tratante.apellido_materno
+- medico_tratante.cedula_profesional
+- medico_tratante.especialidad
+- medico_tratante.telefono
+- medico_tratante.correo
+- medico_tratante.rfc (nuevo, solo MetLife lo requiere)
+FECHAS (5 campos):
+- fecha.ingreso
+- fecha.egreso
+- fecha.diagnostico
+- fecha.cirugia
+- fecha.informe
+DIAGNÓSTICO (3 campos):
+- diagnostico.codigo_cie
+- diagnostico.descripcion
+- diagnostico.codigo_cie_secundario (array)
+INTERVENCIÓN QUIRÚRGICA (3 campos):
+- intervencion_qx.hubo_cirugia
+- intervencion_qx.tipo_anestesia
+- intervencion_qx.descripcion
+SIGNOS VITALES (2 campos - SOLO GNP):
+- signos_vitales.temperatura
+- signos_vitales.presion_sistolica
+VALIDACIÓN CRÍTICA: Ejecuta npm run validate-paths para validar los 30 paths contra los PDFs reales en attached_assets/:
+
+Informe_medico_GNP_1766215603488.pdf
+Informe_medico_Metlife_1766206666755.pdf
+Corrige errores reportados por el script de validación antes de continuar.
+
+Actualiza types/standardized-schema.ts si es necesario para incluir nuevos campos (fecha_nacimiento, certificado, etc.)
+
+✅ OPCIÓN B: Organizar Reglas en Archivos Separados + UI Mejorado
+Parte 1: Crear archivos de reglas separados
+
+Crea 3 nuevos archivos:
+
+services/scoring-rules-general.ts - Reglas aplicables a TODAS las aseguradoras (≥3 reglas):
+import { ScoringRule } from "../types";
+export const REGLAS_GENERALES: ScoringRule[] = [
+  {
+    id: 'diag_falta',
+    name: 'Diagnóstico faltante',
+    level: 'CRÍTICO',
+    points: 25,
+    description: 'El diagnóstico definitivo es la base de la reclamación.',
+    providerTarget: 'ALL',
+    validator: (data) => {
+      // Intentar leer de datos normalizados si existen
+      if (data._normalized?.datos?.diagnostico?.descripcion) {
+        return !data._normalized.datos.diagnostico.descripcion.trim();
+      }
+      // Fallback a datos raw
+      return !data.diagnostico?.diagnostico_definitivo?.trim();
+    },
+    affectedFields: ['diagnostico.diagnostico_definitivo']
+  },
+  // ... mínimo 2 reglas más
+];
+services/scoring-rules-gnp.ts - Reglas específicas de GNP (≥3 reglas):
+export const REGLAS_GNP: ScoringRule[] = [
+  {
+    id: 'gnp_signos',
+    name: 'Signos Vitales Incompletos',
+    level: 'IMPORTANTE',
+    points: 10,
+    description: 'GNP requiere signos vitales (Presión/Temperatura) para el dictamen.',
+    providerTarget: 'GNP',
+    validator: (data) => !data.signos_vitales?.presion_arterial || !data.signos_vitales?.temperatura,
+    affectedFields: ['signos_vitales.presion_arterial']
+  },
+  // ... mínimo 2 reglas más
+];
+services/scoring-rules-metlife.ts - Reglas específicas de MetLife (≥3 reglas):
+export const REGLAS_METLIFE: ScoringRule[] = [
+  {
+    id: 'metlife_rfc',
+    name: 'RFC Médico Obligatorio',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'MetLife requiere el RFC para validación de honorarios.',
+    providerTarget: 'METLIFE',
+    validator: (data) => !data.medico_tratante?.rfc?.trim(),
+    affectedFields: ['medico_tratante.rfc']
+  },
+  // ... mínimo 2 reglas más
+];
+Parte 2: Actualizar services/scoring-engine.ts
+
+Agrega función para obtener reglas según aseguradora:
+
+import { REGLAS_GENERALES } from './scoring-rules-general';
+import { REGLAS_GNP } from './scoring-rules-gnp';
+import { REGLAS_METLIFE } from './scoring-rules-metlife';
+export function getReglasParaAseguradora(provider: ProviderType): ScoringRule[] {
+  const reglasEspecificas = provider === 'GNP' ? REGLAS_GNP : 
+                           provider === 'METLIFE' ? REGLAS_METLIFE : [];
+  return [...REGLAS_GENERALES, ...reglasEspecificas];
+}
+export const DEFAULT_SCORING_RULES = getReglasParaAseguradora('ALL');
+Parte 3: Mejorar UI de RuleConfigurator.tsx
+
+Agrega:
+
+Tabs para alternar entre "Reglas Generales" y "Reglas Específicas"
+Dropdown para seleccionar aseguradora (GNP/METLIFE) en tab "Específicas"
+Badge visual para cada regla mostrando su categoría (GENERAL/GNP/METLIFE)
+Ejemplo de estructura visual:
+
+┌─────────────────────────────────────┐
+│  [GENERALES]  [ESPECÍFICAS ▾]       │
+├─────────────────────────────────────┤
+│  ┌──────────────────────────────┐   │
+│  │ 🔴 GENERAL | Diagnóstico...  │   │
+│  │ Nivel: [CRÍTICO ▾]  Pts: 25  │   │
+│  └──────────────────────────────┘   │
+│  ... más reglas                     │
+└─────────────────────────────────────┘
+🎯 DECISIONES DE IMPLEMENTACIÓN CONFIRMADAS
+Normalización automática: NO integrar aún en geminiService.ts. Mantener infraestructura lista pero sin modificar flujo actual.
+
+Validación de paths: SÍ validar los 30 paths contra PDFs reales usando npm run validate-paths.
+
+UI de reglas: Usar tabs + dropdown para seleccionar aseguradora al editar reglas específicas.
+
+Propiedad de validación: Mantener validator en lugar de migrar a check. Conservar compatibilidad con código existente.
+
+Reglas de ejemplo: Crear reglas genéricas de demostración coherentes con el dominio médico (3 generales + 3 GNP + 3 MetLife).
+
+✅ CHECKLIST DE VALIDACIÓN POST-IMPLEMENTACIÓN
+Compilación:
+
+ npm run dev ejecuta sin errores TypeScript
+ No hay imports faltantes ni referencias rotas
+Normalización (Opción A):
+
+ config/aseguradora-configs.ts tiene mappings de 30 campos para GNP
+ config/aseguradora-configs.ts tiene mappings de 30 campos para METLIFE
+ types/standardized-schema.ts incluye todos los campos del schema
+ npm run validate-paths ejecuta sin errores críticos
+Reglas (Opción B):
+
+ Existe services/scoring-rules-general.ts con ≥3 reglas
+ Existe services/scoring-rules-gnp.ts con ≥3 reglas
+ Existe services/scoring-rules-metlife.ts con ≥3 reglas
+ services/scoring-engine.ts tiene función getReglasParaAseguradora()
+ Las reglas generales intentan usar data._normalized.* con fallback a data.*
+UI (Opción B):
+
+ RuleConfigurator.tsx muestra tabs "Generales" y "Específicas"
+ Tab "Específicas" tiene dropdown GNP/METLIFE
+ Cada regla tiene badge visual (GENERAL/GNP/METLIFE)
+ Los cambios se guardan correctamente al cerrar modal
+Prueba funcional:
+
+ Subir PDF de GNP → score se calcula con reglas generales + GNP
+ Subir PDF de METLIFE → score se calcula con reglas generales + METLIFE
+ Abrir Auditoría de Reglas → se pueden editar niveles y puntos
+ Consola del navegador NO muestra errores TypeScript
+🚨 NOTAS IMPORTANTES
+Libertad creativa: Si encuentras una forma más óptima o eficiente de implementar algo (mejores parsers, validaciones más robustas, UI más intuitiva), tienes libertad de hacerlo. Estas son sugerencias, no restricciones absolutas.
+
+Pregunta si hay dudas: Si algo no te queda claro sobre el output esperado o necesitas más contexto sobre los PDFs/schemas, pregúntame antes de ejecutar.
+
+No romper funcionalidad existente: El Dashboard y flujo actual deben seguir funcionando al 100%. Los cambios son aditivos, no destructivos.

@@ -1,0 +1,66 @@
+
+📋 REPORTE DE VALIDACIÓN DE PATHS - METLIFE
+❌ ERRORES CRÍTICOS (1 path que NO existe):
+Campo Configurado	Path Actual	Problema
+poliza.numero	tramite.numero_poliza	El JSON real de METLIFE NO tiene el campo tramite.numero_poliza
+✅ PATHS CORRECTOS (21/22):
+Todos los demás mappings funcionan correctamente.
+
+⚠️ CAMPOS IMPORTANTES SIN MAPEAR (103 campos)
+Los más críticos para la funcionalidad:
+
+1. Equipo Quirúrgico Completo (equipo_quirurgico_metlife.*):
+• equipo_quirurgico_metlife.anestesiologo.nombre
+• equipo_quirurgico_metlife.anestesiologo.cedula_especialidad
+• equipo_quirurgico_metlife.anestesiologo.celular
+• equipo_quirurgico_metlife.anestesiologo.email
+• equipo_quirurgico_metlife.anestesiologo.rfc
+• equipo_quirurgico_metlife.primer_ayudante.*
+• equipo_quirurgico_metlife.otro_1.* (incluye especialidad)
+• equipo_quirurgico_metlife.otro_2.* (incluye especialidad)
+2. Auditorías de Checkboxes:
+• medico_tratante.tipo_atencion_audit.medico_tratante_marcado
+• medico_tratante.tipo_atencion_audit.cirujano_principal_marcado
+• medico_tratante.tipo_atencion_audit.equipo_quirurgico_marcado
+• medico_tratante.tipo_atencion_audit.interconsultante_marcado
+• medico_tratante.tipo_atencion_audit.segunda_valoracion_marcado
+• padecimiento_actual.tipo_padecimiento_audit.agudo_marcado
+• padecimiento_actual.tipo_padecimiento_audit.cronico_marcado
+• padecimiento_actual.tipo_padecimiento_audit.congenito_marcado
+• padecimiento_actual.tipo_padecimiento_audit.adquirido_marcado
+3. Honorarios del Médico:
+• medico_tratante.honorarios_cirujano
+• medico_tratante.honorarios_ayudante
+• medico_tratante.honorarios_anestesiologo
+• medico_tratante.honorarios_otro_1
+• medico_tratante.honorarios_otro_2
+4. Campos Médico Tratante Adicionales:
+• medico_tratante.cedula_especialidad
+• medico_tratante.celular
+• medico_tratante.rfc
+• medico_tratante.domicilio_consultorio
+• medico_tratante.convenio_aseguradora
+• medico_tratante.se_ajusta_tabulador
+• medico_tratante.tipo_atencion
+5. Padecimiento Actual Adicional:
+• padecimiento_actual.causa_etiologia
+• padecimiento_actual.estado_actual
+• padecimiento_actual.plan_tratamiento
+• padecimiento_actual.fecha_probable_alta
+• padecimiento_actual.seguira_tratamiento
+• padecimiento_actual.tiempo_evolucion
+6. Otros Campos Importantes:
+• hospital.nombre_hospital
+• hospital.tipo_estancia
+• identificacion.causa_atencion
+• identificacion.peso / talla
+• firma.fecha / lugar / nombre_firma
+🔧 CORRECCIONES PROPUESTAS
+Error Crítico a Corregir:
+poliza.numero: Marcar como opcional: true o buscar un path alternativo en el JSON (parece que METLIFE no captura número de póliza en el mismo campo)
+Campos Prioritarios a Agregar:
+Si quieres que agregue los mappings para estos campos críticos, puedo hacerlo. Los más importantes serían:
+
+Equipo quirúrgico completo - Para auditar al equipo médico
+Auditorías de checkboxes - Para verificar qué tipo de atención/padecimiento fue marcado
+Honorarios - Para validar costos

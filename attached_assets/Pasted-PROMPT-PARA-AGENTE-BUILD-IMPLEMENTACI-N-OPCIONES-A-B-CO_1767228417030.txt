@@ -1,0 +1,225 @@
+PROMPT PARA AGENTE BUILD - IMPLEMENTACIÓN OPCIONES A + B
+CONTEXTO DEL PROYECTO
+Estás trabajando en un Auditor Médico IA que procesa informes de aseguradoras mexicanas (GNP y METLIFE). Actualmente el sistema:
+
+Extrae datos de PDFs usando Gemini AI con schemas específicos por aseguradora
+Valida contra reglas de scoring en services/scoring-engine.ts
+Calcula un score de 0-100 basado en cumplimiento de reglas
+El código base incluye:
+
+Normalización (Fase 1): Sistema en services/field-mapper.ts que mapea campos de cada aseguradora a un schema estándar usando configs en config/aseguradora-configs.ts
+Reglas de validación: Actualmente en services/scoring-engine.ts con DEFAULT_SCORING_RULES[]
+UI de configuración: Componente RuleConfigurator.tsx que permite editar severidad/puntos de reglas
+OBJETIVO - IMPLEMENTAR OPCIONES A + B
+OPCIÓN A: Normalizar ~30 Campos Críticos
+Necesito que:
+
+Revises los archivos de configuración actuales:
+
+config/aseguradora-configs.ts (ya tiene algunos campos mapeados)
+types/standardized-schema.ts (schema estándar StandardizedMedicalReport)
+Completes el mapeo de los siguientes 30 campos críticos en ambas aseguradoras (GNP y METLIFE):
+
+CAMPOS A NORMALIZAR:
+
+// PACIENTE (6 campos)
+- paciente.nombre
+- paciente.apellido_paterno
+- paciente.apellido_materno (opcional)
+- paciente.edad
+- paciente.sexo
+- paciente.fecha_nacimiento (opcional)
+// PÓLIZA/TRÁMITE (2 campos)
+- poliza.numero
+- poliza.tipo_tramite (opcional)
+// MÉDICO TRATANTE (6 campos)
+- medico_tratante.nombre
+- medico_tratante.apellido_paterno
+- medico_tratante.apellido_materno (opcional)
+- medico_tratante.cedula_profesional
+- medico_tratante.especialidad
+- medico_tratante.telefono (opcional)
+- medico_tratante.correo (opcional)
+// FECHAS (4 campos)
+- fecha.ingreso (opcional)
+- fecha.egreso (opcional)
+- fecha.diagnostico (opcional)
+- fecha.cirugia (opcional)
+// DIAGNÓSTICO (2 campos)
+- diagnostico.codigo_cie (validar formato según aseguradora)
+- diagnostico.descripcion
+// INTERVENCIÓN QUIRÚRGICA (3 campos)
+- intervencion_qx.hubo_cirugia (boolean)
+- intervencion_qx.tipo_anestesia (opcional)
+- intervencion_qx.descripcion (opcional)
+// SIGNOS VITALES (3 campos - solo GNP los captura)
+- signos_vitales.temperatura (opcional)
+- signos_vitales.frecuencia_cardiaca (opcional)
+- signos_vitales.presion_sistolica (opcional)
+// FIRMA (1 campo)
+- firma_medico (boolean)
+Valida los paths contra los PDFs reales usando el archivo de referencia config/PATH_VALIDATION_CHECKLIST.md
+
+Asegúrate que services/field-mapper.ts (clase FieldNormalizer) retorne SIEMPRE:
+
+raw: datos originales completos
+datos: schema normalizado con los 30 campos
+OPCIÓN B: Crear Sistema de Reglas Generales + Específicas
+Necesito que:
+
+Reestructures el archivo services/scoring-engine.ts para separar:
+// NUEVO ARCHIVO: services/scoring-rules-general.ts
+export const REGLAS_GENERALES: ScoringRule[] = [
+  // Reglas que SIEMPRE aplican (usan campos normalized)
+  // Ejemplo:
+  {
+    id: 'diag_falta',
+    name: 'Diagnóstico faltante',
+    level: 'CRÍTICO',
+    points: 25,
+    description: 'El diagnóstico definitivo es obligatorio',
+    check: (data) => {
+      // ✅ USA CAMPO NORMALIZADO
+      return !data.normalized?.diagnostico?.descripcion?.trim();
+    }
+  }
+];
+// NUEVO ARCHIVO: services/scoring-rules-gnp.ts
+export const REGLAS_ESPECIFICAS_GNP: ScoringRule[] = [
+  {
+    id: 'gnp_signos_vitales',
+    name: 'Signos Vitales Completos',
+    level: 'IMPORTANTE',
+    points: 10,
+    description: 'GNP requiere temperatura y presión arterial',
+    check: (data) => {
+      // ✅ USA CAMPOS RAW específicos de GNP
+      return !data.raw?.signos_vitales?.temperatura || 
+             !data.raw?.signos_vitales?.presion_arterial;
+    }
+  }
+];
+// NUEVO ARCHIVO: services/scoring-rules-metlife.ts
+export const REGLAS_ESPECIFICAS_METLIFE: ScoringRule[] = [
+  {
+    id: 'metlife_rfc_medico',
+    name: 'RFC Médico Obligatorio',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'MetLife requiere RFC para facturación',
+    check: (data) => {
+      // ✅ USA CAMPO RAW específico de METLIFE
+      return !data.raw?.medico_tratante?.rfc?.trim();
+    }
+  }
+];
+Modifica services/scoring-engine.ts para cargar reglas dinámicamente:
+import { REGLAS_GENERALES } from './scoring-rules-general';
+import { REGLAS_ESPECIFICAS_GNP } from './scoring-rules-gnp';
+import { REGLAS_ESPECIFICAS_METLIFE } from './scoring-rules-metlife';
+export function getReglasParaAseguradora(aseguradora: string): ScoringRule[] {
+  const base = [...REGLAS_GENERALES];
+  
+  if (aseguradora === 'GNP') {
+    return [...base, ...REGLAS_ESPECIFICAS_GNP];
+  }
+  
+  if (aseguradora === 'METLIFE') {
+    return [...base, ...REGLAS_ESPECIFICAS_METLIFE];
+  }
+  
+  return base;
+}
+export function calculateScore(data: ExtractedData, previousScore?: number): ScoringResult {
+  const aseguradora = data._metadata?.aseguradora || data.provider || 'UNKNOWN';
+  const rules = getReglasParaAseguradora(aseguradora);
+  
+  // ... resto del código usando 'rules'
+}
+Actualiza components/RuleConfigurator.tsx para mostrar reglas separadas por categoría:
+REQUERIMIENTOS UI:
+
+// En RuleConfigurator.tsx debe haber:
+// 1. TABS para alternar entre "Reglas Generales" y "Reglas Específicas"
+<div className="tabs">
+  <button onClick={() => setActiveTab('general')}>
+    Reglas Generales (Aplican a todas)
+  </button>
+  <button onClick={() => setActiveTab('especificas')}>
+    Reglas Específicas por Aseguradora
+  </button>
+</div>
+// 2. Si activeTab === 'general', mostrar REGLAS_GENERALES
+// 3. Si activeTab === 'especificas', mostrar DROPDOWN para elegir aseguradora:
+<select onChange={(e) => setSelectedAseguradora(e.target.value)}>
+  <option value="GNP">GNP - Grupo Nacional Provincial</option>
+  <option value="METLIFE">MetLife México</option>
+</select>
+// Luego mostrar las reglas específicas de esa aseguradora
+// 4. Cada regla debe tener un BADGE visual que indique:
+//    - "GENERAL" (aplica a todas) con bg-blue-100
+//    - "GNP ONLY" con bg-green-100
+//    - "METLIFE ONLY" con bg-purple-100
+Agrega al menos 3 reglas de ejemplo en cada archivo (general, GNP, METLIFE) que demuestren el uso de data.normalized.* vs data.raw.*
+CONSIDERACIONES TÉCNICAS
+NO elimines las reglas actuales de DEFAULT_SCORING_RULES, úsalas como base para migrar a los nuevos archivos
+
+Mantén compatibilidad con App.tsx que actualmente usa:
+
+const [rules, setRules] = useState<ScoringRule[]>(DEFAULT_SCORING_RULES);
+La estructura de ScoringRule debe incluir un nuevo campo opcional:
+interface ScoringRule {
+  id: string;
+  name: string;
+  level: 'CRÍTICO' | 'IMPORTANTE' | 'MODERADO' | 'DISCRETO';
+  points: number;
+  description: string;
+  check: (data: any) => boolean;  // ← Puede acceder a data.raw Y data.normalized
+  categoria?: 'GENERAL' | 'GNP' | 'METLIFE';  // ← NUEVO
+}
+El flujo completo debe ser:
+PDF → Gemini AI → ExtractedData (raw) 
+    → FieldNormalizer.normalize() → { raw, normalized }
+    → calculateScore() con reglas dinámicas según aseguradora
+    → ScoringResult
+ARCHIVOS QUE DEBES MODIFICAR/CREAR
+CREAR:
+
+services/scoring-rules-general.ts
+services/scoring-rules-gnp.ts
+services/scoring-rules-metlife.ts
+MODIFICAR:
+
+config/aseguradora-configs.ts (completar mappings de 30 campos)
+types/standardized-schema.ts (agregar campos faltantes si es necesario)
+services/scoring-engine.ts (función getReglasParaAseguradora)
+components/RuleConfigurator.tsx (UI con tabs y categorización)
+types.ts (agregar categoria a ScoringRule)
+VALIDAR:
+
+Que services/geminiService.ts use FieldNormalizer correctamente
+Que App.tsx reciba reglas dinámicas según aseguradora seleccionada
+RESTRICCIONES Y MEJORES PRÁCTICAS
+✅ SI tienes una forma más óptima o eficiente de implementar esto, tienes libertad de proponer mejoras
+
+✅ Prioriza código limpio y documentado con comentarios en español
+
+✅ Valida los paths contra los PDFs reales antes de commitear (hay ejemplos en attached_assets/)
+
+❌ NO rompas la compatibilidad con el flujo existente de analyzeDocument() en geminiService.ts
+
+❌ NO modifies providers/ a menos que sea absolutamente necesario (los schemas de Gemini son diferentes a la normalización)
+
+ENTREGABLES ESPERADOS
+✅ 30 campos normalizados funcionando en GNP y METLIFE
+✅ 3 archivos de reglas separados (general, gnp, metlife)
+✅ UI mejorada en RuleConfigurator con tabs y categorización visual
+✅ Al menos 9 reglas de ejemplo (3 por categoría) que demuestren uso de normalized y raw
+✅ Función dinámica getReglasParaAseguradora() integrada en scoring-engine
+PREGUNTA FINAL
+¿Necesitas algún detalle adicional sobre:
+
+Los paths específicos de GNP vs METLIFE?
+La estructura exacta del schema normalizado?
+Ejemplos concretos de reglas que debería incluir?
+Si todo está claro, procede con la implementación completa de A + B. 🚀
