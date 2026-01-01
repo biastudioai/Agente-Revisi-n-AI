@@ -1,0 +1,164 @@
+🎯 PROMPT PARA AGENTE BUILD: MIGRACIÓN DE REGLAS HARDCODED A SISTEMA EDITABLE
+📋 CONTEXTO DEL PROYECTO
+Estás trabajando en un Auditor Médico IA que valida informes médicos de diferentes aseguradoras (GNP, MetLife). Actualmente el sistema tiene:
+
+Reglas hardcoded con funciones validator en:
+
+services/scoring-rules-general.ts (3 reglas generales)
+services/scoring-rules-gnp.ts (3 reglas específicas GNP)
+services/scoring-rules-metlife.ts (3 reglas específicas MetLife)
+Sistema nuevo de reglas editables con:
+
+21 operadores en services/rule-validator.ts
+Editor visual en components/RuleEditor.tsx
+Sistema de condiciones (RuleCondition[]) + lógica AND/OR
+🎯 OBJETIVO PRINCIPAL
+MIGRAR todas las reglas hardcoded (9 reglas totales) al sistema de condiciones editables, eliminando las funciones validator y reemplazándolas por arrays de conditions.
+
+✅ REGLAS A MIGRAR
+REGLAS GENERALES (3 reglas - archivo scoring-rules-general.ts):
+diag_falta: Diagnóstico definitivo vacío
+
+Operador sugerido: IS_EMPTY
+Campo: diagnostico.diagnostico_definitivo
+cie_incoherencia: CIE-10 no coherente con texto
+
+Operador sugerido: EQUALS (comparar con false)
+Campo: diagnostico.cie_coherente_con_texto
+Valor: false
+firma_faltante: Firma autógrafa no detectada
+
+Operador sugerido: EQUALS (comparar con false)
+Campo: firma.firma_autografa_detectada
+Valor: false
+REGLAS GNP (3 reglas - archivo scoring-rules-gnp.ts):
+gnp_signos: Signos vitales incompletos (falta presión O temperatura)
+
+Operador sugerido: ONE_OF_REQUIRED (al menos uno debe estar vacío)
+Campos: ['signos_vitales.presion_arterial', 'signos_vitales.temperatura']
+Lógica: OR (si cualquiera falta, se activa)
+gnp_cedula: Cédula profesional inválida (debe ser 7-8 dígitos)
+
+Operador sugerido: REGEX (negado - si NO cumple el patrón)
+Campo: medico_tratante.cedula_profesional
+Valor regex: ^\d{7,8}$
+gnp_fechas_hospital: Fechas de hospitalización incompletas
+
+Esta es COMPLEJA - requiere 2 condiciones con lógica AND:
+Condición 1: hospital.tipo_estancia CONTAINS "ingreso" O "hospital"
+Condición 2: hospital.fecha_ingreso IS_EMPTY O hospital.fecha_egreso IS_EMPTY
+Solución recomendada: Simplificar a solo validar fechas vacías (sin lógica condicional del tipo_estancia)
+REGLAS METLIFE (3 reglas - archivo scoring-rules-metlife.ts):
+metlife_rfc: RFC médico obligatorio vacío
+
+Operador sugerido: IS_EMPTY
+Campo: medico_tratante.rfc
+metlife_secciones: Secciones incompletas (historia clínica O padecimiento vacíos)
+
+Operador sugerido: ONE_OF_REQUIRED
+Campos: ['antecedentes.historia_clinica_breve', 'padecimiento_actual.descripcion']
+metlife_codigo_cie: Código CIE-10 formato inválido
+
+Operador sugerido: REGEX (negado)
+Campo: diagnostico.codigo_cie
+Valor regex: ^[A-Z]\d{2}(\.\d{1,2})?$
+🛠️ TAREAS TÉCNICAS
+PASO 1: Actualizar archivos de reglas
+Reemplaza las 9 reglas en los 3 archivos eliminando validator y agregando conditions:
+
+// EJEMPLO DE CONVERSIÓN:
+// ANTES (hardcoded):
+{
+  id: 'diag_falta',
+  validator: (data) => !data.diagnostico?.diagnostico_definitivo?.trim(),
+  affectedFields: ['diagnostico.diagnostico_definitivo']
+}
+// DESPUÉS (editable):
+{
+  id: 'diag_falta',
+  conditions: [
+    {
+      id: 'cond_diag_1',
+      field: 'diagnostico.diagnostico_definitivo',
+      operator: 'IS_EMPTY'
+    }
+  ],
+  logicOperator: 'AND',
+  affectedFields: ['diagnostico.diagnostico_definitivo']
+}
+PASO 2: Verificar compatibilidad en rule-validator.ts
+El sistema ya soporta reglas híbridas:
+
+export function validateRule(rule: ScoringRule, data: ExtractedData): boolean {
+  // 1. Si tiene validator (legacy), úsalo
+  if (rule.validator) {
+    return rule.validator(data);
+  }
+  
+  // 2. Si tiene conditions (nuevo sistema), úsalas
+  if (rule.conditions && rule.conditions.length > 0) {
+    const results = rule.conditions.map(cond => validateCondition(cond, data));
+    return rule.logicOperator === 'OR' 
+      ? results.some(r => r) 
+      : results.every(r => r);
+  }
+  
+  return false;
+}
+NO necesitas modificar rule-validator.ts - ya está preparado.
+
+PASO 3: UX/UI - Mejores Prácticas
+Para que las reglas sean editables desde la UI, asegúrate de que:
+
+Todas las reglas tienen isCustom: false (para diferenciarlas de reglas creadas por el usuario)
+El botón "Editar" funciona para reglas del sistema (actualmente solo funciona para isCustom: true)
+El RuleEditor muestra correctamente las condiciones existentes al editar
+Cambios sugeridos en RuleConfigurator.tsx:
+
+Permitir editar TODAS las reglas (no solo isCustom)
+Agregar badge visual "SISTEMA" vs "CUSTOM"
+Mantener botón "Eliminar" solo para reglas custom
+📦 ENTREGABLES ESPERADOS
+✅ Archivo services/scoring-rules-general.ts actualizado (3 reglas con conditions)
+✅ Archivo services/scoring-rules-gnp.ts actualizado (3 reglas con conditions)
+✅ Archivo services/scoring-rules-metlife.ts actualizado (3 reglas con conditions)
+✅ Archivo components/RuleConfigurator.tsx modificado para permitir editar reglas del sistema
+✅ Todas las reglas funcionando igual que antes (validación correcta)
+⚠️ CASOS ESPECIALES
+Regla compleja: gnp_fechas_hospital
+Esta regla tiene lógica condicional (valida fechas SOLO si es hospitalario):
+
+OPCIÓN A (Simplificada - RECOMENDADA):
+
+conditions: [
+  { field: 'hospital.fecha_ingreso', operator: 'IS_EMPTY' },
+  { field: 'hospital.fecha_egreso', operator: 'IS_EMPTY' }
+],
+logicOperator: 'OR'  // Falla si cualquiera está vacío
+OPCIÓN B (Completa - REQUIERE NUEVO OPERADOR):
+Si quieres mantener la lógica exacta (validar solo si es hospitalario), necesitarías crear un operador CONTAINS nuevo. NO LO HAGAS a menos que el usuario lo pida explícitamente.
+
+🎨 REFERENCIA VISUAL
+Después de la migración, todas las reglas deberían verse así en RuleEditor:
+
+┌─────────────────────────────────────────┐
+│ Diagnóstico faltante                    │
+│ ┌───────────────────────────────────┐   │
+│ │ 1  diagnostico.diagnostico_definitivo │
+│ │    Está vacío (falta valor)       │   │
+│ └───────────────────────────────────┘   │
+│ Combinar: Y (AND)                       │
+└─────────────────────────────────────────┘
+🚀 INSTRUCCIONES FINALES
+Revisa cada regla antes de migrarla para elegir el operador correcto
+Genera IDs únicos para cada condición (formato: cond_${timestamp}_${random})
+Prueba la validación con datos reales para confirmar que funciona igual
+Mantén los affectedFields exactos (el Dashboard los usa para resaltar campos)
+NO modifiques rule-validator.ts - el sistema ya es compatible
+Simplifica la lógica compleja cuando sea posible (UX > perfección técnica)
+💡 LIBERTAD CREATIVA
+Si encuentras una forma más óptima o eficiente de realizar esta migración (por ejemplo, usando un operador diferente que sea más semántico), tienes total libertad para proponer una mejor solución. Lo importante es que:
+
+✅ Las 9 reglas queden editables desde la UI
+✅ La validación funcione correctamente
+✅ El código sea mantenible y legible
