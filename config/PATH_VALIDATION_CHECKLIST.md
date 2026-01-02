@@ -135,99 +135,115 @@ Este documento lista TODOS los paths de mapeo usados en `aseguradora-configs.ts`
 
 ---
 
-## NY LIFE MONTERREY - Paths de Mapeo
+## NY LIFE MONTERREY - Paths de Mapeo (Estructura Híbrida v2)
 
-### Paciente
-| Campo Estándar | Path en JSON NY Life | Validar |
-|----------------|----------------------|---------|
-| paciente.nombre | `identificacion.nombres` | [ ] |
-| paciente.apellido_paterno | `identificacion.apellido_paterno` | [ ] |
-| paciente.apellido_materno | `identificacion.apellido_materno` | [ ] |
-| paciente.edad | `identificacion.edad` | [ ] |
-| paciente.sexo | `identificacion.sexo` | [ ] |
-| paciente.tipo_evento | `identificacion.tipo_evento` | [ ] |
+> **NOTA**: NY Life usa estructura híbrida con arrays para captura raw + campos individuales para validación granular.
 
-### Póliza
-| Campo Estándar | Path en JSON NY Life | Validar |
-|----------------|----------------------|---------|
-| poliza.numero | `tramite.numero_poliza` | [ ] |
+### Paciente (con arrays para ambigüedades)
+| Campo Estándar | Path en JSON NY Life | Tipo | Validar |
+|----------------|----------------------|------|---------|
+| paciente.nombre | `identificacion.nombres` | STRING | [ ] |
+| paciente.apellido_paterno | `identificacion.apellido_paterno` | STRING | [ ] |
+| paciente.apellido_materno | `identificacion.apellido_materno` | STRING | [ ] |
+| paciente.edad | `identificacion.edad` | STRING | [ ] |
+| paciente.sexo | `identificacion.sexo` | **ARRAY** | [ ] |
+| paciente.tipo_evento | `identificacion.tipo_evento` | **ARRAY** | [ ] |
 
 ### Médico Tratante
-| Campo Estándar | Path en JSON NY Life | Validar |
-|----------------|----------------------|---------|
-| medico_tratante.nombre | `medico_tratante.nombres` | [ ] |
-| medico_tratante.apellido_paterno | `medico_tratante.apellido_paterno` | [ ] |
-| medico_tratante.apellido_materno | `medico_tratante.apellido_materno` | [ ] |
-| medico_tratante.cedula_profesional | `medico_tratante.cedula_profesional` | [ ] |
-| medico_tratante.cedula_especialidad | `medico_tratante.cedula_especialidad` | [ ] |
-| medico_tratante.especialidad | `medico_tratante.especialidad` | [ ] |
-| medico_tratante.telefono | `medico_tratante.telefono_consultorio` | [ ] |
-| medico_tratante.telefono_movil | `medico_tratante.telefono_movil` | [ ] |
-| medico_tratante.correo | `medico_tratante.correo_electronico` | [ ] |
-| medico_tratante.rfc | `medico_tratante.rfc` | [ ] |
-| medico_tratante.numero_proveedor | `medico_tratante.numero_proveedor` | [ ] |
-| medico_tratante.pertenece_convenio | `medico_tratante.pertenece_convenio` | [ ] |
-| medico_tratante.acepta_tabulador | `medico_tratante.acepta_tabulador` | [ ] |
+| Campo Estándar | Path en JSON NY Life | Tipo | Validar |
+|----------------|----------------------|------|---------|
+| medico_tratante.nombre_completo | `medico_tratante.nombre_completo` | STRING | [ ] |
+| medico_tratante.nombre | `medico_tratante.nombres` | STRING | [ ] |
+| medico_tratante.apellido_paterno | `medico_tratante.apellido_paterno` | STRING | [ ] |
+| medico_tratante.apellido_materno | `medico_tratante.apellido_materno` | STRING | [ ] |
+| medico_tratante.cedula_profesional | `medico_tratante.cedula_profesional` | STRING | [ ] |
+| medico_tratante.cedula_especialidad | `medico_tratante.cedula_especialidad` | STRING | [ ] |
+| medico_tratante.especialidad | `medico_tratante.especialidad` | STRING | [ ] |
+| medico_tratante.numero_proveedor | `medico_tratante.numero_proveedor` | STRING | [ ] |
+| medico_tratante.convenio_red | `medico_tratante.convenio_red` | **ARRAY** | [ ] |
+| medico_tratante.acepta_tabulador | `medico_tratante.acepta_tabulador` | **ARRAY** | [ ] |
 
-### Fechas
-| Campo Estándar | Path en JSON NY Life | Validar |
-|----------------|----------------------|---------|
-| fecha.ingreso | `hospital.fecha_ingreso` | [ ] |
-| fecha.egreso | `hospital.fecha_egreso` | [ ] |
-| fecha.diagnostico | `padecimiento_actual.fecha_diagnostico` | [ ] |
-| fecha.primeros_sintomas | `padecimiento_actual.fecha_primeros_sintomas` | [ ] |
-| fecha.primera_consulta | `padecimiento_actual.fecha_primera_consulta` | [ ] |
-| fecha.firma | `firma.fecha` | [ ] |
+### Fechas (Estructura Robusta día/mes/año)
+| Campo Estándar | Path en JSON NY Life | Tipo | Validar |
+|----------------|----------------------|------|---------|
+| fecha.primeros_sintomas | `padecimiento_actual.fecha_primeros_sintomas.formatted` | OBJECT→STRING | [ ] |
+| fecha.primera_consulta | `padecimiento_actual.fecha_primera_consulta.formatted` | OBJECT→STRING | [ ] |
+| fecha.diagnostico | `padecimiento_actual.fecha_diagnostico.formatted` | OBJECT→STRING | [ ] |
+| fecha.ingreso | `tratamiento_y_hospital.hospital.ingreso.formatted` | OBJECT→STRING | [ ] |
+| fecha.egreso | `tratamiento_y_hospital.hospital.egreso.formatted` | OBJECT→STRING | [ ] |
+| fecha.firma | `firma_cierre.fecha.formatted` | OBJECT→STRING | [ ] |
 
-### Diagnóstico
-| Campo Estándar | Path en JSON NY Life | Validar |
-|----------------|----------------------|---------|
-| diagnostico.descripcion | `diagnostico.diagnostico_1` | [ ] |
-| diagnostico.descripcion_2 | `diagnostico.diagnostico_2` | [ ] |
-| diagnostico.descripcion_3 | `diagnostico.diagnostico_3` | [ ] |
-| diagnostico.tipo_padecimiento | `padecimiento_actual.tipo_padecimiento` | [ ] |
+### Diagnóstico (Array de diagnósticos)
+| Campo Estándar | Path en JSON NY Life | Tipo | Validar |
+|----------------|----------------------|------|---------|
+| diagnostico.descripcion | `padecimiento_actual.diagnosticos[0]` | ARRAY[0] | [ ] |
+| diagnostico.descripcion_2 | `padecimiento_actual.diagnosticos[1]` | ARRAY[1] | [ ] |
+| diagnostico.descripcion_3 | `padecimiento_actual.diagnosticos[2]` | ARRAY[2] | [ ] |
+| diagnostico.tipo_padecimiento | `padecimiento_actual.tipo_padecimiento` | **ARRAY** | [ ] |
 
-### Intervención Quirúrgica / Tratamiento
-| Campo Estándar | Path en JSON NY Life | Validar |
-|----------------|----------------------|---------|
-| intervencion_qx.hubo_cirugia | `tratamiento.es_quirurgico` | [ ] |
-| intervencion_qx.descripcion | `tratamiento.procedimiento_quirurgico` | [ ] |
-| intervencion_qx.hubo_complicaciones | `tratamiento.hubo_complicaciones` | [ ] |
-| intervencion_qx.complicaciones_detalle | `tratamiento.complicaciones_detalle` | [ ] |
+### Tratamiento y Hospital
+| Campo Estándar | Path en JSON NY Life | Tipo | Validar |
+|----------------|----------------------|------|---------|
+| tratamiento.modalidad | `tratamiento_y_hospital.modalidad` | **ARRAY** | [ ] |
+| tratamiento.detalle | `tratamiento_y_hospital.detalle_tratamiento` | STRING | [ ] |
+| tratamiento.estatus | `tratamiento_y_hospital.estatus_tratamiento` | **ARRAY** | [ ] |
+| tratamiento.complicaciones | `tratamiento_y_hospital.complicaciones.marcada` | **ARRAY** | [ ] |
+| tratamiento.complicaciones_detalle | `tratamiento_y_hospital.complicaciones.detalle` | STRING | [ ] |
+| hospital.nombre | `tratamiento_y_hospital.hospital.nombre` | STRING | [ ] |
+| hospital.ciudad | `tratamiento_y_hospital.hospital.ciudad` | STRING | [ ] |
+| hospital.tipo_estancia | `tratamiento_y_hospital.hospital.tipo_estancia` | **ARRAY** | [ ] |
 
 ### Exploración Física
-| Campo Estándar | Path en JSON NY Life | Validar |
-|----------------|----------------------|---------|
-| exploracion_fisica.talla | `exploracion_fisica.talla` | [ ] |
-| exploracion_fisica.peso | `exploracion_fisica.peso` | [ ] |
-| exploracion_fisica.resultados | `exploracion_fisica.resultados` | [ ] |
+| Campo Estándar | Path en JSON NY Life | Tipo | Validar |
+|----------------|----------------------|------|---------|
+| exploracion_fisica.talla | `exploracion_fisica.talla` | STRING | [ ] |
+| exploracion_fisica.peso | `exploracion_fisica.peso` | STRING | [ ] |
+| exploracion_fisica.resultados | `exploracion_fisica.resultados` | STRING | [ ] |
 
-### Antecedentes Patológicos
-| Campo Estándar | Path en JSON NY Life | Validar |
-|----------------|----------------------|---------|
-| antecedentes.patologicos.cardiacos | `antecedentes_patologicos.cardiacos` | [ ] |
-| antecedentes.patologicos.hipertensivos | `antecedentes_patologicos.hipertensivos` | [ ] |
-| antecedentes.patologicos.diabetes | `antecedentes_patologicos.diabetes_mellitus` | [ ] |
-| antecedentes.patologicos.vih_sida | `antecedentes_patologicos.vih_sida` | [ ] |
-| antecedentes.patologicos.cancer | `antecedentes_patologicos.cancer` | [ ] |
-| antecedentes.patologicos.hepaticos | `antecedentes_patologicos.hepaticos` | [ ] |
-| antecedentes.patologicos.convulsivos | `antecedentes_patologicos.convulsivos` | [ ] |
-| antecedentes.patologicos.cirugias | `antecedentes_patologicos.cirugias` | [ ] |
+### Antecedentes Patológicos (MODELO HÍBRIDO: Raw + Granular)
+| Campo Estándar | Path en JSON NY Life | Tipo | Validar |
+|----------------|----------------------|------|---------|
+| **captura_raw** | `antecedentes_patologicos.captura_raw_marcas` | **ARRAY** | [ ] |
+| cardiacos | `antecedentes_patologicos.cardiacos` | STRING ("Sí"/"") | [ ] |
+| hipertensivos | `antecedentes_patologicos.hipertensivos` | STRING ("Sí"/"") | [ ] |
+| diabetes | `antecedentes_patologicos.diabetes_mellitus` | STRING ("Sí"/"") | [ ] |
+| vih_sida | `antecedentes_patologicos.vih_sida` | STRING ("Sí"/"") | [ ] |
+| cancer | `antecedentes_patologicos.cancer` | STRING ("Sí"/"") | [ ] |
+| hepaticos | `antecedentes_patologicos.hepaticos` | STRING ("Sí"/"") | [ ] |
+| convulsivos | `antecedentes_patologicos.convulsivos` | STRING ("Sí"/"") | [ ] |
+| cirugias | `antecedentes_patologicos.cirugias` | STRING ("Sí"/"") | [ ] |
+| detalle_narrativo | `antecedentes_patologicos.detalle_narrativo` | STRING | [ ] |
 
-### Antecedentes No Patológicos
-| Campo Estándar | Path en JSON NY Life | Validar |
-|----------------|----------------------|---------|
-| antecedentes.no_patologicos.fuma | `antecedentes_no_patologicos.fuma` | [ ] |
-| antecedentes.no_patologicos.alcohol | `antecedentes_no_patologicos.alcohol` | [ ] |
-| antecedentes.no_patologicos.drogas | `antecedentes_no_patologicos.drogas` | [ ] |
-| antecedentes.no_patologicos.perdida_peso | `antecedentes_no_patologicos.perdida_peso` | [ ] |
-| antecedentes.no_patologicos.perinatales | `antecedentes_no_patologicos.perinatales` | [ ] |
-| antecedentes.no_patologicos.gineco_obstetricos | `antecedentes_no_patologicos.gineco_obstetricos` | [ ] |
+### Antecedentes No Patológicos (MODELO HÍBRIDO)
+| Campo Estándar | Path en JSON NY Life | Tipo | Validar |
+|----------------|----------------------|------|---------|
+| **captura_raw** | `antecedentes_no_patologicos.captura_raw_marcas` | **ARRAY** | [ ] |
+| fuma | `antecedentes_no_patologicos.fuma` | STRING | [ ] |
+| alcohol | `antecedentes_no_patologicos.alcohol` | STRING | [ ] |
+| drogas | `antecedentes_no_patologicos.drogas` | STRING | [ ] |
+| perdida_peso | `antecedentes_no_patologicos.perdida_peso` | STRING | [ ] |
+| perinatales | `antecedentes_no_patologicos.perinatales` | STRING | [ ] |
+| gineco_obstetricos | `antecedentes_no_patologicos.gineco_obstetricos` | STRING | [ ] |
 
-### Documentación
-| Campo Estándar | Path en JSON NY Life | Validar |
-|----------------|----------------------|---------|
-| firma_medico | `firma.firma_autografa_detectada` | [ ] |
+### Discapacidad
+| Campo Estándar | Path en JSON NY Life | Tipo | Validar |
+|----------------|----------------------|------|---------|
+| discapacidad.tiene | `padecimiento_actual.discapacidad.marcada` | **ARRAY** | [ ] |
+| discapacidad.tipo | `padecimiento_actual.discapacidad.tipo` | **ARRAY** | [ ] |
+| discapacidad.desde | `padecimiento_actual.discapacidad.desde` | STRING | [ ] |
+| discapacidad.hasta | `padecimiento_actual.discapacidad.hasta` | STRING | [ ] |
+
+### Equipo Quirúrgico (ARRAY de objetos)
+| Campo Estándar | Path en JSON NY Life | Tipo | Validar |
+|----------------|----------------------|------|---------|
+| equipo_quirurgico | `equipo_quirurgico` | **ARRAY[{rol, nombre, especialidad, presupuesto}]** | [ ] |
+
+### Firma
+| Campo Estándar | Path en JSON NY Life | Tipo | Validar |
+|----------------|----------------------|------|---------|
+| firma.lugar | `firma_cierre.lugar` | STRING | [ ] |
+| firma.nombre | `firma_cierre.nombre_firma` | STRING | [ ] |
+| firma_medico | `firma_cierre.firma_autografa_detectada` | STRING ("Detectada"/"No detectada") | [ ] |
 
 ---
 

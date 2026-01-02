@@ -1,4 +1,4 @@
-# PROMPT PARA GROK - EXTRACCIÓN NY LIFE MONTERREY
+# PROMPT PARA GROK - EXTRACCIÓN NY LIFE MONTERREY (v2 - Híbrido)
 
 ## Instrucciones para Grok
 
@@ -9,7 +9,7 @@ Copia y pega este prompt completo cuando proceses documentos de Seguros Monterre
 ## PROMPT PRINCIPAL
 
 ```
-🏥 GROK: AUDITOR MÉDICO EXPERTO - EXTRACCIÓN NY LIFE MONTERREY
+GROK: AUDITOR MÉDICO EXPERTO - EXTRACCIÓN NY LIFE MONTERREY (MODO RAW)
 
 OBJETIVO:
 Eres un auditor médico especializado en el mercado mexicano. Tu función es extraer datos del "Formato de Informe Médico" de Seguros Monterrey New York Life y devolver un JSON estrictamente válido según la estructura definida.
@@ -21,25 +21,40 @@ IDENTIFICACIÓN DEL DOCUMENTO NY LIFE:
 - Secciones distintivas: "Datos del Asegurado", "Antecedentes personales patológicos/no patológicos"
 - Campo único: "Nº de proveedor"
 
-⚠️ REGLA FUNDAMENTAL: NO INFERIR NUNCA
-- Si un campo NO está visible en el documento → déjalo vacío ("" o null)
-- NO asumas valores basados en otros campos
-- NO completes información faltante automáticamente
-- Extrae SOLO lo que esté explícitamente escrito
-- Si hay duda sobre un valor → déjalo vacío
+=== REGLA DE ORO: EXTRACCIÓN TOTAL (RAW) ===
 
-🚨 REGLA CRÍTICA PARA CASILLAS Y CHECKBOXES:
+- Tu objetivo es capturar CUALQUIER marca o texto visible
+- Si un campo tiene varias casillas marcadas, extrae TODAS en el array
+- NO infieras. Si no hay marca, deja el array vacío []
+- Los campos que antes eran Sí/No ahora son ARRAYS para capturar ambigüedades de llenado manuscrito
 
-PARA CUALQUIER CAMPO QUE DEPENDA DE UNA CASILLA MARCADA:
-- ✅ Solo extrae/marca como true SI VES una marca visual clara (X, ✓, relleno, sombreado)
-- ❌ NO asumas valores basándote en el contexto del documento
-- ❌ NO inferieras el valor porque "tiene sentido clínicamente"
-- 🔹 Si la casilla está VACÍA → el campo debe quedar false/""/null/[] según su tipo
+=== NORMALIZACIÓN DE GÉNERO ===
 
-📋 FORMATO DE FECHAS:
-- TODAS las fechas en formato DD/MM/AAAA
-- El formulario NY Life tiene estructura: Día | Mes | Año
-- Combina los valores de cada campo
+En este formulario: M = Mujer, H = Hombre
+- Si está marcada la casilla "M" -> Extrae ["Femenino"]
+- Si está marcada la casilla "H" -> Extrae ["Masculino"]
+- Si ambas están marcadas o tachadas, extrae ["Femenino", "Masculino"]
+- Si ninguna está marcada -> []
+
+=== TRATAMIENTO DE FECHAS ===
+
+Las fechas usan estructura robusta con día/mes/año separados:
+- Extrae "dia", "mes" y "año" de las casillas individuales
+- En el campo "formatted", genera el string DD/MM/AAAA
+- Si el mes viene en nombre (ej. "Ene"), conviértelo a número (01)
+- Si el año tiene 2 dígitos, convertir a 4 dígitos (25 → 2025)
+
+=== MODELO HÍBRIDO PARA ANTECEDENTES ===
+
+Para antecedentes patológicos y no patológicos:
+1. En el array 'captura_raw_marcas', incluye el nombre de TODAS las opciones que tengan una marca visible (X, ✓, etc)
+2. En los campos individuales (cardiacos, diabetes, etc.), coloca "Sí" si la casilla está marcada, y déjalo vacío "" si no hay marca
+3. Si el médico escribió texto adicional junto a una casilla (ej. "Diabetes - Controlada"), pon "Sí" en el campo individual y captura el texto completo en el array y en detalle_narrativo
+
+=== EQUIPO QUIRÚRGICO ===
+
+Extrae cada fila (Anestesiólogo, Ayudantes, Otros) como un objeto dentro del array.
+No omitas los presupuestos de honorarios.
 
 EXTRAE LA INFORMACIÓN EN ESTE FORMATO JSON EXACTO:
 
@@ -51,12 +66,13 @@ EXTRAE LA INFORMACIÓN EN ESTE FORMATO JSON EXACTO:
       "apellido_paterno": "",
       "apellido_materno": "",
       "nombres": "",
-      "sexo": "",
+      "sexo": [],
       "edad": "",
-      "tipo_evento": ""
+      "tipo_evento": []
     },
     
     "antecedentes_patologicos": {
+      "captura_raw_marcas": [],
       "cardiacos": "",
       "hipertensivos": "",
       "diabetes_mellitus": "",
@@ -65,10 +81,12 @@ EXTRAE LA INFORMACIÓN EN ESTE FORMATO JSON EXACTO:
       "hepaticos": "",
       "convulsivos": "",
       "cirugias": "",
-      "otros": ""
+      "otros": "",
+      "detalle_narrativo": ""
     },
     
     "antecedentes_no_patologicos": {
+      "captura_raw_marcas": [],
       "fuma": "",
       "alcohol": "",
       "drogas": "",
@@ -79,26 +97,42 @@ EXTRAE LA INFORMACIÓN EN ESTE FORMATO JSON EXACTO:
     },
     
     "padecimiento_actual": {
-      "fecha_primeros_sintomas": "",
-      "fecha_primera_consulta": "",
-      "fecha_diagnostico": "",
+      "fecha_primeros_sintomas": {
+        "dia": "",
+        "mes": "",
+        "año": "",
+        "formatted": ""
+      },
+      "fecha_primera_consulta": {
+        "dia": "",
+        "mes": "",
+        "año": "",
+        "formatted": ""
+      },
+      "fecha_diagnostico": {
+        "dia": "",
+        "mes": "",
+        "año": "",
+        "formatted": ""
+      },
       "descripcion_evolucion": "",
+      "diagnosticos": [],
       "tipo_padecimiento": [],
       "tiempo_evolucion": "",
-      "relacionado_con_otro": null,
-      "padecimiento_relacionado": "",
-      "causo_discapacidad": null,
-      "tipo_discapacidad": "",
-      "discapacidad_desde": "",
-      "discapacidad_hasta": "",
-      "continuara_tratamiento": null,
-      "tratamiento_futuro_detalle": ""
-    },
-    
-    "diagnostico": {
-      "diagnostico_1": "",
-      "diagnostico_2": "",
-      "diagnostico_3": ""
+      "relacion_otro_padecimiento": {
+        "marcada": [],
+        "cual": ""
+      },
+      "discapacidad": {
+        "marcada": [],
+        "tipo": [],
+        "desde": "",
+        "hasta": ""
+      },
+      "continuara_tratamiento": {
+        "marcada": [],
+        "detalle": ""
+      }
     },
     
     "exploracion_fisica": {
@@ -107,27 +141,35 @@ EXTRAE LA INFORMACIÓN EN ESTE FORMATO JSON EXACTO:
       "peso": ""
     },
     
-    "tratamiento": {
-      "es_quirurgico": null,
-      "procedimiento_quirurgico": "",
-      "es_medico": null,
-      "tratamiento_medico": "",
-      "es_programado": null,
-      "es_realizado": null,
-      "descripcion": "",
-      "hubo_complicaciones": null,
-      "complicaciones_detalle": ""
-    },
-    
-    "hospital": {
-      "nombre_hospital": "",
-      "ciudad": "",
-      "fecha_ingreso": "",
-      "fecha_egreso": "",
-      "tipo_estancia": ""
+    "tratamiento_y_hospital": {
+      "modalidad": [],
+      "detalle_tratamiento": "",
+      "estatus_tratamiento": [],
+      "complicaciones": {
+        "marcada": [],
+        "detalle": ""
+      },
+      "hospital": {
+        "nombre": "",
+        "ciudad": "",
+        "ingreso": {
+          "dia": "",
+          "mes": "",
+          "año": "",
+          "formatted": ""
+        },
+        "egreso": {
+          "dia": "",
+          "mes": "",
+          "año": "",
+          "formatted": ""
+        },
+        "tipo_estancia": []
+      }
     },
     
     "medico_tratante": {
+      "nombre_completo": "",
       "apellido_paterno": "",
       "apellido_materno": "",
       "nombres": "",
@@ -139,143 +181,121 @@ EXTRAE LA INFORMACIÓN EN ESTE FORMATO JSON EXACTO:
       "correo_electronico": "",
       "telefono_consultorio": "",
       "telefono_movil": "",
-      "pertenece_convenio": null,
-      "acepta_tabulador": null
+      "convenio_red": [],
+      "acepta_tabulador": []
     },
     
-    "equipo_quirurgico": {
-      "anestesiologo": {
+    "equipo_quirurgico": [
+      {
+        "rol": "",
         "nombre": "",
         "especialidad": "",
-        "presupuesto_honorarios": ""
-      },
-      "primer_ayudante": {
-        "nombre": "",
-        "especialidad": "",
-        "presupuesto_honorarios": ""
-      },
-      "segundo_ayudante": {
-        "nombre": "",
-        "especialidad": "",
-        "presupuesto_honorarios": ""
-      },
-      "otros_medicos": {
-        "nombre": "",
-        "especialidad": "",
-        "presupuesto_honorarios": ""
+        "presupuesto": ""
       }
-    },
+    ],
     
-    "firma": {
+    "firma_cierre": {
       "lugar": "",
-      "fecha": "",
+      "fecha": {
+        "dia": "",
+        "mes": "",
+        "año": "",
+        "formatted": ""
+      },
       "nombre_firma": "",
-      "firma_autografa_detectada": false
+      "firma_autografa_detectada": ""
     },
     
     "metadata": {
-      "existe_coherencia_clinica": true,
+      "existe_coherencia_clinica": "",
       "observaciones": ""
     }
   }
 }
 
-NOTAS DE VALIDACIÓN:
+=== VALORES ESPERADOS POR CAMPO ===
 
-1. TIPO DE EVENTO: Solo extrae "Accidente", "Enfermedad" o "Embarazo" SI la casilla está visualmente marcada
-2. SEXO: El formulario usa "M" (Mujer) y "H" (Hombre). Normaliza a "M" o "F"
-3. TIPO_PADECIMIENTO: Es un ARRAY. Puede contener múltiples valores: ["Congénito", "Agudo", "Adquirido", "Crónico"]
-4. FECHAS: Siempre DD/MM/AAAA. Si el año tiene 2 dígitos, convertir a 4 (25 → 2025)
-5. CAMPOS BOOLEANOS: true/false/null según casilla marcada (Sí/No) o indeterminado
-6. NÚMERO DE PROVEEDOR: Campo específico de NY Life, extraer si está presente
-7. FIRMA_AUTOGRAFA_DETECTADA: true solo si VES una firma manuscrita real
+1. SEXO (array): ["Femenino"] o ["Masculino"] o ["Femenino", "Masculino"] o []
+2. TIPO_EVENTO (array): Puede contener "Accidente", "Enfermedad", "Embarazo"
+3. TIPO_PADECIMIENTO (array): ["Congénito", "Agudo", "Adquirido", "Crónico"]
+4. MODALIDAD (array): ["Quirúrgico", "Médico"]
+5. ESTATUS_TRATAMIENTO (array): ["Programación", "Realizado"]
+6. TIPO_ESTANCIA (array): ["Urgencia", "Hospitalización", "Corta estancia"]
+7. COMPLICACIONES/DISCAPACIDAD/CONVENIO (arrays): ["Sí"] o ["No"] o ["Sí", "No"] o []
+8. CAMPOS GRANULARES (strings): "Sí" si marcado, "" si vacío
+9. FIRMA_AUTOGRAFA_DETECTADA: "Detectada" o "No detectada"
 
-CAMPOS OBLIGATORIOS (deben tener valor):
+=== CAMPOS OBLIGATORIOS ===
+
+Estos campos DEBEN tener valor extraído:
 - identificacion.nombres
 - identificacion.edad
-- diagnostico.diagnostico_1
-- medico_tratante.nombres
+- padecimiento_actual.diagnosticos (al menos 1)
+- medico_tratante.nombre_completo
 - medico_tratante.cedula_profesional
 
 IMPORTANTE:
 - No incluyas explicaciones fuera del JSON
-- Si un campo no existe en el documento, deja el valor como "" o null según el tipo
+- Si un campo no existe en el documento, deja el valor como "" o [] según el tipo
 - Para arrays vacíos usa []
 ```
 
 ---
 
-## TABLA COMPARATIVA: MAPEO NY LIFE vs GNP vs METLIFE
+## TABLA COMPARATIVA: ESTRUCTURA NY LIFE vs GNP vs METLIFE
 
-| Campo Estándar | NY Life Path | GNP Path | MetLife Path |
-|----------------|--------------|----------|--------------|
-| **PACIENTE** ||||
-| Nombre(s) | `identificacion.nombres` | `identificacion.nombres` | `identificacion.nombres` |
-| Apellido Paterno | `identificacion.apellido_paterno` | `identificacion.primer_apellido` | `identificacion.nombres` (split) |
-| Apellido Materno | `identificacion.apellido_materno` | `identificacion.segundo_apellido` | `identificacion.nombres` (split) |
-| Edad | `identificacion.edad` | `identificacion.edad` | `identificacion.edad` |
-| Sexo | `identificacion.sexo` | `identificacion.sexo` | `identificacion.sexo` |
-| Tipo de Evento/Causa | `identificacion.tipo_evento` | `identificacion.causa_atencion` | `identificacion.causa_atencion` |
-| **MÉDICO** ||||
-| Nombre | `medico_tratante.nombres` | `medico_tratante.nombres` | `medico_tratante.nombres` |
-| Cédula Profesional | `medico_tratante.cedula_profesional` | `medico_tratante.cedula_profesional` | `medico_tratante.cedula_profesional` |
-| Cédula Especialidad | `medico_tratante.cedula_especialidad` | `medico_tratante.cedula_especialidad` | N/A |
-| RFC | `medico_tratante.rfc` | `medico_tratante.rfc` | `medico_tratante.rfc` (obligatorio) |
-| Nº Proveedor | `medico_tratante.numero_proveedor` | N/A | N/A |
-| **FECHAS** ||||
-| Primeros Síntomas | `padecimiento_actual.fecha_primeros_sintomas` | `padecimiento_actual.fecha_inicio` | `padecimiento_actual.fecha_inicio` |
-| Primera Consulta | `padecimiento_actual.fecha_primera_consulta` | N/A | `identificacion.fecha_primera_atencion` |
-| Diagnóstico | `padecimiento_actual.fecha_diagnostico` | `diagnostico.fecha_diagnostico` | `diagnostico.fecha_diagnostico` |
-| Ingreso Hospital | `hospital.fecha_ingreso` | `hospital.fecha_ingreso` | `hospital.fecha_ingreso` |
-| Egreso Hospital | `hospital.fecha_egreso` | N/A | `hospital.fecha_egreso` |
-| **DIAGNÓSTICO** ||||
-| Diagnóstico 1 | `diagnostico.diagnostico_1` | `diagnostico.diagnostico_definitivo` | `diagnostico.diagnostico_definitivo` |
-| Diagnóstico 2 | `diagnostico.diagnostico_2` | N/A (en mismo campo) | N/A |
-| Diagnóstico 3 | `diagnostico.diagnostico_3` | N/A (en mismo campo) | N/A |
-| Tipo Padecimiento | `padecimiento_actual.tipo_padecimiento` | `padecimiento_actual.tipo_padecimiento` | `padecimiento_actual.tipo_padecimiento` |
-| **ANTECEDENTES** ||||
-| Cardíacos | `antecedentes_patologicos.cardiacos` | `antecedentes.personales_patologicos` | `antecedentes.personales_patologicos` |
-| Hipertensivos | `antecedentes_patologicos.hipertensivos` | (en personales_patologicos) | (en personales_patologicos) |
-| Diabetes | `antecedentes_patologicos.diabetes_mellitus` | (en personales_patologicos) | (en personales_patologicos) |
-| VIH/SIDA | `antecedentes_patologicos.vih_sida` | (en personales_patologicos) | (en personales_patologicos) |
-| Cáncer | `antecedentes_patologicos.cancer` | (en personales_patologicos) | (en personales_patologicos) |
-| Fuma | `antecedentes_no_patologicos.fuma` | `antecedentes.personales_no_patologicos` | N/A |
-| Alcohol | `antecedentes_no_patologicos.alcohol` | (en personales_no_patologicos) | N/A |
-| **CONVENIO** ||||
-| Pertenece Convenio | `medico_tratante.pertenece_convenio` | `medico_tratante.convenio_gnp` | `medico_tratante.convenio_aseguradora` |
-| Acepta Tabulador | `medico_tratante.acepta_tabulador` | `medico_tratante.se_ajusta_tabulador` | `medico_tratante.se_ajusta_tabulador` |
+| Característica | NY Life (v2) | GNP | MetLife |
+|----------------|--------------|-----|---------|
+| **Checkboxes** | ARRAYS (captura ambigüedad) | BOOLEAN | BOOLEAN |
+| **Fechas** | OBJECT {dia, mes, año, formatted} | STRING DD/MM/AAAA | STRING DD/MM/AAAA |
+| **Antecedentes** | Híbrido (raw + granular) | Campo texto libre | Campo texto libre |
+| **Diagnósticos** | Array hasta 3 | Campo único | Campo único |
+| **Equipo QX** | Array de objetos | Objetos fijos | Objetos fijos |
+| **Convenio** | Array ["Sí"]/["No"] | Boolean | Boolean |
+
+---
+
+## BENEFICIOS DEL MODELO HÍBRIDO
+
+1. **Seguridad (Raw)**: Si el médico marca una casilla de forma extraña o añade una nota al margen, el array `captura_raw_marcas` lo va a registrar.
+
+2. **Velocidad de Validación (Granular)**: En Replit, las reglas de validación pueden ir directo al punto:
+   ```
+   Regla: Si diabetes_mellitus == "Sí" Y edad > 60 -> Alerta de Riesgo Alto
+   ```
+
+3. **Auditoría**: Si hay una disputa, puedes comparar el array crudo contra los campos normalizados para ver si la IA interpretó algo mal.
 
 ---
 
 ## CAMPOS ÚNICOS DE NY LIFE (no presentes en GNP/MetLife)
 
 1. **`medico_tratante.numero_proveedor`** - Número de proveedor asignado por NY Life
-2. **`medico_tratante.cedula_especialidad`** - Campo separado para cédula de especialidad/certificación
-3. **Antecedentes patológicos detallados**: Campos individuales para cada tipo:
-   - `cardiacos`, `hipertensivos`, `diabetes_mellitus`, `vih_sida`, `cancer`, `hepaticos`, `convulsivos`
-4. **Antecedentes no patológicos detallados**: 
-   - `fuma`, `alcohol`, `drogas`, `perdida_peso`, `perinatales`, `gineco_obstetricos`
-5. **`diagnostico.diagnostico_2`** y **`diagnostico.diagnostico_3`** - Hasta 3 diagnósticos separados
-6. **`padecimiento_actual.causo_discapacidad`** - Si causó discapacidad
-7. **`padecimiento_actual.tipo_discapacidad`** - Parcial o Total
-8. **`padecimiento_actual.discapacidad_desde/hasta`** - Período de discapacidad
-9. **`equipo_quirurgico.segundo_ayudante`** - Segundo ayudante (NY Life lo solicita explícitamente)
+2. **`medico_tratante.cedula_especialidad`** - Campo separado para cédula de especialidad
+3. **`antecedentes_patologicos.captura_raw_marcas`** - Array raw de todas las marcas
+4. **`antecedentes_no_patologicos.captura_raw_marcas`** - Array raw de todas las marcas
+5. **Antecedentes patológicos detallados**: cardíacos, hipertensivos, diabetes_mellitus, vih_sida, cancer, hepaticos, convulsivos
+6. **`padecimiento_actual.diagnosticos`** - Array de hasta 3 diagnósticos
+7. **`padecimiento_actual.discapacidad`** - Tracking completo de discapacidad
+8. **`equipo_quirurgico`** - Array flexible con todos los roles
 
 ---
 
 ## FLUJO RECOMENDADO
 
-1. **Grok** extrae el PDF → devuelve JSON con estructura definida arriba
+1. **Grok** extrae el PDF → devuelve JSON con estructura híbrida definida arriba
 2. **Gemini (high mode)** recibe el JSON → valida coherencia clínica y estructura
 3. **Gemini** devuelve JSON limpio y consistente
-4. **Replit** ingesta el JSON sin modificaciones usando `CONFIG_NYLIFE` de `aseguradora-configs.ts`
+4. **Replit** ingesta el JSON usando `CONFIG_NYLIFE` de `aseguradora-configs.ts`
+   - Los campos raw se conservan para auditoría
+   - Los campos granulares se normalizan para validación
 
 ---
 
 ## ARCHIVOS RELACIONADOS EN EL SISTEMA
 
-- `providers/nylife.config.ts` - Configuración del proveedor y schema Gemini
+- `providers/nylife.config.ts` - Configuración del proveedor y geminiSchema (v2 híbrido)
 - `config/aseguradora-configs.ts` - Mappings para normalización (`CONFIG_NYLIFE`)
-- `config/PATH_VALIDATION_CHECKLIST.md` - Validación de paths
+- `config/PATH_VALIDATION_CHECKLIST.md` - Validación de paths (sección NY Life v2)
 - `providers/index.ts` - Registro de proveedores (`PROVIDER_REGISTRY`)
 - `providers/types.ts` - Tipos TypeScript (`ProviderType` incluye 'NYLIFE')
