@@ -1,0 +1,52 @@
+Mi propuesta: El Modelo Híbrido (Raw + Granular)
+Te sugiero ajustar la sección de antecedentes en el JSON para que tenga lo mejor de ambos mundos.
+
+1. Estructura del JSON Sugerida
+Así es como debería quedar la parte de antecedentes_patologicos en el geminiSchema:
+
+TypeScript
+
+antecedentes_patologicos: {
+  type: Type.OBJECT,
+  properties: {
+    // 1. EL ARRAY "RAW" (Para no perder nada del OCR)
+    captura_raw_marcas: { 
+      type: Type.ARRAY, 
+      items: { type: Type.STRING },
+      description: "Lista de todos los nombres de casillas que tengan una marca visual"
+    },
+    // 2. CAMPOS INDIVIDUALES (Para tus reglas de validación en Replit)
+    // Usamos STRING para capturar "Sí", "No" o "" si está vacío
+    cardiacos: { type: Type.STRING },
+    hipertensivos: { type: Type.STRING },
+    diabetes_mellitus: { type: Type.STRING },
+    vih_sida: { type: Type.STRING },
+    cancer: { type: Type.STRING },
+    hepaticos: { type: Type.STRING },
+    convulsivos: { type: Type.STRING },
+    cirugias: { type: Type.STRING },
+    otros: { type: Type.STRING },
+    detalle_narrativo: { type: Type.STRING, description: "Texto libre donde el médico detalla la evolución" }
+  }
+}
+2. Ajuste en el Prompt de Extracción
+Para que Gemini llene ambos correctamente, añade esta instrucción en el extractionInstructions:
+
+REGLA PARA ANTECEDENTES PATOLÓGICOS:
+
+En el array captura_raw_marcas, incluye el nombre de todas las opciones que tengan una marca (X, ✓, etc).
+
+En los campos individuales (cardiacos, diabetes, etc.), coloca "Sí" si la casilla está marcada, y déjalo vacío "" si no hay marca.
+
+Si el médico escribió texto adicional junto a una casilla (ej. "Diabetes - Controlada"), pon "Sí" en el campo individual y captura el texto completo en el array y en detalle_narrativo.
+
+¿Qué ganas con este cambio?
+Seguridad (Raw): Si el médico marca una casilla de forma extraña o añade una nota al margen, el array captura_raw_marcas lo va a registrar.
+
+Velocidad de Validación (Granular): En Replit, tus reglas de "Probabilidad de aceptación" pueden ir directo al punto:
+
+Regla: Si diabetes_mellitus == "Sí" Y edad > 60 -> Alerta de Riesgo Alto.
+
+Auditoría: Si hay una disputa, puedes comparar el array crudo contra los campos normalizados para ver si la IA interpretó algo mal.
+
+Mi conclusión: Implementa la sugerencia del equipo. Es un poco más de trabajo en el esquema inicial, pero hace que el sistema sea mucho más robusto para validaciones automáticas.

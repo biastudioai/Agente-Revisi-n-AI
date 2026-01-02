@@ -17,215 +17,44 @@ export const NYLIFE_CONFIG: ProviderConfig = {
   identificationRules: [
     'Texto "Seguros Monterrey New York Life, S.A. de C.V."',
     'Título "Formato de Informe Médico"',
-    'Secciones como "Datos del Asegurado", "Historia clínica", "Antecedentes personales patológicos"',
-    'Campos específicos: "Nº de proveedor", "Cédula de especialidad/Certificación"',
+    'Secciones como "Datos del Asegurado", "Historia clínica"',
     'Número de registro CGEN-S0038-0020-2019'
   ],
 
   extractionInstructions: `
-⚠️ REGLA FUNDAMENTAL: NO INFERIR NUNCA
-- Si un campo NO está visible en el documento → déjalo vacío ("" o null)
-- NO asumas valores basados en otros campos
-- NO completes información faltante automáticamente
-- Extrae SOLO lo que esté explícitamente escrito
-- Si hay duda sobre un valor → déjalo vacío
+⚠️ REGLA DE ORO: EXTRACCIÓN TOTAL (RAW)
+- Tu objetivo es capturar CUALQUIER marca o texto visible. 
+- Si un campo tiene varias casillas marcadas, extrae todas en el array.
+- NO infieras. Si no hay marca, deja el array vacío [].
 
-🚨 REGLA CRÍTICA UNIVERSAL PARA CASILLAS Y CHECKBOXES:
+1. NORMALIZACIÓN DE GÉNERO (CRÍTICO):
+   - En este formulario: M = Mujer, H = Hombre.
+   - Si está marcada la casilla "M" -> Extrae "Femenino".
+   - Si está marcada la casilla "H" -> Extrae "Masculino".
+   - Si ambas están marcadas o tachadas, extrae ["Femenino", "Masculino"].
 
-PARA CUALQUIER CAMPO QUE DEPENDA DE UNA CASILLA MARCADA:
-- ✅ Solo extrae/marca como true SI VES una marca visual clara (X, ✓, relleno, sombreado)
-- ❌ NO asumas valores basándote en el contexto del documento
-- ❌ NO inferieras el valor porque "tiene sentido clínicamente"
-- ❌ NO completes automáticamente basándote en otros campos
-- 🔹 Si la casilla está VACÍA → el campo debe quedar false/""/null/[] según su tipo
-- 🔹 Si hay DUDA sobre si está marcada → déjalo VACÍO
+2. TRATAMIENTO DE FECHAS:
+   - Extrae "dia", "mes" y "año" de las casillas individuales.
+   - En el campo "formatted", genera el string DD/MM/AAAA. Si el mes viene en nombre (ej. "Ene"), conviértelo a número (01).
 
-📋 JERARQUÍA DE DETECCIÓN - ORDEN DE PRIORIDAD:
+3. CHECKBOXES Y SELECCIONES:
+   - Captura todas las marcas en campos como 'tipo_evento', 'antecedentes', 'tipo_padecimiento' y 'modalidad_tratamiento'.
+   - Los campos que antes eran Sí/No ahora son ARRAYS para permitir capturar errores del llenado manual.
 
-🔲 PRIORIDAD 1 - CHECKBOXES/RECUADROS VISIBLES:
+4. MODELO HÍBRIDO PARA ANTECEDENTES PATOLÓGICOS:
+   - En el array 'captura_raw_marcas', incluye el nombre de TODAS las opciones que tengan una marca (X, ✓, etc).
+   - En los campos individuales (cardiacos, diabetes, etc.), coloca "Sí" si la casilla está marcada, y déjalo vacío "" si no hay marca.
+   - Si el médico escribió texto adicional junto a una casilla (ej. "Diabetes - Controlada"), pon "Sí" en el campo individual y captura el texto completo en el array y en detalle_narrativo.
 
-Si el documento muestra CLARAMENTE recuadros (☐, ☑, □, ■, [ ], [X]) junto a las opciones:
-- Identifica cuál checkbox tiene marca visual dentro
-- La opción marcada es la que está MÁS CERCA del checkbox marcado
-- Este método es el MÁS CONFIABLE cuando los recuadros son visibles
-
-✅ Ejemplos con recuadros visibles:
-   - "☑ Masculino    ☐ Femenino" → Masculino está seleccionado
-   - "[X] Accidente  [ ] Enfermedad  [ ] Embarazo" → Accidente está seleccionado
-   - "□ Congénito    ■ Adquirido" → Adquirido está seleccionado (■ relleno)
-
-⚠️ EJEMPLOS VISUALES DE LO QUE NO DEBES HACER:
-
-🚫 TIPO DE EVENTO - Ejemplos de inferencias PROHIBIDAS:
-❌ "El diagnóstico menciona diabetes" → tipo_evento = "Enfermedad" 
-❌ "Hay trauma en el texto" → tipo_evento = "Accidente"
-❌ "Menciona embarazo en antecedentes" → tipo_evento = "Embarazo"
-❌ "Es un informe quirúrgico" → tipo_evento = "Enfermedad"
-
-⚠️ REGLA VISUAL ESTRICTA PARA "TIPO DE EVENTO":
-
-📋 SI VES ESTO (todas vacías):
-   ☐ Accidente    ☐ Enfermedad    ☐ Embarazo
-   ✅ ENTONCES: tipo_evento = "" (string vacío)
-
-📋 SI VES ESTO:
-   ☑ Accidente    ☐ Enfermedad    ☐ Embarazo
-   ✅ ENTONCES: tipo_evento = "Accidente"
-
-🚫 NO IMPORTA QUÉ DIGA EL DIAGNÓSTICO O EL CONTEXTO CLÍNICO.
-🚫 SI NO VES UNA MARCA VISUAL CLARA (X, ✓, relleno), DEJA EL CAMPO VACÍO.
-
-⚠️ TIPO DE PADECIMIENTO - PERMITE MÚLTIPLES VALORES
-
-Este campo acepta múltiples casillas marcadas:
-- Opciones: Congénito, Agudo, Adquirido, Crónico
-
-📋 EJEMPLO VISUAL:
-SI VES ESTO en el documento:
-   ☑ Congénito    ☐ Adquirido
-   ☑ Agudo        ☐ Crónico
-
-✅ ENTONCES extrae: ["Congénito", "Agudo"]
-
-📋 SI NINGUNA ESTÁ MARCADA:
-✅ ENTONCES extrae: [] (array vacío)
-
-RECUERDA: tipo_padecimiento es un ARRAY de strings, NO un string separado por comas.
-
-🔴🔴🔴 REGLAS CRÍTICAS PARA EXTRACCIÓN DE FECHAS 🔴🔴🔴
-
-⚠️ PROBLEMA COMÚN DE OCR: Las diagonales "/" pueden confundirse con el número "1"
-⚠️ DEBES identificar correctamente los SEPARADORES de fecha vs los DÍGITOS
-
-📋 FORMATO DE SALIDA OBLIGATORIO:
-- TODAS las fechas deben normalizarse a formato DD/MM/AAAA
-- Si el día tiene 1 dígito → agregar 0 adelante (ej: 5 → 05)
-- Si el mes tiene 1 dígito → agregar 0 adelante (ej: 3 → 03)
-- Si el año tiene 2 dígitos → convertir a 4 dígitos (ej: 25 → 2025, 99 → 1999)
-
-📋 ESTRUCTURA DEL FORMULARIO NY LIFE PARA FECHAS:
-El formulario NY Life tiene campos de fecha con estructura:
-   ┌─────────────────────────────────┐
-   │  Día    Mes       Año           │
-   │  ____ / ____ / ________         │
-   └─────────────────────────────────┘
-
-Las "/" están pre-impresas. Los números se escriben en los espacios.
-
-🔴 VALIDACIÓN OBLIGATORIA:
-- El día NUNCA puede ser mayor a 31
-- El mes NUNCA puede ser mayor a 12
-- Si extraes un mes > 12, probablemente confundiste una "/" con "1"
-
-INSTRUCCIONES DE EXTRACCIÓN PARA NY LIFE MONTERREY:
-
-DATOS DEL ASEGURADO (persona que recibe la atención médica):
-- apellido_paterno: Apellido paterno del asegurado
-- apellido_materno: Apellido materno del asegurado
-- nombres: Nombre(s) del asegurado
-- sexo: M (Masculino) o H (Hombre) según casilla marcada - extraer "M" o "F"
-- edad: Edad del asegurado
-- tipo_evento: Accidente, Enfermedad o Embarazo (cuál casilla está marcada)
-
-ANTECEDENTES PERSONALES PATOLÓGICOS:
-- cardiacos: Antecedentes cardíacos
-- hipertensivos: Antecedentes hipertensivos
-- diabetes_mellitus: Antecedentes de diabetes mellitus
-- vih_sida: Antecedentes de VIH/SIDA
-- cancer: Antecedentes de cáncer
-- hepaticos: Antecedentes hepáticos
-- convulsivos: Antecedentes convulsivos
-- cirugias: Cirugías previas
-- otros_patologicos: Otros antecedentes patológicos
-
-ANTECEDENTES PERSONALES NO PATOLÓGICOS:
-- fuma: ¿Fuma? (cantidad)
-- alcohol: ¿Consume bebidas alcohólicas? (tipo y cantidad)
-- drogas: ¿Consume o ha consumido drogas? (tipo y cantidad)
-- perdida_peso: ¿Pérdida no intencional de peso? (cantidad)
-- perinatales: Antecedentes perinatales (en caso necesario)
-- gineco_obstetricos: Antecedentes gineco-obstétricos (cuando aplique)
-- otros_no_patologicos: Otros antecedentes no patológicos
-
-PADECIMIENTO ACTUAL:
-- fecha_primeros_sintomas: Fecha de primeros síntomas del padecimiento (DD/MM/AAAA)
-- fecha_primera_consulta: Fecha de la primera consulta por este padecimiento (DD/MM/AAAA)
-- fecha_diagnostico: Fecha de diagnóstico de este padecimiento (DD/MM/AAAA)
-- descripcion_evolucion: Especificación de detalles de la evolución y estado actual del padecimiento
-
-DIAGNÓSTICO:
-- diagnostico_1: Diagnóstico principal (1)
-- diagnostico_2: Diagnóstico secundario (2) - si existe
-- diagnostico_3: Diagnóstico terciario (3) - si existe
-- tipo_padecimiento: Array de valores marcados: Congénito, Agudo, Adquirido, Crónico
-- tiempo_evolucion: ¿Cuánto tiempo? de evolución
-- relacionado_con_otro: ¿Tiene relación con otro padecimiento? (Sí/No)
-- padecimiento_relacionado: Si sí, ¿cuál?
-- causo_discapacidad: ¿El padecimiento ocasionó discapacidad? (Sí/No)
-- tipo_discapacidad: Parcial o Total
-- discapacidad_desde: Desde cuándo
-- discapacidad_hasta: Hasta cuándo
-- continuara_tratamiento: ¿Continuará recibiendo tratamiento en el futuro? (Sí/No)
-- tratamiento_futuro_detalle: Especificación del tratamiento futuro
-
-EXPLORACIÓN FÍSICA:
-- exploracion_resultados: Exploración física y resultados de estudios relevantes realizados
-- talla: Talla del paciente
-- peso: Peso del paciente
-
-TRATAMIENTO:
-- es_quirurgico: ¿Es tratamiento quirúrgico? (Sí/No basado en checkbox)
-- procedimiento_quirurgico: Especificación del procedimiento quirúrgico
-- es_medico: ¿Es tratamiento médico? (Sí/No basado en checkbox)
-- tratamiento_medico: Descripción del tratamiento médico, dosificación y fecha de inicio
-- es_programado: ¿Es programación de tratamiento? (checkbox)
-- es_realizado: ¿Es descripción de tratamiento ya realizado? (checkbox)
-- descripcion_tratamiento: Descripción completa del tratamiento
-- hubo_complicaciones: ¿Hubo complicaciones? (Sí/No)
-- complicaciones_detalle: Especificación de complicaciones
-
-DATOS DE HOSPITALIZACIÓN:
-- nombre_hospital: Nombre del hospital
-- ciudad: Ciudad
-- fecha_ingreso: Fecha de ingreso (DD/MM/AAAA)
-- fecha_egreso: Fecha de egreso (DD/MM/AAAA)
-- tipo_estancia: Urgencia, Hospitalización, o Corta estancia / Ambulatoria (cuál está marcada)
-
-DATOS DEL MÉDICO TRATANTE:
-- medico_apellido_paterno: Apellido paterno del médico
-- medico_apellido_materno: Apellido materno del médico
-- medico_nombres: Nombre(s) del médico
-- numero_proveedor: Número de proveedor (específico de NY Life)
-- rfc: RFC del médico
-- especialidad: Especialidad médica
-- cedula_profesional: Cédula profesional
-- cedula_especialidad: Cédula de especialidad/Certificación
-- correo_electronico: Correo electrónico
-- telefono_consultorio: Teléfono del consultorio (incluir LADA)
-- telefono_movil: Teléfono móvil
-
-EQUIPO QUIRÚRGICO (si aplica):
-Para Anestesiólogo, Primer Ayudante, Segundo Ayudante, Otros:
-- nombre: Nombre del especialista
-- especialidad: Especialidad
-- presupuesto_honorarios: Presupuesto de honorarios
-
-CONVENIO Y TABULADOR:
-- pertenece_convenio: ¿Pertenece a los prestadores de servicios médicos en convenio con NY Life? (Sí/No)
-- acepta_tabulador: ¿Acepta el tabulador para el pago de honorarios? (Sí/No)
-
-FIRMA:
-- lugar: Lugar de la firma
-- fecha_firma: Fecha de la firma (DD/MM/AAAA)
-- nombre_firma: Nombre del médico que firma
-- firma_autografa_detectada: true si se ve una firma manuscrita real, false si solo hay nombre impreso
+5. EQUIPO QUIRÚRGICO:
+   - Extrae cada fila (Anestesiólogo, Ayudantes, Otros) como un objeto dentro del array. No omitas los presupuestos de honorarios.
 `,
 
   requiredFields: [
     'identificacion.nombres',
     'identificacion.edad',
-    'diagnostico.diagnostico_1',
-    'medico_tratante.nombres',
+    'padecimiento_actual.diagnosticos',
+    'medico_tratante.nombre_completo',
     'medico_tratante.cedula_profesional'
   ],
 
@@ -240,190 +69,225 @@ FIRMA:
           identificacion: {
             type: Type.OBJECT,
             properties: {
-              apellido_paterno: { type: Type.STRING, description: "Apellido paterno del asegurado" },
-              apellido_materno: { type: Type.STRING, description: "Apellido materno del asegurado" },
-              nombres: { type: Type.STRING, description: "Nombre(s) del asegurado" },
-              sexo: { type: Type.STRING, description: "M o F según casilla marcada (M=Mujer, H=Hombre)" },
-              edad: { type: Type.STRING, description: "Edad del asegurado" },
-              tipo_evento: { 
-                type: Type.STRING, 
-                description: "SOLO extrae 'Accidente', 'Enfermedad' o 'Embarazo' SI VES una marca visual clara. Si TODAS las casillas están vacías, devuelve string vacío ''." 
-              }
+              apellido_paterno: { type: Type.STRING },
+              apellido_materno: { type: Type.STRING },
+              nombres: { type: Type.STRING },
+              sexo: { type: Type.ARRAY, items: { type: Type.STRING }, description: "M=Femenino, H=Masculino. Array para capturar ambigüedades." },
+              edad: { type: Type.STRING },
+              tipo_evento: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Accidente, Enfermedad, Embarazo. Array para capturar múltiples marcas." }
             }
           },
 
           antecedentes_patologicos: {
             type: Type.OBJECT,
             properties: {
-              cardiacos: { type: Type.STRING, description: "Antecedentes cardíacos" },
-              hipertensivos: { type: Type.STRING, description: "Antecedentes hipertensivos" },
-              diabetes_mellitus: { type: Type.STRING, description: "Antecedentes de diabetes mellitus" },
-              vih_sida: { type: Type.STRING, description: "Antecedentes de VIH/SIDA" },
-              cancer: { type: Type.STRING, description: "Antecedentes de cáncer" },
-              hepaticos: { type: Type.STRING, description: "Antecedentes hepáticos" },
-              convulsivos: { type: Type.STRING, description: "Antecedentes convulsivos" },
-              cirugias: { type: Type.STRING, description: "Cirugías previas con fechas" },
-              otros: { type: Type.STRING, description: "Otros antecedentes patológicos" }
+              captura_raw_marcas: { 
+                type: Type.ARRAY, 
+                items: { type: Type.STRING },
+                description: "Lista de todos los nombres de casillas que tengan una marca visual (X, ✓, etc)"
+              },
+              cardiacos: { type: Type.STRING, description: "Sí si marcado, vacío si no" },
+              hipertensivos: { type: Type.STRING, description: "Sí si marcado, vacío si no" },
+              diabetes_mellitus: { type: Type.STRING, description: "Sí si marcado, vacío si no" },
+              vih_sida: { type: Type.STRING, description: "Sí si marcado, vacío si no" },
+              cancer: { type: Type.STRING, description: "Sí si marcado, vacío si no" },
+              hepaticos: { type: Type.STRING, description: "Sí si marcado, vacío si no" },
+              convulsivos: { type: Type.STRING, description: "Sí si marcado, vacío si no" },
+              cirugias: { type: Type.STRING, description: "Sí si marcado, vacío si no" },
+              otros: { type: Type.STRING, description: "Otros antecedentes patológicos" },
+              detalle_narrativo: { type: Type.STRING, description: "Texto libre donde el médico detalla la evolución de patologías" }
             }
           },
 
           antecedentes_no_patologicos: {
             type: Type.OBJECT,
             properties: {
-              fuma: { type: Type.STRING, description: "¿Fuma? (cantidad)" },
-              alcohol: { type: Type.STRING, description: "¿Consume bebidas alcohólicas? (tipo y cantidad)" },
-              drogas: { type: Type.STRING, description: "¿Consume o ha consumido drogas? (tipo y cantidad)" },
-              perdida_peso: { type: Type.STRING, description: "¿Pérdida no intencional de peso? (cantidad)" },
+              captura_raw_marcas: { 
+                type: Type.ARRAY, 
+                items: { type: Type.STRING },
+                description: "Lista de todos los nombres de casillas marcadas"
+              },
+              fuma: { type: Type.STRING, description: "Contenido del campo ¿Fuma?" },
+              alcohol: { type: Type.STRING, description: "Contenido del campo ¿Alcohol?" },
+              drogas: { type: Type.STRING, description: "Contenido del campo ¿Drogas?" },
+              perdida_peso: { type: Type.STRING, description: "Contenido del campo ¿Pérdida de peso?" },
               perinatales: { type: Type.STRING, description: "Antecedentes perinatales" },
               gineco_obstetricos: { type: Type.STRING, description: "Antecedentes gineco-obstétricos" },
-              otros: { type: Type.STRING, description: "Otros antecedentes no patológicos" }
+              otros: { type: Type.STRING }
             }
           },
 
           padecimiento_actual: {
             type: Type.OBJECT,
             properties: {
-              fecha_primeros_sintomas: { type: Type.STRING, description: "Fecha de primeros síntomas DD/MM/AAAA" },
-              fecha_primera_consulta: { type: Type.STRING, description: "Fecha de primera consulta DD/MM/AAAA" },
-              fecha_diagnostico: { type: Type.STRING, description: "Fecha de diagnóstico DD/MM/AAAA" },
-              descripcion_evolucion: { type: Type.STRING, description: "Detalles de evolución y estado actual" },
-              tipo_padecimiento: { 
-                type: Type.ARRAY,
-                items: { type: Type.STRING },
-                description: "Array de valores marcados: ['Congénito', 'Agudo', 'Adquirido', 'Crónico']. SOLO extrae los valores que VES marcados visualmente."
+              fecha_primeros_sintomas: { 
+                type: Type.OBJECT, 
+                properties: { 
+                  dia: { type: Type.STRING }, 
+                  mes: { type: Type.STRING }, 
+                  año: { type: Type.STRING }, 
+                  formatted: { type: Type.STRING, description: "DD/MM/AAAA" } 
+                } 
               },
-              tiempo_evolucion: { type: Type.STRING, description: "Tiempo de evolución del padecimiento" },
-              relacionado_con_otro: { type: Type.BOOLEAN, description: "¿Tiene relación con otro padecimiento?" },
-              padecimiento_relacionado: { type: Type.STRING, description: "¿Cuál padecimiento relacionado?" },
-              causo_discapacidad: { type: Type.BOOLEAN, description: "¿El padecimiento ocasionó discapacidad?" },
-              tipo_discapacidad: { type: Type.STRING, description: "Parcial o Total" },
-              discapacidad_desde: { type: Type.STRING, description: "Discapacidad desde" },
-              discapacidad_hasta: { type: Type.STRING, description: "Discapacidad hasta" },
-              continuara_tratamiento: { type: Type.BOOLEAN, description: "¿Continuará recibiendo tratamiento en el futuro?" },
-              tratamiento_futuro_detalle: { type: Type.STRING, description: "Especificación del tratamiento futuro" }
-            }
-          },
-
-          diagnostico: {
-            type: Type.OBJECT,
-            properties: {
-              diagnostico_1: { type: Type.STRING, description: "Diagnóstico principal (1)" },
-              diagnostico_2: { type: Type.STRING, description: "Diagnóstico secundario (2)" },
-              diagnostico_3: { type: Type.STRING, description: "Diagnóstico terciario (3)" }
+              fecha_primera_consulta: { 
+                type: Type.OBJECT, 
+                properties: { 
+                  dia: { type: Type.STRING }, 
+                  mes: { type: Type.STRING }, 
+                  año: { type: Type.STRING }, 
+                  formatted: { type: Type.STRING } 
+                } 
+              },
+              fecha_diagnostico: { 
+                type: Type.OBJECT, 
+                properties: { 
+                  dia: { type: Type.STRING }, 
+                  mes: { type: Type.STRING }, 
+                  año: { type: Type.STRING }, 
+                  formatted: { type: Type.STRING } 
+                } 
+              },
+              descripcion_evolucion: { type: Type.STRING },
+              diagnosticos: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array de hasta 3 diagnósticos" },
+              tipo_padecimiento: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Congénito, Agudo, Adquirido, Crónico" },
+              tiempo_evolucion: { type: Type.STRING },
+              relacion_otro_padecimiento: {
+                type: Type.OBJECT,
+                properties: { 
+                  marcada: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Sí/No como array" }, 
+                  cual: { type: Type.STRING } 
+                }
+              },
+              discapacidad: {
+                type: Type.OBJECT,
+                properties: { 
+                  marcada: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Sí/No como array" }, 
+                  tipo: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Parcial/Total como array" },
+                  desde: { type: Type.STRING },
+                  hasta: { type: Type.STRING }
+                }
+              },
+              continuara_tratamiento: {
+                type: Type.OBJECT,
+                properties: {
+                  marcada: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Sí/No como array" },
+                  detalle: { type: Type.STRING }
+                }
+              }
             }
           },
 
           exploracion_fisica: {
             type: Type.OBJECT,
             properties: {
-              resultados: { type: Type.STRING, description: "Exploración física y resultados de estudios relevantes" },
-              talla: { type: Type.STRING, description: "Talla del paciente" },
-              peso: { type: Type.STRING, description: "Peso del paciente" }
+              resultados: { type: Type.STRING, description: "Exploración física y resultados de estudios" },
+              talla: { type: Type.STRING },
+              peso: { type: Type.STRING }
             }
           },
 
-          tratamiento: {
+          tratamiento_y_hospital: {
             type: Type.OBJECT,
             properties: {
-              es_quirurgico: { type: Type.BOOLEAN, description: "¿Es tratamiento quirúrgico?" },
-              procedimiento_quirurgico: { type: Type.STRING, description: "Procedimiento quirúrgico especificado" },
-              es_medico: { type: Type.BOOLEAN, description: "¿Es tratamiento médico?" },
-              tratamiento_medico: { type: Type.STRING, description: "Tratamiento médico, dosificación y fecha" },
-              es_programado: { type: Type.BOOLEAN, description: "¿Es programación de tratamiento?" },
-              es_realizado: { type: Type.BOOLEAN, description: "¿Es descripción de tratamiento ya realizado?" },
-              descripcion: { type: Type.STRING, description: "Descripción completa del tratamiento" },
-              hubo_complicaciones: { type: Type.BOOLEAN, description: "¿Hubo complicaciones?" },
-              complicaciones_detalle: { type: Type.STRING, description: "Detalle de complicaciones" }
-            }
-          },
-
-          hospital: {
-            type: Type.OBJECT,
-            properties: {
-              nombre_hospital: { type: Type.STRING, description: "Nombre del hospital" },
-              ciudad: { type: Type.STRING, description: "Ciudad" },
-              fecha_ingreso: { type: Type.STRING, description: "Fecha de ingreso DD/MM/AAAA" },
-              fecha_egreso: { type: Type.STRING, description: "Fecha de egreso DD/MM/AAAA" },
-              tipo_estancia: { type: Type.STRING, description: "Urgencia, Hospitalización, o Corta estancia / Ambulatoria" }
+              modalidad: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Quirúrgico, Médico" },
+              detalle_tratamiento: { type: Type.STRING },
+              estatus_tratamiento: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Programación o Realizado" },
+              complicaciones: {
+                type: Type.OBJECT,
+                properties: { 
+                  marcada: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Sí/No como array" }, 
+                  detalle: { type: Type.STRING } 
+                }
+              },
+              hospital: {
+                type: Type.OBJECT,
+                properties: {
+                  nombre: { type: Type.STRING },
+                  ciudad: { type: Type.STRING },
+                  ingreso: { 
+                    type: Type.OBJECT, 
+                    properties: { 
+                      dia: { type: Type.STRING }, 
+                      mes: { type: Type.STRING }, 
+                      año: { type: Type.STRING }, 
+                      formatted: { type: Type.STRING } 
+                    } 
+                  },
+                  egreso: { 
+                    type: Type.OBJECT, 
+                    properties: { 
+                      dia: { type: Type.STRING }, 
+                      mes: { type: Type.STRING }, 
+                      año: { type: Type.STRING }, 
+                      formatted: { type: Type.STRING } 
+                    } 
+                  },
+                  tipo_estancia: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Urgencia, Hospitalización, Corta estancia" }
+                }
+              }
             }
           },
 
           medico_tratante: {
             type: Type.OBJECT,
             properties: {
-              apellido_paterno: { type: Type.STRING, description: "Apellido paterno del médico" },
-              apellido_materno: { type: Type.STRING, description: "Apellido materno del médico" },
-              nombres: { type: Type.STRING, description: "Nombre(s) del médico" },
-              numero_proveedor: { type: Type.STRING, description: "Número de proveedor NY Life" },
-              rfc: { type: Type.STRING, description: "RFC del médico" },
-              especialidad: { type: Type.STRING, description: "Especialidad médica" },
-              cedula_profesional: { type: Type.STRING, description: "Cédula profesional" },
-              cedula_especialidad: { type: Type.STRING, description: "Cédula de especialidad/Certificación" },
-              correo_electronico: { type: Type.STRING, description: "Correo electrónico" },
-              telefono_consultorio: { type: Type.STRING, description: "Teléfono del consultorio con LADA" },
-              telefono_movil: { type: Type.STRING, description: "Teléfono móvil" },
-              pertenece_convenio: { type: Type.BOOLEAN, description: "¿Pertenece a prestadores en convenio?" },
-              acepta_tabulador: { type: Type.BOOLEAN, description: "¿Acepta el tabulador para pago de honorarios?" }
+              nombre_completo: { type: Type.STRING, description: "Nombre completo del médico" },
+              apellido_paterno: { type: Type.STRING },
+              apellido_materno: { type: Type.STRING },
+              nombres: { type: Type.STRING },
+              numero_proveedor: { type: Type.STRING },
+              rfc: { type: Type.STRING },
+              especialidad: { type: Type.STRING },
+              cedula_profesional: { type: Type.STRING },
+              cedula_especialidad: { type: Type.STRING },
+              correo_electronico: { type: Type.STRING },
+              telefono_consultorio: { type: Type.STRING },
+              telefono_movil: { type: Type.STRING },
+              convenio_red: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Sí/No como array" },
+              acepta_tabulador: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Sí/No como array" }
             }
           },
 
           equipo_quirurgico: {
-            type: Type.OBJECT,
-            properties: {
-              anestesiologo: {
-                type: Type.OBJECT,
-                properties: {
-                  nombre: { type: Type.STRING },
-                  especialidad: { type: Type.STRING },
-                  presupuesto_honorarios: { type: Type.STRING }
-                }
-              },
-              primer_ayudante: {
-                type: Type.OBJECT,
-                properties: {
-                  nombre: { type: Type.STRING },
-                  especialidad: { type: Type.STRING },
-                  presupuesto_honorarios: { type: Type.STRING }
-                }
-              },
-              segundo_ayudante: {
-                type: Type.OBJECT,
-                properties: {
-                  nombre: { type: Type.STRING },
-                  especialidad: { type: Type.STRING },
-                  presupuesto_honorarios: { type: Type.STRING }
-                }
-              },
-              otros_medicos: {
-                type: Type.OBJECT,
-                properties: {
-                  nombre: { type: Type.STRING },
-                  especialidad: { type: Type.STRING },
-                  presupuesto_honorarios: { type: Type.STRING }
-                }
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                rol: { type: Type.STRING, description: "Anestesiólogo, Primer Ayudante, Segundo Ayudante, Otros" },
+                nombre: { type: Type.STRING },
+                especialidad: { type: Type.STRING },
+                presupuesto: { type: Type.STRING }
               }
             }
           },
 
-          firma: {
+          firma_cierre: {
             type: Type.OBJECT,
             properties: {
-              lugar: { type: Type.STRING, description: "Lugar de la firma" },
-              fecha: { type: Type.STRING, description: "Fecha de la firma DD/MM/AAAA" },
-              nombre_firma: { type: Type.STRING, description: "Nombre del médico que firma" },
-              firma_autografa_detectada: { type: Type.BOOLEAN, description: "¿Se detectó firma manuscrita?" }
+              lugar: { type: Type.STRING },
+              fecha: { 
+                type: Type.OBJECT, 
+                properties: { 
+                  dia: { type: Type.STRING }, 
+                  mes: { type: Type.STRING }, 
+                  año: { type: Type.STRING }, 
+                  formatted: { type: Type.STRING } 
+                } 
+              },
+              nombre_firma: { type: Type.STRING },
+              firma_autografa_detectada: { type: Type.STRING, description: "Detectada / No detectada" }
             }
           },
 
           metadata: {
             type: Type.OBJECT,
             properties: {
-              existe_coherencia_clinica: { type: Type.BOOLEAN, description: "¿Existe coherencia clínica en el documento?" },
-              observaciones: { type: Type.STRING, description: "Observaciones adicionales sobre la extracción" }
+              existe_coherencia_clinica: { type: Type.STRING, description: "Sí / No" },
+              observaciones: { type: Type.STRING }
             }
           }
         },
-        required: ['provider', 'identificacion', 'diagnostico', 'medico_tratante']
+        required: ['provider', 'identificacion', 'padecimiento_actual', 'medico_tratante']
       }
     },
     required: ['extracted']

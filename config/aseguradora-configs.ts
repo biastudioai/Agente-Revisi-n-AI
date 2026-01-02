@@ -126,6 +126,7 @@ export const CONFIG_NYLIFE: AseguradoraConfig = {
   codigo: 'NYLIFE',
   nombre_completo: 'Seguros Monterrey New York Life',
   mappings: {
+    // PACIENTE - Estructura híbrida con arrays para captura raw
     'paciente.nombre': { path: 'identificacion.nombres', parser: (v) => v?.trim() || '' },
     'paciente.apellido_paterno': { path: 'identificacion.apellido_paterno', parser: (v) => v?.trim() || '' },
     'paciente.apellido_materno': { path: 'identificacion.apellido_materno', opcional: true, parser: (v) => v?.trim() },
@@ -133,19 +134,32 @@ export const CONFIG_NYLIFE: AseguradoraConfig = {
     'paciente.sexo': { 
       path: 'identificacion.sexo', 
       parser: (v) => {
+        if (Array.isArray(v)) {
+          if (v.includes('Femenino')) return 'Femenino';
+          if (v.includes('Masculino')) return 'Masculino';
+          return v[0] || 'Otro';
+        }
         const normalized = v?.toLowerCase().trim();
-        if (normalized === 'm' || normalized === 'mujer' || normalized === 'femenino' || normalized === 'f') return 'Femenino';
-        if (normalized === 'h' || normalized === 'hombre' || normalized === 'masculino') return 'Masculino';
+        if (normalized === 'femenino' || normalized === 'm' || normalized === 'mujer') return 'Femenino';
+        if (normalized === 'masculino' || normalized === 'h' || normalized === 'hombre') return 'Masculino';
         return 'Otro';
       },
       validador: (v) => ['Masculino', 'Femenino', 'Otro'].includes(v)
     },
-    'paciente.fecha_nacimiento': { path: 'identificacion.fecha_nacimiento', opcional: true, parser: (v) => v ? new Date(v) : undefined },
+    'paciente.sexo_raw': { path: 'identificacion.sexo', opcional: true, parser: (v) => Array.isArray(v) ? v : [v] },
+    'paciente.tipo_evento': { 
+      path: 'identificacion.tipo_evento', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v[0] || '' : v?.trim() || '' 
+    },
+    'paciente.tipo_evento_raw': { path: 'identificacion.tipo_evento', opcional: true, parser: (v) => Array.isArray(v) ? v : [v] },
     
+    // PÓLIZA
     'poliza.numero': { path: 'tramite.numero_poliza', opcional: true, parser: (v) => v?.trim() || '' },
     'poliza.certificado': { path: 'tramite.numero_certificado', opcional: true, parser: (v) => v?.trim() || '' },
-    'poliza.asegurado_titular': { path: 'tramite.es_titular', opcional: true, parser: (v) => Boolean(v) },
     
+    // MÉDICO TRATANTE - Con campos específicos de NY Life
+    'medico_tratante.nombre_completo': { path: 'medico_tratante.nombre_completo', parser: (v) => v?.trim() || '' },
     'medico_tratante.nombre': { path: 'medico_tratante.nombres', parser: (v) => v?.trim() || '' },
     'medico_tratante.apellido_paterno': { path: 'medico_tratante.apellido_paterno', parser: (v) => v?.trim() || '' },
     'medico_tratante.apellido_materno': { path: 'medico_tratante.apellido_materno', opcional: true, parser: (v) => v?.trim() },
@@ -157,37 +171,167 @@ export const CONFIG_NYLIFE: AseguradoraConfig = {
     'medico_tratante.correo': { path: 'medico_tratante.correo_electronico', opcional: true },
     'medico_tratante.rfc': { path: 'medico_tratante.rfc', opcional: true, validador: (v) => !v || /^[A-Z]{4}\d{6}[A-Z0-9]{3}$/i.test(v) },
     'medico_tratante.numero_proveedor': { path: 'medico_tratante.numero_proveedor', opcional: true },
+    'medico_tratante.convenio_red': { 
+      path: 'medico_tratante.convenio_red', 
+      opcional: true, 
+      parser: (v) => {
+        if (Array.isArray(v)) return v.includes('Sí');
+        return v === 'Sí';
+      }
+    },
+    'medico_tratante.acepta_tabulador': { 
+      path: 'medico_tratante.acepta_tabulador', 
+      opcional: true, 
+      parser: (v) => {
+        if (Array.isArray(v)) return v.includes('Sí');
+        return v === 'Sí';
+      }
+    },
     
-    'fecha.ingreso': { path: 'hospital.fecha_ingreso', opcional: true, parser: (v) => v ? new Date(v) : undefined },
-    'fecha.egreso': { path: 'hospital.fecha_egreso', opcional: true, parser: (v) => v ? new Date(v) : undefined },
-    'fecha.diagnostico': { path: 'padecimiento_actual.fecha_diagnostico', opcional: true, parser: (v) => v ? new Date(v) : undefined },
-    'fecha.primeros_sintomas': { path: 'padecimiento_actual.fecha_primeros_sintomas', opcional: true, parser: (v) => v ? new Date(v) : undefined },
-    'fecha.primera_consulta': { path: 'padecimiento_actual.fecha_primera_consulta', opcional: true, parser: (v) => v ? new Date(v) : undefined },
-    'fecha.informe': { path: 'firma.fecha', opcional: true, parser: (v) => v ? new Date(v) : undefined },
+    // FECHAS - Estructura robusta con objetos día/mes/año
+    'fecha.primeros_sintomas': { 
+      path: 'padecimiento_actual.fecha_primeros_sintomas.formatted', 
+      opcional: true, 
+      parser: (v) => v ? new Date(v.split('/').reverse().join('-')) : undefined 
+    },
+    'fecha.primera_consulta': { 
+      path: 'padecimiento_actual.fecha_primera_consulta.formatted', 
+      opcional: true, 
+      parser: (v) => v ? new Date(v.split('/').reverse().join('-')) : undefined 
+    },
+    'fecha.diagnostico': { 
+      path: 'padecimiento_actual.fecha_diagnostico.formatted', 
+      opcional: true, 
+      parser: (v) => v ? new Date(v.split('/').reverse().join('-')) : undefined 
+    },
+    'fecha.ingreso': { 
+      path: 'tratamiento_y_hospital.hospital.ingreso.formatted', 
+      opcional: true, 
+      parser: (v) => v ? new Date(v.split('/').reverse().join('-')) : undefined 
+    },
+    'fecha.egreso': { 
+      path: 'tratamiento_y_hospital.hospital.egreso.formatted', 
+      opcional: true, 
+      parser: (v) => v ? new Date(v.split('/').reverse().join('-')) : undefined 
+    },
+    'fecha.informe': { 
+      path: 'firma_cierre.fecha.formatted', 
+      opcional: true, 
+      parser: (v) => v ? new Date(v.split('/').reverse().join('-')) : undefined 
+    },
     
-    'diagnostico.descripcion': { path: 'diagnostico.diagnostico_1', parser: (v) => v?.trim() || '' },
-    'diagnostico.descripcion_2': { path: 'diagnostico.diagnostico_2', opcional: true, parser: (v) => v?.trim() || '' },
-    'diagnostico.descripcion_3': { path: 'diagnostico.diagnostico_3', opcional: true, parser: (v) => v?.trim() || '' },
-    'diagnostico.codigo_cie': { path: 'diagnostico.codigo_cie', opcional: true },
+    // DIAGNÓSTICO - Array de diagnósticos
+    'diagnostico.descripcion': { 
+      path: 'padecimiento_actual.diagnosticos', 
+      parser: (v) => Array.isArray(v) ? v[0] || '' : v?.trim() || '' 
+    },
+    'diagnostico.descripcion_2': { 
+      path: 'padecimiento_actual.diagnosticos', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v[1] || '' : '' 
+    },
+    'diagnostico.descripcion_3': { 
+      path: 'padecimiento_actual.diagnosticos', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v[2] || '' : '' 
+    },
+    'diagnostico.tipo_padecimiento': { 
+      path: 'padecimiento_actual.tipo_padecimiento', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v : [] 
+    },
     
-    'intervencion_qx.hubo_cirugia': { path: 'tratamiento.es_quirurgico', opcional: true, parser: (v) => Boolean(v) },
-    'intervencion_qx.descripcion': { path: 'tratamiento.procedimiento_quirurgico', opcional: true },
-    'intervencion_qx.hubo_complicaciones': { path: 'tratamiento.hubo_complicaciones', opcional: true, parser: (v) => Boolean(v) },
-    'intervencion_qx.complicaciones_detalle': { path: 'tratamiento.complicaciones_detalle', opcional: true },
+    // TRATAMIENTO Y HOSPITAL
+    'tratamiento.modalidad': { 
+      path: 'tratamiento_y_hospital.modalidad', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v : [] 
+    },
+    'tratamiento.detalle': { path: 'tratamiento_y_hospital.detalle_tratamiento', opcional: true },
+    'tratamiento.estatus': { 
+      path: 'tratamiento_y_hospital.estatus_tratamiento', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v : [] 
+    },
+    'tratamiento.hubo_complicaciones': { 
+      path: 'tratamiento_y_hospital.complicaciones.marcada', 
+      opcional: true, 
+      parser: (v) => {
+        if (Array.isArray(v)) return v.includes('Sí');
+        return false;
+      }
+    },
+    'tratamiento.complicaciones_detalle': { path: 'tratamiento_y_hospital.complicaciones.detalle', opcional: true },
+    'hospital.nombre': { path: 'tratamiento_y_hospital.hospital.nombre', opcional: true },
+    'hospital.ciudad': { path: 'tratamiento_y_hospital.hospital.ciudad', opcional: true },
+    'hospital.tipo_estancia': { 
+      path: 'tratamiento_y_hospital.hospital.tipo_estancia', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v : [] 
+    },
     
+    // EXPLORACIÓN FÍSICA
     'exploracion_fisica.talla': { path: 'exploracion_fisica.talla', opcional: true },
     'exploracion_fisica.peso': { path: 'exploracion_fisica.peso', opcional: true },
     'exploracion_fisica.resultados': { path: 'exploracion_fisica.resultados', opcional: true },
     
-    'antecedentes.patologicos.cardiacos': { path: 'antecedentes_patologicos.cardiacos', opcional: true },
-    'antecedentes.patologicos.hipertensivos': { path: 'antecedentes_patologicos.hipertensivos', opcional: true },
-    'antecedentes.patologicos.diabetes': { path: 'antecedentes_patologicos.diabetes_mellitus', opcional: true },
-    'antecedentes.patologicos.vih_sida': { path: 'antecedentes_patologicos.vih_sida', opcional: true },
-    'antecedentes.patologicos.cancer': { path: 'antecedentes_patologicos.cancer', opcional: true },
-    'antecedentes.patologicos.hepaticos': { path: 'antecedentes_patologicos.hepaticos', opcional: true },
-    'antecedentes.patologicos.convulsivos': { path: 'antecedentes_patologicos.convulsivos', opcional: true },
-    'antecedentes.patologicos.cirugias': { path: 'antecedentes_patologicos.cirugias', opcional: true },
+    // ANTECEDENTES PATOLÓGICOS - Modelo híbrido (raw + granular)
+    'antecedentes.patologicos.captura_raw': { 
+      path: 'antecedentes_patologicos.captura_raw_marcas', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v : [] 
+    },
+    'antecedentes.patologicos.cardiacos': { 
+      path: 'antecedentes_patologicos.cardiacos', 
+      opcional: true, 
+      parser: (v) => v === 'Sí' 
+    },
+    'antecedentes.patologicos.hipertensivos': { 
+      path: 'antecedentes_patologicos.hipertensivos', 
+      opcional: true, 
+      parser: (v) => v === 'Sí' 
+    },
+    'antecedentes.patologicos.diabetes': { 
+      path: 'antecedentes_patologicos.diabetes_mellitus', 
+      opcional: true, 
+      parser: (v) => v === 'Sí' 
+    },
+    'antecedentes.patologicos.vih_sida': { 
+      path: 'antecedentes_patologicos.vih_sida', 
+      opcional: true, 
+      parser: (v) => v === 'Sí' 
+    },
+    'antecedentes.patologicos.cancer': { 
+      path: 'antecedentes_patologicos.cancer', 
+      opcional: true, 
+      parser: (v) => v === 'Sí' 
+    },
+    'antecedentes.patologicos.hepaticos': { 
+      path: 'antecedentes_patologicos.hepaticos', 
+      opcional: true, 
+      parser: (v) => v === 'Sí' 
+    },
+    'antecedentes.patologicos.convulsivos': { 
+      path: 'antecedentes_patologicos.convulsivos', 
+      opcional: true, 
+      parser: (v) => v === 'Sí' 
+    },
+    'antecedentes.patologicos.cirugias': { 
+      path: 'antecedentes_patologicos.cirugias', 
+      opcional: true, 
+      parser: (v) => v === 'Sí' 
+    },
+    'antecedentes.patologicos.detalle_narrativo': { 
+      path: 'antecedentes_patologicos.detalle_narrativo', 
+      opcional: true 
+    },
     
+    // ANTECEDENTES NO PATOLÓGICOS - Modelo híbrido
+    'antecedentes.no_patologicos.captura_raw': { 
+      path: 'antecedentes_no_patologicos.captura_raw_marcas', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v : [] 
+    },
     'antecedentes.no_patologicos.fuma': { path: 'antecedentes_no_patologicos.fuma', opcional: true },
     'antecedentes.no_patologicos.alcohol': { path: 'antecedentes_no_patologicos.alcohol', opcional: true },
     'antecedentes.no_patologicos.drogas': { path: 'antecedentes_no_patologicos.drogas', opcional: true },
@@ -195,10 +339,45 @@ export const CONFIG_NYLIFE: AseguradoraConfig = {
     'antecedentes.no_patologicos.perinatales': { path: 'antecedentes_no_patologicos.perinatales', opcional: true },
     'antecedentes.no_patologicos.gineco_obstetricos': { path: 'antecedentes_no_patologicos.gineco_obstetricos', opcional: true },
     
-    'convenio.pertenece_convenio': { path: 'medico_tratante.pertenece_convenio', opcional: true, parser: (v) => Boolean(v) },
-    'convenio.acepta_tabulador': { path: 'medico_tratante.acepta_tabulador', opcional: true, parser: (v) => Boolean(v) },
+    // DISCAPACIDAD
+    'discapacidad.tiene': { 
+      path: 'padecimiento_actual.discapacidad.marcada', 
+      opcional: true, 
+      parser: (v) => {
+        if (Array.isArray(v)) return v.includes('Sí');
+        return false;
+      }
+    },
+    'discapacidad.tipo': { 
+      path: 'padecimiento_actual.discapacidad.tipo', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v : [] 
+    },
+    'discapacidad.desde': { path: 'padecimiento_actual.discapacidad.desde', opcional: true },
+    'discapacidad.hasta': { path: 'padecimiento_actual.discapacidad.hasta', opcional: true },
     
-    'firma_medico': { path: 'firma.firma_autografa_detectada', parser: (v) => Boolean(v) },
+    // EQUIPO QUIRÚRGICO - Array de objetos
+    'equipo_quirurgico': { 
+      path: 'equipo_quirurgico', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v : [] 
+    },
+    
+    // FIRMA
+    'firma.lugar': { path: 'firma_cierre.lugar', opcional: true },
+    'firma.nombre': { path: 'firma_cierre.nombre_firma', opcional: true },
+    'firma_medico': { 
+      path: 'firma_cierre.firma_autografa_detectada', 
+      parser: (v) => v === 'Detectada' 
+    },
+    
+    // METADATA
+    'metadata.coherencia_clinica': { 
+      path: 'metadata.existe_coherencia_clinica', 
+      opcional: true, 
+      parser: (v) => v === 'Sí' 
+    },
+    'metadata.observaciones': { path: 'metadata.observaciones', opcional: true },
   },
 };
 

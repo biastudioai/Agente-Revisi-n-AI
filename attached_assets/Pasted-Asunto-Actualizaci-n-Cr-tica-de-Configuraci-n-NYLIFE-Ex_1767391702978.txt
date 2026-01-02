@@ -1,0 +1,185 @@
+Asunto: Actualización Crítica de Configuración NYLIFE - Extracción Raw y Normalización
+
+Hola, necesito actualizar el archivo de configuración NYLIFE_CONFIG para el proveedor Seguros Monterrey New York Life. El objetivo primordial es realizar una extracción total de la información (Raw), capturando exactamente lo que aparece en el PDF sin restricciones de validación en este paso.
+
+Cambios Clave Implementados:
+De Booleans a Arrays: Se han cambiado todos los campos de "Sí/No" y Checkboxes de Type.BOOLEAN a Type.ARRAY. Esto es para que, si un médico marca ambas casillas o tacha de forma ambigua, Gemini extraiga todos los valores detectados en lugar de forzar un error o una elección.
+
+Estructura de Fechas Robusta: Las fechas ahora son objetos que capturan dia, mes y año por separado (tal como vienen en las casillas del PDF) e incluyen un campo formatted para la UI.
+
+Normalización de Género: Se instruye a la IA para mapear la "M" (Mujer) a "Femenino" y la "H" (Hombre) a "Masculino" directamente en la extracción.
+
+Equipo Quirúrgico como Array: Se cambia a una lista de objetos para permitir capturar múltiples médicos en los campos de "Otros".
+
+Por favor, reemplaza la configuración actual por el siguiente código:
+
+TypeScript
+
+import { Type } from "@google/genai";
+import { ProviderConfig } from "./types";
+
+export const NYLIFE_CONFIG: ProviderConfig = {
+  id: 'NYLIFE',
+  name: 'nylife',
+  displayName: 'Seguros Monterrey New York Life',
+  
+  theme: {
+    primary: 'bg-emerald-600',
+    secondary: 'text-emerald-600',
+    border: 'border-emerald-200',
+    light: 'bg-emerald-50',
+    accent: 'emerald'
+  },
+
+  identificationRules: [
+    'Texto "Seguros Monterrey New York Life, S.A. de C.V."',
+    'Título "Formato de Informe Médico"',
+    'Secciones como "Datos del Asegurado", "Historia clínica"',
+    'Número de registro CGEN-S0038-0020-2019'
+  ],
+
+  extractionInstructions: `
+⚠️ REGLA DE ORO: EXTRACCIÓN TOTAL (RAW)
+- Tu objetivo es capturar CUALQUIER marca o texto visible. 
+- Si un campo tiene varias casillas marcadas, extrae todas en el array.
+- NO infieras. Si no hay marca, deja el array vacío [].
+
+1. NORMALIZACIÓN DE GÉNERO (CRÍTICO):
+   - En este formulario: M = Mujer, H = Hombre.
+   - Si está marcada la casilla "M" -> Extrae "Femenino".
+   - Si está marcada la casilla "H" -> Extrae "Masculino".
+   - Si ambas están marcadas o tachadas, extrae ["Femenino", "Masculino"].
+
+2. TRATAMIENTO DE FECHAS:
+   - Extrae "dia", "mes" y "año" de las casillas individuales.
+   - En el campo "formatted", genera el string DD/MM/AAAA. Si el mes viene en nombre (ej. "Ene"), conviértelo a número (01).
+
+3. CHECKBOXES Y SELECCIONES:
+   - Captura todas las marcas en campos como 'tipo_evento', 'antecedentes', 'tipo_padecimiento' y 'modalidad_tratamiento'.
+   - Los campos que antes eran Sí/No ahora son ARRAYS para permitir capturar errores del llenado manual.
+
+4. EQUIPO QUIRÚRGICO:
+   - Extrae cada fila (Anestesiólogo, Ayudantes, Otros) como un objeto dentro del array. No omitas los presupuestos de honorarios.
+`,
+
+  geminiSchema: {
+    type: Type.OBJECT,
+    properties: {
+      extracted: {
+        type: Type.OBJECT,
+        properties: {
+          identificacion: {
+            type: Type.OBJECT,
+            properties: {
+              apellido_paterno: { type: Type.STRING },
+              apellido_materno: { type: Type.STRING },
+              nombres: { type: Type.STRING },
+              sexo: { type: Type.ARRAY, items: { type: Type.STRING }, description: "M=Femenino, H=Masculino" },
+              edad: { type: Type.STRING },
+              tipo_evento: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Accidente, Enfermedad, Embarazo" }
+            }
+          },
+          historia_clinica: {
+            type: Type.OBJECT,
+            properties: {
+              patologicos_seleccionados: { type: Type.ARRAY, items: { type: Type.STRING } },
+              detalle_narrativo: { type: Type.STRING, description: "Área de texto libre para detalles de patologías y cirugías" },
+              no_patologicos: {
+                type: Type.OBJECT,
+                properties: {
+                  fuma: { type: Type.STRING },
+                  alcohol: { type: Type.STRING },
+                  drogas: { type: Type.STRING },
+                  perdida_peso: { type: Type.STRING },
+                  otros: { type: Type.STRING }
+                }
+              }
+            }
+          },
+          padecimiento_actual: {
+            type: Type.OBJECT,
+            properties: {
+              fecha_primeros_sintomas: { 
+                type: Type.OBJECT, 
+                properties: { dia: {type: Type.STRING}, mes: {type: Type.STRING}, año: {type: Type.STRING}, formatted: {type: Type.STRING} } 
+              },
+              descripcion_evolucion: { type: Type.STRING },
+              diagnosticos: { type: Type.ARRAY, items: { type: Type.STRING } },
+              tipo_padecimiento: { type: Type.ARRAY, items: { type: Type.STRING } },
+              relacion_otro_padecimiento: {
+                type: Type.OBJECT,
+                properties: { marcada: { type: Type.ARRAY, items: { type: Type.STRING } }, cual: { type: Type.STRING } }
+              },
+              discapacidad: {
+                type: Type.OBJECT,
+                properties: { 
+                  marcada: { type: Type.ARRAY, items: { type: Type.STRING } }, 
+                  tipo: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  desde: { type: Type.STRING },
+                  hasta: { type: Type.STRING }
+                }
+              }
+            }
+          },
+          tratamiento_y_hospital: {
+            type: Type.OBJECT,
+            properties: {
+              talla: { type: Type.STRING },
+              peso: { type: Type.STRING },
+              modalidad: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Quirúrgico, Médico" },
+              detalle_tratamiento: { type: Type.STRING },
+              estatus_tratamiento: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Programación o Realizado" },
+              complicaciones: {
+                type: Type.OBJECT,
+                properties: { marcada: { type: Type.ARRAY, items: { type: Type.STRING } }, detalle: { type: Type.STRING } }
+              },
+              hospital: {
+                type: Type.OBJECT,
+                properties: {
+                  nombre: { type: Type.STRING },
+                  ciudad: { type: Type.STRING },
+                  ingreso: { type: Type.OBJECT, properties: { dia: {type: Type.STRING}, mes: {type: Type.STRING}, año: {type: Type.STRING}, formatted: {type: Type.STRING} } },
+                  egreso: { type: Type.OBJECT, properties: { dia: {type: Type.STRING}, mes: {type: Type.STRING}, año: {type: Type.STRING}, formatted: {type: Type.STRING} } },
+                  tipo_estancia: { type: Type.ARRAY, items: { type: Type.STRING } }
+                }
+              }
+            }
+          },
+          medico_tratante: {
+            type: Type.OBJECT,
+            properties: {
+              nombre_completo: { type: Type.STRING },
+              numero_proveedor: { type: Type.STRING },
+              rfc: { type: Type.STRING },
+              cedula_profesional: { type: Type.STRING },
+              convenio_red: { type: Type.ARRAY, items: { type: Type.STRING } },
+              acepta_tabulador: { type: Type.ARRAY, items: { type: Type.STRING } }
+            }
+          },
+          equipo_quirurgico: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                rol: { type: Type.STRING, description: "Anestesiólogo, Ayudante, etc." },
+                nombre: { type: Type.STRING },
+                especialidad: { type: Type.STRING },
+                presupuesto: { type: Type.STRING }
+              }
+            }
+          },
+          firma_cierre: {
+            type: Type.OBJECT,
+            properties: {
+              lugar: { type: Type.STRING },
+              fecha: { type: Type.OBJECT, properties: { dia: {type: Type.STRING}, mes: {type: Type.STRING}, año: {type: Type.STRING}, formatted: {type: Type.STRING} } },
+              firma_autografa_detectada: { type: Type.STRING, description: "Detectada / No detectada" }
+            }
+          }
+        },
+        required: ['identificacion', 'padecimiento_actual', 'medico_tratante']
+      }
+    }
+  }
+};
+Instrucción final para Replit: "Si consideras que la estructura de Arrays para campos binarios (Sí/No) es la mejor forma de evitar pérdida de datos en el OCR de documentos manuscritos, por favor implementa esta versión de inmediato."

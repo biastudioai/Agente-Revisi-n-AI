@@ -1,0 +1,192 @@
+{
+  "provider": "NY_LIFE",
+  "displayName": "Seguros Monterrey New York Life",
+  "schema": {
+    "extracted": {
+      "type": "OBJECT",
+      "properties": {
+        "identificacion_asegurado": {
+          "type": "OBJECT",
+          "properties": {
+            "apellido_paterno": { "type": "STRING" },
+            "apellido_materno": { "type": "STRING" },
+            "nombres": { "type": "STRING" },
+            "sexo_detectado": { "type": "ARRAY", "items": { "type": "STRING" }, "description": "Captura M, H o ambos si están marcados" },
+            "edad": { "type": "STRING" },
+            "tipo_evento_marcado": { 
+              "type": "ARRAY", 
+              "items": { "type": "STRING" },
+              "description": "Captura Accidentes, Enfermedad, Embarazo"
+            }
+          }
+        },
+        "historia_clinica_antecedentes": {
+          "type": "OBJECT",
+          "properties": {
+            "patologicos_seleccionados": {
+              "type": "ARRAY",
+              "items": { "type": "STRING" },
+              "description": "Checkboxes: Cardiacos, Hipertensivos, Diabetes, VIH, Cáncer, Hepáticos, Convulsivos, Cirugías, Otros"
+            },
+            "detalle_patologias_y_evolucion": { "type": "STRING" },
+            "no_patologicos_detalle": {
+              "type": "OBJECT",
+              "properties": {
+                "alcohol": { "type": "STRING" },
+                "fuma": { "type": "STRING" },
+                "drogas": { "type": "STRING" },
+                "perdida_peso": { "type": "STRING" },
+                "perinatales": { "type": "STRING" },
+                "gineco_obstetricos": { "type": "STRING" },
+                "otros": { "type": "STRING" }
+              }
+            }
+          }
+        },
+        "padecimiento_actual": {
+          "type": "OBJECT",
+          "properties": {
+            "fecha_primeros_sintomas": {
+              "type": "OBJECT",
+              "properties": { "dia": { "type": "STRING" }, "mes": { "type": "STRING" }, "año": { "type": "STRING" } }
+            },
+            "detalles_evolucion_estado_actual": { "type": "STRING" },
+            "fecha_primera_consulta": {
+              "type": "OBJECT",
+              "properties": { "dia": { "type": "STRING" }, "mes": { "type": "STRING" }, "año": { "type": "STRING" } }
+            },
+            "fecha_diagnostico": {
+              "type": "OBJECT",
+              "properties": { "dia": { "type": "STRING" }, "mes": { "type": "STRING" }, "año": { "type": "STRING" } }
+            },
+            "diagnosticos_lista": { "type": "ARRAY", "items": { "type": "STRING" } },
+            "tipo_padecimiento_marcado": {
+              "type": "ARRAY",
+              "items": { "type": "STRING" },
+              "description": "Congénito, Agudo, Adquirido, Crónico"
+            },
+            "tiempo_evolucion_txt": { "type": "STRING" },
+            "relacion_otro_padecimiento": {
+              "type": "OBJECT",
+              "properties": {
+                "respuesta_marcada": { "type": "ARRAY", "items": { "type": "STRING" } },
+                "cual": { "type": "STRING" }
+              }
+            },
+            "discapacidad": {
+              "type": "OBJECT",
+              "properties": {
+                "respuesta_marcada": { "type": "ARRAY", "items": { "type": "STRING" } },
+                "grado_marcado": { "type": "ARRAY", "items": { "type": "STRING" } },
+                "fecha_desde": { "type": "STRING" },
+                "fecha_hasta": { "type": "STRING" }
+              }
+            },
+            "tratamiento_futuro": {
+              "type": "OBJECT",
+              "properties": {
+                "respuesta_marcada": { "type": "ARRAY", "items": { "type": "STRING" } },
+                "especificar": { "type": "STRING" }
+              }
+            }
+          }
+        },
+        "exploracion_y_tratamiento": {
+          "type": "OBJECT",
+          "properties": {
+            "talla": { "type": "STRING" },
+            "peso": { "type": "STRING" },
+            "exploracion_fisica_y_estudios_txt": { "type": "STRING" },
+            "tipo_tratamiento_marcado": {
+              "type": "ARRAY",
+              "items": { "type": "STRING" },
+              "description": "Quirúrgico, Médico"
+            },
+            "detalle_tratamiento_quirurgico": { "type": "STRING" },
+            "detalle_tratamiento_medico": { "type": "STRING" },
+            "programacion_o_realizado_marcado": {
+              "type": "ARRAY",
+              "items": { "type": "STRING" }
+            },
+            "descripcion_tratamiento_txt": { "type": "STRING" },
+            "complicaciones": {
+              "type": "OBJECT",
+              "properties": {
+                "respuesta_marcada": { "type": "ARRAY", "items": { "type": "STRING" } },
+                "especificar": { "type": "STRING" }
+              }
+            }
+          }
+        },
+        "hospitalizacion": {
+          "type": "OBJECT",
+          "properties": {
+            "nombre_hospital": { "type": "STRING" },
+            "ciudad": { "type": "STRING" },
+            "fecha_ingreso": {
+              "type": "OBJECT",
+              "properties": { "dia": { "type": "STRING" }, "mes": { "type": "STRING" }, "año": { "type": "STRING" } }
+            },
+            "tipo_estancia_marcada": {
+              "type": "ARRAY",
+              "items": { "type": "STRING" },
+              "description": "Urgencia, Hospitalización, Corta estancia"
+            },
+            "fecha_egreso": {
+              "type": "OBJECT",
+              "properties": { "dia": { "type": "STRING" }, "mes": { "type": "STRING" }, "año": { "type": "STRING" } }
+            }
+          }
+        },
+        "medico_y_equipo": {
+          "type": "OBJECT",
+          "properties": {
+            "datos_medico_tratante": {
+              "type": "OBJECT",
+              "properties": {
+                "apellido_paterno": { "type": "STRING" },
+                "apellido_materno": { "type": "STRING" },
+                "nombres": { "type": "STRING" },
+                "numero_proveedor": { "type": "STRING" },
+                "rfc": { "type": "STRING" },
+                "especialidad": { "type": "STRING" },
+                "cedula_profesional": { "type": "STRING" },
+                "cedula_especialidad_certificacion": { "type": "STRING" },
+                "correo": { "type": "STRING" },
+                "tel_consultorio": { "type": "STRING" },
+                "tel_movil": { "type": "STRING" }
+              }
+            },
+            "equipo_quirurgico": {
+              "type": "OBJECT",
+              "properties": {
+                "anestesiologo": { "type": "OBJECT", "properties": { "nombre": {"type": "STRING"}, "especialidad": {"type": "STRING"}, "presupuesto": {"type": "STRING"} } },
+                "primer_ayudante": { "type": "OBJECT", "properties": { "nombre": {"type": "STRING"}, "especialidad": {"type": "STRING"}, "presupuesto": {"type": "STRING"} } },
+                "segundo_ayudante": { "type": "OBJECT", "properties": { "nombre": {"type": "STRING"}, "especialidad": {"type": "STRING"}, "presupuesto": {"type": "STRING"} } },
+                "otros_medicos": { "type": "ARRAY", "items": { "type": "OBJECT", "properties": { "nombre": {"type": "STRING"}, "especialidad": {"type": "STRING"}, "presupuesto": {"type": "STRING"} } } }
+              }
+            },
+            "convenio_y_honorarios": {
+              "type": "OBJECT",
+              "properties": {
+                "pertenece_a_red_marcado": { "type": "ARRAY", "items": { "type": "STRING" } },
+                "acepta_tabulador_marcado": { "type": "ARRAY", "items": { "type": "STRING" } }
+              }
+            }
+          }
+        },
+        "cierre_formulario": {
+          "type": "OBJECT",
+          "properties": {
+            "fecha_firma": {
+              "type": "OBJECT",
+              "properties": { "dia": { "type": "STRING" }, "mes": { "type": "STRING" }, "año": { "type": "STRING" } }
+            },
+            "nombre_firma_medico": { "type": "STRING" },
+            "firma_autografa_detectada": { "type": "STRING", "description": "Si/No/Detectada" }
+          }
+        }
+      }
+    }
+  }
+}
