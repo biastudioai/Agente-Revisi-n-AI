@@ -23,7 +23,7 @@ export const NYLIFE_CONFIG: ProviderConfig = {
 
   extractionInstructions: `
 ⚠️ REGLA DE ORO: EXTRACCIÓN TOTAL (RAW)
-- Tu objetivo es capturar CUALQUIER marca o texto visible. 
+- Tu objetivo es capturar CUALQUIER marca o texto visible llenado en la información. 
 - Si un campo tiene varias casillas marcadas, extrae todas en el array.
 - NO infieras. Si no hay marca, deja el array vacío [].
 
