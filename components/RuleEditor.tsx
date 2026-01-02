@@ -199,16 +199,12 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
       }
     });
     
-    console.log('Validation errors found:', newErrors);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = () => {
-    console.log('handleSave called', { name, description, conditions });
-    const validationResult = validate();
-    console.log('Validation result:', validationResult, 'Errors will update in state');
-    if (!validationResult) {
+    if (!validate()) {
       return;
     }
     
@@ -290,6 +286,23 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
 
         <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6">
           
+          {Object.keys(errors).length > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-red-700">Por favor corrige los siguientes errores:</p>
+                <ul className="mt-1 text-xs text-red-600 list-disc list-inside">
+                  {errors.name && <li>{errors.name}</li>}
+                  {errors.description && <li>{errors.description}</li>}
+                  {errors.conditions && <li>{errors.conditions}</li>}
+                  {Object.keys(errors).filter(k => k.startsWith('cond_')).length > 0 && (
+                    <li>Hay campos incompletos en las condiciones</li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className="block text-xs font-bold text-slate-600 mb-1.5">
