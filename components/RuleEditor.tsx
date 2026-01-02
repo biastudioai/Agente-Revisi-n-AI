@@ -45,6 +45,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
   const [conditions, setConditions] = useState<RuleCondition[]>([]);
   const [logicOperator, setLogicOperator] = useState<LogicOperator>('AND');
   const [fieldSearch, setFieldSearch] = useState<Record<string, string>>({});
+  const [fieldFocus, setFieldFocus] = useState<string | null>(null);
   const [pathSearch, setPathSearch] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [normalizedFieldName, setNormalizedFieldName] = useState('');
@@ -599,13 +600,18 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                             value={fieldSearch[cond.id] ?? cond.field}
                             onChange={(e) => {
                               setFieldSearch({ ...fieldSearch, [cond.id]: e.target.value });
-                              if (AVAILABLE_FIELDS.includes(e.target.value)) {
+                              const allAvailableFields = normalizedFieldName 
+                                ? [normalizedFieldName, ...AVAILABLE_FIELDS]
+                                : AVAILABLE_FIELDS;
+                              if (allAvailableFields.includes(e.target.value)) {
                                 updateCondition(cond.id, { field: e.target.value });
                               }
                             }}
+                            onFocus={() => setFieldFocus(cond.id)}
                             onBlur={() => {
                               setTimeout(() => {
                                 setFieldSearch({ ...fieldSearch, [cond.id]: '' });
+                                setFieldFocus(null);
                               }, 200);
                             }}
                             placeholder="Buscar campo..."
@@ -613,7 +619,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                               errors[`cond_${idx}_field`] ? 'border-red-300 bg-red-50' : 'border-slate-200'
                             }`}
                           />
-                          {(fieldSearch[cond.id] || (!cond.field && document.activeElement?.id === `field_${cond.id}`)) && (
+                          {(fieldFocus === cond.id || fieldSearch[cond.id]) && (
                             <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-40 overflow-y-auto">
                               {filteredFields(fieldSearch[cond.id] || '').map(f => (
                                 <button

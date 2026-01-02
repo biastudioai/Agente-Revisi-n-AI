@@ -1,0 +1,103 @@
+🎯 PROMPT PARA AGENTE BUILD: Corregir Integración del Campo Normalizado en Dropdown de Condiciones
+📋 CONTEXTO DEL PROBLEMA
+El usuario ha configurado correctamente:
+
+Paths por aseguradora: padecimiento_actual.descripcion para GNP y METLIFE
+Nombre normalizado: descripcion
+PROBLEMA ACTUAL:
+El campo normalizado descripcion NO está apareciendo en el dropdown de "CAMPO" dentro de la sección de Condiciones, por lo que el usuario no puede usarlo para crear reglas.
+
+COMPORTAMIENTO ESPERADO:
+
+El campo descripcion (nombre normalizado) debe aparecer en el dropdown de campos de las condiciones
+Debe tener un badge visual "NORMALIZADO" en color morado para diferenciarlo
+Al seleccionarlo, debe quedar guardado como field: 'descripcion' en la condición
+El motor de validación debe traducirlo automáticamente usando fieldMappings
+🔍 ANÁLISIS TÉCNICO
+Ubicación del Código:
+Archivo: components/RuleEditor.tsx
+
+Función Afectada:
+const filteredFields = (searchTerm: string) => {
+  const fieldsWithNormalized = normalizedFieldName 
+    ? [normalizedFieldName, ...AVAILABLE_FIELDS]
+    : AVAILABLE_FIELDS;
+  
+  if (!searchTerm) return fieldsWithNormalized.slice(0, 15);
+  return fieldsWithNormalized.filter(f => 
+    f.toLowerCase().includes(searchTerm.toLowerCase())
+  ).slice(0, 15);
+};
+Problema Identificado:
+La función filteredFields SÍ incluye el campo normalizado, pero hay un problema de renderizado en el componente de búsqueda de campos en las condiciones.
+
+✅ SOLUCIÓN REQUERIDA
+Opción A: Verificar que el campo normalizado se muestre correctamente (RECOMENDADA)
+Acciones:
+
+Verificar que normalizedFieldName tenga valor cuando se renderiza el dropdown de campos
+Asegurar que el input de búsqueda esté usando filteredFields correctamente
+Agregar el badge "NORMALIZADO" en el dropdown de opciones (ya implementado, pero verificar)
+Opción B: Agregar el campo normalizado manualmente al estado local si no se detecta
+Si por alguna razón el campo no se está propagando correctamente, asegurar que:
+
+El campo normalizado se agregue al inicio de la lista de campos disponibles
+Se diferencie visualmente con el badge morado
+Persista al buscar/filtrar
+🛠️ IMPLEMENTACIÓN ESPECÍFICA
+Archivo: components/RuleEditor.tsx
+Verificar línea ~237-265 donde se renderiza el input de búsqueda de campos:
+
+<input
+  type="text"
+  value={fieldSearch[cond.id] ?? cond.field}
+  onChange={(e) => {
+    setFieldSearch({ ...fieldSearch, [cond.id]: e.target.value });
+    if (AVAILABLE_FIELDS.includes(e.target.value)) {
+      updateCondition(cond.id, { field: e.target.value });
+    }
+  }}
+  // ... resto del código
+PROBLEMA DETECTADO:
+La validación AVAILABLE_FIELDS.includes(e.target.value) NO incluye el campo normalizado, solo los campos estáticos.
+
+SOLUCIÓN:
+Cambiar la validación para incluir el campo normalizado:
+
+onChange={(e) => {
+  setFieldSearch({ ...fieldSearch, [cond.id]: e.target.value });
+  const allAvailableFields = normalizedFieldName 
+    ? [normalizedFieldName, ...AVAILABLE_FIELDS]
+    : AVAILABLE_FIELDS;
+  if (allAvailableFields.includes(e.target.value)) {
+    updateCondition(cond.id, { field: e.target.value });
+  }
+}}
+🎯 OBJETIVO FINAL
+Después de la corrección, el usuario debe poder:
+
+✅ Ver el campo descripcion en el dropdown de "CAMPO" de las condiciones
+✅ Ver el badge "NORMALIZADO" junto al nombre del campo
+✅ Seleccionarlo y que quede guardado como field: 'descripcion'
+✅ Que el motor de validación lo traduzca automáticamente a padecimiento_actual.descripcion según la aseguradora del informe
+📝 VALIDACIÓN POST-IMPLEMENTACIÓN
+Probar el siguiente flujo:
+
+Crear una regla para GNP + METLIFE
+Configurar paths: padecimiento_actual.descripcion para ambas
+Configurar nombre normalizado: descripcion
+Ir a la sección de Condiciones
+Hacer clic en el input de "CAMPO"
+Verificar que aparezca descripcion con badge "NORMALIZADO"
+Seleccionarlo y configurar operador IS_EMPTY
+Guardar regla
+Verificar en el JSON que la condición tenga field: 'descripcion'
+⚠️ NOTAS IMPORTANTES
+No modifiques la lógica de fieldMappings, eso ya funciona correctamente
+El motor de validación ya soporta campos normalizados vía getFieldValue()
+Solo necesitas asegurar que el campo aparezca en el dropdown y sea seleccionable
+Mantén el badge visual para diferenciarlo de campos regulares
+🚀 EJECUCIÓN
+Si tienes una forma más óptima o eficiente de resolver este problema, tienes libertad de implementarla, siempre y cuando el resultado final cumpla con el objetivo de que el campo normalizado aparezca y sea seleccionable en el dropdown de condiciones.
+
+¿Necesitas más contexto o hay algo que no te quede claro sobre esta corrección?
