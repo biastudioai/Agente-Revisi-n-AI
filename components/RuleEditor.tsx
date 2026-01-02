@@ -121,10 +121,10 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
 
   const filteredPaths = (provider: string, searchTerm: string) => {
     const paths = pathsByProvider[provider as 'GNP' | 'METLIFE'] || [];
-    if (!searchTerm) return paths.slice(0, 15);
+    if (!searchTerm) return paths;
     return paths.filter(p => 
       p.toLowerCase().includes(searchTerm.toLowerCase())
-    ).slice(0, 15);
+    );
   };
 
   const validate = (): boolean => {
