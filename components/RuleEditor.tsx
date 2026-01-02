@@ -155,8 +155,13 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
   };
 
   const filteredFields = (searchTerm: string) => {
-    if (!searchTerm) return AVAILABLE_FIELDS.slice(0, 15);
-    return AVAILABLE_FIELDS.filter(f => 
+    // Agregar el campo normalizado si existe
+    const fieldsWithNormalized = normalizedFieldName 
+      ? [normalizedFieldName, ...AVAILABLE_FIELDS]
+      : AVAILABLE_FIELDS;
+    
+    if (!searchTerm) return fieldsWithNormalized.slice(0, 15);
+    return fieldsWithNormalized.filter(f => 
       f.toLowerCase().includes(searchTerm.toLowerCase())
     ).slice(0, 15);
   };
@@ -618,15 +623,27 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                                     updateCondition(cond.id, { field: f });
                                     setFieldSearch({ ...fieldSearch, [cond.id]: '' });
                                   }}
-                                  className="w-full px-3 py-1.5 text-left text-xs hover:bg-slate-50 border-b border-slate-100 last:border-0"
+                                  className="w-full px-3 py-1.5 text-left text-xs hover:bg-brand-50 border-b border-slate-100 last:border-0 flex items-center justify-between gap-2"
                                 >
-                                  {f}
+                                  <span className="truncate">{f}</span>
+                                  {f === normalizedFieldName && (
+                                    <span className="px-1.5 py-0.5 text-[9px] font-bold bg-purple-100 text-purple-700 rounded shrink-0">
+                                      NORMALIZADO
+                                    </span>
+                                  )}
                                 </button>
                               ))}
                             </div>
                           )}
                           {cond.field && (
-                            <span className="text-[10px] text-slate-400 mt-0.5 block truncate">{cond.field}</span>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <span className="text-[10px] text-slate-400 truncate">{cond.field}</span>
+                              {cond.field === normalizedFieldName && (
+                                <span className="px-1.5 py-0.5 text-[9px] font-bold bg-purple-100 text-purple-700 rounded shrink-0">
+                                  NORMALIZADO
+                                </span>
+                              )}
+                            </div>
                           )}
                         </div>
                         
