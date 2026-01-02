@@ -1,6 +1,6 @@
 import { Type } from "@google/genai";
 
-export type ProviderType = 'GNP' | 'METLIFE' | 'UNKNOWN';
+export type ProviderType = 'GNP' | 'METLIFE' | 'NYLIFE' | 'UNKNOWN';
 
 export interface ProviderTheme {
   primary: string;
@@ -54,5 +54,6 @@ export interface ProviderConfig {
 export interface ProviderRegistry {
   GNP: ProviderConfig;
   METLIFE: ProviderConfig;
+  NYLIFE: ProviderConfig;
   [key: string]: ProviderConfig;
 }

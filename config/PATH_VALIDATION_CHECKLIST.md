@@ -135,6 +135,102 @@ Este documento lista TODOS los paths de mapeo usados en `aseguradora-configs.ts`
 
 ---
 
+## NY LIFE MONTERREY - Paths de Mapeo
+
+### Paciente
+| Campo Estándar | Path en JSON NY Life | Validar |
+|----------------|----------------------|---------|
+| paciente.nombre | `identificacion.nombres` | [ ] |
+| paciente.apellido_paterno | `identificacion.apellido_paterno` | [ ] |
+| paciente.apellido_materno | `identificacion.apellido_materno` | [ ] |
+| paciente.edad | `identificacion.edad` | [ ] |
+| paciente.sexo | `identificacion.sexo` | [ ] |
+| paciente.tipo_evento | `identificacion.tipo_evento` | [ ] |
+
+### Póliza
+| Campo Estándar | Path en JSON NY Life | Validar |
+|----------------|----------------------|---------|
+| poliza.numero | `tramite.numero_poliza` | [ ] |
+
+### Médico Tratante
+| Campo Estándar | Path en JSON NY Life | Validar |
+|----------------|----------------------|---------|
+| medico_tratante.nombre | `medico_tratante.nombres` | [ ] |
+| medico_tratante.apellido_paterno | `medico_tratante.apellido_paterno` | [ ] |
+| medico_tratante.apellido_materno | `medico_tratante.apellido_materno` | [ ] |
+| medico_tratante.cedula_profesional | `medico_tratante.cedula_profesional` | [ ] |
+| medico_tratante.cedula_especialidad | `medico_tratante.cedula_especialidad` | [ ] |
+| medico_tratante.especialidad | `medico_tratante.especialidad` | [ ] |
+| medico_tratante.telefono | `medico_tratante.telefono_consultorio` | [ ] |
+| medico_tratante.telefono_movil | `medico_tratante.telefono_movil` | [ ] |
+| medico_tratante.correo | `medico_tratante.correo_electronico` | [ ] |
+| medico_tratante.rfc | `medico_tratante.rfc` | [ ] |
+| medico_tratante.numero_proveedor | `medico_tratante.numero_proveedor` | [ ] |
+| medico_tratante.pertenece_convenio | `medico_tratante.pertenece_convenio` | [ ] |
+| medico_tratante.acepta_tabulador | `medico_tratante.acepta_tabulador` | [ ] |
+
+### Fechas
+| Campo Estándar | Path en JSON NY Life | Validar |
+|----------------|----------------------|---------|
+| fecha.ingreso | `hospital.fecha_ingreso` | [ ] |
+| fecha.egreso | `hospital.fecha_egreso` | [ ] |
+| fecha.diagnostico | `padecimiento_actual.fecha_diagnostico` | [ ] |
+| fecha.primeros_sintomas | `padecimiento_actual.fecha_primeros_sintomas` | [ ] |
+| fecha.primera_consulta | `padecimiento_actual.fecha_primera_consulta` | [ ] |
+| fecha.firma | `firma.fecha` | [ ] |
+
+### Diagnóstico
+| Campo Estándar | Path en JSON NY Life | Validar |
+|----------------|----------------------|---------|
+| diagnostico.descripcion | `diagnostico.diagnostico_1` | [ ] |
+| diagnostico.descripcion_2 | `diagnostico.diagnostico_2` | [ ] |
+| diagnostico.descripcion_3 | `diagnostico.diagnostico_3` | [ ] |
+| diagnostico.tipo_padecimiento | `padecimiento_actual.tipo_padecimiento` | [ ] |
+
+### Intervención Quirúrgica / Tratamiento
+| Campo Estándar | Path en JSON NY Life | Validar |
+|----------------|----------------------|---------|
+| intervencion_qx.hubo_cirugia | `tratamiento.es_quirurgico` | [ ] |
+| intervencion_qx.descripcion | `tratamiento.procedimiento_quirurgico` | [ ] |
+| intervencion_qx.hubo_complicaciones | `tratamiento.hubo_complicaciones` | [ ] |
+| intervencion_qx.complicaciones_detalle | `tratamiento.complicaciones_detalle` | [ ] |
+
+### Exploración Física
+| Campo Estándar | Path en JSON NY Life | Validar |
+|----------------|----------------------|---------|
+| exploracion_fisica.talla | `exploracion_fisica.talla` | [ ] |
+| exploracion_fisica.peso | `exploracion_fisica.peso` | [ ] |
+| exploracion_fisica.resultados | `exploracion_fisica.resultados` | [ ] |
+
+### Antecedentes Patológicos
+| Campo Estándar | Path en JSON NY Life | Validar |
+|----------------|----------------------|---------|
+| antecedentes.patologicos.cardiacos | `antecedentes_patologicos.cardiacos` | [ ] |
+| antecedentes.patologicos.hipertensivos | `antecedentes_patologicos.hipertensivos` | [ ] |
+| antecedentes.patologicos.diabetes | `antecedentes_patologicos.diabetes_mellitus` | [ ] |
+| antecedentes.patologicos.vih_sida | `antecedentes_patologicos.vih_sida` | [ ] |
+| antecedentes.patologicos.cancer | `antecedentes_patologicos.cancer` | [ ] |
+| antecedentes.patologicos.hepaticos | `antecedentes_patologicos.hepaticos` | [ ] |
+| antecedentes.patologicos.convulsivos | `antecedentes_patologicos.convulsivos` | [ ] |
+| antecedentes.patologicos.cirugias | `antecedentes_patologicos.cirugias` | [ ] |
+
+### Antecedentes No Patológicos
+| Campo Estándar | Path en JSON NY Life | Validar |
+|----------------|----------------------|---------|
+| antecedentes.no_patologicos.fuma | `antecedentes_no_patologicos.fuma` | [ ] |
+| antecedentes.no_patologicos.alcohol | `antecedentes_no_patologicos.alcohol` | [ ] |
+| antecedentes.no_patologicos.drogas | `antecedentes_no_patologicos.drogas` | [ ] |
+| antecedentes.no_patologicos.perdida_peso | `antecedentes_no_patologicos.perdida_peso` | [ ] |
+| antecedentes.no_patologicos.perinatales | `antecedentes_no_patologicos.perinatales` | [ ] |
+| antecedentes.no_patologicos.gineco_obstetricos | `antecedentes_no_patologicos.gineco_obstetricos` | [ ] |
+
+### Documentación
+| Campo Estándar | Path en JSON NY Life | Validar |
+|----------------|----------------------|---------|
+| firma_medico | `firma.firma_autografa_detectada` | [ ] |
+
+---
+
 ## Instrucciones para Corrección
 
 Si un path no coincide:

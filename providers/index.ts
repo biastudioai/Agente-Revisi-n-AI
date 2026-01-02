@@ -2,10 +2,12 @@ import { Type } from "@google/genai";
 import { ProviderConfig, ProviderRegistry, ProviderType, GeminiSchema } from "./types";
 import { METLIFE_CONFIG } from "./metlife.config";
 import { GNP_CONFIG } from "./gnp.config";
+import { NYLIFE_CONFIG } from "./nylife.config";
 
 export const PROVIDER_REGISTRY: ProviderRegistry = {
   METLIFE: METLIFE_CONFIG,
-  GNP: GNP_CONFIG
+  GNP: GNP_CONFIG,
+  NYLIFE: NYLIFE_CONFIG
 };
 
 export function getProviderConfig(provider: ProviderType): ProviderConfig | null {
@@ -52,7 +54,7 @@ export function buildCombinedGeminiSchema(): GeminiSchema {
   const combinedProperties: Record<string, any> = {
     provider: { 
       type: Type.STRING, 
-      description: "Identificador del proveedor: METLIFE, GNP o UNKNOWN" 
+      description: "Identificador del proveedor: METLIFE, GNP, NYLIFE o UNKNOWN" 
     }
   };
 
@@ -93,6 +95,8 @@ export function buildSystemPrompt(): string {
   const identificationRules = Object.values(PROVIDER_REGISTRY)
     .map(config => `- ${config.displayName}: ${config.identificationRules.join(', ')}`)
     .join('\n');
+
+  // Incluir NYLIFE en la descripción del proveedor
 
   const extractionInstructions = Object.values(PROVIDER_REGISTRY)
     .map(config => `\n### ${config.displayName.toUpperCase()}\n${config.extractionInstructions}`)

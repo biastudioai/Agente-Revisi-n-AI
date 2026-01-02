@@ -2,10 +2,10 @@
 
 ## Overview
 
-This is an AI-powered medical report evaluator for Mexican insurance companies (GNP and MetLife). The application uses Google's Gemini AI to extract data from medical report images/PDFs, validate the extracted information against configurable scoring rules, and provide pre-approval recommendations for insurance claims.
+This is an AI-powered medical report evaluator for Mexican insurance companies (GNP, MetLife, and NY Life Monterrey). The application uses Google's Gemini AI to extract data from medical report images/PDFs, validate the extracted information against configurable scoring rules, and provide pre-approval recommendations for insurance claims.
 
 The system processes medical forms by:
-1. Detecting the insurance provider (GNP or MetLife) based on document formatting
+1. Detecting the insurance provider (GNP, MetLife, or NY Life) based on document formatting
 2. Extracting structured data fields (patient info, diagnosis, treatment, hospitalization, etc.)
 3. Validating extracted data against provider-specific and general scoring rules
 4. Generating a compliance score with detailed flags for issues found
@@ -38,8 +38,17 @@ The application uses a config-driven architecture for multi-provider support:
 - `providers/types.ts` - TypeScript interfaces for provider configs, themes, and schemas
 - `providers/metlife.config.ts` - MetLife-specific extraction instructions and Gemini schema
 - `providers/gnp.config.ts` - GNP-specific extraction instructions and Gemini schema
+- `providers/nylife.config.ts` - NY Life Monterrey-specific extraction instructions and Gemini schema
 
 This pattern allows adding new insurance providers by creating a new config file without modifying core logic.
+
+### NY Life Monterrey Integration (NEW - January 2026)
+Added support for Seguros Monterrey New York Life with:
+- **Unique fields**: numero_proveedor, cedula_especialidad, detailed antecedentes (patológicos/no patológicos)
+- **Up to 3 separate diagnoses**: diagnostico_1, diagnostico_2, diagnostico_3
+- **Disability tracking**: causo_discapacidad, tipo_discapacidad, discapacidad_desde/hasta
+- **Detailed surgical team**: anestesiologo, primer_ayudante, segundo_ayudante, otros_medicos
+- **Prompt for Grok**: `config/prompts/PROMPT_GROK_NYLIFE.md`
 
 ### AI Integration
 - `services/geminiService.ts` - Interfaces with Google Gemini AI for document analysis
@@ -152,6 +161,7 @@ Sistema de normalización para mapear campos de diferentes aseguradoras a un sch
 - `config/aseguradora-configs.ts` - Configuraciones de mapeo:
   - CONFIG_GNP: Mapeos de campos GNP → schema estándar
   - CONFIG_METLIFE: Mapeos de campos MetLife → schema estándar
+  - CONFIG_NYLIFE: Mapeos de campos NY Life → schema estándar (incluye antecedentes detallados)
   - ASEGURADORAS_CONFIG: Registro central de aseguradoras
 
 - `services/field-mapper.ts` - Clase FieldNormalizer:
