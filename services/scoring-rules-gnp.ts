@@ -50,10 +50,10 @@ export const REGLAS_GNP: ScoringRule[] = [
   },
   {
     id: 'gnp_fechas_hospital',
-    name: 'Fechas de Hospitalización Incompletas',
+    name: 'Fecha de Ingreso Incompleta',
     level: 'MODERADO',
     points: 8,
-    description: 'GNP requiere fecha de ingreso y egreso para casos hospitalarios.',
+    description: 'GNP requiere fecha de ingreso para casos hospitalarios.',
     providerTarget: 'GNP',
     isCustom: false,
     conditions: [
@@ -61,14 +61,9 @@ export const REGLAS_GNP: ScoringRule[] = [
         id: 'cond_gnp_fechas_1',
         field: 'hospital.fecha_ingreso',
         operator: 'IS_EMPTY'
-      },
-      {
-        id: 'cond_gnp_fechas_2',
-        field: 'hospital.fecha_egreso',
-        operator: 'IS_EMPTY'
       }
     ],
-    logicOperator: 'OR',
-    affectedFields: ['hospital.fecha_ingreso', 'hospital.fecha_egreso', 'hospital.tipo_estancia']
+    logicOperator: 'AND',
+    affectedFields: ['hospital.fecha_ingreso', 'hospital.tipo_estancia']
   }
 ];
