@@ -1,0 +1,79 @@
+📋 PROMPT PARA AGENTE BUILD - CORRECCIÓN DEL AUTOCOMPLETE DE PATHS
+🎯 CONTEXTO DEL PROBLEMA
+El usuario está trabajando en el componente RuleEditor.tsx que tiene una funcionalidad de autocomplete para paths por aseguradora. Actualmente, el autocomplete está mostrando paths incorrectos que NO corresponden a la estructura real de los JSONs de cada aseguradora.
+
+📸 Evidencia del problema (capturas adjuntas):
+El autocomplete muestra paths como signos_vitales.peso para ambas aseguradoras
+Pero según la estructura real:
+GNP: sí tiene signos_vitales.peso ✅
+METLIFE: NO tiene esa sección, el peso está en identificacion.peso ❌
+🔍 ANÁLISIS DE LA CAUSA RAÍZ
+El problema está en cómo se construye pathsByProvider en RuleEditor.tsx:
+
+const pathsByProvider = useMemo(() => {
+  const gnpPaths = Object.values(CONFIG_GNP.mappings).map(m => m.path);
+  const metlifePaths = Object.values(CONFIG_METLIFE.mappings).map(m => m.path);
+  return {
+    GNP: [...new Set(gnpPaths)].sort(),
+    METLIFE: [...new Set(metlifePaths)].sort()
+  };
+}, []);
+El error: Estás extrayendo los paths del archivo de configuración de mapeo (aseguradora-configs.ts), que contiene paths del esquema estandarizado, NO los paths reales que usa Gemini para cada aseguradora.
+
+✅ SOLUCIÓN CORRECTA
+Debes extraer los paths directamente desde las configuraciones de Gemini de cada aseguradora:
+
+providers/gnp.config.ts → Tiene el geminiSchema real de GNP
+providers/metlife.config.ts → Tiene el geminiSchema real de MetLife
+Estos archivos definen la estructura EXACTA que Gemini devuelve para cada aseguradora.
+
+📦 OBJETIVO DE LA IMPLEMENTACIÓN
+Crear una función utilitaria que recorra recursivamente el geminiSchema de cada aseguradora y extraiga TODOS los paths válidos (ej: identificacion.nombres, diagnostico.codigo_cie, etc.)
+
+Reemplazar la lógica actual en RuleEditor.tsx para que use estos paths reales en lugar de los del mapeo
+
+Filtrar correctamente en el autocomplete: cuando el usuario esté en el renglón de GNP, solo mostrar paths de GNP; cuando esté en METLIFE, solo mostrar paths de MetLife
+
+🛠️ PASOS DETALLADOS PARA EL AGENTE
+PASO 1: Crear función extractora de paths
+Crea una función en providers/index.ts (o donde prefieras) que haga esto:
+
+// Ejemplo de lo que debe devolver:
+// extractPathsFromGeminiSchema(CONFIG_GNP.geminiSchema) 
+// → ['identificacion.nombres', 'identificacion.edad', 'signos_vitales.peso', ...]
+// extractPathsFromGeminiSchema(CONFIG_METLIFE.geminiSchema)
+// → ['identificacion.nombres', 'identificacion.edad', 'identificacion.peso', ...]
+//   (nota: NO tiene 'signos_vitales.peso')
+La función debe:
+
+Recorrer recursivamente el objeto geminiSchema.properties.extracted.properties
+Para cada sección (ej: identificacion, diagnostico), concatenar el nombre de la sección con cada propiedad interna
+Devolver un array plano de strings con todos los paths posibles
+PASO 2: Modificar RuleEditor.tsx
+Reemplaza el useMemo actual de pathsByProvider para que use la nueva función:
+
+const pathsByProvider = useMemo(() => {
+  return {
+    GNP: extractPathsFromGeminiSchema(CONFIG_GNP.geminiSchema).sort(),
+    METLIFE: extractPathsFromGeminiSchema(CONFIG_METLIFE.geminiSchema).sort()
+  };
+}, []);
+PASO 3: Verificar el autocomplete
+Después del cambio:
+
+En el renglón de GNP → deberías ver paths como signos_vitales.peso, signos_vitales.temperatura, etc.
+En el renglón de METLIFE → NO deberías ver signos_vitales.*, sino identificacion.peso, identificacion.talla
+⚠️ CONSIDERACIONES IMPORTANTES
+No modifiques aseguradora-configs.ts: ese archivo es para el mapeo/normalización, no para el autocomplete
+No modifiques los archivos de configuración de Gemini (gnp.config.ts, metlife.config.ts): solo léelos
+Maneja tipos anidados: El schema puede tener objetos dentro de objetos (ej: medico_tratante.nombres)
+Maneja arrays: Algunos campos son arrays (ej: otros_medicos[0].nombres), decide si incluirlos o no en el autocomplete
+🚀 RESULTADO ESPERADO
+Después de esta implementación:
+
+El autocomplete mostrará SOLO los paths que realmente existen en el JSON de esa aseguradora
+El usuario podrá seleccionar paths válidos sin confusión
+Se eliminará el error de mostrar signos_vitales.peso para MetLife (que no lo tiene)
+NOTA PARA EL AGENTE: Estos cambios son una corrección de bug crítico, no una feature nueva. El autocomplete actual muestra información incorrecta que puede llevar a crear reglas que fallarán en runtime. Prioriza la precisión sobre la cantidad de paths mostrados.
+
+Si tienes una forma más óptima o eficiente de extraer los paths desde el geminiSchema, tienes total libertad para implementarla. Lo importante es que los paths sean 100% precisos para cada aseguradora.

@@ -16,7 +16,7 @@ import {
   operatorNeedsAdditionalFields,
   getPreviewResult
 } from '../services/rule-validator';
-import { CONFIG_GNP, CONFIG_METLIFE } from '../config/aseguradora-configs';
+import { getPathsByProvider } from '../providers';
 
 interface RuleEditorProps {
   isOpen: boolean;
@@ -48,15 +48,8 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
   const [pathSearch, setPathSearch] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Extraer paths disponibles por aseguradora
-  const pathsByProvider = useMemo(() => {
-    const gnpPaths = Object.values(CONFIG_GNP.mappings).map(m => m.path);
-    const metlifePaths = Object.values(CONFIG_METLIFE.mappings).map(m => m.path);
-    return {
-      GNP: [...new Set(gnpPaths)].sort(),
-      METLIFE: [...new Set(metlifePaths)].sort()
-    };
-  }, []);
+  // Extraer paths disponibles por aseguradora (desde los geminiSchema reales)
+  const pathsByProvider = useMemo(() => getPathsByProvider(), []);
 
   useEffect(() => {
     if (isOpen) {

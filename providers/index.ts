@@ -163,4 +163,51 @@ IMPORTANTE:
 `;
 }
 
+/**
+ * Extrae recursivamente todos los paths válidos de un geminiSchema
+ * @param schema - El geminiSchema de un proveedor
+ * @returns Array de strings con todos los paths (ej: ['identificacion.nombres', 'signos_vitales.peso'])
+ */
+export function extractPathsFromGeminiSchema(schema: GeminiSchema): string[] {
+  const paths: string[] = [];
+  
+  function extractFromProperties(properties: Record<string, any>, prefix: string = '') {
+    for (const [key, value] of Object.entries(properties)) {
+      if (key === 'provider') continue;
+      
+      const currentPath = prefix ? `${prefix}.${key}` : key;
+      
+      if (value.type === Type.OBJECT && value.properties) {
+        extractFromProperties(value.properties, currentPath);
+      } else if (value.type === Type.ARRAY && value.items?.properties) {
+        // Para arrays de objetos, usar notación con índice [0] como representativo
+        extractFromProperties(value.items.properties, `${currentPath}[0]`);
+      } else {
+        paths.push(currentPath);
+      }
+    }
+  }
+  
+  const extractedProps = schema.properties?.extracted?.properties;
+  if (extractedProps) {
+    extractFromProperties(extractedProps);
+  }
+  
+  return paths;
+}
+
+/**
+ * Obtiene todos los paths disponibles por proveedor desde los geminiSchema reales
+ * @returns Objeto con paths por proveedor { GNP: string[], METLIFE: string[] }
+ */
+export function getPathsByProvider(): Record<string, string[]> {
+  const result: Record<string, string[]> = {};
+  
+  for (const [providerId, config] of Object.entries(PROVIDER_REGISTRY)) {
+    result[providerId] = extractPathsFromGeminiSchema(config.geminiSchema).sort();
+  }
+  
+  return result;
+}
+
 export type { ProviderConfig, ProviderType, ProviderTheme } from "./types";
