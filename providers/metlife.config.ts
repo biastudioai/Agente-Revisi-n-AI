@@ -130,6 +130,61 @@ tipo_padecimiento = []
 
 RECUERDA: tipo_padecimiento es un ARRAY que puede tener 0, 1, 2, 3 o 4 elementos según cuántas casillas estén marcadas.
 
+🔴🔴🔴 REGLAS CRÍTICAS PARA EXTRACCIÓN DE FECHAS 🔴🔴🔴
+
+⚠️ PROBLEMA COMÚN DE OCR: Las diagonales "/" pueden confundirse con el número "1"
+⚠️ DEBES identificar correctamente los SEPARADORES de fecha vs los DÍGITOS
+
+📋 FORMATO DE SALIDA OBLIGATORIO:
+- TODAS las fechas deben normalizarse a formato DD/MM/AAAA
+- Si el día tiene 1 dígito → agregar 0 adelante (ej: 5 → 05)
+- Si el mes tiene 1 dígito → agregar 0 adelante (ej: 3 → 03)
+- Si el año tiene 2 dígitos → convertir a 4 dígitos (ej: 25 → 2025, 99 → 1999)
+
+📋 ESTRUCTURA DEL FORMULARIO METLIFE PARA FECHAS:
+El formulario MetLife tiene campos de fecha con CASILLAS SEPARADAS:
+   ┌─────────────────────────────────────────┐
+   │    ___  │  ___  │  _______             │
+   │    Día  │  Mes  │   Año                │
+   └─────────────────────────────────────────┘
+
+⚠️ Las líneas verticales "|" son SEPARADORES DE COLUMNA, NO son parte de la fecha.
+⚠️ Debes COMBINAR los valores de las 3 casillas en formato DD/MM/AAAA.
+
+📋 CÓMO EXTRAER FECHAS EN METLIFE:
+1. Lee el valor de la casilla "Día" → puede ser 1-2 dígitos
+2. Lee el valor de la casilla "Mes" → puede ser 1-2 dígitos
+3. Lee el valor de la casilla "Año" → puede ser 2-4 dígitos
+4. COMBINA en formato: DD/MM/AAAA (agregando ceros y convirtiendo año si es necesario)
+
+📋 EJEMPLOS DE EXTRACCIÓN METLIFE:
+- Día: "5", Mes: "11", Año: "2025" → extraer como: "05/11/2025"
+- Día: "05", Mes: "1", Año: "25" → extraer como: "05/01/2025"
+- Día: "31", Mes: "12", Año: "2025" → extraer como: "31/12/2025"
+
+⚠️ REGLA CRÍTICA: NO confundas separadores visuales con el número "1"
+- Si ves algo que parece "111/2025" cuando el mes debería ser visible → revisa si son "11" con "/" separador
+- Los separadores "|" del formulario NO son parte de los números
+
+📋 FORMATOS DE ENTRADA QUE PUEDES ENCONTRAR (todos válidos):
+- DD/MM/AAAA → 05/11/2025 → extraer como: 05/11/2025
+- D/MM/AAAA → 5/11/2025 → extraer como: 05/11/2025
+- DD/M/AAAA → 05/1/2025 → extraer como: 05/01/2025
+- D/M/AAAA → 5/1/2025 → extraer como: 05/01/2025
+- DD/MM/AA → 05/11/25 → extraer como: 05/11/2025
+- D/M/AA → 5/1/25 → extraer como: 05/01/2025
+
+📋 EJEMPLOS DE CORRECCIÓN DE OCR:
+❌ OCR lee: "051 1 2025" → ✅ Fecha real: "05/11/2025"
+❌ OCR lee: "0511/12025" → ✅ Fecha real: "05/11/2025"
+❌ OCR lee: "5 1 1 2025" → ✅ Fecha real: "05/11/2025"
+❌ OCR lee: "05 / 11 / 2025" → ✅ Fecha real: "05/11/2025"
+
+🔴 VALIDACIÓN OBLIGATORIA:
+- El día NUNCA puede ser mayor a 31
+- El mes NUNCA puede ser mayor a 12
+- Si extraes un mes > 12, probablemente confundiste una "/" con "1"
+
 INSTRUCCIONES DE EXTRACCIÓN PARA METLIFE (ALTA PRIORIDAD):
 
 CABECERA (Lugar y Fecha):

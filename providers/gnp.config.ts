@@ -155,6 +155,56 @@ SI VES ESTO (ninguna marcada):
 
 RECUERDA: tipo_padecimiento es un ARRAY de strings, NO un string separado por comas.
 
+🔴🔴🔴 REGLAS CRÍTICAS PARA EXTRACCIÓN DE FECHAS 🔴🔴🔴
+
+⚠️ PROBLEMA COMÚN DE OCR: Las diagonales "/" pueden confundirse con el número "1"
+⚠️ DEBES identificar correctamente los SEPARADORES de fecha vs los DÍGITOS
+
+📋 FORMATO DE SALIDA OBLIGATORIO:
+- TODAS las fechas deben normalizarse a formato DD/MM/AAAA
+- Si el día tiene 1 dígito → agregar 0 adelante (ej: 5 → 05)
+- Si el mes tiene 1 dígito → agregar 0 adelante (ej: 3 → 03)
+- Si el año tiene 2 dígitos → convertir a 4 dígitos (ej: 25 → 2025, 99 → 1999)
+
+📋 ESTRUCTURA DEL FORMULARIO GNP PARA FECHAS:
+El formulario GNP tiene campos de fecha con formato pre-impreso:
+   ┌─────────────────────────────────┐
+   │  ____ / ____ / ________        │
+   │  (DD)   (MM)   (AAAA)          │
+   └─────────────────────────────────┘
+
+Las "/" YA ESTÁN IMPRESAS en el formulario. Los números se escriben EN LOS ESPACIOS entre las diagonales.
+
+⚠️ REGLA CRÍTICA: NO confundas las "/" pre-impresas con el número "1"
+- Si ves "05/11/2025" → la fecha es 05/11/2025 (5 de noviembre 2025)
+- Si ves "0511/12025" → ESTO ES UN ERROR DE OCR, la fecha real es 05/11/2025
+- Si ves algo como "051 1 2025" → probablemente es 05/11/2025 (las "/" se confundieron con 1)
+
+📋 FORMATOS DE ENTRADA QUE PUEDES ENCONTRAR (todos válidos):
+- DD/MM/AAAA → 05/11/2025 → extraer como: 05/11/2025
+- D/MM/AAAA → 5/11/2025 → extraer como: 05/11/2025
+- DD/M/AAAA → 05/1/2025 → extraer como: 05/01/2025
+- D/M/AAAA → 5/1/2025 → extraer como: 05/01/2025
+- DD/MM/AA → 05/11/25 → extraer como: 05/11/2025
+- D/M/AA → 5/1/25 → extraer como: 05/01/2025
+
+📋 CÓMO IDENTIFICAR UNA FECHA CORRECTAMENTE:
+1. Busca el PATRÓN de fecha: números separados por "/" o espacios
+2. El PRIMER grupo (1-2 dígitos) = DÍA (rango válido: 01-31)
+3. El SEGUNDO grupo (1-2 dígitos) = MES (rango válido: 01-12)
+4. El TERCER grupo (2-4 dígitos) = AÑO
+
+📋 EJEMPLOS DE CORRECCIÓN DE OCR:
+❌ OCR lee: "051 1 2025" → ✅ Fecha real: "05/11/2025"
+❌ OCR lee: "0511/12025" → ✅ Fecha real: "05/11/2025"
+❌ OCR lee: "5 1 1 2025" → ✅ Fecha real: "05/11/2025"
+❌ OCR lee: "05 / 11 / 2025" → ✅ Fecha real: "05/11/2025"
+
+🔴 VALIDACIÓN OBLIGATORIA:
+- El día NUNCA puede ser mayor a 31
+- El mes NUNCA puede ser mayor a 12
+- Si extraes un mes > 12, probablemente confundiste una "/" con "1"
+
 INSTRUCCIONES DE EXTRACCIÓN PARA GNP:
 
 SECCIÓN TRÁMITE:
