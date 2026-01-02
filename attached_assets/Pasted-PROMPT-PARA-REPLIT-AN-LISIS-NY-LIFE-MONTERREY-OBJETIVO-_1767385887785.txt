@@ -1,0 +1,100 @@
+PROMPT PARA REPLIT - ANÁLISIS NY LIFE MONTERREY
+OBJETIVO
+Analizar el formato del informe médico de Seguros Monterrey New York Life y determinar cómo encajarlo en la estructura que el sistema ya utiliza para GNP y MedLife, manteniendo consistencia.
+
+TAREA PARA REPLIT
+Basándote en:
+
+La estructura/formato que ya utilizas para procesar GNP
+La estructura/formato que ya utilizas para procesar MedLife
+El documento de New York Life Monterrey que se adjunta
+
+Necesito que hagas lo siguiente:
+1. MAPEO DE CAMPOS
+Identifica cada sección del formato NY Life y determina:
+
+Qué campos ya existen en tu estructura GNP/MedLife actual
+Qué campos son nuevos o diferentes en NY Life
+Cómo nominarías cada campo para mantener consistencia con tu nomenclatura actual
+
+2. ESTRUCTURA DE SALIDA
+Genera la estructura JSON/formato exacto que utiliza tu sistema (la que ya funcionan para GNP y MedLife), pero adaptada para NY Life. Incluye:
+
+Nombres de campos exactos que uses actualmente
+Tipos de datos que ya utilizas (string, number, array, object, null)
+Jerarquía de objetos que mantiene tu sistema
+Cualquier campo que debería ser null/omitido si NY Life no lo proporciona
+
+3. GENERADOR DE PROMPT PARA GROK
+Una vez definas la estructura, crea el prompt que le darías a Grok para que:
+
+Extraiga EXACTAMENTE en el formato que tu sistema entiende
+Sepa cómo mapear los campos del PDF de NY Life a tu nomenclatura
+Maneje valores null correctamente
+Preserve la precisión de datos médicos y fechas
+
+
+CONTEXTO DEL DOCUMENTO NY LIFE
+El formato tiene estas secciones principales:
+Datos del Asegurado: Nombre, apellidos, sexo, edad, tipo de evento
+Antecedentes Personales:
+
+No patológicos: Fuma, alcohol, drogas, pérdida de peso, perinatales, gineco-obstétricos, otros
+Patológicos: Cardiacos, hipertensivos, diabetes, VIH/SIDA, cáncer, hepáticos, convulsivos, cirugías, otros
+
+Padecimiento Actual:
+
+Tipo: Congénito, Agudo, Adquirido, Crónico
+Diagnósticos: hasta 3
+Fechas: primeros síntomas, primera consulta, diagnóstico
+Descripción de evolución
+Complicaciones
+Relación con otro padecimiento
+Discapacidad
+
+Tratamiento:
+
+Continuará en el futuro: Sí/No
+Quirúrgico: procedimiento, especialistas (anestesiólogo, ayudantes)
+Médico: descripción, dosificación, fecha inicio
+Hospitalización: tipo de estancia, fechas ingreso/egreso
+
+Datos del Médico Tratante:
+
+Nombre, apellidos, especialidad, RFC, cédula profesional
+Contacto: email, teléfono, móvil
+Hospital/ciudad
+Proveedor en convenio: Sí/No
+Acepta tabulador: Sí/No
+
+Exploración Física:
+
+Talla, peso, resultados de estudios
+
+
+ENTREGA ESPERADA
+Por favor, entrega:
+
+Tabla comparativa (opcional pero útil): Muestra cómo los campos NY Life se mapean a tu estructura actual
+Estructura JSON/formato exacta que el sistema utilizará para NY Life (copiado de tu código si es posible)
+Prompt para Grok que sea claro, preciso y que Grok pueda ejecutar sin ambigüedad
+Notas de validación (si aplica): Campos opcionales, obligatorios, comportamientos especiales
+
+
+PREGUNTAS DE REFERENCIA (si las necesitas)
+
+¿Cómo nombras actualmente los campos de datos del asegurado en GNP/MedLife?
+¿Cómo estructuras los antecedentes médicos?
+¿Cómo manejas múltiples diagnósticos?
+¿Cómo estructuras fechas (ISO, separadas, ambas)?
+¿Hay campos calculados o derivados que deba incluir?
+¿Cómo manejas datos opcionales vs obligatorios?
+
+
+SIGUIENTE PASO
+Una vez tengas el prompt para Grok, seguimos este flujo:
+
+Grok extrae en tu formato → JSON
+Ese JSON se copia a Gemini (high mode) → revisión y validación final
+Gemini devuelve JSON limpio y consistente
+Replit lo ingesta sin cambios significativos
