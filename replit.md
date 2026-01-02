@@ -87,6 +87,7 @@ Sistema de reglas editables que permite crear y modificar reglas de validación 
   - Panel de preview con indicadores ⚠️ DETECTADO / ✓ OK
   - **Selector de múltiples aseguradoras** (checkboxes para GNP, METLIFE, TODAS)
   - **Mapeo de paths por aseguradora** (fieldMappings) cuando hay múltiples proveedores seleccionados
+  - **Nombre de campo normalizado** con auto-población basada en paths comunes (respeta ediciones manuales del usuario)
 
 ### Multi-Provider Field Mapping System (NEW)
 Sistema que permite crear reglas que aplican a múltiples aseguradoras con paths diferentes:
@@ -103,6 +104,10 @@ Sistema que permite crear reglas que aplican a múltiples aseguradoras con paths
 - **UI mejorada**: Checkboxes para selección múltiple, sección de mapeo de paths visible solo cuando hay múltiples proveedores
 - **Validación inteligente**: El motor de validación usa el path correcto según el `data.provider` del informe
 - **Autocomplete dinámico**: Los paths en el autocomplete se extraen directamente del geminiSchema real de cada aseguradora usando `extractPathsFromGeminiSchema()` y `getPathsByProvider()` en `providers/index.ts`, garantizando que solo se muestren paths válidos para cada proveedor
+- **Nombre de campo normalizado**: Campo opcional `normalizedFieldName` que:
+  - Se auto-genera basándose en segmentos comunes de los paths mapeados
+  - Respeta ediciones manuales del usuario (no sobrescribe si fue editado)
+  - Se limpia automáticamente al volver a un solo proveedor o ALL
 
 - **Persistencia**: Reglas personalizadas guardadas en localStorage
 - **Migración Completada**: Todas las 9 reglas del sistema (3 generales + 3 GNP + 3 MetLife) han sido migradas de funciones `validator` hardcodeadas a arrays de `conditions` editables
