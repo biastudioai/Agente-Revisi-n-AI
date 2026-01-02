@@ -29,6 +29,23 @@ interface RuleEditorProps {
 const generateId = () => `rule_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 const generateConditionId = () => `cond_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+// Función para sugerir un nombre normalizado basado en los paths
+const suggestNormalizedName = (paths: string[]): string => {
+  if (paths.length === 0) return '';
+  // Intenta encontrar un prefijo común o usa el último segmento del path
+  const segments = paths.map(p => p.split('.')).flat();
+  const counts: Record<string, number> = {};
+  segments.forEach(s => {
+    counts[s] = (counts[s] || 0) + 1;
+  });
+
+  const mostFrequent = Object.entries(counts).sort(([, a], [, b]) => b - a)[0]?.[0];
+  if (mostFrequent) return mostFrequent;
+
+  // Fallback al último segmento de cada path
+  return paths[0].split('.').pop() || '';
+};
+
 const RuleEditor: React.FC<RuleEditorProps> = ({ 
   isOpen, 
   onClose, 
@@ -46,6 +63,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
   const [logicOperator, setLogicOperator] = useState<LogicOperator>('AND');
   const [fieldSearch, setFieldSearch] = useState<Record<string, string>>({});
   const [pathSearch, setPathSearch] = useState<Record<string, string>>({});
+  const [normalizedNames, setNormalizedNames] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Extraer paths disponibles por aseguradora (desde los geminiSchema reales)
@@ -63,6 +81,19 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
         setFieldMappings(rule.fieldMappings || {});
         setConditions(rule.conditions || []);
         setLogicOperator(rule.logicOperator || 'AND');
+
+        // Inicializar nombres normalizados si existen mappings
+        const initialNormalizedNames: Record<string, string> = {};
+        if (rule.fieldMappings) {
+          Object.keys(rule.fieldMappings).forEach(provider => {
+            if (rule.fieldMappings[provider] && rule.fieldMappings[provider].length > 0) {
+              const suggested = suggestNormalizedName(rule.fieldMappings[provider]);
+              initialNormalizedNames[provider] = suggested;
+            }
+          });
+        }
+        setNormalizedNames(initialNormalizedNames);
+
       } else {
         setName('');
         setDescription('');
@@ -76,6 +107,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
           operator: 'IS_EMPTY'
         }]);
         setLogicOperator('AND');
+        setNormalizedNames({});
       }
       setFieldSearch({});
       setPathSearch({});
@@ -129,7 +161,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!name.trim()) {
       newErrors.name = 'El nombre es requerido';
     }
@@ -150,20 +182,20 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
         newErrors[`cond_${idx}_compare`] = 'Selecciona un campo de comparación';
       }
     });
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = () => {
     if (!validate()) return;
-    
+
     const affectedFields: string[] = conditions
       .map(c => c.field)
       .filter((f): f is string => !!f)
       .concat(conditions.filter(c => c.compareField).map(c => c.compareField as string))
       .concat(conditions.flatMap(c => c.additionalFields || []));
-    
+
     Object.values(fieldMappings).forEach((paths: string[]) => {
       paths.forEach((path: string) => {
         if (path && !affectedFields.includes(path)) {
@@ -171,15 +203,15 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
         }
       });
     });
-    
+
     const finalTargets = providerTargets.length === 0 ? ['ALL'] : providerTargets;
     const hasMultipleProviders = finalTargets.length > 1 && !finalTargets.includes('ALL');
     const singleTarget = finalTargets.length === 1 ? finalTargets[0] : undefined;
-    
+
     const hasMappings = Object.keys(fieldMappings).some(k => 
       fieldMappings[k] && fieldMappings[k].length > 0 && fieldMappings[k][0]
     );
-    
+
     const newRule: ScoringRule = {
       id: rule?.id || generateId(),
       name: name.trim(),
@@ -192,9 +224,10 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
       conditions,
       logicOperator,
       affectedFields: [...new Set(affectedFields)],
-      isCustom: true
+      isCustom: true,
+      normalizedNames: Object.keys(normalizedNames).length > 0 ? normalizedNames : undefined
     };
-    
+
     onSave(newRule);
     onClose();
   };
@@ -213,7 +246,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-fade-in">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
-        
+
         <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
           <div>
             <h2 className="text-lg font-bold text-slate-800">
@@ -232,7 +265,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
         </div>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6">
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className="block text-xs font-bold text-slate-600 mb-1.5">
@@ -249,7 +282,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
               />
               {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
             </div>
-            
+
             <div className="col-span-2">
               <label className="block text-xs font-bold text-slate-600 mb-1.5">
                 Descripción *
@@ -265,7 +298,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
               />
               {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description}</p>}
             </div>
-            
+
             <div>
               <label className="block text-xs font-bold text-slate-600 mb-1.5">
                 Nivel de Severidad
@@ -284,7 +317,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none opacity-60" />
               </div>
             </div>
-            
+
             <div>
               <label className="block text-xs font-bold text-slate-600 mb-1.5">
                 Puntos a Deducir
@@ -298,7 +331,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono focus:ring-2 focus:ring-brand-200 outline-none"
               />
             </div>
-            
+
             <div className="col-span-2">
               <label className="block text-xs font-bold text-slate-600 mb-1.5">
                 Aplica a Aseguradoras (selecciona múltiples)
@@ -310,6 +343,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                     if (target === 'ALL') {
                       setProviderTargets(['ALL']);
                       setFieldMappings({});
+                      setNormalizedNames({});
                     } else {
                       if (isSelected) {
                         const newTargets = providerTargets.filter(p => p !== target);
@@ -317,13 +351,16 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                         const newMappings = { ...fieldMappings };
                         delete newMappings[target];
                         setFieldMappings(newMappings);
+                        const newNormalizedNames = { ...normalizedNames };
+                        delete newNormalizedNames[target];
+                        setNormalizedNames(newNormalizedNames);
                       } else {
                         const newTargets = providerTargets.filter(p => p !== 'ALL');
                         setProviderTargets([...newTargets, target]);
                       }
                     }
                   };
-                  
+
                   return (
                     <label
                       key={target}
@@ -361,7 +398,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                 <p className="text-xs text-slate-500 mb-3">
                   Define dónde buscar el campo en cada aseguradora. Si el path es diferente por aseguradora, configúralo aquí.
                 </p>
-                
+
                 <div className="space-y-3">
                   {providerTargets.map(provider => (
                     <div key={provider} className="flex items-center gap-3">
@@ -380,7 +417,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                           onChange={(e) => {
                             const newValue = e.target.value;
                             setPathSearch({ ...pathSearch, [provider]: newValue });
-                            
+
                             // Si el valor coincide exactamente con un path válido, guardarlo
                             const paths = pathsByProvider[provider as 'GNP' | 'METLIFE'] || [];
                             if (paths.includes(newValue)) {
@@ -388,6 +425,13 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                                 ...fieldMappings,
                                 [provider]: [newValue]
                               });
+                              // Sugerir nombre normalizado solo si no está ya definido
+                              if (!normalizedNames[provider]) {
+                                setNormalizedNames({
+                                  ...normalizedNames,
+                                  [provider]: suggestNormalizedName([newValue])
+                                });
+                              }
                             }
                           }}
                           onFocus={() => {
@@ -411,7 +455,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                           placeholder={`ej: signos_vitales.peso`}
                           className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-200 outline-none font-mono"
                         />
-                        
+
                         {/* Dropdown de autocomplete */}
                         {pathSearch[provider] !== undefined && (
                           <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto custom-scrollbar">
@@ -421,10 +465,22 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                                   key={p}
                                   type="button"
                                   onClick={() => {
-                                    setFieldMappings({
+                                    const newMappings = {
                                       ...fieldMappings,
                                       [provider]: [p]
-                                    });
+                                    };
+                                    setFieldMappings(newMappings);
+
+                                    // Auto-sugerir nombre normalizado
+                                    const allPaths = Object.values(newMappings).flat();
+                                    const suggested = suggestNormalizedName(allPaths);
+                                    if (!normalizedNames[provider]) {
+                                      setNormalizedNames({
+                                        ...normalizedNames,
+                                        [provider]: suggested
+                                      });
+                                    }
+
                                     // Limpiar el search state
                                     const newPathSearch = { ...pathSearch };
                                     delete newPathSearch[provider];
@@ -442,13 +498,31 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                             )}
                           </div>
                         )}
-                        
+
                         {/* Mostrar path seleccionado cuando no hay búsqueda activa */}
                         {fieldMappings[provider]?.[0] && pathSearch[provider] === undefined && (
                           <span className="text-[10px] text-slate-500 mt-0.5 block truncate font-mono">
                             ✓ {fieldMappings[provider][0]}
                           </span>
                         )}
+                      </div>
+                      {/* Campo para el nombre normalizado */}
+                      <div className="flex-1 relative">
+                         <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                           Nombre Normalizado
+                         </label>
+                         <input
+                            type="text"
+                            value={normalizedNames[provider] || ''}
+                            onChange={(e) => {
+                              setNormalizedNames({
+                                ...normalizedNames,
+                                [provider]: e.target.value
+                              });
+                            }}
+                            placeholder={`ej: ${suggested || 'peso'}`}
+                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-200 outline-none"
+                          />
                       </div>
                     </div>
                   ))}
@@ -491,11 +565,11 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                 </div>
               </div>
             </div>
-            
+
             {errors.conditions && (
               <p className="text-xs text-red-500 mb-2">{errors.conditions}</p>
             )}
-            
+
             <div className="space-y-3">
               {conditions.map((cond, idx) => (
                 <div key={cond.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4">
@@ -503,7 +577,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                     <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 shrink-0 mt-1">
                       {idx + 1}
                     </div>
-                    
+
                     <div className="flex-1 space-y-3">
                       <div className="grid grid-cols-2 gap-3">
                         <div className="relative">
@@ -548,7 +622,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                             <span className="text-[10px] text-slate-400 mt-0.5 block truncate">{cond.field}</span>
                           )}
                         </div>
-                        
+
                         <div>
                           <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Operador</label>
                           <select
@@ -571,7 +645,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                           </select>
                         </div>
                       </div>
-                      
+
                       {operatorNeedsValue(cond.operator) && (
                         <div>
                           <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
@@ -592,7 +666,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                           />
                         </div>
                       )}
-                      
+
                       {operatorNeedsCompareField(cond.operator) && (
                         <div>
                           <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
@@ -612,7 +686,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                           </select>
                         </div>
                       )}
-                      
+
                       {operatorNeedsAdditionalFields(cond.operator) && (
                         <div>
                           <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
@@ -630,7 +704,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                         </div>
                       )}
                     </div>
-                    
+
                     {conditions.length > 1 && (
                       <button
                         type="button"
@@ -644,7 +718,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                 </div>
               ))}
             </div>
-            
+
             <button
               type="button"
               onClick={addCondition}
