@@ -199,12 +199,18 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
       }
     });
     
+    console.log('Validation errors found:', newErrors);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = () => {
-    if (!validate()) return;
+    console.log('handleSave called', { name, description, conditions });
+    const validationResult = validate();
+    console.log('Validation result:', validationResult, 'Errors will update in state');
+    if (!validationResult) {
+      return;
+    }
     
     const affectedFields: string[] = conditions
       .map(c => c.field)
@@ -806,6 +812,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
             Cancelar
           </button>
           <button 
+            type="button"
             onClick={handleSave}
             className="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-lg shadow-lg shadow-brand-500/20 transition-all active:scale-95 flex items-center gap-2"
           >
