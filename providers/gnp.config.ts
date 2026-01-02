@@ -194,11 +194,31 @@ Las "/" YA ESTÁN IMPRESAS en el formulario. Los números se escriben EN LOS ESP
 3. El SEGUNDO grupo (1-2 dígitos) = MES (rango válido: 01-12)
 4. El TERCER grupo (2-4 dígitos) = AÑO
 
-📋 EJEMPLOS DE CORRECCIÓN DE OCR:
-❌ OCR lee: "051 1 2025" → ✅ Fecha real: "05/11/2025"
-❌ OCR lee: "0511/12025" → ✅ Fecha real: "05/11/2025"
-❌ OCR lee: "5 1 1 2025" → ✅ Fecha real: "05/11/2025"
-❌ OCR lee: "05 / 11 / 2025" → ✅ Fecha real: "05/11/2025"
+📋 CÓMO INTERPRETAR FECHAS ESCRITAS A MANO EN GNP:
+
+⚠️ REGLA CRÍTICA: Las "/" del formulario GNP están PRE-IMPRESAS.
+Los números escritos a mano están ENTRE las diagonales, NO incluyen las diagonales.
+
+PROCESO DE INTERPRETACIÓN:
+1. Ignora cualquier carácter que parezca "/" o "1" en posición de separador
+2. Identifica los GRUPOS DE DÍGITOS escritos a mano:
+   - Primer grupo (antes del primer separador) = DÍA
+   - Segundo grupo (entre separadores) = MES
+   - Tercer grupo (después del segundo separador) = AÑO
+3. Lee cada grupo de dígitos independientemente
+
+📋 EJEMPLO VISUAL:
+Si ves escrito a mano: "05  12  2025" (con las "/" pre-impresas del formulario)
+El OCR puede leerlo como: "05 1 21 2025" o "051 21 2025" (confundiendo "/" con "1")
+
+Para interpretar correctamente:
+- Identifica que hay 3 grupos de números: [05] [12] [2025]
+- Las "/" son los separadores pre-impresos, NO son dígitos
+- La fecha es: 05/12/2025 (5 de diciembre de 2025)
+
+⚠️ NO asumas que un "1" es parte del mes. Analiza el CONTEXTO VISUAL:
+- Si ves "1" en posición de separador → es una "/" mal leída
+- Si ves "1" como parte de un grupo de dígitos → es el dígito 1
 
 🔴 VALIDACIÓN OBLIGATORIA:
 - El día NUNCA puede ser mayor a 31

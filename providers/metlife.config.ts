@@ -174,11 +174,26 @@ El formulario MetLife tiene campos de fecha con CASILLAS SEPARADAS:
 - DD/MM/AA → 05/11/25 → extraer como: 05/11/2025
 - D/M/AA → 5/1/25 → extraer como: 05/01/2025
 
-📋 EJEMPLOS DE CORRECCIÓN DE OCR:
-❌ OCR lee: "051 1 2025" → ✅ Fecha real: "05/11/2025"
-❌ OCR lee: "0511/12025" → ✅ Fecha real: "05/11/2025"
-❌ OCR lee: "5 1 1 2025" → ✅ Fecha real: "05/11/2025"
-❌ OCR lee: "05 / 11 / 2025" → ✅ Fecha real: "05/11/2025"
+📋 CÓMO INTERPRETAR FECHAS EN METLIFE:
+
+⚠️ REGLA CRÍTICA: MetLife tiene CASILLAS SEPARADAS para Día, Mes y Año.
+Los separadores visuales (líneas verticales) NO son parte de los números.
+
+PROCESO DE INTERPRETACIÓN:
+1. Lee el contenido de CADA CASILLA por separado
+2. Ignora las líneas divisorias entre casillas
+3. Combina los valores: DÍA + "/" + MES + "/" + AÑO
+
+📋 EJEMPLO VISUAL:
+Si las casillas muestran: [05] | [12] | [2025]
+El OCR puede confundirse con las líneas divisorias.
+
+Para interpretar correctamente:
+- Lee cada casilla independientemente
+- Casilla Día = 05, Casilla Mes = 12, Casilla Año = 2025
+- La fecha es: 05/12/2025 (5 de diciembre de 2025)
+
+⚠️ NO asumas valores. Lee EXACTAMENTE lo que está en cada casilla.
 
 🔴 VALIDACIÓN OBLIGATORIA:
 - El día NUNCA puede ser mayor a 31
