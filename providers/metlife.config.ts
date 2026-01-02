@@ -158,8 +158,8 @@ El formulario MetLife tiene campos de fecha con CASILLAS SEPARADAS:
 4. COMBINA en formato: DD/MM/AAAA (agregando ceros y convirtiendo año si es necesario)
 
 📋 EJEMPLOS DE EXTRACCIÓN METLIFE:
-- Día: "5", Mes: "11", Año: "2025" → extraer como: "05/11/2025"
-- Día: "05", Mes: "1", Año: "25" → extraer como: "05/01/2025"
+- Día: "5", Mes: "3", Año: "2025" → extraer como: "05/03/2025"
+- Día: "15", Mes: "1", Año: "25" → extraer como: "15/01/2025"
 - Día: "31", Mes: "12", Año: "2025" → extraer como: "31/12/2025"
 
 ⚠️ REGLA CRÍTICA: NO confundas separadores visuales con el número "1"
@@ -167,12 +167,12 @@ El formulario MetLife tiene campos de fecha con CASILLAS SEPARADAS:
 - Los separadores "|" del formulario NO son parte de los números
 
 📋 FORMATOS DE ENTRADA QUE PUEDES ENCONTRAR (todos válidos):
-- DD/MM/AAAA → 05/11/2025 → extraer como: 05/11/2025
-- D/MM/AAAA → 5/11/2025 → extraer como: 05/11/2025
-- DD/M/AAAA → 05/1/2025 → extraer como: 05/01/2025
-- D/M/AAAA → 5/1/2025 → extraer como: 05/01/2025
-- DD/MM/AA → 05/11/25 → extraer como: 05/11/2025
-- D/M/AA → 5/1/25 → extraer como: 05/01/2025
+- DD/MM/AAAA → normalizar a DD/MM/AAAA
+- D/MM/AAAA → agregar 0 al día
+- DD/M/AAAA → agregar 0 al mes
+- D/M/AAAA → agregar 0 a día y mes
+- DD/MM/AA → convertir año a 4 dígitos (20XX)
+- D/M/AA → agregar ceros y convertir año
 
 📋 CÓMO INTERPRETAR FECHAS EN METLIFE:
 

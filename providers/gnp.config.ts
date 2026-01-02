@@ -176,17 +176,15 @@ El formulario GNP tiene campos de fecha con formato pre-impreso:
 Las "/" YA ESTÁN IMPRESAS en el formulario. Los números se escriben EN LOS ESPACIOS entre las diagonales.
 
 ⚠️ REGLA CRÍTICA: NO confundas las "/" pre-impresas con el número "1"
-- Si ves "05/11/2025" → la fecha es 05/11/2025 (5 de noviembre 2025)
-- Si ves "0511/12025" → ESTO ES UN ERROR DE OCR, la fecha real es 05/11/2025
-- Si ves algo como "051 1 2025" → probablemente es 05/11/2025 (las "/" se confundieron con 1)
+Las "/" son separadores, NO son dígitos. Analiza el contexto visual para identificar los números reales.
 
 📋 FORMATOS DE ENTRADA QUE PUEDES ENCONTRAR (todos válidos):
-- DD/MM/AAAA → 05/11/2025 → extraer como: 05/11/2025
-- D/MM/AAAA → 5/11/2025 → extraer como: 05/11/2025
-- DD/M/AAAA → 05/1/2025 → extraer como: 05/01/2025
-- D/M/AAAA → 5/1/2025 → extraer como: 05/01/2025
-- DD/MM/AA → 05/11/25 → extraer como: 05/11/2025
-- D/M/AA → 5/1/25 → extraer como: 05/01/2025
+- DD/MM/AAAA → normalizar a DD/MM/AAAA
+- D/MM/AAAA → agregar 0 al día
+- DD/M/AAAA → agregar 0 al mes
+- D/M/AAAA → agregar 0 a día y mes
+- DD/MM/AA → convertir año a 4 dígitos (20XX)
+- D/M/AA → agregar ceros y convertir año
 
 📋 CÓMO IDENTIFICAR UNA FECHA CORRECTAMENTE:
 1. Busca el PATRÓN de fecha: números separados por "/" o espacios
