@@ -280,6 +280,7 @@ export interface ScoringRule {
   // Sistema de múltiples aseguradoras (nuevo)
   providerTargets?: string[];
   fieldMappings?: FieldMappings;
+  normalizedFieldName?: string; // Nombre normalizado para el campo mapeado entre aseguradoras
   
   // Retrocompatibilidad con reglas antiguas (único provider)
   providerTarget?: 'ALL' | 'GNP' | 'METLIFE';

@@ -47,6 +47,8 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
   const [fieldSearch, setFieldSearch] = useState<Record<string, string>>({});
   const [pathSearch, setPathSearch] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [normalizedFieldName, setNormalizedFieldName] = useState('');
+  const [userEditedNormalizedName, setUserEditedNormalizedName] = useState(false);
 
   // Extraer paths disponibles por aseguradora (desde los geminiSchema reales)
   const pathsByProvider = useMemo(() => getPathsByProvider(), []);
@@ -61,6 +63,8 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
         const targets = rule.providerTargets || (rule.providerTarget ? [rule.providerTarget] : ['ALL']);
         setProviderTargets(targets);
         setFieldMappings(rule.fieldMappings || {});
+        setNormalizedFieldName(rule.normalizedFieldName || '');
+        setUserEditedNormalizedName(!!rule.normalizedFieldName);
         setConditions(rule.conditions || []);
         setLogicOperator(rule.logicOperator || 'AND');
       } else {
@@ -70,6 +74,8 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
         setPoints(10);
         setProviderTargets(['ALL']);
         setFieldMappings({});
+        setNormalizedFieldName('');
+        setUserEditedNormalizedName(false);
         setConditions([{
           id: generateConditionId(),
           field: '',
@@ -82,6 +88,42 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
       setErrors({});
     }
   }, [isOpen, rule]);
+
+  const suggestNormalizedName = useMemo(() => {
+    const paths = Object.values(fieldMappings).map(arr => arr?.[0]).filter(Boolean);
+    if (paths.length < 2) return '';
+    
+    const segments = paths.map(p => p!.split('.'));
+    
+    const lastSegments = segments.map(s => s[s.length - 1]);
+    if (lastSegments.every(s => s === lastSegments[0])) {
+      return lastSegments[0];
+    }
+    
+    const secondToLast = segments.filter(s => s.length > 1).map(s => s[s.length - 2]);
+    if (secondToLast.length === paths.length && secondToLast.every(s => s === secondToLast[0])) {
+      return secondToLast[0];
+    }
+    
+    const uniqueSegments = [...new Set(lastSegments)];
+    return uniqueSegments.join('_');
+  }, [fieldMappings]);
+
+  // Auto-poblar nombre normalizado cuando cambia la sugerencia (si el usuario no lo ha editado)
+  useEffect(() => {
+    if (suggestNormalizedName && !userEditedNormalizedName) {
+      setNormalizedFieldName(suggestNormalizedName);
+    }
+  }, [suggestNormalizedName, userEditedNormalizedName]);
+
+  // Limpiar nombre normalizado cuando vuelve a ser un solo provider o ALL
+  useEffect(() => {
+    const hasMultipleProviders = providerTargets.length > 1 && !providerTargets.includes('ALL');
+    if (!hasMultipleProviders) {
+      setNormalizedFieldName('');
+      setUserEditedNormalizedName(false);
+    }
+  }, [providerTargets]);
 
   const preview = useMemo(() => {
     const partialRule: Partial<ScoringRule> = {
@@ -189,6 +231,9 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
       providerTargets: finalTargets,
       providerTarget: singleTarget as 'ALL' | 'GNP' | 'METLIFE' | undefined,
       fieldMappings: (hasMultipleProviders && hasMappings) ? fieldMappings : undefined,
+      normalizedFieldName: (hasMultipleProviders && hasMappings && normalizedFieldName.trim()) 
+        ? normalizedFieldName.trim() 
+        : undefined,
       conditions,
       logicOperator,
       affectedFields: [...new Set(affectedFields)],
@@ -452,6 +497,42 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                       </div>
                     </div>
                   ))}
+                </div>
+                
+                {/* Campo de nombre normalizado */}
+                <div className="mt-4 pt-3 border-t border-slate-200">
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
+                    Nombre Normalizado 
+                    <span className="text-slate-400 font-normal ml-1" title="Nombre descriptivo para identificar este campo mapeado entre aseguradoras">
+                      (opcional)
+                    </span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={normalizedFieldName}
+                      onChange={(e) => {
+                        setNormalizedFieldName(e.target.value);
+                        setUserEditedNormalizedName(true);
+                      }}
+                      placeholder={suggestNormalizedName || 'ej: peso, celular_medico'}
+                      className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-200 outline-none"
+                    />
+                    {suggestNormalizedName && !normalizedFieldName && (
+                      <button
+                        type="button"
+                        onClick={() => setNormalizedFieldName(suggestNormalizedName)}
+                        className="px-3 py-2 text-xs bg-brand-50 text-brand-600 rounded-lg hover:bg-brand-100 transition-colors whitespace-nowrap"
+                      >
+                        Usar: {suggestNormalizedName}
+                      </button>
+                    )}
+                  </div>
+                  {suggestNormalizedName && (
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      Sugerido en base a los paths mapeados
+                    </p>
+                  )}
                 </div>
               </div>
             )}

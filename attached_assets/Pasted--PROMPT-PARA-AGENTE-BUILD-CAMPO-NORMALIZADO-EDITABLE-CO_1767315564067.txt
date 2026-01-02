@@ -1,0 +1,99 @@
+📋 PROMPT PARA AGENTE BUILD - CAMPO NORMALIZADO EDITABLE CON SUGERENCIA AUTOMÁTICA
+🎯 CONTEXTO DEL PROBLEMA
+Estamos trabajando en el componente RuleEditor.tsx que permite crear reglas de validación para múltiples aseguradoras (GNP, METLIFE).
+
+Funcionalidad actual:
+
+El usuario puede seleccionar múltiples aseguradoras con checkboxes
+Cuando selecciona 2+ aseguradoras, aparece una sección "Paths por Aseguradora" donde debe mapear el path específico de cada una
+Los paths tienen autocomplete basado en los schemas reales de cada aseguradora
+PROBLEMA DETECTADO:
+
+Cuando el usuario selecciona GNP + METLIFE (2 aseguradoras), todo el formulario se pone en blanco
+Esto causó un rollback completo de los cambios propuestos
+La causa fue un error en la lógica de manejo de estados cuando hay múltiples providers seleccionados
+🎯 OBJETIVO DE ESTA TAREA
+Implementar un campo de nombre normalizado editable con las siguientes características:
+
+Requerimientos:
+Sugerencia Automática Inteligente:
+
+Cuando el usuario mapea paths de diferentes aseguradoras, el sistema debe sugerir automáticamente un nombre normalizado
+La sugerencia debe basarse en el segmento común más descriptivo de los paths mapeados
+Ejemplo: Si los paths son:
+GNP: equipo_quirurgico_metlife.otro_2.celular
+METLIFE: equipo_quirurgico_metlife.otro_2.email
+Sugerencia: otro_2 (evitando solo el prefijo de aseguradora)
+Campo Editable:
+
+El usuario puede editar manualmente el nombre sugerido
+Debe mostrarse como un input de texto normal (NO readonly)
+Pre-llenado con la sugerencia automática
+UX Mejorada:
+
+Tooltip explicando por qué se sugirió ese nombre
+Validación para evitar nombres duplicados entre condiciones
+Placeholder descriptivo cuando está vacío
+Casos de Uso:
+
+Paths con prefijos de aseguradora: equipo_quirurgico_metlife → usuario puede cambiar a medico_otro_2
+Paths genéricos: signos_vitales.peso → sugerencia peso
+Paths complejos: usuario decide el mejor nombre descriptivo
+⚠️ RESTRICCIÓN CRÍTICA
+NO MODIFICAR la lógica de selección de múltiples aseguradoras.
+
+El problema anterior (formulario en blanco) fue causado por cambios en:
+
+Manejo del estado providerTargets
+Lógica de fieldMappings
+Renderizado condicional de la sección de paths
+SOLO AGREGAR:
+
+Un nuevo campo de input para el nombre normalizado
+Lógica para generar la sugerencia automática basada en los paths mapeados
+Funcionalidad de edición manual del nombre
+NO TOCAR:
+
+Sistema de checkboxes de aseguradoras
+Lógica de autocomplete de paths
+Persistencia de fieldMappings
+🛠️ SOLUCIÓN RECOMENDADA (Sugerencia, puedes optimizar)
+Paso 1: Agregar estado para nombre normalizado
+const [normalizedFieldName, setNormalizedFieldName] = useState<string>('');
+Paso 2: Función para generar sugerencia automática
+Crear una función que:
+
+Recibe los paths mapeados de cada aseguradora
+Encuentra el segmento común más descriptivo
+Evita usar solo prefijos de aseguradoras
+Retorna la sugerencia
+Paso 3: Actualizar la UI
+En la sección "Paths por Aseguradora" (que aparece cuando hay múltiples providers):
+
+Agregar un input de texto editable
+Pre-llenarlo con la sugerencia automática
+Permitir edición manual
+Agregar tooltip explicativo
+Paso 4: Persistir el nombre normalizado
+Guardarlo como parte de la condición o en fieldMappings según lo que tenga más sentido arquitectónicamente.
+
+📝 ARCHIVOS A MODIFICAR
+Principal:
+
+components/RuleEditor.tsx (agregar campo normalizado editable)
+Opcional:
+
+types.ts (si necesitas agregar tipo para el nombre normalizado)
+✅ CRITERIOS DE ÉXITO
+✅ Al mapear paths de diferentes aseguradoras, se sugiere automáticamente un nombre normalizado
+✅ El usuario puede editar el nombre sugerido libremente
+✅ La sugerencia es inteligente (no solo el prefijo de aseguradora)
+✅ Seleccionar GNP + METLIFE NO causa que el formulario se ponga en blanco
+✅ La funcionalidad de autocomplete de paths sigue funcionando
+✅ El nombre normalizado se guarda correctamente al crear la regla
+🚨 NOTA IMPORTANTE
+Si encuentras una forma más óptima o eficiente de implementar esto (por ejemplo, usando un patrón diferente o una arquitectura mejor), tienes libertad total de hacerlo. Estas son sugerencias, no restricciones absolutas.
+
+Lo único NO NEGOCIABLE es que seleccionar múltiples aseguradoras no debe romper el formulario.
+
+¿Necesitas alguna aclaración sobre algún punto específico?
