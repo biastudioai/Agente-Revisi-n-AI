@@ -102,6 +102,7 @@ Sistema que permite crear reglas que aplican a múltiples aseguradoras con paths
 - **Retrocompatibilidad**: Las reglas antiguas con `providerTarget` (string único) siguen funcionando
 - **UI mejorada**: Checkboxes para selección múltiple, sección de mapeo de paths visible solo cuando hay múltiples proveedores
 - **Validación inteligente**: El motor de validación usa el path correcto según el `data.provider` del informe
+- **Autocomplete dinámico**: Los paths en el autocomplete se extraen directamente del geminiSchema real de cada aseguradora usando `extractPathsFromGeminiSchema()` y `getPathsByProvider()` en `providers/index.ts`, garantizando que solo se muestren paths válidos para cada proveedor
 
 - **Persistencia**: Reglas personalizadas guardadas en localStorage
 - **Migración Completada**: Todas las 9 reglas del sistema (3 generales + 3 GNP + 3 MetLife) han sido migradas de funciones `validator` hardcodeadas a arrays de `conditions` editables
