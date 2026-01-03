@@ -16,7 +16,16 @@ import {
   operatorNeedsAdditionalFields,
   getPreviewResult
 } from '../services/rule-validator';
-import { getPathsByProvider } from '../providers';
+import { getPathsByProvider, PROVIDER_REGISTRY } from '../providers';
+
+const PROVIDER_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  ALL: { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-300' },
+  GNP: { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-300' },
+  METLIFE: { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-300' },
+  NYLIFE: { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-300' },
+};
+
+const PROVIDER_TARGETS = ['ALL', ...Object.keys(PROVIDER_REGISTRY)] as const;
 
 interface RuleEditorProps {
   isOpen: boolean;
@@ -168,7 +177,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
   };
 
   const filteredPaths = (provider: string, searchTerm: string) => {
-    const paths = pathsByProvider[provider as 'GNP' | 'METLIFE'] || [];
+    const paths = pathsByProvider[provider] || [];
     if (!searchTerm) return paths;
     return paths.filter(p => 
       p.toLowerCase().includes(searchTerm.toLowerCase())
@@ -374,8 +383,11 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                 Aplica a Aseguradoras (selecciona múltiples)
               </label>
               <div className="flex flex-wrap gap-2">
-                {(['ALL', 'GNP', 'METLIFE'] as const).map((target) => {
+                {PROVIDER_TARGETS.map((target) => {
                   const isSelected = providerTargets.includes(target);
+                  const colors = PROVIDER_COLORS[target] || { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-300' };
+                  const displayName = target === 'ALL' ? 'TODAS' : (PROVIDER_REGISTRY[target]?.displayName || target);
+                  
                   const handleToggle = () => {
                     if (target === 'ALL') {
                       setProviderTargets(['ALL']);
@@ -399,11 +411,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                       key={target}
                       className={`flex items-center gap-2 px-4 py-2 border rounded-lg cursor-pointer transition-all ${
                         isSelected
-                          ? target === 'ALL' 
-                            ? 'bg-purple-100 text-purple-700 border-purple-300'
-                            : target === 'GNP'
-                            ? 'bg-blue-100 text-blue-700 border-blue-300'
-                            : 'bg-green-100 text-green-700 border-green-300'
+                          ? `${colors.bg} ${colors.text} ${colors.border}`
                           : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
                       }`}
                     >
@@ -433,13 +441,11 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                 </p>
                 
                 <div className="space-y-3">
-                  {providerTargets.map(provider => (
+                  {providerTargets.map(provider => {
+                    const colors = PROVIDER_COLORS[provider] || { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-300' };
+                    return (
                     <div key={provider} className="flex items-center gap-3">
-                      <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full shrink-0 ${
-                        provider === 'GNP' 
-                          ? 'bg-blue-100 text-blue-700' 
-                          : 'bg-green-100 text-green-700'
-                      }`}>
+                      <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full shrink-0 ${colors.bg} ${colors.text}`}>
                         {provider}
                       </span>
                       <div className="flex-1 relative">
@@ -521,7 +527,8 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                         )}
                       </div>
                     </div>
-                  ))}
+                  );
+                  })}
                 </div>
                 
                 {/* Campo de nombre normalizado */}
