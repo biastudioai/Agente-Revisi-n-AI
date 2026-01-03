@@ -1,0 +1,22 @@
+Estoy viendo varios errores que necesito que corrijas. Por ejemplo,   
+
+1- en antecedentes, quiero que el detalle narrativo salga después de cada de cada checkbox, muy similar a cómo se ve en el en el documento original. Entonces sería el checkbox con el nombre y posterior a la derecha de eso el detalle narrativo para escribir, ya que si lo dejas en conjunto puede llegar, o sea, como lo tienes ahorita en conjunto puede llegar a ser confuso.  
+
+2-Después de el tiempo de evolución del tipo de padecimiento, falta poner la pregunta y el checkbox de ¿tiene relación con otro padecimiento? y el espacio para escribir cuál, si es que se selecciona que sí. Siempre hay que tenerlo mostrado aunque no esté escrito nada.   
+
+3-Luego, las fechas del padecimiento ocasiona discapacidad, desde y hasta, tenemos que poner un calendario para poder elegir la fecha en caso de que esté incorrecta, al igual que en los otros formatos que vienen de fecha. Esto siempre hay que ponerlo.  
+
+4-Y después de esas fechas, falta también mostrar el continuará recibiendo tratamiento en el futuro, el checkbox sí, no, y el favor de especificar. Esto igual, aunque haya escrito no o sí o lo que fuera, siempre hay que mostrar la respuesta que se seleccionó.  
+
+
+5-Luego vamos a agregar una sección justo después de padecimiento enfocada, bueno, que se llama tratamiento. Esta sí o sí debe de estar ahí, en este momento la tienes en la sección de hospital, pero pásalo a esta nueva sección llamada tratamiento.  
+
+6- Los checkboxes del tipo de estancia están marcados, en este caso en específico, tanto Urgencia como Corta Estancia Ambulatoria, ambas opciones. Sin embargo, en el mapeo por extracción solo aparece el de Urgencia.  
+
+7- El equipo quirúrgico o para otros médicos en general siempre pone todos los que aparecen, no sólo los que se tienen información. Ahí, por ejemplo, faltó poner primer ayudante, segundo ayudante, que no tiene nada en este caso en específico del último, entonces para así poner la información. 
+
+8-También si te fijas en el convenio de red, si es parte de los prestadores de servicio con convenio, en el documento está escrita las dos opciones, sí y no, y en el mapeo de extracción solo está sí. Y también en el tabulador, ese es correcto.
+
+9- En la sección de firma, hay un espacio para el lugar. Sin embargo, si te fijas en el informe, no hay ningún espacio para que indique el lugar. Así que ese lo podemos quitar de la UI, y si hay algo en el JSON o de extracción, también lo podemos quitar.
+
+Revisa todos los cambios y hazme preguntas si tienes alguna duda antes de ejecutar. Si lo ves todo correcto y te hace coherencia todo lo que te digo, ejecuta. Y si crees que hay algo óptimo, avísame para corregirlo o toma la libertad técnica de hacerlo.
