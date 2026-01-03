@@ -94,9 +94,11 @@ Sistema de reglas editables que permite crear y modificar reglas de validación 
   - Constructor visual de condiciones
   - Selector de operador lógico (AND/OR)
   - Panel de preview con indicadores ⚠️ DETECTADO / ✓ OK
-  - **Selector de múltiples aseguradoras** (checkboxes para GNP, METLIFE, TODAS)
+  - **Selector de múltiples aseguradoras** (checkboxes para GNP, METLIFE, NYLIFE, TODAS)
   - **Mapeo de paths por aseguradora** (fieldMappings) cuando hay múltiples proveedores seleccionados
   - **Nombre de campo normalizado** con auto-población basada en paths comunes (respeta ediciones manuales del usuario)
+  - **Autocomplete de campos filtrado por aseguradora**: Cuando se seleccionan aseguradoras específicas (ej: NYLIFE, METLIFE), el autocomplete de campos en las condiciones solo muestra los campos de esas aseguradoras. Cada campo incluye una etiqueta con su origen (NYLIFE, METLIFE, GNP, GENERAL o NORMALIZADO)
+  - **Campo de Comparación filtrado**: El dropdown de Campo de Comparación también usa los mismos campos filtrados con etiquetas de origen
 
 ### Multi-Provider Field Mapping System (NEW)
 Sistema que permite crear reglas que aplican a múltiples aseguradoras con paths diferentes:
