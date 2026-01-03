@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { ScoringRule, ProviderType, ExtractedData } from '../types';
 import { Settings, AlertTriangle, ShieldAlert, AlertCircle, Info, X, ChevronDown, Plus, Pencil, Trash2 } from 'lucide-react';
+import { PROVIDER_REGISTRY } from '../providers';
 import RuleEditor from './RuleEditor';
 
 interface RuleConfiguratorProps {
@@ -92,6 +93,8 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
         return <span key={target} className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700 border border-blue-200">GNP</span>;
       case 'METLIFE':
         return <span key={target} className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-green-100 text-green-700 border border-green-200">METLIFE</span>;
+      case 'NYLIFE':
+        return <span key={target} className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">NY LIFE</span>;
       default:
         return <span key={target} className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-100 text-slate-700 border border-slate-200">{target}</span>;
     }
@@ -169,8 +172,11 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
                     onChange={(e) => setSelectedProvider(e.target.value as ProviderType)}
                     className="appearance-none pl-4 pr-10 py-2 text-sm font-medium bg-white border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-brand-200 focus:border-brand-500 outline-none cursor-pointer"
                   >
-                    <option value="GNP">GNP</option>
-                    <option value="METLIFE">METLIFE</option>
+                    {Object.keys(PROVIDER_REGISTRY).map((providerKey) => (
+                      <option key={providerKey} value={providerKey}>
+                        {PROVIDER_REGISTRY[providerKey].displayName || providerKey}
+                      </option>
+                    ))}
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
                 </div>
