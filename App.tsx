@@ -6,7 +6,7 @@ import PdfViewer from './components/PdfViewer';
 import ProviderSelector, { ProviderOption } from './components/ProviderSelector';
 import { analyzeReportImage, reEvaluateReport } from './services/geminiService';
 import { DEFAULT_SCORING_RULES } from './services/scoring-engine';
-import { AnalysisReport, AnalysisStatus, ExtractedData, ScoringRule } from './types';
+import { AnalysisReport, AnalysisStatus, ExtractedData, ScoringRule, SavedReport } from './types';
 import { detectProviderFromPdf, DetectedProvider } from './services/providerDetection';
 import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw, AlignLeft, Image as ImageIcon, Loader2 } from 'lucide-react';
 

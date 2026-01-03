@@ -4,13 +4,14 @@ import ScoreCard from './ScoreCard';
 import DateInput from './DateInput';
 import ReviewModal from './ReviewModal';
 import { getProviderTheme } from '../providers';
-import { RotateCcw, Activity, User, FileText, Hospital, Users, PenTool, ShieldCheck, HeartPulse, ClipboardList, BadgeCheck, Building2, Stethoscope, Syringe } from 'lucide-react';
+import { RotateCcw, Activity, User, FileText, Hospital, Users, PenTool, ShieldCheck, HeartPulse, ClipboardList, BadgeCheck, Building2, Stethoscope, Syringe, Save } from 'lucide-react';
 
 interface DashboardProps {
   report: AnalysisReport;
   onReevaluate: (updatedData: ExtractedData) => void;
   isReevaluating: boolean;
   onSyncChanges: (changes: Record<string, { old: any, new: any }>) => void;
+  onSaveReport?: () => void;
 }
 
 type TabId = 
@@ -24,7 +25,7 @@ type TabId =
   | 'medico' 
   | 'validacion';
 
-const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluating, onSyncChanges }) => {
+const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluating, onSyncChanges, onSaveReport }) => {
   const [formData, setFormData] = useState<ExtractedData>(report.extracted);
   const [modifiedFields, setModifiedFields] = useState<Record<string, { old: any, new: any }>>({});
   const [activeTab, setActiveTab] = useState<TabId>('identificacion');
@@ -280,6 +281,11 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
              {Object.keys(modifiedFields).length > 0 && (
                 <button onClick={() => { setFormData(report.extracted); setModifiedFields({}); }} className="px-3 py-1.5 border border-slate-200 rounded-lg text-slate-500 text-xs font-bold hover:bg-slate-50">
                     <RotateCcw className="w-3 h-3 mr-1.5 inline" />Limpiar
+                </button>
+             )}
+             {onSaveReport && (
+                <button onClick={onSaveReport} className="px-3 py-1.5 border rounded-lg text-xs font-bold bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700 shadow-sm flex items-center gap-1.5">
+                    <Save className="w-3 h-3" />Guardar
                 </button>
              )}
          </div>
