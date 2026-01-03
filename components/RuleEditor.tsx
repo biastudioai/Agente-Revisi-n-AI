@@ -164,16 +164,57 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
     ));
   };
 
-  const filteredFields = (searchTerm: string) => {
-    // Agregar el campo normalizado si existe
-    const fieldsWithNormalized = normalizedFieldName 
-      ? [normalizedFieldName, ...AVAILABLE_FIELDS]
-      : AVAILABLE_FIELDS;
+  // Crear lista de campos con etiqueta de origen (aseguradora o GENERAL)
+  const getFieldsWithLabels = useMemo(() => {
+    const fieldsMap = new Map<string, { field: string; source: string; displayName: string }>();
     
-    if (!searchTerm) return fieldsWithNormalized.slice(0, 15);
-    return fieldsWithNormalized.filter(f => 
-      f.toLowerCase().includes(searchTerm.toLowerCase())
-    ).slice(0, 15);
+    // Si hay aseguradoras específicas seleccionadas (no ALL), usar SOLO sus campos
+    const hasSpecificProviders = providerTargets.length > 0 && !providerTargets.includes('ALL');
+    
+    if (hasSpecificProviders) {
+      // Agregar campos de cada aseguradora seleccionada
+      providerTargets.forEach(provider => {
+        const paths = pathsByProvider[provider] || [];
+        paths.forEach(path => {
+          const key = `${path}_${provider}`;
+          fieldsMap.set(key, {
+            field: path,
+            source: provider,
+            displayName: `${path} (${provider})`
+          });
+        });
+      });
+    } else {
+      // Si es ALL o no hay selección, mostrar SOLO campos generales
+      AVAILABLE_FIELDS.forEach(field => {
+        fieldsMap.set(field, {
+          field: field,
+          source: 'GENERAL',
+          displayName: `${field} (GENERAL)`
+        });
+      });
+    }
+    
+    // Agregar campo normalizado si existe
+    if (normalizedFieldName) {
+      fieldsMap.set(`${normalizedFieldName}_NORMALIZADO`, {
+        field: normalizedFieldName,
+        source: 'NORMALIZADO',
+        displayName: `${normalizedFieldName} (NORMALIZADO)`
+      });
+    }
+    
+    return Array.from(fieldsMap.values());
+  }, [providerTargets, pathsByProvider, normalizedFieldName]);
+
+  const filteredFields = (searchTerm: string) => {
+    const fields = getFieldsWithLabels;
+    
+    if (!searchTerm) return fields.slice(0, 20);
+    return fields.filter(f => 
+      f.field.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      f.source.toLowerCase().includes(searchTerm.toLowerCase())
+    ).slice(0, 20);
   };
 
   const filteredPaths = (provider: string, searchTerm: string) => {
@@ -626,10 +667,8 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                             value={fieldSearch[cond.id] ?? cond.field}
                             onChange={(e) => {
                               setFieldSearch({ ...fieldSearch, [cond.id]: e.target.value });
-                              const allAvailableFields = normalizedFieldName 
-                                ? [normalizedFieldName, ...AVAILABLE_FIELDS]
-                                : AVAILABLE_FIELDS;
-                              if (allAvailableFields.includes(e.target.value)) {
+                              const matchingField = getFieldsWithLabels.find(f => f.field === e.target.value);
+                              if (matchingField) {
                                 updateCondition(cond.id, { field: e.target.value });
                               }
                             }}
@@ -646,35 +685,63 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                             }`}
                           />
                           {(fieldFocus === cond.id || fieldSearch[cond.id]) && (
-                            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-40 overflow-y-auto">
-                              {filteredFields(fieldSearch[cond.id] || '').map(f => (
-                                <button
-                                  key={f}
-                                  type="button"
-                                  onClick={() => {
-                                    updateCondition(cond.id, { field: f });
-                                    setFieldSearch({ ...fieldSearch, [cond.id]: '' });
-                                  }}
-                                  className="w-full px-3 py-1.5 text-left text-xs hover:bg-brand-50 border-b border-slate-100 last:border-0 flex items-center justify-between gap-2"
-                                >
-                                  <span className="truncate">{f}</span>
-                                  {f === normalizedFieldName && (
-                                    <span className="px-1.5 py-0.5 text-[9px] font-bold bg-purple-100 text-purple-700 rounded shrink-0">
-                                      NORMALIZADO
+                            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                              {filteredFields(fieldSearch[cond.id] || '').map((f, i) => {
+                                const sourceColors: Record<string, string> = {
+                                  'NORMALIZADO': 'bg-purple-100 text-purple-700',
+                                  'GENERAL': 'bg-slate-100 text-slate-600',
+                                  'GNP': 'bg-blue-100 text-blue-700',
+                                  'METLIFE': 'bg-green-100 text-green-700',
+                                  'NYLIFE': 'bg-emerald-100 text-emerald-700',
+                                };
+                                const colorClass = sourceColors[f.source] || 'bg-gray-100 text-gray-600';
+                                
+                                return (
+                                  <button
+                                    key={`${f.field}_${f.source}_${i}`}
+                                    type="button"
+                                    onClick={() => {
+                                      updateCondition(cond.id, { field: f.field });
+                                      setFieldSearch({ ...fieldSearch, [cond.id]: '' });
+                                    }}
+                                    className="w-full px-3 py-1.5 text-left text-xs hover:bg-brand-50 border-b border-slate-100 last:border-0 flex items-center justify-between gap-2"
+                                  >
+                                    <span className="truncate font-mono">{f.field}</span>
+                                    <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded shrink-0 ${colorClass}`}>
+                                      {f.source}
                                     </span>
-                                  )}
-                                </button>
-                              ))}
+                                  </button>
+                                );
+                              })}
+                              {filteredFields(fieldSearch[cond.id] || '').length === 0 && (
+                                <div className="px-3 py-2 text-xs text-slate-400 italic">
+                                  No se encontraron campos
+                                </div>
+                              )}
                             </div>
                           )}
                           {cond.field && (
                             <div className="flex items-center gap-1 mt-0.5">
-                              <span className="text-[10px] text-slate-400 truncate">{cond.field}</span>
-                              {cond.field === normalizedFieldName && (
-                                <span className="px-1.5 py-0.5 text-[9px] font-bold bg-purple-100 text-purple-700 rounded shrink-0">
-                                  NORMALIZADO
-                                </span>
-                              )}
+                              <span className="text-[10px] text-slate-400 truncate font-mono">{cond.field}</span>
+                              {(() => {
+                                const fieldInfo = getFieldsWithLabels.find(f => f.field === cond.field);
+                                if (fieldInfo) {
+                                  const sourceColors: Record<string, string> = {
+                                    'NORMALIZADO': 'bg-purple-100 text-purple-700',
+                                    'GENERAL': 'bg-slate-100 text-slate-600',
+                                    'GNP': 'bg-blue-100 text-blue-700',
+                                    'METLIFE': 'bg-green-100 text-green-700',
+                                    'NYLIFE': 'bg-emerald-100 text-emerald-700',
+                                  };
+                                  const colorClass = sourceColors[fieldInfo.source] || 'bg-gray-100 text-gray-600';
+                                  return (
+                                    <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded shrink-0 ${colorClass}`}>
+                                      {fieldInfo.source}
+                                    </span>
+                                  );
+                                }
+                                return null;
+                              })()}
                             </div>
                           )}
                         </div>
@@ -736,8 +803,10 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
                             }`}
                           >
                             <option value="">Selecciona un campo...</option>
-                            {AVAILABLE_FIELDS.map(f => (
-                              <option key={f} value={f}>{f}</option>
+                            {getFieldsWithLabels.map((f, i) => (
+                              <option key={`${f.field}_${f.source}_${i}`} value={f.field}>
+                                {f.field} ({f.source})
+                              </option>
                             ))}
                           </select>
                         </div>
