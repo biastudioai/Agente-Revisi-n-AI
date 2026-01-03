@@ -48,6 +48,15 @@ export const NYLIFE_CONFIG: ProviderConfig = {
 
 5. EQUIPO QUIRÚRGICO:
    - Extrae cada fila (Anestesiólogo, Ayudantes, Otros) como un objeto dentro del array. No omitas los presupuestos de honorarios.
+
+6. FIRMAS POR PÁGINA (CRÍTICO - EXTRACCIÓN INDEPENDIENTE):
+   - Cada página (1 y 2) debe evaluarse DE FORMA COMPLETAMENTE INDEPENDIENTE.
+   - NO copies el nombre o firma de una página a otra.
+   - Si la página 1 tiene el espacio de firma VACÍO:
+     * firma_pagina_1.nombre_firma = "" (vacío)
+     * firma_pagina_1.firma_autografa_detectada = "No detectada"
+   - Si la página 2 tiene firma pero la página 1 NO, los campos de firma_pagina_1 deben quedar VACÍOS.
+   - Solo marca "Detectada" si hay trazo de firma manuscrita VISIBLE en ESA página específica.
 `,
 
   requiredFields: [
@@ -289,37 +298,37 @@ export const NYLIFE_CONFIG: ProviderConfig = {
 
           firma_pagina_1: {
             type: Type.OBJECT,
-            description: "Firma del médico tratante en la página 1 del informe",
+            description: "Firma del médico tratante SOLO en la página 1. IMPORTANTE: Extraer ÚNICAMENTE lo visible en página 1. Si no hay firma/nombre en página 1, dejar campos vacíos. NO copiar de página 2.",
             properties: {
               fecha: { 
                 type: Type.OBJECT, 
                 properties: { 
-                  dia: { type: Type.STRING }, 
-                  mes: { type: Type.STRING }, 
-                  año: { type: Type.STRING }, 
-                  formatted: { type: Type.STRING, description: "Formato DD/MM/AAAA" } 
+                  dia: { type: Type.STRING, description: "Día de firma SOLO si está en página 1, vacío si no existe" }, 
+                  mes: { type: Type.STRING, description: "Mes de firma SOLO si está en página 1, vacío si no existe" }, 
+                  año: { type: Type.STRING, description: "Año de firma SOLO si está en página 1, vacío si no existe" }, 
+                  formatted: { type: Type.STRING, description: "Formato DD/MM/AAAA SOLO si fecha existe en página 1" } 
                 } 
               },
-              nombre_firma: { type: Type.STRING, description: "Nombre del médico que firma (extraer de la línea de firma)" },
-              firma_autografa_detectada: { type: Type.STRING, description: "Detectada / No detectada - si hay trazo de firma manuscrita" }
+              nombre_firma: { type: Type.STRING, description: "Nombre del médico SOLO si está escrito/impreso en la página 1. Dejar VACÍO si no hay nombre visible en página 1. NO copiar de página 2." },
+              firma_autografa_detectada: { type: Type.STRING, description: "Detectada SOLO si hay trazo de firma manuscrita visible en página 1. No detectada si el espacio está vacío." }
             }
           },
 
           firma_pagina_2: {
             type: Type.OBJECT,
-            description: "Firma del médico tratante en la página 2 del informe (misma persona que página 1)",
+            description: "Firma del médico tratante SOLO en la página 2. Extraer ÚNICAMENTE lo visible en página 2, independiente de página 1.",
             properties: {
               fecha: { 
                 type: Type.OBJECT, 
                 properties: { 
-                  dia: { type: Type.STRING }, 
-                  mes: { type: Type.STRING }, 
-                  año: { type: Type.STRING }, 
-                  formatted: { type: Type.STRING, description: "Formato DD/MM/AAAA" } 
+                  dia: { type: Type.STRING, description: "Día de firma SOLO si está en página 2" }, 
+                  mes: { type: Type.STRING, description: "Mes de firma SOLO si está en página 2" }, 
+                  año: { type: Type.STRING, description: "Año de firma SOLO si está en página 2" }, 
+                  formatted: { type: Type.STRING, description: "Formato DD/MM/AAAA SOLO si fecha existe en página 2" } 
                 } 
               },
-              nombre_firma: { type: Type.STRING, description: "Nombre del médico que firma (extraer de la línea de firma en página 2)" },
-              firma_autografa_detectada: { type: Type.STRING, description: "Detectada / No detectada - si hay trazo de firma manuscrita" }
+              nombre_firma: { type: Type.STRING, description: "Nombre del médico SOLO si está escrito/impreso en la página 2. NO copiar de otra parte del documento." },
+              firma_autografa_detectada: { type: Type.STRING, description: "Detectada SOLO si hay trazo de firma manuscrita visible en página 2. No detectada si el espacio está vacío." }
             }
           },
 

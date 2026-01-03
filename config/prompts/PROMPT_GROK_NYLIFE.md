@@ -60,16 +60,33 @@ Extrae el equipo quirúrgico en la estructura fija con 4 roles:
 - otros_medicos: Otros médicos participantes
 No omitas los presupuestos de honorarios.
 
-=== FIRMAS DEL MÉDICO (2 PÁGINAS) ===
+=== FIRMAS DEL MÉDICO (2 PÁGINAS) - EXTRACCIÓN INDEPENDIENTE ===
 
-El informe médico de NY Life tiene 2 páginas y requiere firma del médico tratante en AMBAS.
-- firma_pagina_1: Busca la firma al final de la primera página
-- firma_pagina_2: Busca la firma al final de la segunda página (cerca de "Nombre y firma del médico tratante")
+⚠️ REGLA CRÍTICA: Cada página debe evaluarse DE FORMA COMPLETAMENTE INDEPENDIENTE.
+NO copies datos de una página a otra. Si una página no tiene firma, nombre o fecha, deja esos campos VACÍOS.
 
-Para cada firma extrae:
-1. fecha: La fecha escrita junto a la firma
-2. nombre_firma: El nombre impreso o manuscrito del médico
-3. firma_autografa_detectada: "Detectada" si hay trazo de firma manuscrita, "No detectada" si solo hay nombre impreso
+El informe médico de NY Life tiene 2 páginas con espacios de firma separados:
+
+**firma_pagina_1** (SOLO de la primera página):
+- Ubicación: Al final de la primera página, bajo "Nombre y firma del médico tratante"
+- SOLO extrae lo que está FÍSICAMENTE VISIBLE en la página 1
+- Si el espacio de firma de la página 1 está VACÍO (sin nombre, sin firma, sin fecha):
+  - nombre_firma: "" (vacío)
+  - firma_autografa_detectada: "No detectada"
+  - fecha: todos los campos vacíos
+
+**firma_pagina_2** (SOLO de la segunda página):
+- Ubicación: Al final de la segunda página, bajo "Nombre y firma del médico tratante"
+- SOLO extrae lo que está FÍSICAMENTE VISIBLE en la página 2
+- Si el espacio de firma de la página 2 está VACÍO, aplica la misma regla
+
+Para cada firma extrae ÚNICAMENTE lo que ves en ESA página específica:
+1. fecha: La fecha escrita junto a la firma EN ESA PÁGINA
+2. nombre_firma: El nombre impreso o manuscrito del médico EN ESA PÁGINA (NO lo copies de otra página)
+3. firma_autografa_detectada: "Detectada" SOLO si hay trazo de firma manuscrita EN ESA PÁGINA, "No detectada" si no hay firma visible
+
+⚠️ ERROR COMÚN A EVITAR: Si la página 2 tiene firma pero la página 1 NO tiene firma, 
+los campos de firma_pagina_1 deben quedar VACÍOS. NO copies el nombre de la página 2 a la página 1.
 
 EXTRAE LA INFORMACIÓN EN ESTE FORMATO JSON EXACTO:
 
