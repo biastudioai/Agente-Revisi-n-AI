@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import FileUpload from './components/FileUpload';
 import Dashboard from './components/Dashboard';
 import RuleConfigurator from './components/RuleConfigurator';
+import InsuranceAuditor from './components/InsuranceAuditor';
 import PdfViewer from './components/PdfViewer';
 import ProviderSelector, { ProviderOption } from './components/ProviderSelector';
 import { analyzeReportImage, reEvaluateReport } from './services/geminiService';
 import { DEFAULT_SCORING_RULES } from './services/scoring-engine';
 import { AnalysisReport, AnalysisStatus, ExtractedData, ScoringRule, SavedReport } from './types';
 import { detectProviderFromPdf, DetectedProvider } from './services/providerDetection';
-import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw, AlignLeft, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw, AlignLeft, Image as ImageIcon, Loader2, Building2 } from 'lucide-react';
 
 const App: React.FC = () => {
   const [status, setStatus] = useState<AnalysisStatus>('idle');
@@ -33,6 +34,7 @@ const App: React.FC = () => {
     return DEFAULT_SCORING_RULES;
   });
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
+  const [isInsuranceAuditorOpen, setIsInsuranceAuditorOpen] = useState(false);
 
   // State for Provider Selection
   const [selectedProvider, setSelectedProvider] = useState<ProviderOption>('UNKNOWN');
@@ -307,6 +309,14 @@ const App: React.FC = () => {
            </div>
            <div className="flex items-center gap-2">
               <button 
+                onClick={() => setIsInsuranceAuditorOpen(true)}
+                className="text-xs text-purple-700 bg-purple-50 border border-purple-200 hover:bg-purple-100 hover:border-purple-300 font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 shadow-sm"
+              >
+                <Building2 className="w-3.5 h-3.5" />
+                Auditoría de aseguradoras
+              </button>
+
+              <button 
                 onClick={() => setIsRulesModalOpen(true)}
                 className="text-xs text-brand-700 bg-brand-50 border border-brand-200 hover:bg-brand-100 hover:border-brand-300 font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 shadow-sm"
               >
@@ -452,6 +462,12 @@ const App: React.FC = () => {
             rules={rules}
             onUpdateRules={handleRulesUpdate}
             currentReport={report?.extracted}
+        />
+
+        {/* Insurance Auditor Modal */}
+        <InsuranceAuditor
+            isOpen={isInsuranceAuditorOpen}
+            onClose={() => setIsInsuranceAuditorOpen(false)}
         />
       </div>
     );
@@ -608,8 +624,15 @@ const App: React.FC = () => {
   // Render: UPLOAD SCREEN (Default - idle)
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex flex-col font-sans text-slate-900">
-      {/* Header con botón de Auditoría */}
-      <header className="absolute top-0 right-0 p-6 z-20">
+      {/* Header con botones de Auditoría */}
+      <header className="absolute top-0 right-0 p-6 z-20 flex items-center gap-2">
+        <button 
+          onClick={() => setIsInsuranceAuditorOpen(true)}
+          className="text-xs text-purple-700 bg-white/90 backdrop-blur border border-purple-200 hover:bg-purple-50 hover:border-purple-300 font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-purple-500/10 hover:shadow-purple-500/20"
+        >
+          <Building2 className="w-4 h-4" />
+          Auditoría de aseguradoras
+        </button>
         <button 
           onClick={() => setIsRulesModalOpen(true)}
           className="text-xs text-brand-700 bg-white/90 backdrop-blur border border-brand-200 hover:bg-brand-50 hover:border-brand-300 font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20"
@@ -675,6 +698,12 @@ const App: React.FC = () => {
         rules={rules}
         onUpdateRules={handleRulesUpdate}
         currentReport={null}
+      />
+
+      {/* Insurance Auditor Modal */}
+      <InsuranceAuditor
+        isOpen={isInsuranceAuditorOpen}
+        onClose={() => setIsInsuranceAuditorOpen(false)}
       />
     </div>
   );
