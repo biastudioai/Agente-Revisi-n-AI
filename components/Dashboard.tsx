@@ -666,16 +666,16 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                                             <span className="text-xs font-medium text-slate-700">¿Tiene relación con otro padecimiento?</span>
                                             <div className="flex gap-3">
                                                 <label className="flex items-center gap-1">
-                                                    <input type="checkbox" checked={(formData as any).padecimiento_actual?.relacion_otro_padecimiento?.includes('Sí')} onChange={(e) => { const arr = (formData as any).padecimiento_actual?.relacion_otro_padecimiento || []; handleInputChange('padecimiento_actual.relacion_otro_padecimiento', e.target.checked ? [...arr.filter((v:string) => v !== 'Sí'), 'Sí'] : arr.filter((v:string) => v !== 'Sí')); }} className="w-4 h-4 rounded" />
+                                                    <input type="checkbox" checked={(formData as any).padecimiento_actual?.relacion_otro_padecimiento?.marcada?.includes('Sí')} onChange={(e) => { const arr = (formData as any).padecimiento_actual?.relacion_otro_padecimiento?.marcada || []; handleInputChange('padecimiento_actual.relacion_otro_padecimiento.marcada', e.target.checked ? [...arr.filter((v:string) => v !== 'Sí'), 'Sí'] : arr.filter((v:string) => v !== 'Sí')); }} className="w-4 h-4 rounded" />
                                                     <span className="text-xs text-slate-600">Sí</span>
                                                 </label>
                                                 <label className="flex items-center gap-1">
-                                                    <input type="checkbox" checked={(formData as any).padecimiento_actual?.relacion_otro_padecimiento?.includes('No')} onChange={(e) => { const arr = (formData as any).padecimiento_actual?.relacion_otro_padecimiento || []; handleInputChange('padecimiento_actual.relacion_otro_padecimiento', e.target.checked ? [...arr.filter((v:string) => v !== 'No'), 'No'] : arr.filter((v:string) => v !== 'No')); }} className="w-4 h-4 rounded" />
+                                                    <input type="checkbox" checked={(formData as any).padecimiento_actual?.relacion_otro_padecimiento?.marcada?.includes('No')} onChange={(e) => { const arr = (formData as any).padecimiento_actual?.relacion_otro_padecimiento?.marcada || []; handleInputChange('padecimiento_actual.relacion_otro_padecimiento.marcada', e.target.checked ? [...arr.filter((v:string) => v !== 'No'), 'No'] : arr.filter((v:string) => v !== 'No')); }} className="w-4 h-4 rounded" />
                                                     <span className="text-xs text-slate-600">No</span>
                                                 </label>
                                             </div>
                                         </div>
-                                        {renderInput("¿Cuál?", (formData as any).padecimiento_actual?.relacion_otro_padecimiento_cual, 'padecimiento_actual.relacion_otro_padecimiento_cual')}
+                                        {renderInput("¿Cuál?", (formData as any).padecimiento_actual?.relacion_otro_padecimiento?.cual, 'padecimiento_actual.relacion_otro_padecimiento.cual')}
                                     </div>
                                 </div>
 

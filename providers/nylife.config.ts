@@ -248,34 +248,78 @@ export const NYLIFE_CONFIG: ProviderConfig = {
             }
           },
 
-          equipo_quirurgico: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                rol: { type: Type.STRING, description: "Anestesiólogo, Primer Ayudante, Segundo Ayudante, Otros" },
-                nombre: { type: Type.STRING },
-                especialidad: { type: Type.STRING },
-                presupuesto: { type: Type.STRING }
+          equipo_quirurgico_nylife: {
+            type: Type.OBJECT,
+            description: "Equipo quirúrgico con 4 roles fijos",
+            properties: {
+              anestesiologo: {
+                type: Type.OBJECT,
+                properties: {
+                  nombre: { type: Type.STRING },
+                  especialidad: { type: Type.STRING },
+                  presupuesto: { type: Type.STRING }
+                }
+              },
+              primer_ayudante: {
+                type: Type.OBJECT,
+                properties: {
+                  nombre: { type: Type.STRING },
+                  especialidad: { type: Type.STRING },
+                  presupuesto: { type: Type.STRING }
+                }
+              },
+              segundo_ayudante: {
+                type: Type.OBJECT,
+                properties: {
+                  nombre: { type: Type.STRING },
+                  especialidad: { type: Type.STRING },
+                  presupuesto: { type: Type.STRING }
+                }
+              },
+              otros_medicos: {
+                type: Type.OBJECT,
+                properties: {
+                  nombre: { type: Type.STRING },
+                  especialidad: { type: Type.STRING },
+                  presupuesto: { type: Type.STRING }
+                }
               }
             }
           },
 
-          firma_cierre: {
+          firma_pagina_1: {
             type: Type.OBJECT,
+            description: "Firma del médico tratante en la página 1 del informe",
             properties: {
-              lugar: { type: Type.STRING },
               fecha: { 
                 type: Type.OBJECT, 
                 properties: { 
                   dia: { type: Type.STRING }, 
                   mes: { type: Type.STRING }, 
                   año: { type: Type.STRING }, 
-                  formatted: { type: Type.STRING } 
+                  formatted: { type: Type.STRING, description: "Formato DD/MM/AAAA" } 
                 } 
               },
-              nombre_firma: { type: Type.STRING },
-              firma_autografa_detectada: { type: Type.STRING, description: "Detectada / No detectada" }
+              nombre_firma: { type: Type.STRING, description: "Nombre del médico que firma (extraer de la línea de firma)" },
+              firma_autografa_detectada: { type: Type.STRING, description: "Detectada / No detectada - si hay trazo de firma manuscrita" }
+            }
+          },
+
+          firma_pagina_2: {
+            type: Type.OBJECT,
+            description: "Firma del médico tratante en la página 2 del informe (misma persona que página 1)",
+            properties: {
+              fecha: { 
+                type: Type.OBJECT, 
+                properties: { 
+                  dia: { type: Type.STRING }, 
+                  mes: { type: Type.STRING }, 
+                  año: { type: Type.STRING }, 
+                  formatted: { type: Type.STRING, description: "Formato DD/MM/AAAA" } 
+                } 
+              },
+              nombre_firma: { type: Type.STRING, description: "Nombre del médico que firma (extraer de la línea de firma en página 2)" },
+              firma_autografa_detectada: { type: Type.STRING, description: "Detectada / No detectada - si hay trazo de firma manuscrita" }
             }
           },
 

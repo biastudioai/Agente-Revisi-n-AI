@@ -53,8 +53,23 @@ Para antecedentes patológicos y no patológicos:
 
 === EQUIPO QUIRÚRGICO ===
 
-Extrae cada fila (Anestesiólogo, Ayudantes, Otros) como un objeto dentro del array.
+Extrae el equipo quirúrgico en la estructura fija con 4 roles:
+- anestesiologo: Datos del anestesiólogo
+- primer_ayudante: Datos del primer ayudante
+- segundo_ayudante: Datos del segundo ayudante
+- otros_medicos: Otros médicos participantes
 No omitas los presupuestos de honorarios.
+
+=== FIRMAS DEL MÉDICO (2 PÁGINAS) ===
+
+El informe médico de NY Life tiene 2 páginas y requiere firma del médico tratante en AMBAS.
+- firma_pagina_1: Busca la firma al final de la primera página
+- firma_pagina_2: Busca la firma al final de la segunda página (cerca de "Nombre y firma del médico tratante")
+
+Para cada firma extrae:
+1. fecha: La fecha escrita junto a la firma
+2. nombre_firma: El nombre impreso o manuscrito del médico
+3. firma_autografa_detectada: "Detectada" si hay trazo de firma manuscrita, "No detectada" si solo hay nombre impreso
 
 EXTRAE LA INFORMACIÓN EN ESTE FORMATO JSON EXACTO:
 
@@ -185,17 +200,41 @@ EXTRAE LA INFORMACIÓN EN ESTE FORMATO JSON EXACTO:
       "acepta_tabulador": []
     },
     
-    "equipo_quirurgico": [
-      {
-        "rol": "",
+    "equipo_quirurgico_nylife": {
+      "anestesiologo": {
+        "nombre": "",
+        "especialidad": "",
+        "presupuesto": ""
+      },
+      "primer_ayudante": {
+        "nombre": "",
+        "especialidad": "",
+        "presupuesto": ""
+      },
+      "segundo_ayudante": {
+        "nombre": "",
+        "especialidad": "",
+        "presupuesto": ""
+      },
+      "otros_medicos": {
         "nombre": "",
         "especialidad": "",
         "presupuesto": ""
       }
-    ],
+    },
     
-    "firma_cierre": {
-      "lugar": "",
+    "firma_pagina_1": {
+      "fecha": {
+        "dia": "",
+        "mes": "",
+        "año": "",
+        "formatted": ""
+      },
+      "nombre_firma": "",
+      "firma_autografa_detectada": ""
+    },
+    
+    "firma_pagina_2": {
       "fecha": {
         "dia": "",
         "mes": "",
