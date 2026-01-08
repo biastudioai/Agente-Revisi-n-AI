@@ -296,7 +296,7 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
             <div className="flex-1">
                 {viewMode === 'form' ? (
                 <>
-                    <div className="flex flex-wrap gap-1 mb-6 bg-slate-100/50 p-1.5 rounded-xl border border-slate-200 shadow-inner">
+                    <div className="sticky top-0 z-10 flex flex-wrap gap-1 mb-6 bg-slate-100/50 p-1.5 rounded-xl border border-slate-200 shadow-inner backdrop-blur-sm">
                         {tabs.map((tab) => {
                             // Ocultar pestañas según el proveedor
                             if (tab.id === 'observaciones' && (provider === 'GNP' || provider === 'NYLIFE')) {
