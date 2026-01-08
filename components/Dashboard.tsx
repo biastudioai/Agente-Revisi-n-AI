@@ -310,20 +310,10 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                             }
                             
                             const Icon = tab.icon;
+                            const isActive = activeTab === tab.id;
                             const isMetLife = provider === 'METLIFE';
-                            const activeSection = activeTab; // Temporarily using activeTab until full refactor
                             return (
-                                <button 
-                                    key={tab.id} 
-                                    onClick={() => {
-                                        setActiveTab(tab.id as TabId);
-                                        const element = document.getElementById(`section-${tab.id}`);
-                                        if (element) {
-                                            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                        }
-                                    }} 
-                                    className={`flex items-center px-4 py-2 text-[10px] font-black rounded-lg transition-all ${activeTab === tab.id ? 'bg-white shadow-md ' + theme.secondary : 'text-slate-400 hover:text-slate-600'}`}
-                                >
+                                <button key={tab.id} onClick={() => setActiveTab(tab.id as TabId)} className={`flex items-center px-4 py-2 text-[10px] font-black rounded-lg transition-all ${isActive ? 'bg-white shadow-md ' + theme.secondary : 'text-slate-400 hover:text-slate-600'}`}>
                                 {isMetLife && <span className="mr-1.5 opacity-50">{tab.metlifeSection}.</span>}
                                 <Icon className="w-3.5 h-3.5 mr-2" />
                                 {tab.label.toUpperCase()}
@@ -332,153 +322,142 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                         })}
                     </div>
 
-                    <div className="animate-fade-in space-y-12 pb-32">
-                        {/* SECCIÓN: PACIENTE */}
-                        <section id="section-identificacion" className="scroll-mt-24">
-                            {provider === 'METLIFE' && (
+                    <div className="animate-fade-in space-y-6">
+                        {activeTab === 'identificacion' && provider === 'METLIFE' && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="md:col-span-2">{renderInput("Nombre Completo Asegurado", formData.identificacion?.nombres, 'identificacion.nombres')}</div>
+                                {renderInput("Edad", formData.identificacion?.edad, 'identificacion.edad')}
+                                <div className="md:col-span-2">
+                                    {renderRadioGroup("Sexo", formData.identificacion?.sexo, 'identificacion.sexo', ['Masculino', 'Femenino', 'Otro'])}
+                                </div>
+                                <div className="md:col-span-2">
+                                    {renderRadioGroup("Causa Atención", formData.identificacion?.causa_atencion, 'identificacion.causa_atencion', ['Accidente', 'Enfermedad', 'Embarazo', 'Segunda valoración'])}
+                                </div>
+                                {renderInput("Peso", formData.identificacion?.peso, 'identificacion.peso', 'text', 'kg')}
+                                {renderInput("Talla", formData.identificacion?.talla, 'identificacion.talla', 'text', 'cm')}
+                                <div className="md:col-span-2">
+                                    <DateInput label="Fecha Primera Atención" value={formData.identificacion?.fecha_primera_atencion} path="identificacion.fecha_primera_atencion" isModified={!!modifiedFields['identificacion.fecha_primera_atencion']} isHighlighted={highlightedField === 'identificacion.fecha_primera_atencion'} onChange={handleInputChange} />
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'identificacion' && provider === 'NYLIFE' && (
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    {renderInput("Apellido Paterno", (formData as any).identificacion?.apellido_paterno, 'identificacion.apellido_paterno')}
+                                    {renderInput("Apellido Materno", (formData as any).identificacion?.apellido_materno, 'identificacion.apellido_materno')}
+                                    {renderInput("Nombre(s)", (formData as any).identificacion?.nombres, 'identificacion.nombres')}
+                                </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="md:col-span-2">{renderInput("Nombre Completo Asegurado", formData.identificacion?.nombres, 'identificacion.nombres')}</div>
+                                    {renderInput("Edad", (formData as any).identificacion?.edad, 'identificacion.edad')}
+                                    <div>
+                                        {renderCheckboxGroup("Sexo", (formData as any).identificacion?.sexo, 'identificacion.sexo', ['Femenino', 'Masculino'])}
+                                    </div>
+                                </div>
+                                <div>
+                                    {renderCheckboxGroup("Tipo de Evento", (formData as any).identificacion?.tipo_evento, 'identificacion.tipo_evento', ['Accidente', 'Enfermedad', 'Embarazo'])}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'identificacion' && provider === 'GNP' && (
+                            <div className="space-y-6">
+                                <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
+                                    <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>TIPO DE TRÁMITE</h4>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                        <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${formData.tramite?.reembolso ? `${theme.light} ${theme.border} ring-1 ${theme.border}` : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                                            <input type="checkbox" checked={formData.tramite?.reembolso || false} onChange={(e) => handleInputChange('tramite.reembolso', e.target.checked)} className="w-4 h-4 rounded text-orange-600" />
+                                            <span className="text-xs font-medium text-slate-700">Reembolso</span>
+                                        </label>
+                                        <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${formData.tramite?.programacion_cirugia ? `${theme.light} ${theme.border} ring-1 ${theme.border}` : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                                            <input type="checkbox" checked={formData.tramite?.programacion_cirugia || false} onChange={(e) => handleInputChange('tramite.programacion_cirugia', e.target.checked)} className="w-4 h-4 rounded text-orange-600" />
+                                            <span className="text-xs font-medium text-slate-700">Prog. Cirugía</span>
+                                        </label>
+                                        <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${formData.tramite?.programacion_medicamentos ? `${theme.light} ${theme.border} ring-1 ${theme.border}` : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                                            <input type="checkbox" checked={formData.tramite?.programacion_medicamentos || false} onChange={(e) => handleInputChange('tramite.programacion_medicamentos', e.target.checked)} className="w-4 h-4 rounded text-orange-600" />
+                                            <span className="text-xs font-medium text-slate-700">Prog. Medicamentos</span>
+                                        </label>
+                                        <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${formData.tramite?.programacion_servicios ? `${theme.light} ${theme.border} ring-1 ${theme.border}` : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                                            <input type="checkbox" checked={formData.tramite?.programacion_servicios || false} onChange={(e) => handleInputChange('tramite.programacion_servicios', e.target.checked)} className="w-4 h-4 rounded text-orange-600" />
+                                            <span className="text-xs font-medium text-slate-700">Prog. Servicios</span>
+                                        </label>
+                                        <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${formData.tramite?.indemnizacion ? `${theme.light} ${theme.border} ring-1 ${theme.border}` : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                                            <input type="checkbox" checked={formData.tramite?.indemnizacion || false} onChange={(e) => handleInputChange('tramite.indemnizacion', e.target.checked)} className="w-4 h-4 rounded text-orange-600" />
+                                            <span className="text-xs font-medium text-slate-700">Indemnización</span>
+                                        </label>
+                                        <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${formData.tramite?.reporte_hospitalario ? `${theme.light} ${theme.border} ring-1 ${theme.border}` : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                                            <input type="checkbox" checked={formData.tramite?.reporte_hospitalario || false} onChange={(e) => handleInputChange('tramite.reporte_hospitalario', e.target.checked)} className="w-4 h-4 rounded text-orange-600" />
+                                            <span className="text-xs font-medium text-slate-700">Reporte Hospitalario</span>
+                                        </label>
+                                    </div>
+                                    <div className="mt-4">
+                                        {renderInput("Número de Póliza", formData.tramite?.numero_poliza, 'tramite.numero_poliza')}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    {renderInput("Primer Apellido", formData.identificacion?.primer_apellido, 'identificacion.primer_apellido')}
+                                    {renderInput("Segundo Apellido", formData.identificacion?.segundo_apellido, 'identificacion.segundo_apellido')}
+                                    {renderInput("Nombre(s)", formData.identificacion?.nombres, 'identificacion.nombres')}
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {renderInput("Edad", formData.identificacion?.edad, 'identificacion.edad')}
-                                    <div className="md:col-span-2">
-                                        {renderRadioGroup("Sexo", formData.identificacion?.sexo, 'identificacion.sexo', ['Masculino', 'Femenino', 'Otro'])}
-                                    </div>
-                                    <div className="md:col-span-2">
-                                        {renderRadioGroup("Causa Atención", formData.identificacion?.causa_atencion, 'identificacion.causa_atencion', ['Accidente', 'Enfermedad', 'Embarazo', 'Segunda valoración'])}
-                                    </div>
-                                    {renderInput("Peso", formData.identificacion?.peso, 'identificacion.peso', 'text', 'kg')}
-                                    {renderInput("Talla", formData.identificacion?.talla, 'identificacion.talla', 'text', 'cm')}
-                                    <div className="md:col-span-2">
-                                        <DateInput label="Fecha Primera Atención" value={formData.identificacion?.fecha_primera_atencion} path="identificacion.fecha_primera_atencion" isModified={!!modifiedFields['identificacion.fecha_primera_atencion']} isHighlighted={highlightedField === 'identificacion.fecha_primera_atencion'} onChange={handleInputChange} />
-                                    </div>
-                                </div>
-                            )}
-
-                            {provider === 'NYLIFE' && (
-                                <div className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        {renderInput("Apellido Paterno", (formData as any).identificacion?.apellido_paterno, 'identificacion.apellido_paterno')}
-                                        {renderInput("Apellido Materno", (formData as any).identificacion?.apellido_materno, 'identificacion.apellido_materno')}
-                                        {renderInput("Nombre(s)", (formData as any).identificacion?.nombres, 'identificacion.nombres')}
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {renderInput("Edad", (formData as any).identificacion?.edad, 'identificacion.edad')}
-                                        <div>
-                                            {renderCheckboxGroup("Sexo", (formData as any).identificacion?.sexo, 'identificacion.sexo', ['Femenino', 'Masculino'])}
-                                        </div>
-                                    </div>
                                     <div>
-                                        {renderCheckboxGroup("Tipo de Evento", (formData as any).identificacion?.tipo_evento, 'identificacion.tipo_evento', ['Accidente', 'Enfermedad', 'Embarazo'])}
+                                        {renderRadioGroup("Sexo", formData.identificacion?.sexo, 'identificacion.sexo', ['Femenino', 'Masculino'])}
                                     </div>
                                 </div>
-                            )}
-
-                            {provider === 'GNP' && (
-                                <div className="space-y-6">
-                                    <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
-                                        <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>TIPO DE TRÁMITE</h4>
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                            <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${formData.tramite?.reembolso ? `${theme.light} ${theme.border} ring-1 ${theme.border}` : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
-                                                <input type="checkbox" checked={formData.tramite?.reembolso || false} onChange={(e) => handleInputChange('tramite.reembolso', e.target.checked)} className="w-4 h-4 rounded text-orange-600" />
-                                                <span className="text-xs font-medium text-slate-700">Reembolso</span>
-                                            </label>
-                                            <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${formData.tramite?.programacion_cirugia ? `${theme.light} ${theme.border} ring-1 ${theme.border}` : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
-                                                <input type="checkbox" checked={formData.tramite?.programacion_cirugia || false} onChange={(e) => handleInputChange('tramite.programacion_cirugia', e.target.checked)} className="w-4 h-4 rounded text-orange-600" />
-                                                <span className="text-xs font-medium text-slate-700">Prog. Cirugía</span>
-                                            </label>
-                                            <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${formData.tramite?.programacion_medicamentos ? `${theme.light} ${theme.border} ring-1 ${theme.border}` : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
-                                                <input type="checkbox" checked={formData.tramite?.programacion_medicamentos || false} onChange={(e) => handleInputChange('tramite.programacion_medicamentos', e.target.checked)} className="w-4 h-4 rounded text-orange-600" />
-                                                <span className="text-xs font-medium text-slate-700">Prog. Medicamentos</span>
-                                            </label>
-                                            <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${formData.tramite?.programacion_servicios ? `${theme.light} ${theme.border} ring-1 ${theme.border}` : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
-                                                <input type="checkbox" checked={formData.tramite?.programacion_servicios || false} onChange={(e) => handleInputChange('tramite.programacion_servicios', e.target.checked)} className="w-4 h-4 rounded text-orange-600" />
-                                                <span className="text-xs font-medium text-slate-700">Prog. Servicios</span>
-                                            </label>
-                                            <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${formData.tramite?.indemnizacion ? `${theme.light} ${theme.border} ring-1 ${theme.border}` : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
-                                                <input type="checkbox" checked={formData.tramite?.indemnizacion || false} onChange={(e) => handleInputChange('tramite.indemnizacion', e.target.checked)} className="w-4 h-4 rounded text-orange-600" />
-                                                <span className="text-xs font-medium text-slate-700">Indemnización</span>
-                                            </label>
-                                            <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${formData.tramite?.reporte_hospitalario ? `${theme.light} ${theme.border} ring-1 ${theme.border}` : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
-                                                <input type="checkbox" checked={formData.tramite?.reporte_hospitalario || false} onChange={(e) => handleInputChange('tramite.reporte_hospitalario', e.target.checked)} className="w-4 h-4 rounded text-orange-600" />
-                                                <span className="text-xs font-medium text-slate-700">Reporte Hospitalario</span>
-                                            </label>
-                                        </div>
-                                        <div className="mt-4">
-                                            {renderInput("Número de Póliza", formData.tramite?.numero_poliza, 'tramite.numero_poliza')}
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        {renderInput("Primer Apellido", formData.identificacion?.primer_apellido, 'identificacion.primer_apellido')}
-                                        {renderInput("Segundo Apellido", formData.identificacion?.segundo_apellido, 'identificacion.segundo_apellido')}
-                                        {renderInput("Nombre(s)", formData.identificacion?.nombres, 'identificacion.nombres')}
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {renderInput("Edad", formData.identificacion?.edad, 'identificacion.edad')}
-                                        <div>
-                                            {renderRadioGroup("Sexo", formData.identificacion?.sexo, 'identificacion.sexo', ['Femenino', 'Masculino'])}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        {renderRadioGroup("Causa de Atención", formData.identificacion?.causa_atencion, 'identificacion.causa_atencion', ['Accidente', 'Enfermedad', 'Embarazo'])}
-                                    </div>
+                                <div>
+                                    {renderRadioGroup("Causa de Atención", formData.identificacion?.causa_atencion, 'identificacion.causa_atencion', ['Accidente', 'Enfermedad', 'Embarazo'])}
                                 </div>
-                            )}
-                        </section>
+                            </div>
+                        )}
 
-                        {/* SECCIÓN: ANTECEDENTES */}
-                        <section id="section-antecedentes" className="scroll-mt-24">
-                            {provider === 'METLIFE' && (
-                                <div className="space-y-4">
-                                    {renderInput("Historia Clínica / Antecedentes", formData.antecedentes?.historia_clinica_breve, 'antecedentes.historia_clinica_breve', 'textarea')}
-                                    {renderInput("Antecedentes Personales Patológicos", formData.antecedentes?.personales_patologicos, 'antecedentes.personales_patologicos', 'textarea')}
-                                    {renderInput("Antecedentes Quirúrgicos", formData.antecedentes?.antecedentes_quirurgicos, 'antecedentes.antecedentes_quirurgicos', 'textarea')}
-                                    <div className="p-4 bg-pink-50 rounded-xl border border-pink-200">
-                                        <div className="text-[9px] font-black text-pink-500 uppercase tracking-widest mb-3">Gineco-Obstétricos</div>
-                                        <div className="grid grid-cols-4 gap-4 mb-3">
-                                            {renderInput("G", formData.antecedentes?.gineco_g, 'antecedentes.gineco_g')}
-                                            {renderInput("P", formData.antecedentes?.gineco_p, 'antecedentes.gineco_p')}
-                                            {renderInput("A", formData.antecedentes?.gineco_a, 'antecedentes.gineco_a')}
-                                            {renderInput("C", formData.antecedentes?.gineco_c, 'antecedentes.gineco_c')}
+                        {activeTab === 'antecedentes' && provider === 'METLIFE' && (
+                            <div className="space-y-4">
+                                {renderInput("Historia Clínica / Antecedentes", formData.antecedentes?.historia_clinica_breve, 'antecedentes.historia_clinica_breve', 'textarea')}
+                                {renderInput("Antecedentes Personales Patológicos", formData.antecedentes?.personales_patologicos, 'antecedentes.personales_patologicos', 'textarea')}
+                                {renderInput("Antecedentes Quirúrgicos", formData.antecedentes?.antecedentes_quirurgicos, 'antecedentes.antecedentes_quirurgicos', 'textarea')}
+                                <div className="p-4 bg-pink-50 rounded-xl border border-pink-200">
+                                    <div className="text-[9px] font-black text-pink-500 uppercase tracking-widest mb-3">Gineco-Obstétricos</div>
+                                    <div className="grid grid-cols-4 gap-4 mb-3">
+                                        {renderInput("G", formData.antecedentes?.gineco_g, 'antecedentes.gineco_g')}
+                                        {renderInput("P", formData.antecedentes?.gineco_p, 'antecedentes.gineco_p')}
+                                        {renderInput("A", formData.antecedentes?.gineco_a, 'antecedentes.gineco_a')}
+                                        {renderInput("C", formData.antecedentes?.gineco_c, 'antecedentes.gineco_c')}
+                                    </div>
+                                    {renderInput("Descripción Adicional", formData.antecedentes?.gineco_descripcion, 'antecedentes.gineco_descripcion', 'textarea')}
+                                </div>
+                                {renderInput("Otras Afecciones (sin relación)", formData.antecedentes?.otras_afecciones, 'antecedentes.otras_afecciones', 'textarea')}
+                            </div>
+                        )}
+
+                        {activeTab === 'antecedentes' && provider === 'GNP' && (
+                            <div className="space-y-4">
+                                {renderInput("Antecedentes Personales Patológicos", formData.antecedentes?.personales_patologicos, 'antecedentes.personales_patologicos', 'textarea')}
+                                {renderInput("Antecedentes Personales NO Patológicos", formData.antecedentes?.personales_no_patologicos, 'antecedentes.personales_no_patologicos', 'textarea')}
+                                <div className="p-4 bg-pink-50 rounded-xl border border-pink-200">
+                                    <div className="text-[9px] font-black text-pink-500 uppercase tracking-widest mb-3">Gineco-Obstétricos (Descripción Anatómica)</div>
+                                    {renderInput("Descripción", formData.antecedentes?.gineco_obstetricos, 'antecedentes.gineco_obstetricos', 'textarea')}
+                                </div>
+                                <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                                    <div className="text-[9px] font-black text-blue-500 uppercase tracking-widest mb-3">Antecedentes Perinatales</div>
+                                    {renderInput("Descripción", formData.antecedentes?.perinatales, 'antecedentes.perinatales', 'textarea')}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'antecedentes' && provider === 'NYLIFE' && (
+                            <div className="space-y-4">
+                                <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
+                                    <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>ANTECEDENTES PATOLÓGICOS</h4>
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
+                                            <label className="flex items-center gap-2 min-w-[140px]">
+                                                <input type="checkbox" checked={(formData as any).antecedentes_patologicos?.cardiacos === 'Sí'} onChange={(e) => handleInputChange('antecedentes_patologicos.cardiacos', e.target.checked ? 'Sí' : '')} className="w-4 h-4 rounded" />
+                                                <span className="text-xs font-medium text-slate-700">Cardíacos</span>
+                                            </label>
+                                            <input type="text" value={(formData as any).antecedentes_patologicos?.cardiacos_detalle || ''} onChange={(e) => handleInputChange('antecedentes_patologicos.cardiacos_detalle', e.target.value)} placeholder="Detalle..." className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded" />
                                         </div>
-                                        {renderInput("Descripción Adicional", formData.antecedentes?.gineco_descripcion, 'antecedentes.gineco_descripcion', 'textarea')}
-                                    </div>
-                                    {renderInput("Otras Afecciones (sin relación)", formData.antecedentes?.otras_afecciones, 'antecedentes.otras_afecciones', 'textarea')}
-                                </div>
-                            )}
-
-                            {provider === 'GNP' && (
-                                <div className="space-y-4">
-                                    {renderInput("Antecedentes Personales Patológicos", formData.antecedentes?.personales_patologicos, 'antecedentes.personales_patologicos', 'textarea')}
-                                    {renderInput("Antecedentes Personales NO Patológicos", formData.antecedentes?.personales_no_patologicos, 'antecedentes.personales_no_patologicos', 'textarea')}
-                                    <div className="p-4 bg-pink-50 rounded-xl border border-pink-200">
-                                        <div className="text-[9px] font-black text-pink-500 uppercase tracking-widest mb-3">Gineco-Obstétricos (Descripción Anatómica)</div>
-                                        {renderInput("Descripción", formData.antecedentes?.gineco_obstetricos, 'antecedentes.gineco_obstetricos', 'textarea')}
-                                    </div>
-                                    <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
-                                        <div className="text-[9px] font-black text-blue-500 uppercase tracking-widest mb-3">Antecedentes Perinatales</div>
-                                        {renderInput("Descripción", formData.antecedentes?.perinatales, 'antecedentes.perinatales', 'textarea')}
-                                    </div>
-                                </div>
-                            )}
-
-                            {provider === 'NYLIFE' && (
-                                <div className="space-y-4">
-                                    <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
-                                        <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>ANTECEDENTES PATOLÓGICOS</h4>
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
-                                                <label className="flex items-center gap-2 min-w-[140px]">
-                                                    <input type="checkbox" checked={(formData as any).antecedentes_patologicos?.cardiacos === 'Sí'} onChange={(e) => handleInputChange('antecedentes_patologicos.cardiacos', e.target.checked ? 'Sí' : '')} className="w-4 h-4 rounded" />
-                                                    <span className="text-xs font-medium text-slate-700">Cardíacos</span>
-                                                </label>
-                                                <input type="text" value={(formData as any).antecedentes_patologicos?.cardiacos_detalle || ''} onChange={(e) => handleInputChange('antecedentes_patologicos.cardiacos_detalle', e.target.value)} placeholder="Detalle..." className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded" />
-                                            </div>
-                                            {/* ... more fields ... */}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </section>
                                         <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
                                             <label className="flex items-center gap-2 min-w-[140px]">
                                                 <input type="checkbox" checked={(formData as any).antecedentes_patologicos?.hipertensivos === 'Sí'} onChange={(e) => handleInputChange('antecedentes_patologicos.hipertensivos', e.target.checked ? 'Sí' : '')} className="w-4 h-4 rounded" />
