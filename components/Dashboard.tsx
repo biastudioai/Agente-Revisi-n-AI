@@ -28,7 +28,6 @@ type TabId =
 const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluating, onSyncChanges, onSaveReport }) => {
   const [formData, setFormData] = useState<ExtractedData>(report.extracted);
   const [modifiedFields, setModifiedFields] = useState<Record<string, { old: any, new: any }>>({});
-  const [activeTab, setActiveTab] = useState<TabId>('identificacion');
   const [highlightedField, setHighlightedField] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'form' | 'text'>('form');
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -56,7 +55,7 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
         const clearTimer = setTimeout(() => setHighlightedField(null), 3000);
         return () => { clearTimeout(timer); clearTimeout(clearTimer); };
     }
-  }, [highlightedField, activeTab, viewMode]);
+  }, [highlightedField, viewMode]);
 
   const handleInputChange = (pathString: string, value: any) => {
     const path = pathString.split('.');
@@ -87,21 +86,32 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
     }
   };
 
-  const handleIssueClick = (fieldPath: string) => {
-      const targetTab = getTabForField(fieldPath);
-      setViewMode('form');
-      setActiveTab(targetTab);
-      setHighlightedField(fieldPath);
+  const scrollToSection = (sectionId: TabId) => {
+    const element = document.getElementById(`section-${sectionId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   };
 
-  const getTabForField = (path: string): TabId => {
+  const handleIssueClick = (fieldPath: string) => {
+      const targetTab = getTabForField(fieldPath, provider);
+      setViewMode('form');
+      setHighlightedField(fieldPath);
+      setTimeout(() => scrollToSection(targetTab), 100);
+  };
+
+  const getTabForField = (path: string, currentProvider: ProviderType): TabId => {
     if (path.includes('identificacion') || path.includes('tramite') || path.includes('firma')) return 'identificacion';
     if (path.includes('antecedentes')) return 'antecedentes';
     if (path.includes('padecimiento') || path.includes('diagnostico') || path.includes('intervencion') || path.includes('complicaciones') || path.includes('exploracion')) return 'padecimiento';
     if (path.includes('hospital')) return 'hospital';
-    if (path.includes('info_adicional')) return 'observaciones';
+    if (path.includes('info_adicional')) {
+      return currentProvider === 'METLIFE' ? 'observaciones' : 'padecimiento';
+    }
     if (path.includes('medico')) return 'medico';
-    if (path.includes('equipo_quirurgico')) return 'equipo_qx';
+    if (path.includes('equipo_quirurgico')) {
+      return currentProvider === 'NYLIFE' ? 'medico' : 'equipo_qx';
+    }
     return 'identificacion';
   };
 
@@ -310,10 +320,9 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                             }
                             
                             const Icon = tab.icon;
-                            const isActive = activeTab === tab.id;
                             const isMetLife = provider === 'METLIFE';
                             return (
-                                <button key={tab.id} onClick={() => setActiveTab(tab.id as TabId)} className={`flex items-center px-4 py-2 text-[10px] font-black rounded-lg transition-all ${isActive ? 'bg-white shadow-md ' + theme.secondary : 'text-slate-400 hover:text-slate-600'}`}>
+                                <button key={tab.id} onClick={() => scrollToSection(tab.id as TabId)} className={`flex items-center px-4 py-2 text-[10px] font-black rounded-lg transition-all bg-white shadow-md hover:shadow-lg ${theme.secondary} hover:opacity-80`}>
                                 {isMetLife && <span className="mr-1.5 opacity-50">{tab.metlifeSection}.</span>}
                                 <Icon className="w-3.5 h-3.5 mr-2" />
                                 {tab.label.toUpperCase()}
@@ -323,7 +332,9 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                     </div>
 
                     <div className="animate-fade-in space-y-6">
-                        {activeTab === 'identificacion' && provider === 'METLIFE' && (
+                        {/* SECCIÓN: IDENTIFICACIÓN / PACIENTE */}
+                        <div id="section-identificacion" className="scroll-mt-20">
+                        {provider === 'METLIFE' && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="md:col-span-2">{renderInput("Nombre Completo Asegurado", formData.identificacion?.nombres, 'identificacion.nombres')}</div>
                                 {renderInput("Edad", formData.identificacion?.edad, 'identificacion.edad')}
@@ -341,7 +352,7 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                             </div>
                         )}
 
-                        {activeTab === 'identificacion' && provider === 'NYLIFE' && (
+                        {provider === 'NYLIFE' && (
                             <div className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     {renderInput("Apellido Paterno", (formData as any).identificacion?.apellido_paterno, 'identificacion.apellido_paterno')}
@@ -360,7 +371,7 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                             </div>
                         )}
 
-                        {activeTab === 'identificacion' && provider === 'GNP' && (
+                        {provider === 'GNP' && (
                             <div className="space-y-6">
                                 <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
                                     <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>TIPO DE TRÁMITE</h4>
@@ -411,8 +422,11 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                                 </div>
                             </div>
                         )}
+                        </div>
 
-                        {activeTab === 'antecedentes' && provider === 'METLIFE' && (
+                        {/* SECCIÓN: ANTECEDENTES */}
+                        <div id="section-antecedentes" className="scroll-mt-20">
+                        {provider === 'METLIFE' && (
                             <div className="space-y-4">
                                 {renderInput("Historia Clínica / Antecedentes", formData.antecedentes?.historia_clinica_breve, 'antecedentes.historia_clinica_breve', 'textarea')}
                                 {renderInput("Antecedentes Personales Patológicos", formData.antecedentes?.personales_patologicos, 'antecedentes.personales_patologicos', 'textarea')}
@@ -431,7 +445,7 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                             </div>
                         )}
 
-                        {activeTab === 'antecedentes' && provider === 'GNP' && (
+                        {provider === 'GNP' && (
                             <div className="space-y-4">
                                 {renderInput("Antecedentes Personales Patológicos", formData.antecedentes?.personales_patologicos, 'antecedentes.personales_patologicos', 'textarea')}
                                 {renderInput("Antecedentes Personales NO Patológicos", formData.antecedentes?.personales_no_patologicos, 'antecedentes.personales_no_patologicos', 'textarea')}
@@ -446,7 +460,7 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                             </div>
                         )}
 
-                        {activeTab === 'antecedentes' && provider === 'NYLIFE' && (
+                        {provider === 'NYLIFE' && (
                             <div className="space-y-4">
                                 <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
                                     <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>ANTECEDENTES PATOLÓGICOS</h4>
@@ -573,8 +587,11 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                                 </div>
                             </div>
                         )}
+                        </div>
 
-                        {activeTab === 'padecimiento' && provider === 'METLIFE' && (
+                        {/* SECCIÓN: PADECIMIENTO */}
+                        <div id="section-padecimiento" className="scroll-mt-20">
+                        {provider === 'METLIFE' && (
                             <div className="space-y-4">
                                 {renderInput("Signos, Síntomas y Evolución", formData.padecimiento_actual?.descripcion, 'padecimiento_actual.descripcion', 'textarea')}
                                 <div className="grid grid-cols-1 gap-4">
@@ -645,7 +662,7 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                             </div>
                         )}
 
-                        {activeTab === 'padecimiento' && provider === 'NYLIFE' && (
+                        {provider === 'NYLIFE' && (
                             <div className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <DateInput label="Fecha Primeros Síntomas" value={(formData as any).padecimiento_actual?.fecha_primeros_sintomas?.formatted} path="padecimiento_actual.fecha_primeros_sintomas.formatted" isModified={!!modifiedFields['padecimiento_actual.fecha_primeros_sintomas.formatted']} isHighlighted={highlightedField === 'padecimiento_actual.fecha_primeros_sintomas.formatted'} onChange={handleInputChange} />
@@ -745,7 +762,7 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                             </div>
                         )}
 
-                        {activeTab === 'padecimiento' && provider === 'GNP' && (
+                        {provider === 'GNP' && (
                             <div className="space-y-4">
                                 {renderInput("Padecimiento Actual", formData.padecimiento_actual?.descripcion, 'padecimiento_actual.descripcion', 'textarea')}
                                 <DateInput label="Fecha de Inicio del Padecimiento" value={formData.padecimiento_actual?.fecha_inicio} path="padecimiento_actual.fecha_inicio" isModified={!!modifiedFields['padecimiento_actual.fecha_inicio']} isHighlighted={highlightedField === 'padecimiento_actual.fecha_inicio'} onChange={handleInputChange} />
@@ -816,8 +833,29 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                                 {renderInput("Información Adicional", formData.info_adicional?.descripcion, 'info_adicional.descripcion', 'textarea')}
                             </div>
                         )}
+                        </div>
 
-                        {activeTab === 'hospital' && provider === 'METLIFE' && (
+                        {/* SECCIÓN: TRATAMIENTO (solo NYLIFE) */}
+                        {provider === 'NYLIFE' && (
+                            <div id="section-tratamiento" className="scroll-mt-20">
+                                <div className="space-y-4">
+                                    <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
+                                        <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>TRATAMIENTO</h4>
+                                        {renderCheckboxGroup("Modalidad", (formData as any).tratamiento_y_hospital?.modalidad, 'tratamiento_y_hospital.modalidad', ['Quirúrgico', 'Médico'])}
+                                        {renderInput("Detalle del Tratamiento", (formData as any).tratamiento_y_hospital?.detalle_tratamiento, 'tratamiento_y_hospital.detalle_tratamiento', 'textarea')}
+                                        {renderCheckboxGroup("Estatus", (formData as any).tratamiento_y_hospital?.estatus_tratamiento, 'tratamiento_y_hospital.estatus_tratamiento', ['Programación', 'Realizado'])}
+                                        <div className="mt-4">
+                                            {renderCheckboxGroup("¿Hubo Complicaciones?", (formData as any).tratamiento_y_hospital?.complicaciones?.marcada, 'tratamiento_y_hospital.complicaciones.marcada', ['Sí', 'No'])}
+                                            {renderInput("Detalle de Complicaciones", (formData as any).tratamiento_y_hospital?.complicaciones?.detalle, 'tratamiento_y_hospital.complicaciones.detalle', 'textarea')}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* SECCIÓN: HOSPITAL */}
+                        <div id="section-hospital" className="scroll-mt-20">
+                        {provider === 'METLIFE' && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="md:col-span-2">{renderInput("Nombre Hospital", formData.hospital?.nombre_hospital, 'hospital.nombre_hospital')}</div>
                                 <div className="md:col-span-2">
@@ -829,7 +867,7 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                             </div>
                         )}
 
-                        {activeTab === 'hospital' && provider === 'GNP' && (
+                        {provider === 'GNP' && (
                             <div className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="md:col-span-2">{renderInput("Nombre del Hospital o Clínica", formData.hospital?.nombre_hospital, 'hospital.nombre_hospital')}</div>
@@ -843,22 +881,7 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                             </div>
                         )}
 
-                        {activeTab === 'tratamiento' && provider === 'NYLIFE' && (
-                            <div className="space-y-4">
-                                <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
-                                    <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>TRATAMIENTO</h4>
-                                    {renderCheckboxGroup("Modalidad", (formData as any).tratamiento_y_hospital?.modalidad, 'tratamiento_y_hospital.modalidad', ['Quirúrgico', 'Médico'])}
-                                    {renderInput("Detalle del Tratamiento", (formData as any).tratamiento_y_hospital?.detalle_tratamiento, 'tratamiento_y_hospital.detalle_tratamiento', 'textarea')}
-                                    {renderCheckboxGroup("Estatus", (formData as any).tratamiento_y_hospital?.estatus_tratamiento, 'tratamiento_y_hospital.estatus_tratamiento', ['Programación', 'Realizado'])}
-                                    <div className="mt-4">
-                                        {renderCheckboxGroup("¿Hubo Complicaciones?", (formData as any).tratamiento_y_hospital?.complicaciones?.marcada, 'tratamiento_y_hospital.complicaciones.marcada', ['Sí', 'No'])}
-                                        {renderInput("Detalle de Complicaciones", (formData as any).tratamiento_y_hospital?.complicaciones?.detalle, 'tratamiento_y_hospital.complicaciones.detalle', 'textarea')}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'hospital' && provider === 'NYLIFE' && (
+                        {provider === 'NYLIFE' && (
                             <div className="space-y-4">
                                 <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
                                     <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>HOSPITAL</h4>
@@ -890,24 +913,31 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                                 </div>
                             </div>
                         )}
+                        </div>
 
-                        {activeTab === 'observaciones' && (
-                            <div className="space-y-4">
-                                {renderInput("Observaciones y Comentarios Adicionales", formData.info_adicional?.descripcion, 'info_adicional.descripcion', 'textarea')}
+                        {/* SECCIÓN: OBSERVACIONES (solo METLIFE) */}
+                        {provider === 'METLIFE' && (
+                            <div id="section-observaciones" className="scroll-mt-20">
+                                <div className="space-y-4">
+                                    {renderInput("Observaciones y Comentarios Adicionales", formData.info_adicional?.descripcion, 'info_adicional.descripcion', 'textarea')}
+                                </div>
                             </div>
                         )}
 
-                        {activeTab === 'equipo_qx' && provider === 'METLIFE' && (
-                            <div className="space-y-4">
-                                <p className="text-xs text-slate-500 mb-4">Profesionales de la salud que participaron en el procedimiento:</p>
-                                {renderPersonalQuirurgico("Anestesiólogo", formData.equipo_quirurgico_metlife?.anestesiologo, 'equipo_quirurgico_metlife.anestesiologo')}
-                                {renderPersonalQuirurgico("Primer Ayudante", formData.equipo_quirurgico_metlife?.primer_ayudante, 'equipo_quirurgico_metlife.primer_ayudante')}
-                                {renderPersonalQuirurgico("Otro Profesional 1", formData.equipo_quirurgico_metlife?.otro_1, 'equipo_quirurgico_metlife.otro_1')}
-                                {renderPersonalQuirurgico("Otro Profesional 2", formData.equipo_quirurgico_metlife?.otro_2, 'equipo_quirurgico_metlife.otro_2')}
-                            </div>
-                        )}
+                        {/* SECCIÓN: EQUIPO QUIRÚRGICO / OTROS MÉDICOS (METLIFE y GNP, no NYLIFE) */}
+                        {provider !== 'NYLIFE' && (
+                            <div id="section-equipo_qx" className="scroll-mt-20">
+                            {provider === 'METLIFE' && (
+                                <div className="space-y-4">
+                                    <p className="text-xs text-slate-500 mb-4">Profesionales de la salud que participaron en el procedimiento:</p>
+                                    {renderPersonalQuirurgico("Anestesiólogo", formData.equipo_quirurgico_metlife?.anestesiologo, 'equipo_quirurgico_metlife.anestesiologo')}
+                                    {renderPersonalQuirurgico("Primer Ayudante", formData.equipo_quirurgico_metlife?.primer_ayudante, 'equipo_quirurgico_metlife.primer_ayudante')}
+                                    {renderPersonalQuirurgico("Otro Profesional 1", formData.equipo_quirurgico_metlife?.otro_1, 'equipo_quirurgico_metlife.otro_1')}
+                                    {renderPersonalQuirurgico("Otro Profesional 2", formData.equipo_quirurgico_metlife?.otro_2, 'equipo_quirurgico_metlife.otro_2')}
+                                </div>
+                            )}
 
-                        {activeTab === 'equipo_qx' && provider === 'GNP' && (
+                            {provider === 'GNP' && (
                             <div className="space-y-6">
                                 <p className="text-xs text-slate-500 mb-4">Médicos interconsultantes o participantes en la intervención:</p>
                                 
@@ -937,9 +967,13 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                                     );
                                 })}
                             </div>
+                            )}
+                            </div>
                         )}
 
-                        {activeTab === 'medico' && provider === 'METLIFE' && (
+                        {/* SECCIÓN: MÉDICO TRATANTE */}
+                        <div id="section-medico" className="scroll-mt-20">
+                        {provider === 'METLIFE' && (
                             <div className="space-y-4">
                                 {renderCheckboxGroup("Tipo de Atención", formData.medico_tratante?.tipo_atencion, 'medico_tratante.tipo_atencion', ['Médico tratante', 'Cirujano principal', 'Interconsultante', 'Equipo quirúrgico', 'Segunda valoración'])}
                                 {renderInput("Nombre Médico Tratante", formData.medico_tratante?.nombres, 'medico_tratante.nombres')}
@@ -979,7 +1013,7 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                             </div>
                         )}
 
-                        {activeTab === 'medico' && provider === 'NYLIFE' && (
+                        {provider === 'NYLIFE' && (
                             <div className="space-y-4">
                                 <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
                                     <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>MÉDICO TRATANTE</h4>
@@ -1081,7 +1115,7 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                             </div>
                         )}
 
-                        {activeTab === 'medico' && provider === 'GNP' && (
+                        {provider === 'GNP' && (
                             <div className="space-y-4">
                                 <div className="grid grid-cols-3 gap-4">
                                     {renderInput("Primer Apellido", formData.medico_tratante?.primer_apellido, 'medico_tratante.primer_apellido')}
@@ -1120,12 +1154,15 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
 
                                 <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
                                     <input type="checkbox" checked={formData.medico_tratante?.hubo_interconsulta || false} onChange={(e) => handleInputChange('medico_tratante.hubo_interconsulta', e.target.checked)} className="w-4 h-4 rounded text-orange-600" />
-                                    <label className="text-xs text-slate-600">¿Hubo interconsulta? (Los datos se capturan en la pestaña "Equipo Qx")</label>
+                                    <label className="text-xs text-slate-600">¿Hubo interconsulta? (Los datos se capturan en la sección "Equipo Qx")</label>
                                 </div>
                             </div>
                         )}
+                        </div>
 
-                        {activeTab === 'validacion' && provider !== 'NYLIFE' && (
+                        {/* SECCIÓN: FIRMA / VALIDACIÓN */}
+                        <div id="section-validacion" className="scroll-mt-20">
+                        {provider !== 'NYLIFE' && (
                             <div className="p-10 border-4 border-dashed border-slate-100 rounded-3xl text-center">
                                 <ShieldCheck className="w-12 h-12 text-slate-200 mx-auto mb-4" />
                                 <h3 className="text-sm font-bold text-slate-400 mb-4 uppercase tracking-widest">Validación de Autorización</h3>
@@ -1156,7 +1193,7 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                             </div>
                         )}
 
-                        {activeTab === 'validacion' && provider === 'NYLIFE' && (
+                        {provider === 'NYLIFE' && (
                             <div className="space-y-6">
                                 <div className={`p-6 ${theme.light} rounded-xl border ${theme.border}`}>
                                     <h4 className={`text-xs font-black mb-4 ${theme.secondary} flex items-center`}>
@@ -1219,6 +1256,7 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                                 </div>
                             </div>
                         )}
+                        </div>
                     </div>
                 </>
                 ) : (
