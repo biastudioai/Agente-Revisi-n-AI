@@ -93,32 +93,34 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileSelected, isProcessing, s
             Últimos Reportes Guardados
           </h3>
           {savedReports.length > 0 ? (
-            <div className="space-y-2">
-              {savedReports.slice(0, 5).map((report) => (
-                <button
-                  key={report.id}
-                  onClick={() => onLoadReport(report.id)}
-                  className="w-full p-3 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-brand-300 transition-all text-left group"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-slate-900 group-hover:text-brand-700">{report.fileName}</p>
-                      <p className="text-xs text-slate-500 mt-1">
-                        {report.provider} • {new Date(report.timestamp).toLocaleDateString('es-MX', { 
-                          day: 'numeric', 
-                          month: 'short', 
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
+            <div className="max-h-[320px] overflow-y-auto pr-1 custom-scrollbar">
+              <div className="space-y-2">
+                {savedReports.map((report) => (
+                  <button
+                    key={report.id}
+                    onClick={() => onLoadReport(report.id)}
+                    className="w-full p-3 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-brand-300 transition-all text-left group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-slate-900 group-hover:text-brand-700">{report.fileName}</p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {report.provider} • {new Date(report.timestamp).toLocaleDateString('es-MX', { 
+                            day: 'numeric', 
+                            month: 'short', 
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                      <div className="text-brand-600 group-hover:scale-110 transition-transform">
+                        <FileText className="w-5 h-5" />
+                      </div>
                     </div>
-                    <div className="text-brand-600 group-hover:scale-110 transition-transform">
-                      <FileText className="w-5 h-5" />
-                    </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                ))}
+              </div>
             </div>
           ) : (
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-center">
