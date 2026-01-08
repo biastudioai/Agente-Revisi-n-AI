@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  REVIEWER
+  USER
+}
+
+enum FormStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+  UNPAID
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String    @map("password_hash")
+  nombre        String
+  rol           UserRole  @default(USER)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  sessions        Session[]
+  passwordResets  PasswordReset[]
+  auditLogs       AuditLog[]
+  medicalForms    MedicalForm[]
+  stripeCustomer  StripeCustomer?
+  subscriptions   Subscription[]
+  paymentHistory  PaymentHistory[]
+
+  @@map("users")
+}
+
+model MedicalForm {
+  id               String      @id @default(uuid())
+  userId           String      @map("user_id")
+  insuranceCompany String      @map("insurance_company")
+  formData         Json        @map("form_data") @db.JsonB
+  status           FormStatus  @default(PENDING)
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
+
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  formPdfs FormPdf[]
+
+  @@index([insuranceCompany])
+  @@map("medical_forms")
+}
+
+model FormPdf {
+  id        String   @id @default(uuid())
+  formId    String   @map("form_id")
+  pdfUrl    String   @map("pdf_url")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  medicalForm MedicalForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@map("form_pdfs")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  sessionToken String   @unique @map("session_token")
+  expiresAt    DateTime @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([sessionToken])
+  @@map("sessions")
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  tokenHash String   @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@map("password_resets")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?  @map("user_id")
+  action     String
+  entityId   String?  @map("entity_id")
+  entityType String?  @map("entity_type")
+  ipAddress  String?  @map("ip_address")
+  metadata   Json?    @db.JsonB
+  timestamp  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+model StripeCustomer {
+  id               String   @id @default(uuid())
+  userId           String   @unique @map("user_id")
+  stripeCustomerId String   @unique @map("stripe_customer_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("stripe_customers")
+}
+
+model Subscription {
+  id                   String             @id @default(uuid())
+  userId               String             @map("user_id")
+  stripeSubscriptionId String             @unique @map("stripe_subscription_id")
+  planType             String             @map("plan_type")
+  status               SubscriptionStatus @default(ACTIVE)
+  currentPeriodEnd     DateTime           @map("current_period_end")
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("subscriptions")
+}
+
+model PaymentHistory {
+  id                    String   @id @default(uuid())
+  userId                String   @map("user_id")
+  stripePaymentIntentId String   @unique @map("stripe_payment_intent_id")
+  amount                Int
+  currency              String   @default("usd")
+  status                String
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("payment_history")
+}
