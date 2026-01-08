@@ -10,6 +10,8 @@ import {
 } from '../services/authService';
 import { authMiddleware, AuthenticatedRequest } from '../middlewares/auth';
 import { createAuditLog, getClientIP } from '../middlewares/audit';
+import { sendPasswordResetEmail } from '../services/emailService';
+import prisma from '../config/database';
 
 const router = Router();
 
@@ -125,17 +127,37 @@ router.post('/password-reset/request', asyncHandler(async (req: AuthenticatedReq
 
   const resetToken = await requestPasswordReset(email);
 
+  let emailSent = false;
+  let emailError: string | undefined;
+
+  if (resetToken) {
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+      select: { nombre: true },
+    });
+
+    const result = await sendPasswordResetEmail(email, resetToken, user?.nombre || 'Usuario');
+    emailSent = result.success;
+    emailError = result.error;
+  }
+
   await createAuditLog({
     userId: null,
     action: 'PASSWORD_RESET_REQUEST',
     entityType: 'User',
     ipAddress: getClientIP(req),
-    metadata: { email },
+    metadata: { email, emailSent, emailError } as any,
   });
 
+  if (resetToken && !emailSent) {
+    res.status(500).json({ 
+      error: 'No se pudo enviar el correo de recuperación. Por favor intenta más tarde.',
+    });
+    return;
+  }
+
   res.json({ 
-    message: 'If the email exists, a reset link has been sent',
-    ...(process.env.NODE_ENV === 'development' && resetToken ? { resetToken } : {}),
+    message: 'Si el correo existe, recibirás un enlace para restablecer tu contraseña.',
   });
 }));
 

@@ -55,3 +55,42 @@ Preferred communication style: Simple, everyday language.
 - **Prisma**: ORM for database interaction (PostgreSQL).
 - **Express.js**: Backend server framework.
 - **bcrypt**: For password hashing.
+- **googleapis**: Gmail API for password reset emails.
+
+## Authentication System (January 2026)
+
+### Login Page
+- **Location**: `components/LoginPage.tsx`
+- **Features**:
+  - Login with email/password
+  - User registration
+  - Password recovery via email
+  - Token-based password reset
+
+### Email Service
+- **Location**: `server/src/services/emailService.ts`
+- **Integration**: Replit Gmail Connector
+- **Features**:
+  - HTML email templates
+  - Password reset emails with secure tokens
+  - Error handling with visible feedback
+
+### API Endpoints
+```
+POST /api/auth/register - Create account
+POST /api/auth/login - Login
+POST /api/auth/logout - Logout
+POST /api/auth/password-reset/request - Request reset email
+POST /api/auth/password-reset/confirm - Reset password
+GET  /api/auth/validate - Validate session
+GET  /api/health - Server health check
+```
+
+### Database Tables
+- `users` - id, email, password_hash, nombre, rol, timestamps
+- `medical_forms` - With insurance_company index
+- `form_pdfs` - PDF URLs linked to forms
+- `sessions` - Session tokens
+- `password_resets` - Reset tokens
+- `audit_logs` - Action tracking
+- `stripe_customers`, `subscriptions`, `payment_history` - Ready for Stripe

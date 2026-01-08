@@ -5,13 +5,23 @@ import RuleConfigurator from './components/RuleConfigurator';
 import InsuranceAuditor from './components/InsuranceAuditor';
 import PdfViewer from './components/PdfViewer';
 import ProviderSelector, { ProviderOption } from './components/ProviderSelector';
+import LoginPage from './components/LoginPage';
 import { analyzeReportImage, reEvaluateReport } from './services/geminiService';
 import { DEFAULT_SCORING_RULES } from './services/scoring-engine';
 import { AnalysisReport, AnalysisStatus, ExtractedData, ScoringRule, SavedReport } from './types';
 import { detectProviderFromPdf, DetectedProvider } from './services/providerDetection';
-import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw, AlignLeft, Image as ImageIcon, Loader2, Building2 } from 'lucide-react';
+import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw, AlignLeft, Image as ImageIcon, Loader2, Building2, LogOut } from 'lucide-react';
+
+interface User {
+  id: string;
+  email: string;
+  nombre: string;
+  rol: string;
+}
 
 const App: React.FC = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [status, setStatus] = useState<AnalysisStatus>('idle');
   const [report, setReport] = useState<AnalysisReport | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +58,40 @@ const App: React.FC = () => {
 
   // State for Left Panel View Mode (Visual vs Text)
   const [leftPanelView, setLeftPanelView] = useState<'visual' | 'text'>('visual');
+
+  // Check authentication on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/validate', {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.valid && data.user) {
+            setUser(data.user);
+          }
+        }
+      } catch (e) {
+        console.error('Error checking auth:', e);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+    checkAuth();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (e) {
+      console.error('Error logging out:', e);
+    }
+    setUser(null);
+  };
 
   // Cargar reportes guardados de localStorage al montar
   useEffect(() => {
@@ -244,6 +288,20 @@ const App: React.FC = () => {
     }
   };
 
+  // Show loading while checking auth
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+      </div>
+    );
+  }
+
+  // Show login page if not authenticated
+  if (!user) {
+    return <LoginPage onLoginSuccess={setUser} />;
+  }
+
   // Determine approval status
   let approvalStatus: 'APPROVED' | 'REVIEW' | 'REJECTED' = 'REVIEW';
   if (report) {
@@ -331,6 +389,17 @@ const App: React.FC = () => {
               >
                 <RefreshCw className="w-4 h-4" />
               </button>
+
+              <div className="flex items-center gap-2 ml-2 pl-2 border-l border-slate-200">
+                <span className="text-xs text-slate-500">{user.nombre}</span>
+                <button
+                  onClick={handleLogout}
+                  className="text-xs text-slate-500 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                  title="Cerrar sesión"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
            </div>
         </header>
 
