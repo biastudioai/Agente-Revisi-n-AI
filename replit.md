@@ -198,3 +198,81 @@ Sistema de normalización para mapear campos de diferentes aseguradoras a un sch
 ### Development
 - **Vite** - Build tool and dev server (port 5000)
 - **TypeScript** - Type checking with bundler module resolution
+
+## Backend Architecture (NEW - January 2026)
+
+### Server Setup
+- **Framework**: Express.js with TypeScript
+- **ORM**: Prisma 7 with PostgreSQL adapter (@prisma/adapter-pg)
+- **Database**: PostgreSQL (Replit managed)
+- **Port**: 3001
+
+### Database Schema
+The backend uses Prisma ORM with the following tables:
+
+**Core Tables:**
+- `users` - User accounts with email, password_hash, nombre, rol (ADMIN/REVIEWER/USER)
+- `medical_forms` - Medical form data with JSONB storage, insurance_company indexed for fast filtering
+- `form_pdfs` - PDF file URLs linked to medical forms (1:N relationship)
+- `sessions` - Session tokens for authentication
+- `password_resets` - Password reset tokens with expiration
+- `audit_logs` - Action tracking for compliance (LOGIN, LOGOUT, VIEW_FORM, EDIT_JSON, etc.)
+
+**Stripe Integration Tables (Ready for Future Use):**
+- `stripe_customers` - Links users to Stripe customer IDs
+- `subscriptions` - Subscription plans with status tracking
+- `payment_history` - Payment transaction records
+
+### Authentication System
+- **Password Hashing**: bcrypt with 12 salt rounds
+- **Session Management**: Secure random tokens with 7-day expiry
+- **Cookie-based Auth**: HttpOnly cookies for web, Bearer tokens for API
+- **Password Reset**: SHA-256 hashed tokens with 1-hour expiry
+
+### API Endpoints
+```
+POST /api/auth/register - Create new user account
+POST /api/auth/login - Authenticate and create session
+POST /api/auth/logout - Invalidate session
+POST /api/auth/password-reset/request - Request password reset
+POST /api/auth/password-reset/confirm - Complete password reset
+GET  /api/auth/me - Get current user info
+GET  /api/auth/validate - Validate session token
+GET  /api/health - Server health check
+```
+
+### Middleware
+- `authMiddleware` - Validates session tokens and populates req.user
+- `requireRole()` - Role-based access control (ADMIN, REVIEWER, USER)
+- `auditMiddleware` - Automatic action logging for protected routes
+- `createAuditLog()` - Global function for manual audit logging
+
+### Security Features
+- CORS configured for frontend origin
+- Cookie security (HttpOnly, Secure in production, SameSite)
+- IP address tracking in audit logs
+- Session invalidation on password change
+
+### File Structure
+```
+server/
+├── src/
+│   ├── config/
+│   │   └── database.ts      # Prisma client with PG adapter
+│   ├── generated/prisma/    # Generated Prisma client
+│   ├── middlewares/
+│   │   ├── auth.ts          # Authentication middleware
+│   │   └── audit.ts         # Audit logging middleware
+│   ├── routes/
+│   │   └── auth.ts          # Authentication routes
+│   ├── services/
+│   │   └── authService.ts   # Auth business logic
+│   ├── utils/
+│   │   ├── password.ts      # bcrypt helpers
+│   │   └── token.ts         # Token generation
+│   └── index.ts             # Express server entry point
+├── prisma/
+│   ├── schema.prisma        # Database schema
+│   └── migrations/          # Migration history
+└── package.json
+```
