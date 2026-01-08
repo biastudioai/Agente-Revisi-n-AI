@@ -29,14 +29,6 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
   const [formData, setFormData] = useState<ExtractedData>(report.extracted);
   const [modifiedFields, setModifiedFields] = useState<Record<string, { old: any, new: any }>>({});
   const [activeTab, setActiveTab] = useState<TabId>('identificacion');
-  
-  const scrollToSection = (tabId: TabId) => {
-    const element = document.getElementById(`section-${tabId}`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-    setActiveTab(tabId);
-  };
   const [highlightedField, setHighlightedField] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'form' | 'text'>('form');
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -321,7 +313,7 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                             const isActive = activeTab === tab.id;
                             const isMetLife = provider === 'METLIFE';
                             return (
-                                <button key={tab.id} onClick={() => scrollToSection(tab.id as TabId)} className={`flex items-center px-4 py-2 text-[10px] font-black rounded-lg transition-all ${isActive ? 'bg-white shadow-md ' + theme.secondary : 'text-slate-400 hover:text-slate-600'}`}>
+                                <button key={tab.id} onClick={() => setActiveTab(tab.id as TabId)} className={`flex items-center px-4 py-2 text-[10px] font-black rounded-lg transition-all ${isActive ? 'bg-white shadow-md ' + theme.secondary : 'text-slate-400 hover:text-slate-600'}`}>
                                 {isMetLife && <span className="mr-1.5 opacity-50">{tab.metlifeSection}.</span>}
                                 <Icon className="w-3.5 h-3.5 mr-2" />
                                 {tab.label.toUpperCase()}
@@ -330,10 +322,8 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                         })}
                     </div>
 
-                    <div className="animate-fade-in space-y-8">
-                        {/* SECCIÓN: PACIENTE / IDENTIFICACIÓN */}
-                        <div id="section-identificacion" className="scroll-mt-20">
-                        {provider === 'METLIFE' && (
+                    <div className="animate-fade-in space-y-6">
+                        {activeTab === 'identificacion' && provider === 'METLIFE' && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="md:col-span-2">{renderInput("Nombre Completo Asegurado", formData.identificacion?.nombres, 'identificacion.nombres')}</div>
                                 {renderInput("Edad", formData.identificacion?.edad, 'identificacion.edad')}
@@ -351,7 +341,7 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                             </div>
                         )}
 
-                        {provider === 'NYLIFE' && (
+                        {activeTab === 'identificacion' && provider === 'NYLIFE' && (
                             <div className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     {renderInput("Apellido Paterno", (formData as any).identificacion?.apellido_paterno, 'identificacion.apellido_paterno')}
@@ -370,7 +360,7 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                             </div>
                         )}
 
-                        {provider === 'GNP' && (
+                        {activeTab === 'identificacion' && provider === 'GNP' && (
                             <div className="space-y-6">
                                 <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
                                     <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>TIPO DE TRÁMITE</h4>
@@ -421,11 +411,8 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                                 </div>
                             </div>
                         )}
-                        </div>
 
-                        {/* SECCIÓN: ANTECEDENTES */}
-                        <div id="section-antecedentes" className="scroll-mt-20 pt-6 border-t border-slate-200">
-                        {provider === 'METLIFE' && (
+                        {activeTab === 'antecedentes' && provider === 'METLIFE' && (
                             <div className="space-y-4">
                                 {renderInput("Historia Clínica / Antecedentes", formData.antecedentes?.historia_clinica_breve, 'antecedentes.historia_clinica_breve', 'textarea')}
                                 {renderInput("Antecedentes Personales Patológicos", formData.antecedentes?.personales_patologicos, 'antecedentes.personales_patologicos', 'textarea')}
