@@ -71,6 +71,19 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileSelected, isProcessing, s
             </div>
             <h3 className="text-lg font-semibold text-gray-800">Sube tu Informe Médico</h3>
             <p className="text-sm text-gray-500 mt-1 mb-4">Arrastra un archivo o haz clic para seleccionar (PDF, JPG, PNG)</p>
+            
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-lg text-left max-w-md">
+              <h4 className="text-xs font-bold text-blue-800 uppercase tracking-wider mb-2 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                Mejores prácticas para subirlo:
+              </h4>
+              <ul className="text-xs text-blue-700 space-y-1 list-disc ml-4">
+                <li>Asegúrate que la imagen sea nítida y legible.</li>
+                <li>Intenta que esté en orden de páginas (1, 2, 3, etc.).</li>
+                <li>Evita sombras o reflejos sobre el documento.</li>
+              </ul>
+            </div>
+
             <button className="px-5 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors shadow-sm">
               Seleccionar Archivo
             </button>
