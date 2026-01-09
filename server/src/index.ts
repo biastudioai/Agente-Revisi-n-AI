@@ -3,7 +3,9 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/auth';
+import formsRoutes from './routes/forms';
 import prisma from './config/database';
+import { registerObjectStorageRoutes } from '../replit_integrations/object_storage';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -12,10 +14,14 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5000',
   credentials: true,
 }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 
 app.use('/api/auth', authRoutes);
+app.use('/api/forms', formsRoutes);
+
+registerObjectStorageRoutes(app);
 
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

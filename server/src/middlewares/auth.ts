@@ -70,3 +70,5 @@ export function requireRole(...roles: string[]) {
     next();
   };
 }
+
+export const requireAuth = authMiddleware;

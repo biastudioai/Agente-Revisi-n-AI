@@ -93,18 +93,36 @@ const App: React.FC = () => {
     setUser(null);
   };
 
-  // Cargar reportes guardados de localStorage al montar
+  // Cargar reportes guardados desde el backend al montar
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('saved-reports');
-      if (saved) {
-        const parsed = JSON.parse(saved) as SavedReport[];
-        setSavedReports(parsed.sort((a, b) => b.timestamp - a.timestamp)); // Más reciente primero
+    const loadSavedForms = async () => {
+      try {
+        const response = await fetch('/api/forms', {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const forms = await response.json();
+          const reports: SavedReport[] = forms.map((form: any) => ({
+            id: form.id,
+            timestamp: new Date(form.createdAt).getTime(),
+            fileName: 'Informe Médico',
+            provider: form.insuranceCompany,
+            extractedData: form.formData,
+            score: form.formData?.score || { finalScore: 0, categoryScores: [] },
+            flags: form.formData?.flags || [],
+            pdfUrl: form.formPdfs?.[0]?.pdfUrl || null,
+          }));
+          setSavedReports(reports);
+        }
+      } catch (e) {
+        console.error('Error loading saved reports:', e);
       }
-    } catch (e) {
-      console.error('Error loading saved reports:', e);
+    };
+    
+    if (user) {
+      loadSavedForms();
     }
-  }, []);
+  }, [user]);
 
   // Convert Base64 to Blob URL for download link
   useEffect(() => {
@@ -236,28 +254,63 @@ const App: React.FC = () => {
       setPendingChanges(changes);
   };
 
-  // Guardar reporte actual en localStorage
-  const handleSaveReport = () => {
+  // Guardar reporte en base de datos y archivo en Object Storage
+  const handleSaveReport = async () => {
     if (!report) return;
     
-    const newReport: SavedReport = {
-      id: `report_${Date.now()}`,
-      timestamp: Date.now(),
-      fileName: 'Informe Médico', // Podrías guardar nombre real del archivo si lo tienes
-      provider: report.extracted.provider,
-      extractedData: report.extracted,
-      score: report.score,
-      flags: report.flags
-    };
-
     try {
-      const updated = [newReport, ...savedReports];
-      localStorage.setItem('saved-reports', JSON.stringify(updated));
-      setSavedReports(updated);
-      alert('✅ Reporte guardado exitosamente');
-    } catch (e) {
+      const formData = {
+        ...report.extracted,
+        score: report.score,
+        flags: report.flags,
+      };
+
+      const requestBody: {
+        insuranceCompany: string;
+        formData: any;
+        fileBase64?: string;
+        fileMimeType?: string;
+      } = {
+        insuranceCompany: report.extracted.provider || 'UNKNOWN',
+        formData: formData,
+      };
+
+      if (filePreview) {
+        requestBody.fileBase64 = filePreview.data;
+        requestBody.fileMimeType = filePreview.type;
+      }
+
+      const response = await fetch('/api/forms', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al guardar');
+      }
+
+      const result = await response.json();
+      
+      const newReport: SavedReport = {
+        id: result.formId,
+        timestamp: Date.now(),
+        fileName: 'Informe Médico',
+        provider: report.extracted.provider,
+        extractedData: report.extracted,
+        score: report.score,
+        flags: report.flags
+      };
+
+      setSavedReports(prev => [newReport, ...prev]);
+      alert('Reporte guardado exitosamente en la base de datos');
+    } catch (e: any) {
       console.error('Error saving report:', e);
-      alert('❌ Error al guardar reporte');
+      alert('Error al guardar reporte: ' + (e.message || 'Error desconocido'));
     }
   };
 
@@ -276,15 +329,24 @@ const App: React.FC = () => {
   };
 
   // Eliminar reporte del historial
-  const handleDeleteReport = (id: string) => {
+  const handleDeleteReport = async (id: string) => {
     if (!confirm('¿Eliminar este reporte del historial?')) return;
     
     try {
-      const updated = savedReports.filter(r => r.id !== id);
-      localStorage.setItem('saved-reports', JSON.stringify(updated));
-      setSavedReports(updated);
+      const response = await fetch(`/api/forms/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        setSavedReports(prev => prev.filter(r => r.id !== id));
+      } else {
+        const error = await response.json();
+        alert('Error al eliminar: ' + (error.error || 'Error desconocido'));
+      }
     } catch (e) {
       console.error('Error deleting report:', e);
+      alert('Error al eliminar el reporte');
     }
   };
 
