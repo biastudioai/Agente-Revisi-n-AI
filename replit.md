@@ -1,8 +1,27 @@
-# Evaluador Médico IA
+# Veryka.ai - Evaluador Médico Inteligente
 
 ## Overview
 
 This project is an AI-powered medical report evaluator designed for Mexican insurance companies (GNP, MetLife, and NY Life Monterrey). It leverages Google's Gemini AI to extract and validate data from medical report images/PDFs against configurable scoring rules, providing pre-approval recommendations for insurance claims. The system streamlines the evaluation process by detecting the insurance provider, extracting structured data, applying validation rules, generating compliance scores with detailed issue flags, and allowing manual corrections with real-time re-evaluation. The business vision is to automate and standardize medical claim pre-approval, reducing processing time and increasing accuracy for insurance providers.
+
+## Branding (Veryka.ai)
+
+### Brand Colors
+| Element | Hex Code | CSS Variable |
+|---------|----------|--------------|
+| Azul Primario (Dark) | #1A2B56 | `veryka-dark` |
+| Cian (Accent) | #00D1E0 | `veryka-cyan` |
+| Fondo Claro | #F8FAFC | `veryka-light` |
+
+### Brand Styles
+- **Border Radius**: 14px (`rounded-veryka`)
+- **Logo**: `attached_assets/Veryka_Logo_1767919213039.png`
+
+### Usage Guidelines
+- Use dark blue (#1A2B56) for primary buttons and titles
+- Use cyan (#00D1E0) for accents, links, and highlights
+- Use light background (#F8FAFC) for page backgrounds
+- Maintain 14px border radius on cards and buttons
 
 ## User Preferences
 
@@ -12,7 +31,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Frontend
 - **Framework**: React 19 with TypeScript
-- **Styling**: Tailwind CSS
+- **Styling**: Tailwind CSS with Veryka brand colors
 - **Icons**: Lucide React
 - **Build Tool**: Vite
 
