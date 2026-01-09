@@ -10,7 +10,7 @@ import { analyzeReportImage, reEvaluateReport } from './services/geminiService';
 import { DEFAULT_SCORING_RULES } from './services/scoring-engine';
 import { AnalysisReport, AnalysisStatus, ExtractedData, ScoringRule, SavedReport } from './types';
 import { detectProviderFromPdf, DetectedProvider } from './services/providerDetection';
-import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw, AlignLeft, Image as ImageIcon, Loader2, Building2, LogOut } from 'lucide-react';
+import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw, AlignLeft, Image as ImageIcon, Loader2, Building2, LogOut, ChevronDown, User as UserIcon } from 'lucide-react';
 
 interface User {
   id: string;
@@ -58,6 +58,9 @@ const App: React.FC = () => {
 
   // State for Left Panel View Mode (Visual vs Text)
   const [leftPanelView, setLeftPanelView] = useState<'visual' | 'text'>('visual');
+
+  // State for User Dropdown
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   // Check authentication on mount
   useEffect(() => {
@@ -771,6 +774,43 @@ const App: React.FC = () => {
           <Settings className="w-4 h-4" />
           Auditoría de reglas
         </button>
+        
+        {/* User Dropdown */}
+        <div className="relative">
+          <button 
+            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+            className="text-xs text-slate-700 bg-white/90 backdrop-blur border border-slate-200 hover:bg-slate-50 hover:border-slate-300 font-medium px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-slate-500/10"
+          >
+            <UserIcon className="w-4 h-4" />
+            <span>{user?.nombre || user?.email || 'Usuario'}</span>
+            <ChevronDown className={`w-3 h-3 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
+          </button>
+          
+          {isUserMenuOpen && (
+            <>
+              <div 
+                className="fixed inset-0 z-10" 
+                onClick={() => setIsUserMenuOpen(false)}
+              />
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1 z-20">
+                <div className="px-4 py-2 border-b border-slate-100">
+                  <p className="text-xs text-slate-500">Conectado como</p>
+                  <p className="text-sm font-medium text-slate-700 truncate">{user?.email}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Cerrar sesión
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </header>
 
       <main className="flex-grow flex flex-col items-center justify-center p-6 relative overflow-hidden">
