@@ -818,16 +818,14 @@ const App: React.FC = () => {
             <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-accent-100/40 rounded-full blur-3xl opacity-60"></div>
         </div>
 
+        {/* Logo Section - Left Aligned */}
+        <div className="absolute top-6 left-6 z-20 flex flex-col items-start">
+          <img src="/attached_assets/Veryka_Logo_1767919213039.png" alt="Veryka.ai" className="h-10 object-contain" />
+          <span className="text-[10px] font-bold text-veryka-dark uppercase tracking-widest mt-1">Auditoría Inteligente</span>
+        </div>
+
         {/* Hero Section */}
         <div className="text-center mb-12 max-w-3xl animate-slide-up relative z-10">
-          <div className="inline-flex items-center justify-center p-1.5 bg-white rounded-2xl shadow-xl shadow-slate-200/60 mb-8 ring-1 ring-slate-100">
-            <div className="px-4 py-2 bg-slate-50 rounded-xl flex items-center gap-3">
-               <div className="p-1.5 bg-brand-600 rounded-lg">
-                  <Stethoscope className="h-4 w-4 text-white" />
-               </div>
-               <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Auditoría Inteligente v2.0</span>
-            </div>
-          </div>
           
           <h1 className="text-5xl md:text-6xl font-extrabold text-slate-900 mb-6 tracking-tight leading-tight">
             Valida Informes Médicos <br/>
