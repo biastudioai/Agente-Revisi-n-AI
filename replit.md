@@ -84,7 +84,32 @@ POST /api/auth/password-reset/request - Request reset email
 POST /api/auth/password-reset/confirm - Reset password
 GET  /api/auth/validate - Validate session
 GET  /api/health - Server health check
+
+POST /api/forms - Create medical form with JSON data and optional file upload
+GET  /api/forms - List all user's medical forms
+GET  /api/forms/:id - Get specific medical form
+DELETE /api/forms/:id - Delete medical form and associated files
+GET  /objects/* - Serve uploaded files from Object Storage
 ```
+
+## File Storage System (January 2026)
+
+### Object Storage Integration
+- **Location**: `server/replit_integrations/object_storage/`
+- **Service**: Replit Object Storage (Google Cloud Storage backend)
+- **Features**:
+  - Automatic file upload when saving reports
+  - PDF and image file storage
+  - Secure file serving via `/objects/*` endpoint
+  - Automatic cleanup when deleting forms
+
+### Storage Flow
+1. User saves a medical report
+2. Frontend sends JSON data + base64 file to `/api/forms`
+3. Backend stores JSON in `medical_forms.form_data`
+4. Backend uploads file to Object Storage
+5. Backend saves file URL in `form_pdfs.pdf_url`
+6. Files accessible via `/objects/uploads/{uuid}.{ext}`
 
 ### Database Tables
 - `users` - id, email, password_hash, nombre, rol, timestamps
