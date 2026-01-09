@@ -423,10 +423,9 @@ const App: React.FC = () => {
     return (
       <div className="h-screen flex flex-col bg-slate-50 overflow-hidden font-sans">
         {/* Navbar Compact */}
-        <header className="h-20 bg-white border-b border-slate-200 flex items-center px-4 justify-between shrink-0 z-30 shadow-sm">
-           <div className="flex flex-col items-start gap-1">
-              <img src="/attached_assets/Veryka_Logo_1767919213039.png" alt="Veryka.ai" className="h-10 object-contain" />
-              <span className="text-[10px] font-black text-veryka-dark tracking-[0.2em] ml-1">AUDITORÍA INTELIGENTE</span>
+        <header className="h-14 bg-white border-b border-slate-200 flex items-center px-4 justify-between shrink-0 z-30 shadow-sm">
+           <div className="flex items-center gap-3">
+              <img src="/attached_assets/Veryka_Logo_1767919213039.png" alt="Veryka.ai" className="h-8 object-contain" />
            </div>
            <div className="flex items-center gap-2">
               <button 
