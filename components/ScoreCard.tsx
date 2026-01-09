@@ -65,7 +65,7 @@ const ScoreCard: React.FC<ScoreCardProps> = ({ scoreData, flags, hasChanges, isR
         <div className="absolute top-4 left-4 z-10">
            <button
               onClick={onOpenReview}
-              className="flex items-center justify-center w-8 h-8 rounded-full bg-white/80 hover:bg-brand-50 border border-white/50 hover:border-brand-200 shadow-sm text-brand-600 transition-all transform hover:scale-110"
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-white/80 hover:bg-accent-50 border border-white/50 hover:border-accent-200 shadow-sm text-veryka-dark transition-all transform hover:scale-110"
               title="Enviar Revisión"
            >
               <Send className="w-4 h-4" />
@@ -79,8 +79,8 @@ const ScoreCard: React.FC<ScoreCardProps> = ({ scoreData, flags, hasChanges, isR
                     onClick={onReevaluate}
                     disabled={isReevaluating}
                     className={`
-                        flex items-center px-3 py-2 rounded-lg text-xs font-bold text-white shadow-lg shadow-accent-500/30 transition-all transform
-                        ${isReevaluating ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-brand-600 to-accent-600 hover:scale-105 active:scale-95'}
+                        flex items-center px-3 py-2 rounded-veryka text-xs font-bold text-white shadow-lg shadow-accent-500/30 transition-all transform
+                        ${isReevaluating ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-veryka-dark to-veryka-cyan hover:scale-105 active:scale-95'}
                     `}
                     >
                     {isReevaluating ? (

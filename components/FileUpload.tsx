@@ -45,8 +45,8 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileSelected, isProcessing, s
   return (
     <div className="w-full max-w-2xl mx-auto">
       <div 
-        className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${
-          isProcessing ? 'bg-gray-50 border-gray-300 cursor-wait' : 'bg-white border-brand-300 hover:border-brand-500 cursor-pointer'
+        className={`border-2 border-dashed rounded-veryka p-6 text-center transition-colors ${
+          isProcessing ? 'bg-gray-50 border-gray-300 cursor-wait' : 'bg-white border-accent-300 hover:border-accent-500 cursor-pointer'
         }`}
         onClick={() => !isProcessing && fileInputRef.current?.click()}
       >
@@ -60,31 +60,31 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileSelected, isProcessing, s
         
         {isProcessing ? (
           <div className="flex flex-col items-center animate-pulse">
-            <Loader2 className="w-10 h-10 text-brand-600 animate-spin mb-3" />
-            <h3 className="text-lg font-semibold text-brand-900">Analizando Informe...</h3>
+            <Loader2 className="w-10 h-10 text-veryka-cyan animate-spin mb-3" />
+            <h3 className="text-lg font-semibold text-veryka-dark">Analizando Informe...</h3>
             <p className="text-sm text-gray-500 mt-1">Nuestra IA está extrayendo datos y validando reglas.</p>
           </div>
         ) : (
           <div className="flex flex-col items-center group">
-            <div className="w-12 h-12 bg-brand-50 rounded-full flex items-center justify-center mb-3 group-hover:bg-brand-100 transition-colors">
-              <Upload className="w-6 h-6 text-brand-600" />
+            <div className="w-12 h-12 bg-accent-50 rounded-full flex items-center justify-center mb-3 group-hover:bg-accent-100 transition-colors">
+              <Upload className="w-6 h-6 text-veryka-cyan" />
             </div>
             <h3 className="text-lg font-semibold text-gray-800">Sube tu Informe Médico</h3>
             <p className="text-sm text-gray-500 mt-1 mb-4">Arrastra un archivo o haz clic para seleccionar (PDF, JPG, PNG)</p>
             
-            <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-lg text-left max-w-md">
-              <h4 className="text-xs font-bold text-blue-800 uppercase tracking-wider mb-2 flex items-center gap-1">
+            <div className="mb-6 p-4 bg-accent-50 border border-accent-100 rounded-veryka text-left max-w-md">
+              <h4 className="text-xs font-bold text-veryka-dark uppercase tracking-wider mb-2 flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 Mejores prácticas para subirlo:
               </h4>
-              <ul className="text-xs text-blue-700 space-y-1 list-disc ml-4">
+              <ul className="text-xs text-veryka-dark/80 space-y-1 list-disc ml-4">
                 <li>Asegúrate que la imagen sea nítida y legible.</li>
                 <li>Intenta que esté en orden de páginas (1, 2, 3, etc.).</li>
                 <li>Evita sombras o reflejos sobre el documento.</li>
               </ul>
             </div>
 
-            <button className="px-5 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors shadow-sm">
+            <button className="px-5 py-2 bg-veryka-dark text-white rounded-veryka text-sm font-medium hover:bg-brand-800 transition-colors shadow-sm">
               Seleccionar Archivo
             </button>
           </div>

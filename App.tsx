@@ -356,8 +356,8 @@ const App: React.FC = () => {
   // Show loading while checking auth
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+      <div className="min-h-screen bg-gradient-to-br from-[#F8FAFC] via-white to-[#e8f7f8] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-[#00D1E0] animate-spin" />
       </div>
     );
   }
@@ -425,15 +425,12 @@ const App: React.FC = () => {
         {/* Navbar Compact */}
         <header className="h-14 bg-white border-b border-slate-200 flex items-center px-4 justify-between shrink-0 z-30 shadow-sm">
            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-brand-600 to-brand-800 rounded-lg flex items-center justify-center shadow-lg shadow-brand-500/30">
-                 <ShieldCheck className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-bold text-slate-800 tracking-tight text-sm hidden md:block">Evaluador Médico IA</span>
+              <img src="/attached_assets/Veryka_Logo_1767919213039.png" alt="Veryka.ai" className="h-8 object-contain" />
            </div>
            <div className="flex items-center gap-2">
               <button 
                 onClick={() => setIsInsuranceAuditorOpen(true)}
-                className="text-xs text-purple-700 bg-purple-50 border border-purple-200 hover:bg-purple-100 hover:border-purple-300 font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 shadow-sm"
+                className="text-xs text-veryka-dark bg-accent-50 border border-accent-200 hover:bg-accent-100 hover:border-accent-300 font-bold px-3 py-1.5 rounded-veryka transition-all flex items-center gap-2 shadow-sm"
               >
                 <Building2 className="w-3.5 h-3.5" />
                 Auditoría de aseguradoras
@@ -441,7 +438,7 @@ const App: React.FC = () => {
 
               <button 
                 onClick={() => setIsRulesModalOpen(true)}
-                className="text-xs text-brand-700 bg-brand-50 border border-brand-200 hover:bg-brand-100 hover:border-brand-300 font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 shadow-sm"
+                className="text-xs text-veryka-dark bg-brand-50 border border-brand-200 hover:bg-brand-100 hover:border-brand-300 font-bold px-3 py-1.5 rounded-veryka transition-all flex items-center gap-2 shadow-sm"
               >
                 <Settings className="w-3.5 h-3.5" />
                 Auditoría de reglas

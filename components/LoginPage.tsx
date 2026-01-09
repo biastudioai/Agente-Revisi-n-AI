@@ -157,17 +157,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#F8FAFC] via-white to-[#e8f7f8] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl shadow-lg mb-4">
-            <Stethoscope className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Evaluador Médico IA</h1>
+          <img src="/attached_assets/Veryka_Logo_1767919213039.png" alt="Veryka.ai" className="h-16 mx-auto mb-4" />
           <p className="text-gray-600 mt-1">Sistema de evaluación de informes médicos</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white rounded-[14px] shadow-xl p-8">
           {view === 'login' && (
             <>
               <h2 className="text-xl font-semibold text-gray-900 mb-6">
@@ -196,7 +193,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       type="text"
                       value={nombre}
                       onChange={(e) => setNombre(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00D1E0] focus:border-[#00D1E0] transition-colors"
                       placeholder="Tu nombre"
                       required
                     />
@@ -213,7 +210,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00D1E0] focus:border-[#00D1E0] transition-colors"
                       placeholder="correo@ejemplo.com"
                       required
                     />
@@ -230,7 +227,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00D1E0] focus:border-[#00D1E0] transition-colors"
                       placeholder="••••••••"
                       required
                       minLength={8}
@@ -254,7 +251,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                         setError(null);
                         setSuccessMessage(null);
                       }}
-                      className="text-sm text-blue-600 hover:text-blue-800"
+                      className="text-sm text-[#00D1E0] hover:text-[#1A2B56]"
                     >
                       ¿Olvidaste tu contraseña?
                     </button>
@@ -264,7 +261,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full bg-[#1A2B56] text-white py-3 rounded-[14px] font-medium hover:bg-[#141f3d] focus:ring-4 focus:ring-[#00D1E0]/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
                     <>
@@ -286,7 +283,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       setError(null);
                       setSuccessMessage(null);
                     }}
-                    className="text-blue-600 hover:text-blue-800 font-medium"
+                    className="text-[#00D1E0] hover:text-[#1A2B56] font-medium"
                   >
                     {isRegister ? 'Inicia sesión' : 'Regístrate'}
                   </button>
@@ -337,7 +334,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00D1E0] focus:border-[#00D1E0] transition-colors"
                       placeholder="correo@ejemplo.com"
                       required
                     />
@@ -347,7 +344,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full bg-[#1A2B56] text-white py-3 rounded-[14px] font-medium hover:bg-[#141f3d] focus:ring-4 focus:ring-[#00D1E0]/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
                     <>
@@ -386,7 +383,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       type={showPassword ? 'text' : 'password'}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00D1E0] focus:border-[#00D1E0] transition-colors"
                       placeholder="••••••••"
                       required
                       minLength={8}
@@ -411,7 +408,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       type={showPassword ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00D1E0] focus:border-[#00D1E0] transition-colors"
                       placeholder="••••••••"
                       required
                       minLength={8}
@@ -422,7 +419,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full bg-[#1A2B56] text-white py-3 rounded-[14px] font-medium hover:bg-[#141f3d] focus:ring-4 focus:ring-[#00D1E0]/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
                     <>
@@ -439,7 +436,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         </div>
 
         <p className="text-center text-gray-500 text-sm mt-6">
-          © {new Date().getFullYear()} Evaluador Médico IA
+          © {new Date().getFullYear()} Veryka.ai
         </p>
       </div>
     </div>
