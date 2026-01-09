@@ -754,13 +754,13 @@ const App: React.FC = () => {
 
   // Render: UPLOAD SCREEN (Default - idle)
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex flex-col font-sans text-slate-900 overflow-auto">
+    <div className="h-screen bg-gradient-to-b from-slate-50 to-white flex flex-col font-sans text-slate-900 overflow-y-auto">
       {/* Header con logo y botones */}
-      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-sm border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+      <header className="shrink-0 z-30 px-6 py-4 flex items-center justify-between">
         {/* Logo a la izquierda */}
         <div className="flex flex-col items-start">
-          <img src="/attached_assets/Veryka_Logo_1767919213039.png" alt="Veryka.ai" className="h-8 object-contain" />
-          <span className="text-[9px] font-bold text-veryka-dark uppercase tracking-widest mt-0.5">Auditoría Inteligente</span>
+          <img src="/attached_assets/Veryka_Logo_1767919213039.png" alt="Veryka.ai" className="h-12 object-contain" />
+          <span className="text-[10px] font-bold text-veryka-dark uppercase tracking-widest mt-1">Auditoría Inteligente</span>
         </div>
         
         {/* Botones a la derecha */}
