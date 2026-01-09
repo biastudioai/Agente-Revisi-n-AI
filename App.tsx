@@ -423,7 +423,7 @@ const App: React.FC = () => {
     return (
       <div className="h-screen flex flex-col bg-slate-50 overflow-hidden font-sans">
         {/* Navbar Compact */}
-        <header className="h-14 bg-white border-b border-slate-200 flex items-center px-4 justify-between shrink-0 z-30 shadow-sm">
+        <header className="h-14 bg-slate-50 flex items-center px-4 justify-between shrink-0 z-30">
            <div className="flex items-center gap-3">
               <img src="/attached_assets/Veryka_Logo_1767919213039.png" alt="Veryka.ai" className="h-8 object-contain" />
            </div>
