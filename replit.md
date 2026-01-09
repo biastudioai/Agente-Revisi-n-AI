@@ -125,15 +125,21 @@ GET  /objects/* - Serve uploaded files from Object Storage
 ### Storage Flow
 1. User saves a medical report
 2. Frontend sends JSON data + base64 file to `/api/forms`
-3. Backend stores JSON in `medical_forms.form_data`
-4. Backend uploads file to Object Storage
-5. Backend saves file URL in `form_pdfs.pdf_url`
-6. Files accessible via `/objects/uploads/{uuid}.{ext}`
+3. Backend uses upsert to update or create the form (one per user+insuranceCompany)
+4. Backend uploads new file to Object Storage
+5. Backend upserts the PDF URL in `form_pdfs` (one per form)
+6. Old file is deleted from storage only after successful save
+7. Files accessible via `/objects/uploads/{uuid}.{ext}`
+
+### Database Constraints (January 2026)
+- `medical_forms`: Unique constraint on `(user_id, insurance_company)` - prevents duplicate forms per user per insurance company
+- `form_pdfs`: Unique constraint on `form_id` - ensures only one PDF per form (overwrites on save)
+- Transactional saves with cleanup on failure to prevent data loss
 
 ### Database Tables
 - `users` - id, email, password_hash, nombre, rol, timestamps
-- `medical_forms` - With insurance_company index
-- `form_pdfs` - PDF URLs linked to forms
+- `medical_forms` - With unique(user_id, insurance_company) and insurance_company index
+- `form_pdfs` - PDF URLs with unique(form_id) constraint
 - `sessions` - Session tokens
 - `password_resets` - Reset tokens
 - `audit_logs` - Action tracking
