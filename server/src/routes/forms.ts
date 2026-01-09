@@ -56,19 +56,28 @@ router.post(
     }
 
     try {
-      const medicalForm = await prisma.medicalForm.create({
-        data: {
-          userId,
-          insuranceCompany,
-          formData,
-          status: 'PENDING',
+      const privateDir = getPrivateObjectDir();
+      let newPdfUrl: string | null = null;
+      let newFilePath: string | null = null;
+      let oldPdfUrl: string | null = null;
+
+      const existingForm = await prisma.medicalForm.findUnique({
+        where: {
+          userId_insuranceCompany: {
+            userId,
+            insuranceCompany,
+          },
+        },
+        include: {
+          formPdfs: true,
         },
       });
 
-      let pdfUrl: string | null = null;
+      if (existingForm?.formPdfs[0]?.pdfUrl) {
+        oldPdfUrl = existingForm.formPdfs[0].pdfUrl;
+      }
 
       if (fileBase64 && fileMimeType) {
-        const privateDir = getPrivateObjectDir();
         const objectId = randomUUID();
         const extension = fileMimeType === 'application/pdf' ? '.pdf' : 
                          fileMimeType.startsWith('image/') ? `.${fileMimeType.split('/')[1]}` : '';
@@ -88,28 +97,93 @@ router.post(
             },
           });
           
-          pdfUrl = `/objects/${entityPath}`;
-          
-          await prisma.formPdf.create({
-            data: {
-              formId: medicalForm.id,
-              pdfUrl: pdfUrl,
-            },
-          });
-          
-          console.log('File uploaded successfully to Object Storage:', pdfUrl);
+          newPdfUrl = `/objects/${entityPath}`;
+          newFilePath = fullPath;
+          console.log('File uploaded to Object Storage:', newPdfUrl);
         } catch (uploadError) {
           console.error('Error uploading file:', uploadError);
-          await prisma.medicalForm.delete({ where: { id: medicalForm.id } });
           res.status(500).json({ error: 'Error al subir el archivo' });
           return;
+        }
+      }
+
+      let medicalForm;
+      try {
+        medicalForm = await prisma.$transaction(async (tx) => {
+          const form = await tx.medicalForm.upsert({
+            where: {
+              userId_insuranceCompany: {
+                userId,
+                insuranceCompany,
+              },
+            },
+            update: {
+              formData,
+              status: 'PENDING',
+            },
+            create: {
+              userId,
+              insuranceCompany,
+              formData,
+              status: 'PENDING',
+            },
+          });
+
+          if (newPdfUrl) {
+            await tx.formPdf.upsert({
+              where: {
+                formId: form.id,
+              },
+              update: {
+                pdfUrl: newPdfUrl,
+              },
+              create: {
+                formId: form.id,
+                pdfUrl: newPdfUrl,
+              },
+            });
+          }
+
+          return form;
+        });
+      } catch (dbError) {
+        console.error('Error in database transaction:', dbError);
+        if (newFilePath) {
+          try {
+            const { bucketName, objectName } = parseObjectPath(newFilePath);
+            const bucket = objectStorageClient.bucket(bucketName);
+            const file = bucket.file(objectName);
+            await file.delete();
+            console.log('Cleaned up orphaned file after DB error:', newPdfUrl);
+          } catch (cleanupError) {
+            console.error('Error cleaning up orphaned file:', cleanupError);
+          }
+        }
+        res.status(500).json({ error: 'Error al guardar el formulario' });
+        return;
+      }
+
+      if (newPdfUrl && oldPdfUrl && oldPdfUrl.startsWith('/objects/') && oldPdfUrl !== newPdfUrl) {
+        try {
+          const oldEntityPath = oldPdfUrl.slice('/objects/'.length);
+          const oldFullPath = `${privateDir}/${oldEntityPath}`;
+          const { bucketName: oldBucketName, objectName: oldObjectName } = parseObjectPath(oldFullPath);
+          const oldBucket = objectStorageClient.bucket(oldBucketName);
+          const oldFile = oldBucket.file(oldObjectName);
+          const [exists] = await oldFile.exists();
+          if (exists) {
+            await oldFile.delete();
+            console.log('Deleted old file from Object Storage:', oldPdfUrl);
+          }
+        } catch (deleteError) {
+          console.error('Error deleting old file from Object Storage (non-critical):', deleteError);
         }
       }
 
       res.status(201).json({
         success: true,
         formId: medicalForm.id,
-        pdfUrl,
+        pdfUrl: newPdfUrl,
         message: 'Formulario guardado exitosamente',
       });
     } catch (error) {
