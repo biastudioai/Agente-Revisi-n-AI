@@ -301,7 +301,7 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
          </div>
       </div>
 
-      <div className="flex-1 flex flex-col xl:flex-row gap-6 p-6 min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col xl:flex-row gap-6 p-6 min-h-0 overflow-auto custom-scrollbar">
          {/* Left column: Form/Text with scroll */}
          <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
                 {viewMode === 'form' ? (

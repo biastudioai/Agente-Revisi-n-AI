@@ -756,7 +756,7 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex flex-col font-sans text-slate-900 overflow-auto">
       {/* Header con logo y botones */}
-      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-sm border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+      <header className="sticky top-0 z-30 bg-gradient-to-b from-slate-50 to-transparent backdrop-blur-sm px-6 py-4 flex items-center justify-between">
         {/* Logo a la izquierda */}
         <div className="flex flex-col items-start">
           <img src="/attached_assets/Veryka_Logo_1767919213039.png" alt="Veryka.ai" className="h-8 object-contain" />
