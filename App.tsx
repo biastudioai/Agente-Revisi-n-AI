@@ -754,9 +754,17 @@ const App: React.FC = () => {
 
   // Render: UPLOAD SCREEN (Default - idle)
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex flex-col font-sans text-slate-900">
-      {/* Header con botones de Auditoría */}
-      <header className="absolute top-0 right-0 p-6 z-20 flex items-center gap-2">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex flex-col font-sans text-slate-900 overflow-auto">
+      {/* Header con logo y botones */}
+      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-sm border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+        {/* Logo a la izquierda */}
+        <div className="flex flex-col items-start">
+          <img src="/attached_assets/Veryka_Logo_1767919213039.png" alt="Veryka.ai" className="h-8 object-contain" />
+          <span className="text-[9px] font-bold text-veryka-dark uppercase tracking-widest mt-0.5">Auditoría Inteligente</span>
+        </div>
+        
+        {/* Botones a la derecha */}
+        <div className="flex items-center gap-2">
         <button 
           onClick={() => setIsInsuranceAuditorOpen(true)}
           className="text-xs text-purple-700 bg-white/90 backdrop-blur border border-purple-200 hover:bg-purple-50 hover:border-purple-300 font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-purple-500/10 hover:shadow-purple-500/20"
@@ -808,20 +816,15 @@ const App: React.FC = () => {
             </>
           )}
         </div>
+        </div>
       </header>
 
-      <main className="flex-grow flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      <main className="flex-grow flex flex-col items-center justify-center p-6 pt-12 relative overflow-hidden">
         
         {/* Background Elements */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
             <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-brand-100/50 rounded-full blur-3xl opacity-60"></div>
             <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-accent-100/40 rounded-full blur-3xl opacity-60"></div>
-        </div>
-
-        {/* Logo Section - Left Aligned */}
-        <div className="absolute top-6 left-6 z-20 flex flex-col items-start">
-          <img src="/attached_assets/Veryka_Logo_1767919213039.png" alt="Veryka.ai" className="h-10 object-contain" />
-          <span className="text-[10px] font-bold text-veryka-dark uppercase tracking-widest mt-1">Auditoría Inteligente</span>
         </div>
 
         {/* Hero Section */}
