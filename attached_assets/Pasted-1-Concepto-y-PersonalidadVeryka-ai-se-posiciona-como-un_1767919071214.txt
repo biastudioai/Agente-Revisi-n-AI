@@ -1,0 +1,15 @@
+1. Concepto y PersonalidadVeryka.ai se posiciona como una plataforma inteligente, adaptable y fluida.Misión: Simplificar procesos complejos mediante inteligencia artificial.Valores: Innovación, Transparencia, Velocidad y Flexibilidad.2. Paleta de ColoresPara mantener la coherencia con el logo, utilizaremos una paleta basada en azules tecnológicos y un fondo neutro para resaltar la interfaz de la app.ElementoColor HexUso en React/CSSAzul Primario#1A2B56Títulos, Botones principales, Sidebars.Cian Eléctrico#00D1E0Enlaces, hover states, iconos activos, .ai.Azul Fluido#6CB6E4Gradientes, ilustraciones secundarias.Fondo (Light)#F8FAFCFondo de la aplicación (Dashboard).Texto Cuerpo#334155Párrafos y lectura larga.3. TipografíaLa tipografía debe ser legible en pantallas de alta densidad y evocar un sentimiento "tech".Principal (Títulos): Montserrat o Inter (Bold). Transmiten robustez y modernidad.Secundaria (Cuerpo): Inter o Roboto (Regular/Medium). Optimizadas para interfaces de usuario (UI).Monoespaciada (Para código o datos): JetBrains Mono o Fira Code (ideal si la app muestra procesos de Node.js o datos técnicos).4. Estilo de Componentes (UI Kit)Para una app en React, el diseño debe ser limpio y basado en tarjetas (Cards).Bordes: Usar un border-radius de 12px a 16px para imitar la suavidad de las curvas del logo "V".Efectos: Utilizar el efecto de Glassmorphism (fondos semi-transparentes con desenfoque) en modales para evocar la transparencia del humo en el logo.Gradientes: * linear-gradient(135deg, #1A2B56 0%, #00D1E0 100%) para botones de acción principal (CTA).5. IconografíaLos iconos deben ser de línea fina (Outline) para no competir con el peso visual del logo. Se recomienda usar librerías como Lucide React o Heroicons.6. Aplicación en el Stack TecnológicoFrontend (React + Tailwind CSS)Si utilizas Tailwind, puedes configurar tu archivo tailwind.config.js así:JavaScriptmodule.exports = {
+  theme: {
+    extend: {
+      colors: {
+        'veryka-dark': '#1A2B56',
+        'veryka-cyan': '#00D1E0',
+        'veryka-light': '#F8FAFC',
+      },
+      borderRadius: {
+        'veryka': '14px',
+      }
+    },
+  },
+}
+Backend (Node.js/API)Logs: Usa el color Cian en la consola (vía chalk) para identificar mensajes de éxito de la API de Veryka.Documentación (Swagger/Postman): Personaliza la interfaz con el logo y el color azul primario para que los desarrolladores sientan la identidad de marca.7. Usos Correctos e IncorrectosCorrecto: Usar el logo sobre fondos blancos o azules muy oscuros.Incorrecto: Estirar el logo, cambiar la tipografía "Veryka" por una con serifa (como Times New Roman), o usar el logo sobre fondos con texturas muy cargadas que compitan con el efecto "fluido".
