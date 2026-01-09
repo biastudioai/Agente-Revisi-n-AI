@@ -425,7 +425,7 @@ const App: React.FC = () => {
         {/* Navbar Compact */}
         <header className="h-14 bg-slate-50 flex items-center px-4 justify-between shrink-0 z-30">
            <div className="flex items-center gap-3">
-              <img src="/attached_assets/Veryka_Logo_1767919213039.png" alt="Veryka.ai" className="h-8 object-contain" />
+              <img src="/attached_assets/Veryka_Logo_1767919213039.png" alt="Veryka.ai" className="h-12 object-contain" />
            </div>
            <div className="flex items-center gap-2">
               <button 
@@ -759,7 +759,7 @@ const App: React.FC = () => {
       <header className="sticky top-0 z-30 bg-gradient-to-b from-slate-50 to-transparent backdrop-blur-sm px-6 py-4 flex items-center justify-between">
         {/* Logo a la izquierda */}
         <div className="flex flex-col items-start">
-          <img src="/attached_assets/Veryka_Logo_1767919213039.png" alt="Veryka.ai" className="h-8 object-contain" />
+          <img src="/attached_assets/Veryka_Logo_1767919213039.png" alt="Veryka.ai" className="h-12 object-contain" />
           <span className="text-[9px] font-bold text-veryka-dark uppercase tracking-widest mt-0.5">Auditoría Inteligente</span>
         </div>
         
