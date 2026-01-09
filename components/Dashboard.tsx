@@ -267,7 +267,7 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
   ];
 
   return (
-    <div className="h-full flex flex-col bg-white relative overflow-hidden">
+    <div className="h-full flex flex-col bg-white relative overflow-auto custom-scrollbar">
       <ReviewModal isOpen={isReviewModalOpen} onClose={() => setIsReviewModalOpen(false)} report={{ ...report, extracted: formData }} />
 
       <div className={`border-b px-6 py-4 flex justify-between items-center shrink-0 ${theme.border} ${theme.light}`}>
