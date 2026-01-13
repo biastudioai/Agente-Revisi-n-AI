@@ -324,6 +324,46 @@ export const REGLAS_GNP: ScoringRule[] = [
     affectedFields: ['padecimiento_actual.tipo_padecimiento_agudo_cronico']
   },
   {
+    id: 'gnp_origen_mutuamente_excluyente',
+    name: 'Congénito y Adquirido son mutuamente excluyentes',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Solo puede seleccionar Congénito O Adquirido, no ambos al mismo tiempo.',
+    providerTarget: 'GNP',
+    isCustom: false,
+    conditions: [],
+    logicOperator: 'AND',
+    affectedFields: ['padecimiento_actual.tipo_padecimiento'],
+    validator: (data) => {
+      const tipoPad = data.padecimiento_actual?.tipo_padecimiento;
+      if (!tipoPad || !Array.isArray(tipoPad)) return false;
+      const valores = tipoPad.map(v => v.toLowerCase());
+      const tieneCongenito = valores.includes('congénito') || valores.includes('congenito');
+      const tieneAdquirido = valores.includes('adquirido');
+      return tieneCongenito && tieneAdquirido;
+    }
+  },
+  {
+    id: 'gnp_evolucion_mutuamente_excluyente',
+    name: 'Agudo y Crónico son mutuamente excluyentes',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Solo puede seleccionar Agudo O Crónico, no ambos al mismo tiempo.',
+    providerTarget: 'GNP',
+    isCustom: false,
+    conditions: [],
+    logicOperator: 'AND',
+    affectedFields: ['padecimiento_actual.tipo_padecimiento'],
+    validator: (data) => {
+      const tipoPad = data.padecimiento_actual?.tipo_padecimiento;
+      if (!tipoPad || !Array.isArray(tipoPad)) return false;
+      const valores = tipoPad.map(v => v.toLowerCase());
+      const tieneAgudo = valores.includes('agudo');
+      const tieneCronico = valores.includes('crónico') || valores.includes('cronico');
+      return tieneAgudo && tieneCronico;
+    }
+  },
+  {
     id: 'gnp_relacionado_otro_padecimiento',
     name: 'Relación con otro padecimiento no indicada',
     level: 'CRÍTICO',
