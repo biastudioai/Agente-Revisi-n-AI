@@ -3,8 +3,9 @@ import { REGLAS_GENERALES } from './scoring-rules-general';
 import { REGLAS_GNP } from './scoring-rules-gnp';
 import { REGLAS_METLIFE } from './scoring-rules-metlife';
 import { validateRule } from './rule-validator';
+import { fetchRulesFromDatabase, clearRulesCache } from './database-rules-loader';
 
-export function getReglasParaAseguradora(provider: ProviderType | 'ALL'): ScoringRule[] {
+export function getReglasParaAseguradoraLocal(provider: ProviderType | 'ALL'): ScoringRule[] {
   if (provider === 'GNP') {
     return [...REGLAS_GENERALES, ...REGLAS_GNP];
   }
@@ -14,7 +15,26 @@ export function getReglasParaAseguradora(provider: ProviderType | 'ALL'): Scorin
   return [...REGLAS_GENERALES, ...REGLAS_GNP, ...REGLAS_METLIFE];
 }
 
-export const DEFAULT_SCORING_RULES: ScoringRule[] = getReglasParaAseguradora('ALL');
+export async function getReglasParaAseguradora(provider: ProviderType | 'ALL'): Promise<ScoringRule[]> {
+  try {
+    const providerToFetch = provider === 'ALL' || provider === 'UNKNOWN' ? undefined : provider;
+    const dbRules = await fetchRulesFromDatabase(providerToFetch as ProviderType | undefined);
+    if (dbRules && dbRules.length > 0) {
+      return dbRules;
+    }
+  } catch (error) {
+    console.warn('Error loading rules from database, falling back to local rules:', error);
+  }
+  return getReglasParaAseguradoraLocal(provider);
+}
+
+export function getReglasParaAseguradoraSync(provider: ProviderType | 'ALL'): ScoringRule[] {
+  return getReglasParaAseguradoraLocal(provider);
+}
+
+export const DEFAULT_SCORING_RULES: ScoringRule[] = getReglasParaAseguradoraLocal('ALL');
+
+export { clearRulesCache };
 
 export function calculateScore(
   data: ExtractedData,

@@ -4,6 +4,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/auth';
 import formsRoutes from './routes/forms';
+import rulesRoutes from './routes/rules';
 import prisma from './config/database';
 import { registerObjectStorageRoutes } from '../replit_integrations/object_storage';
 
@@ -20,6 +21,7 @@ app.use(cookieParser());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/forms', formsRoutes);
+app.use('/api/rules', rulesRoutes);
 
 registerObjectStorageRoutes(app);
 

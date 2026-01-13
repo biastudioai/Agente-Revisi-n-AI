@@ -161,3 +161,57 @@ model PaymentHistory {
   @@index([userId])
   @@map("payment_history")
 }
+
+enum RuleLevel {
+  CRITICO
+  IMPORTANTE
+  MODERADO
+  DISCRETO
+}
+
+enum RuleCategory {
+  GENERAL
+  GNP
+  METLIFE
+  NYLIFE
+}
+
+model ScoringRuleRecord {
+  id              String       @id @default(uuid())
+  ruleId          String       @unique @map("rule_id")
+  name            String
+  level           RuleLevel
+  points          Int
+  description     String
+  providerTarget  String       @map("provider_target")
+  category        RuleCategory @default(GENERAL)
+  isCustom        Boolean      @default(false) @map("is_custom")
+  isActive        Boolean      @default(true) @map("is_active")
+  conditions      Json?        @db.JsonB
+  logicOperator   String?      @map("logic_operator")
+  affectedFields  String[]     @map("affected_fields")
+  hasValidator    Boolean      @default(false) @map("has_validator")
+  validatorKey    String?      @map("validator_key")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  @@index([providerTarget])
+  @@index([category])
+  @@index([isActive])
+  @@map("scoring_rules")
+}
+
+model AseguradoraConfig {
+  id                String   @id @default(uuid())
+  codigo            String   @unique
+  nombreCompleto    String   @map("nombre_completo")
+  mappingsJson      Json     @map("mappings_json") @db.JsonB
+  themeConfig       Json?    @map("theme_config") @db.JsonB
+  extractionRules   Json?    @map("extraction_rules") @db.JsonB
+  isActive          Boolean  @default(true) @map("is_active")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@index([codigo])
+  @@map("aseguradora_configs")
+}
