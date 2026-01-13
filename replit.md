@@ -39,7 +39,12 @@ Preferred communication style: Simple, everyday language.
 - **Multi-Provider Support**: A configuration-driven "Provider Registry Pattern" allows easy integration of new insurance providers by adding new configuration files (e.g., `metlife.config.ts`, `gnp.config.ts`, `nylife.config.ts`). This includes provider-specific extraction instructions and Gemini schemas.
 - **AI Integration**: Uses Google Gemini AI for document analysis, configured for consistent extractions (`temperature: 0.1`) and structured JSON output based on dynamic provider-specific schemas.
 - **Scoring Engine**: A rule-based validation system with configurable rules categorized by severity (CRÍTICO, IMPORTANTE, MODERADO, DISCRETO). It supports general rules and provider-specific rules, calculating a final score and returning detailed flags for violations.
-- **Editable Rules System**: A user interface allows dynamic creation and modification of validation rules. It supports 21 operators across categories (Existence, Comparison, Dates, Formats, Multi-field), simple AND/OR logic, and real-time previews. Rules can be applied to single or multiple providers with dynamic field mapping.
+- **Editable Rules System**: A user interface allows dynamic creation and modification of validation rules. It supports 28 operators across categories (Existence, Comparison, Dates, Formats, Strings, Multi-field), simple AND/OR logic, and real-time previews. Rules can be applied to single or multiple providers with dynamic field mapping.
+- **GNP Audit Rules (January 2026)**: Comprehensive 63-rule system for GNP insurance including:
+  - ~24 universal rules (patient ID, vital signs ranges, chronology, signatures, document integrity)
+  - ~40 GNP-specific rules (procedure selection, policy validation, conditional medical history, hospital data, consulting physicians, complications)
+  - Visual document tampering detection (tachaduras/enmendaduras) via Gemini AI
+  - Signature verification and diagnosis severity classification
 - **Multi-Provider Field Mapping**: Enables rules to apply to multiple insurers even if field paths differ, using `fieldMappings` and dynamic autocomplete based on each provider's Gemini schema.
 - **Normalization Layer**: An infrastructure for mapping disparate provider-specific fields to a standardized medical report schema (`StandardizedMedicalReport`), providing both raw and normalized data for compatibility and future processing.
 - **Provider Detection**: Automatically identifies insurance providers from PDF text content (first 2 pages) using keyword matching, with a fallback to manual selection.
