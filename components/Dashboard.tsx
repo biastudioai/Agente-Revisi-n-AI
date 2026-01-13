@@ -64,11 +64,8 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
         for (const key of path) { if (originalValue) originalValue = originalValue[key]; }
     } catch (e) { originalValue = undefined; }
 
-    // Convertir "Sí"/"No" a booleano para campos específicos
+    // Mantener el valor tal cual (arrays para checkboxes)
     let processedValue = value;
-    if (pathString === 'complicaciones.presento_complicaciones') {
-      processedValue = value === 'Sí' ? true : value === 'No' ? false : value;
-    }
 
     setFormData(prevData => {
         let newData = { ...prevData };
@@ -211,14 +208,17 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
     );
   };
 
-  const renderCheckboxGroup = (label: string, value: string | string[] | undefined, path: string, options: string[]) => {
+  const renderCheckboxGroup = (label: string, value: string | string[] | boolean | undefined, path: string, options: string[]) => {
     const isModified = modifiedFields[path] !== undefined;
     const isHighlighted = highlightedField === path;
     
-    // Manejar tanto arrays como strings separados por comas (backward compatibility)
+    // Manejar arrays, strings separados por comas y booleanos (backward compatibility)
     let selectedValues: string[];
     if (Array.isArray(value)) {
-      selectedValues = value.map(v => v.toLowerCase());
+      selectedValues = value.map(v => String(v).toLowerCase());
+    } else if (typeof value === 'boolean') {
+      // Convertir booleanos a Sí/No para campos como complicaciones
+      selectedValues = [value ? 'sí' : 'no'];
     } else if (typeof value === 'string' && value) {
       selectedValues = value.split(',').map(v => v.trim().toLowerCase());
     } else {
@@ -227,14 +227,15 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
 
     const handleToggle = (option: string) => {
       const optionLower = option.toLowerCase();
-      let newValues: string[];
+      // Selección única: si ya está seleccionado, deseleccionar (array vacío)
+      // Si no está seleccionado, reemplazar con solo esta opción
       if (selectedValues.includes(optionLower)) {
-        newValues = selectedValues.filter(v => v !== optionLower);
+        // Deseleccionar - array vacío
+        handleInputChange(path, []);
       } else {
-        newValues = [...selectedValues, option];
+        // Seleccionar solo esta opción (reemplaza cualquier selección previa)
+        handleInputChange(path, [option]);
       }
-      // Guardar como array de strings
-      handleInputChange(path, newValues);
     };
 
     return (
@@ -444,11 +445,11 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {renderInput("Edad", formData.identificacion?.edad, 'identificacion.edad')}
                                     <div>
-                                        {renderRadioGroup("Sexo", formData.identificacion?.sexo, 'identificacion.sexo', ['Femenino', 'Masculino'])}
+                                        {renderCheckboxGroup("Sexo", formData.identificacion?.sexo, 'identificacion.sexo', ['Femenino', 'Masculino'])}
                                     </div>
                                 </div>
                                 <div>
-                                    {renderRadioGroup("Causa de Atención", formData.identificacion?.causa_atencion, 'identificacion.causa_atencion', ['Accidente', 'Enfermedad', 'Embarazo'])}
+                                    {renderCheckboxGroup("Causa de Atención", formData.identificacion?.causa_atencion, 'identificacion.causa_atencion', ['Accidente', 'Enfermedad', 'Embarazo'])}
                                 </div>
                             </div>
                         )}
@@ -833,16 +834,24 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                                 <div className="p-4 bg-red-50 rounded-xl border border-red-200">
                                     <h4 className="text-xs font-black mb-3 text-red-600">COMPLICACIONES</h4>
                                     <div className="mb-3">
-                                        {renderRadioGroup(
+                                        {renderCheckboxGroup(
                                             "¿Se presentaron complicaciones?", 
-                                            formData.complicaciones?.presento_complicaciones === true ? 'Sí' : 
-                                            formData.complicaciones?.presento_complicaciones === false ? 'No' : 
-                                            undefined, 
+                                            Array.isArray(formData.complicaciones?.presento_complicaciones) 
+                                              ? formData.complicaciones.presento_complicaciones 
+                                              : formData.complicaciones?.presento_complicaciones === true ? ['Sí'] 
+                                              : formData.complicaciones?.presento_complicaciones === false ? ['No'] 
+                                              : undefined, 
                                             'complicaciones.presento_complicaciones', 
                                             ['Sí', 'No']
                                         )}
                                     </div>
-                                    {formData.complicaciones?.presento_complicaciones === true && (
+                                    {(() => {
+                                        const val: any = formData.complicaciones?.presento_complicaciones;
+                                        if (Array.isArray(val)) return val.some((v: any) => String(v).toLowerCase() === 'sí');
+                                        if (typeof val === 'boolean') return val === true;
+                                        if (typeof val === 'string') return val.toLowerCase().includes('sí');
+                                        return false;
+                                    })() && (
                                         <>
                                             {renderInput("Descripción de Complicaciones", formData.complicaciones?.descripcion, 'complicaciones.descripcion', 'textarea')}
                                             <DateInput label="Fecha de Inicio de Complicaciones" value={formData.complicaciones?.fecha_inicio} path="complicaciones.fecha_inicio" isModified={!!modifiedFields['complicaciones.fecha_inicio']} isHighlighted={highlightedField === 'complicaciones.fecha_inicio'} onChange={handleInputChange} />
@@ -905,7 +914,7 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                                     {renderInput("Estado", formData.hospital?.estado, 'hospital.estado')}
                                 </div>
                                 <div>
-                                    {renderRadioGroup("Tipo de Estancia", formData.hospital?.tipo_estancia, 'hospital.tipo_estancia', ['Urgencia', 'Hospitalaria', 'Corta estancia / ambulatoria'])}
+                                    {renderCheckboxGroup("Tipo de Estancia", formData.hospital?.tipo_estancia, 'hospital.tipo_estancia', ['Urgencia', 'Hospitalaria', 'Corta estancia / ambulatoria'])}
                                 </div>
                                 <DateInput label="Fecha de Ingreso" value={formData.hospital?.fecha_ingreso} path="hospital.fecha_ingreso" isModified={!!modifiedFields['hospital.fecha_ingreso']} isHighlighted={highlightedField === 'hospital.fecha_ingreso'} onChange={handleInputChange} />
                             </div>
@@ -977,9 +986,14 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                                         <div key={index} className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
                                             <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>MÉDICO {index + 1}</h4>
                                             <div className="mb-3">
-                                                {renderRadioGroup("Tipo de Participación", medico?.tipo_participacion, `otros_medicos.${index}.tipo_participacion`, ['Interconsultante', 'Cirujano', 'Anestesiólogo', 'Ayudantía', 'Otra'])}
+                                                {renderCheckboxGroup("Tipo de Participación", medico?.tipo_participacion, `otros_medicos.${index}.tipo_participacion`, ['Interconsultante', 'Cirujano', 'Anestesiólogo', 'Ayudantía', 'Otra'])}
                                             </div>
-                                            {medico?.tipo_participacion === 'Otra' && renderInput("Especifique cuál", medico?.tipo_participacion_otra, `otros_medicos.${index}.tipo_participacion_otra`)}
+                                            {(() => {
+                                                const tp = medico?.tipo_participacion;
+                                                if (Array.isArray(tp)) return tp.some(v => String(v).toLowerCase() === 'otra');
+                                                if (typeof tp === 'string') return tp.toLowerCase().includes('otra');
+                                                return false;
+                                            })() && renderInput("Especifique cuál", medico?.tipo_participacion_otra, `otros_medicos.${index}.tipo_participacion_otra`)}
                                             <div className="grid grid-cols-3 gap-3 mt-3">
                                                 {renderInput("Primer Apellido", medico?.primer_apellido, `otros_medicos.${index}.primer_apellido`)}
                                                 {renderInput("Segundo Apellido", medico?.segundo_apellido, `otros_medicos.${index}.segundo_apellido`)}
@@ -1178,9 +1192,14 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
                                 </div>
 
                                 <div>
-                                    {renderRadioGroup("Tipo de Participación", formData.medico_tratante?.tipo_participacion, 'medico_tratante.tipo_participacion', ['Tratante', 'Cirujano', 'Otra'])}
+                                    {renderCheckboxGroup("Tipo de Participación", formData.medico_tratante?.tipo_participacion, 'medico_tratante.tipo_participacion', ['Tratante', 'Cirujano', 'Otra'])}
                                 </div>
-                                {formData.medico_tratante?.tipo_participacion === 'Otra' && renderInput("Especifique cuál", formData.medico_tratante?.tipo_participacion_otra, 'medico_tratante.tipo_participacion_otra')}
+                                {(() => {
+                                    const tp = formData.medico_tratante?.tipo_participacion;
+                                    if (Array.isArray(tp)) return tp.some(v => String(v).toLowerCase() === 'otra');
+                                    if (typeof tp === 'string') return tp.toLowerCase().includes('otra');
+                                    return false;
+                                })() && renderInput("Especifique cuál", formData.medico_tratante?.tipo_participacion_otra, 'medico_tratante.tipo_participacion_otra')}
 
                                 <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
                                     <input type="checkbox" checked={formData.medico_tratante?.hubo_interconsulta || false} onChange={(e) => handleInputChange('medico_tratante.hubo_interconsulta', e.target.checked)} className="w-4 h-4 rounded text-orange-600" />

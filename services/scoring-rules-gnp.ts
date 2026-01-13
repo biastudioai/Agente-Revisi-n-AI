@@ -363,6 +363,132 @@ export const REGLAS_GNP: ScoringRule[] = [
       return tieneAgudo && tieneCronico;
     }
   },
+  
+  // ========================================
+  // REGLAS DE SELECCIÓN ÚNICA (Solo una opción permitida)
+  // ========================================
+  {
+    id: 'gnp_sexo_seleccion_unica',
+    name: 'Solo puede seleccionar un sexo',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Solo puede seleccionar Femenino O Masculino, no ambos.',
+    providerTarget: 'GNP',
+    isCustom: false,
+    conditions: [],
+    logicOperator: 'AND',
+    affectedFields: ['identificacion.sexo'],
+    validator: (data) => {
+      const sexo = data.identificacion?.sexo;
+      if (!sexo) return false;
+      // Si es array, verificar que no tenga más de un elemento
+      if (Array.isArray(sexo)) return sexo.length > 1;
+      // Si es string con coma (legacy), considerar múltiples selecciones
+      if (typeof sexo === 'string' && sexo.includes(',')) return true;
+      return false;
+    }
+  },
+  {
+    id: 'gnp_causa_atencion_seleccion_unica',
+    name: 'Solo puede seleccionar una causa de atención',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Solo puede seleccionar Accidente, Enfermedad O Embarazo, no múltiples.',
+    providerTarget: 'GNP',
+    isCustom: false,
+    conditions: [],
+    logicOperator: 'AND',
+    affectedFields: ['identificacion.causa_atencion'],
+    validator: (data) => {
+      const causa = data.identificacion?.causa_atencion;
+      if (!causa) return false;
+      if (Array.isArray(causa)) return causa.length > 1;
+      if (typeof causa === 'string' && causa.includes(',')) return true;
+      return false;
+    }
+  },
+  {
+    id: 'gnp_complicaciones_seleccion_unica',
+    name: 'Solo puede seleccionar Sí o No en complicaciones',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Solo puede seleccionar Sí O No para complicaciones, no ambos.',
+    providerTarget: 'GNP',
+    isCustom: false,
+    conditions: [],
+    logicOperator: 'AND',
+    affectedFields: ['complicaciones.presento_complicaciones'],
+    validator: (data) => {
+      const complicaciones = data.complicaciones?.presento_complicaciones;
+      if (!complicaciones) return false;
+      if (Array.isArray(complicaciones)) return complicaciones.length > 1;
+      // Legacy: no aplica para booleanos ya que solo pueden ser true/false
+      return false;
+    }
+  },
+  {
+    id: 'gnp_tipo_estancia_seleccion_unica',
+    name: 'Solo puede seleccionar un tipo de estancia',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Solo puede seleccionar un tipo de estancia: Urgencia, Hospitalaria o Corta estancia.',
+    providerTarget: 'GNP',
+    isCustom: false,
+    conditions: [],
+    logicOperator: 'AND',
+    affectedFields: ['hospital.tipo_estancia'],
+    validator: (data) => {
+      const tipoEstancia = data.hospital?.tipo_estancia;
+      if (!tipoEstancia) return false;
+      if (Array.isArray(tipoEstancia)) return tipoEstancia.length > 1;
+      if (typeof tipoEstancia === 'string' && tipoEstancia.includes(',')) return true;
+      return false;
+    }
+  },
+  {
+    id: 'gnp_medico_tratante_participacion_seleccion_unica',
+    name: 'Solo puede seleccionar un tipo de participación del médico tratante',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'El médico tratante solo puede tener un tipo de participación: Tratante, Cirujano u Otra.',
+    providerTarget: 'GNP',
+    isCustom: false,
+    conditions: [],
+    logicOperator: 'AND',
+    affectedFields: ['medico_tratante.tipo_participacion'],
+    validator: (data) => {
+      const tipoParticipacion = data.medico_tratante?.tipo_participacion;
+      if (!tipoParticipacion) return false;
+      if (Array.isArray(tipoParticipacion)) return tipoParticipacion.length > 1;
+      if (typeof tipoParticipacion === 'string' && tipoParticipacion.includes(',')) return true;
+      return false;
+    }
+  },
+  {
+    id: 'gnp_otros_medicos_participacion_seleccion_unica',
+    name: 'Cada médico solo puede tener un tipo de participación',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Cada médico adicional solo puede tener un tipo de participación.',
+    providerTarget: 'GNP',
+    isCustom: false,
+    conditions: [],
+    logicOperator: 'AND',
+    affectedFields: ['otros_medicos.0.tipo_participacion', 'otros_medicos.1.tipo_participacion', 'otros_medicos.2.tipo_participacion'],
+    validator: (data) => {
+      const otrosMedicos = data.otros_medicos;
+      if (!otrosMedicos || !Array.isArray(otrosMedicos)) return false;
+      for (const medico of otrosMedicos) {
+        const tp = medico?.tipo_participacion;
+        if (tp) {
+          if (Array.isArray(tp) && tp.length > 1) return true;
+          if (typeof tp === 'string' && tp.includes(',')) return true;
+        }
+      }
+      return false;
+    }
+  },
+
   {
     id: 'gnp_relacionado_otro_padecimiento',
     name: 'Relación con otro padecimiento no indicada',

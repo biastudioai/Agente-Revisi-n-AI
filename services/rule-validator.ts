@@ -96,11 +96,19 @@ export function validateCondition(
     
     case 'EQUALS':
       if (fieldValue === undefined || fieldValue === null) return false;
-      return String(fieldValue).trim().toLowerCase() === String(cond.value).trim().toLowerCase();
+      const targetValue = String(cond.value).trim().toLowerCase();
+      if (Array.isArray(fieldValue)) {
+        return fieldValue.some(v => String(v).trim().toLowerCase() === targetValue);
+      }
+      return String(fieldValue).trim().toLowerCase() === targetValue;
     
     case 'NOT_EQUALS':
       if (fieldValue === undefined || fieldValue === null) return true;
-      return String(fieldValue).trim().toLowerCase() !== String(cond.value).trim().toLowerCase();
+      const compareValue = String(cond.value).trim().toLowerCase();
+      if (Array.isArray(fieldValue)) {
+        return !fieldValue.some(v => String(v).trim().toLowerCase() === compareValue);
+      }
+      return String(fieldValue).trim().toLowerCase() !== compareValue;
     
     case 'GREATER_THAN': {
       if (!isNumeric(fieldValue) || !isNumeric(cond.value)) return false;
@@ -189,12 +197,20 @@ export function validateCondition(
     
     case 'CONTAINS': {
       if (isEmpty(fieldValue) || !cond.value) return false;
-      return String(fieldValue).toLowerCase().includes(String(cond.value).toLowerCase());
+      const searchValue = String(cond.value).toLowerCase();
+      if (Array.isArray(fieldValue)) {
+        return fieldValue.some(v => String(v).toLowerCase().includes(searchValue));
+      }
+      return String(fieldValue).toLowerCase().includes(searchValue);
     }
     
     case 'NOT_CONTAINS': {
       if (isEmpty(fieldValue) || !cond.value) return true;
-      return !String(fieldValue).toLowerCase().includes(String(cond.value).toLowerCase());
+      const searchValue = String(cond.value).toLowerCase();
+      if (Array.isArray(fieldValue)) {
+        return !fieldValue.some(v => String(v).toLowerCase().includes(searchValue));
+      }
+      return !String(fieldValue).toLowerCase().includes(searchValue);
     }
     
     case 'LENGTH_LESS_THAN': {

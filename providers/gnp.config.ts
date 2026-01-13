@@ -399,8 +399,16 @@ Basándote en el diagnóstico definitivo, clasifica la severidad como:
               segundo_apellido: { type: Type.STRING },
               nombres: { type: Type.STRING },
               edad: { type: Type.STRING },
-              sexo: { type: Type.STRING },
-              causa_atencion: { type: Type.STRING }
+              sexo: { 
+                type: Type.ARRAY, 
+                items: { type: Type.STRING },
+                description: "Array con el sexo marcado: ['Femenino'] o ['Masculino']. SOLO extrae lo que VES marcado visualmente. Si hay ambos marcados (error en documento), incluir ambos."
+              },
+              causa_atencion: { 
+                type: Type.ARRAY, 
+                items: { type: Type.STRING },
+                description: "Array con la causa de atención marcada: puede contener 'Accidente', 'Enfermedad', 'Embarazo'. SOLO extrae lo que VES marcado visualmente."
+              }
             }
           },
 
@@ -471,7 +479,11 @@ Basándote en el diagnóstico definitivo, clasifica la severidad como:
           complicaciones: {
             type: Type.OBJECT,
             properties: {
-              presento_complicaciones: { type: Type.BOOLEAN, description: "¿Presentó complicaciones?" },
+              presento_complicaciones: { 
+                type: Type.ARRAY, 
+                items: { type: Type.STRING },
+                description: "Array con la opción marcada: ['Sí'] o ['No']. SOLO extrae lo que VES marcado visualmente."
+              },
               descripcion: { type: Type.STRING, description: "Descripción de complicaciones" },
               fecha_inicio: { type: Type.STRING, description: "Fecha de inicio de complicaciones" }
             }
@@ -507,7 +519,11 @@ Basándote en el diagnóstico definitivo, clasifica la severidad como:
               nombre_hospital: { type: Type.STRING, description: "Nombre del hospital o clínica" },
               ciudad: { type: Type.STRING, description: "Ciudad" },
               estado: { type: Type.STRING, description: "Estado" },
-              tipo_estancia: { type: Type.STRING, description: "Urgencia, Hospitalaria, o Corta estancia / ambulatoria" },
+              tipo_estancia: { 
+                type: Type.ARRAY, 
+                items: { type: Type.STRING },
+                description: "Array con el tipo de estancia marcado: puede contener 'Urgencia', 'Hospitalaria', 'Corta estancia / ambulatoria'. SOLO extrae lo que VES marcado visualmente."
+              },
               fecha_ingreso: { type: Type.STRING, description: "Fecha de ingreso" }
             }
           },
@@ -527,7 +543,11 @@ Basándote en el diagnóstico definitivo, clasifica la severidad como:
               telefono_consultorio: { type: Type.STRING },
               celular: { type: Type.STRING },
               correo_electronico: { type: Type.STRING },
-              tipo_participacion: { type: Type.STRING },
+              tipo_participacion: { 
+                type: Type.ARRAY, 
+                items: { type: Type.STRING },
+                description: "Array con el tipo de participación marcado: puede contener 'Tratante', 'Cirujano', 'Otra'. SOLO extrae lo que VES marcado visualmente."
+              },
               tipo_participacion_otra: { type: Type.STRING },
               hubo_interconsulta: { type: Type.BOOLEAN }
             }
@@ -538,7 +558,11 @@ Basándote en el diagnóstico definitivo, clasifica la severidad como:
             items: {
               type: Type.OBJECT,
               properties: {
-                tipo_participacion: { type: Type.STRING, description: "Interconsultante, Cirujano, Anestesiólogo, Ayudantía, u Otra" },
+                tipo_participacion: { 
+                  type: Type.ARRAY, 
+                  items: { type: Type.STRING },
+                  description: "Array con el tipo de participación marcado: puede contener 'Interconsultante', 'Cirujano', 'Anestesiólogo', 'Ayudantía', 'Otra'. SOLO extrae lo que VES marcado visualmente."
+                },
                 tipo_participacion_otra: { type: Type.STRING, description: "Si es Otra, especificar cuál" },
                 primer_apellido: { type: Type.STRING, description: "Primer apellido del médico" },
                 segundo_apellido: { type: Type.STRING, description: "Segundo apellido del médico" },
