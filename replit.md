@@ -149,3 +149,41 @@ GET  /objects/* - Serve uploaded files from Object Storage
 - `password_resets` - Reset tokens
 - `audit_logs` - Action tracking
 - `stripe_customers`, `subscriptions`, `payment_history` - Ready for Stripe
+- `scoring_rules` - Validation rules stored in PostgreSQL (migrated January 2026)
+- `aseguradora_configs` - Insurance provider configurations
+
+## Scoring Rules Database System (January 2026)
+
+### Architecture
+- **Database Storage**: All 56 validation rules migrated from static TypeScript files to PostgreSQL
+- **Service Layer**: `server/src/services/rulesService.ts` provides CRUD operations with type-safe mappings
+- **Frontend Integration**: `services/database-rules-loader.ts` with 5-minute cache and fallback to local rules
+- **API Endpoints**: REST API at `/api/rules` for rule management
+
+### Rule Distribution
+| Category | Count | Description |
+|----------|-------|-------------|
+| GENERAL | 25 | Universal rules (patient ID, vital signs, signatures) |
+| GNP | 28 | GNP-specific rules (procedure selection, policy validation) |
+| METLIFE | 3 | MetLife-specific rules |
+
+### API Endpoints (Rules)
+```
+GET  /api/rules - List all active rules (public, for frontend)
+GET  /api/rules/stats - Get rule statistics by category
+GET  /api/rules/aseguradora/:provider - Get rules for specific insurer
+GET  /api/rules/:ruleId - Get specific rule by ID
+POST /api/rules - Create new rule (requires auth)
+PUT  /api/rules/:ruleId - Update rule (requires auth)
+POST /api/rules/:ruleId/deactivate - Deactivate rule (requires auth)
+POST /api/rules/:ruleId/activate - Activate rule (requires auth)
+```
+
+### Validator Registry Pattern
+Rules with JavaScript validator functions are handled via `VALIDATORS_REGISTRY` in `database-rules-loader.ts`. Functions cannot be stored in JSON, so they are referenced by `validatorKey` in the database and resolved at runtime.
+
+### Fallback Mechanism
+If database is unavailable, the scoring engine falls back to static rules from:
+- `services/scoring-rules-general.ts`
+- `services/scoring-rules-gnp.ts`
+- `services/scoring-rules-metlife.ts`
