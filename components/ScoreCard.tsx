@@ -213,9 +213,12 @@ const ScoreCard: React.FC<ScoreCardProps> = ({ scoreData, flags, hasChanges, isR
         </div>
       )}
       
-      <div className="p-3 text-center border-t border-gray-100/50 bg-white/30">
-         <p className="text-[9px] text-gray-400">
-          Scoring Híbrido • JS Determinístico v4.0
+      <div className="p-4 text-center border-t border-gray-100/50 bg-white/40">
+        <p className="text-[10px] text-gray-500 font-medium mb-1.5">
+          Scoring Híbrido impulsado por IA
+        </p>
+        <p className="text-[9px] text-gray-400 leading-relaxed italic">
+          Este análisis debe ser validado por un auditor(a). Se recomienda contrastar con el documento original para garantizar la precisión de la extracción.
         </p>
       </div>
     </div>
