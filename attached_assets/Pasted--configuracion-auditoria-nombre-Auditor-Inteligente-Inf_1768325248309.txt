@@ -1,0 +1,534 @@
+{
+  "configuracion_auditoria": {
+    "nombre": "Auditor Inteligente Informe Médico GNP",
+    "version": "3.5",
+    "pais": "México",
+    "reglas_totales": 63,
+    "niveles_severidad": [
+      "Crítico",
+      "Importante",
+      "Moderado",
+      "Nota"
+    ]
+  },
+  "reglas": [
+    {
+      "id": "01",
+      "bloque": "Bloque 1: Identificación del Asegurado",
+      "logica": "count(tramite_seleccionado) >= 1",
+      "mensaje": "Debe seleccionar al menos un trámite solicitado.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "02",
+      "bloque": "Bloque 1: Identificación del Asegurado",
+      "logica": "poliza.numero.is_numeric() == False",
+      "mensaje": "El número de póliza debe contener solo dígitos.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "03",
+      "bloque": "Bloque 1: Identificación del Asegurado",
+      "logica": "paciente.apellido_paterno == ''",
+      "mensaje": "El primer apellido del asegurado es obligatorio.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "03b",
+      "bloque": "Bloque 1: Identificación del Asegurado",
+      "logica": "paciente.apellido_materno == ''",
+      "mensaje": "Falta segundo apellido. Se recomienda 'N/A' si no tiene.",
+      "severidad": "Nota"
+    },
+    {
+      "id": "04",
+      "bloque": "Bloque 1: Identificación del Asegurado",
+      "logica": "paciente.nombre == ''",
+      "mensaje": "El nombre del asegurado es obligatorio.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "05",
+      "bloque": "Bloque 1: Identificación del Asegurado",
+      "logica": "count(paciente.sexo_marcado) != 1",
+      "mensaje": "Seleccione solo un sexo (F o M).",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "06",
+      "bloque": "Bloque 1: Identificación del Asegurado",
+      "logica": "not (0 <= paciente.edad <= 110)",
+      "mensaje": "Ingrese una edad válida para el asegurado (0-110).",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "07",
+      "bloque": "Bloque 1: Identificación del Asegurado",
+      "logica": "count(causa_atencion) != 1",
+      "mensaje": "Seleccione una sola causa (Accidente/Enfermedad/Embarazo).",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "08",
+      "bloque": "Bloque 2: Historia Clínica y Tratamiento",
+      "logica": "ant.patologicos == ''",
+      "mensaje": "Indique antecedentes patológicos o 'Ninguno'.",
+      "severidad": "Importante"
+    },
+    {
+      "id": "09",
+      "bloque": "Bloque 2: Historia Clínica y Tratamiento",
+      "logica": "ant.no_patologicos == ''",
+      "mensaje": "Indique antecedentes no patológicos o 'Ninguno'.",
+      "severidad": "Importante"
+    },
+    {
+      "id": "10",
+      "bloque": "Bloque 2: Historia Clínica y Tratamiento",
+      "logica": "if paciente.sexo == 'F' and ant.gineco == ''",
+      "mensaje": "Descripción de G.O. obligatoria para mujeres.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "11",
+      "bloque": "Bloque 2: Historia Clínica y Tratamiento",
+      "logica": "if paciente.edad < 18 and ant.perinatales == ''",
+      "mensaje": "Antecedentes perinatales obligatorios para menores de edad.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "12",
+      "bloque": "Bloque 2: Historia Clínica y Tratamiento",
+      "logica": "len(padecimiento.descripcion) < 15",
+      "mensaje": "La descripción del padecimiento actual es insuficiente.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "13",
+      "bloque": "Bloque 2: Historia Clínica y Tratamiento",
+      "logica": "not is_valid_date(f_inicio_pad)",
+      "mensaje": "Fecha de inicio de síntomas inválida o vacía.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "13b",
+      "bloque": "Bloque 2: Historia Clínica y Tratamiento",
+      "logica": "if trat.descripcion != '' and f_inicio_trat == ''",
+      "mensaje": "Fecha de inicio del tratamiento obligatoria si se detalla uno.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "13c",
+      "bloque": "Bloque 2: Historia Clínica y Tratamiento",
+      "logica": "if diag.definitivo != '' and trat.descripcion == ''",
+      "mensaje": "Descripción del tratamiento obligatoria si hay un diagnóstico.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "14",
+      "bloque": "Bloque 3: Diagnóstico y Coherencia Clínica",
+      "logica": "diagnostico.definitivo == ''",
+      "mensaje": "El diagnóstico definitivo no puede estar vacío.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "15",
+      "bloque": "Bloque 3: Diagnóstico y Coherencia Clínica",
+      "logica": "f_diagnostico > fecha_actual",
+      "mensaje": "La fecha de diagnóstico no puede ser una fecha futura.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "16",
+      "bloque": "Bloque 3: Diagnóstico y Coherencia Clínica",
+      "logica": "count(congenito_adquirido) != 1",
+      "mensaje": "Elija exactamente entre Congénito o Adquirido.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "17",
+      "bloque": "Bloque 3: Diagnóstico y Coherencia Clínica",
+      "logica": "count(agudo_cronico) != 1",
+      "mensaje": "Elija exactamente entre Agudo o Crónico.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "18",
+      "bloque": "Bloque 3: Diagnóstico y Coherencia Clínica",
+      "logica": "count(relacionado_otro) != 1",
+      "mensaje": "Marque 'Sí' o 'No' en relación con otro padecimiento.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "61",
+      "bloque": "Bloque 3: Diagnóstico y Coherencia Clínica",
+      "logica": "if diag.severidad == 'grave' and trat.descripcion == 'Ninguno'",
+      "mensaje": "Diagnóstico grave sin tratamiento documentado. Verificar coherencia.",
+      "severidad": "Importante"
+    },
+    {
+      "id": "19",
+      "bloque": "Bloque 4: Signos Vitales",
+      "logica": "not (30 <= pulso <= 220)",
+      "mensaje": "Frecuencia de pulso fuera de rango fisiológico probable.",
+      "severidad": "Moderado"
+    },
+    {
+      "id": "20",
+      "bloque": "Bloque 4: Signos Vitales",
+      "logica": "not (8 <= respiracion <= 60)",
+      "mensaje": "Frecuencia respiratoria fuera de rango fisiológico probable.",
+      "severidad": "Moderado"
+    },
+    {
+      "id": "21",
+      "bloque": "Bloque 4: Signos Vitales",
+      "logica": "not (34 <= temperatura <= 42)",
+      "mensaje": "Temperatura fuera de rango fisiológico.",
+      "severidad": "Importante"
+    },
+    {
+      "id": "22",
+      "bloque": "Bloque 4: Signos Vitales",
+      "logica": "regex_match('^\\d{2,3}/\\d{2,3}$', presion) == False",
+      "mensaje": "Use el formato XXX/XX para la presión arterial.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "23",
+      "bloque": "Bloque 4: Signos Vitales",
+      "logica": "if sistolica <= diastolica",
+      "mensaje": "La presión sistólica debe ser numéricamente mayor a la diastólica.",
+      "severidad": "Importante"
+    },
+    {
+      "id": "24",
+      "bloque": "Bloque 4: Signos Vitales",
+      "logica": "peso <= 0 or talla <= 0",
+      "mensaje": "Ingrese valores de peso y talla válidos (mayores a cero).",
+      "severidad": "Importante"
+    },
+    {
+      "id": "25",
+      "bloque": "Bloque 5: Hospitalización y Exploración",
+      "logica": "exploracion.hallazgos == ''",
+      "mensaje": "Los hallazgos de exploración física son obligatorios.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "25b",
+      "bloque": "Bloque 5: Hospitalización y Exploración",
+      "logica": "info_adicional == ''",
+      "mensaje": "Se recomienda llenar información adicional si el caso lo amerita.",
+      "severidad": "Nota"
+    },
+    {
+      "id": "26",
+      "bloque": "Bloque 5: Hospitalización y Exploración",
+      "logica": "estudios.descripcion == ''",
+      "mensaje": "Mencione estudios realizados o escriba 'Ninguno'.",
+      "severidad": "Importante"
+    },
+    {
+      "id": "27",
+      "bloque": "Bloque 5: Hospitalización y Exploración",
+      "logica": "count(tipo_estancia) != 1",
+      "mensaje": "Seleccione exactamente un tipo de estancia.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "28",
+      "bloque": "Bloque 5: Hospitalización y Exploración",
+      "logica": "if estancia != 'Corta' and hosp.nombre == ''",
+      "mensaje": "Nombre del hospital obligatorio para Urgencia u Hospitalización.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "28b",
+      "bloque": "Bloque 5: Hospitalización y Exploración",
+      "logica": "if estancia != 'Corta' and (hosp.ciudad == '' or hosp.estado == '')",
+      "mensaje": "Ciudad y Estado del hospital son obligatorios para esta estancia.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "29",
+      "bloque": "Bloque 5: Hospitalización y Exploración",
+      "logica": "if estancia != 'Corta' and f_ingreso == ''",
+      "mensaje": "Fecha de ingreso hospitalario obligatoria.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "30",
+      "bloque": "Bloque 6: Datos del Médico Tratante",
+      "logica": "medico.apellido_paterno == ''",
+      "mensaje": "El primer apellido del médico tratante es obligatorio.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "30b",
+      "bloque": "Bloque 6: Datos del Médico Tratante",
+      "logica": "medico.apellido_materno == ''",
+      "mensaje": "Falta el segundo apellido del médico (Recomendado).",
+      "severidad": "Nota"
+    },
+    {
+      "id": "31",
+      "bloque": "Bloque 6: Datos del Médico Tratante",
+      "logica": "medico.nombre == ''",
+      "mensaje": "El nombre del médico tratante es obligatorio.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "32",
+      "bloque": "Bloque 6: Datos del Médico Tratante",
+      "logica": "medico.cedula.is_numeric() == False",
+      "mensaje": "La cédula profesional debe ser numérica.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "32b",
+      "bloque": "Bloque 6: Datos del Médico Tratante",
+      "logica": "count(convenio_gnp) != 1",
+      "mensaje": "Indique obligatoriamente si el médico tiene convenio con GNP.",
+      "severidad": "Importante"
+    },
+    {
+      "id": "32c",
+      "bloque": "Bloque 6: Datos del Médico Tratante",
+      "logica": "count(ajusta_tabulador) != 1",
+      "mensaje": "Indique si el médico se ajusta al tabulador de la póliza.",
+      "severidad": "Importante"
+    },
+    {
+      "id": "32d",
+      "bloque": "Bloque 6: Datos del Médico Tratante",
+      "logica": "if 'Cirujano' in medico.participacion and medico.ppto == ''",
+      "mensaje": "Presupuesto de honorarios requerido si participa como Cirujano.",
+      "severidad": "Importante"
+    },
+    {
+      "id": "33",
+      "bloque": "Bloque 6: Datos del Médico Tratante",
+      "logica": "if medico.especialidad != '' and medico.cedula_especialidad == ''",
+      "mensaje": "Cédula de especialidad requerida si se declara una especialidad.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "34",
+      "bloque": "Bloque 6: Datos del Médico Tratante",
+      "logica": "count(medico.participacion) < 1",
+      "mensaje": "Seleccione al menos un rol de participación para el médico.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "35",
+      "bloque": "Bloque 6: Datos del Médico Tratante",
+      "logica": "regex_match(email_pattern, medico.correo) == False",
+      "mensaje": "El formato del correo electrónico del médico es inválido.",
+      "severidad": "Importante"
+    },
+    {
+      "id": "36",
+      "bloque": "Bloque 6: Datos del Médico Tratante",
+      "logica": "medico.telefono == '' and medico.celular == ''",
+      "mensaje": "Debe proporcionar al menos un teléfono de contacto del médico.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "37",
+      "bloque": "Bloque 7: Médicos Interconsultantes",
+      "logica": "count(hubo_interconsulta) != 1",
+      "mensaje": "Indique 'Sí' o 'No' en el campo de interconsultas.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "38",
+      "bloque": "Bloque 7: Médicos Interconsultantes",
+      "logica": "if interconsulta == 'SÍ' and count(lista_interconsultantes) == 0",
+      "mensaje": "Declaró interconsulta pero la tabla de médicos está vacía.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "39",
+      "bloque": "Bloque 7: Médicos Interconsultantes",
+      "logica": "for m in lista: if m.nombre != '' and m.cedula == ''",
+      "mensaje": "Falta la cédula profesional del médico interconsultante.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "39b",
+      "bloque": "Bloque 7: Médicos Interconsultantes",
+      "logica": "for m in lista: if m.nombre != '' and m.apellido_materno == ''",
+      "mensaje": "Falta el segundo apellido del médico interconsultante.",
+      "severidad": "Nota"
+    },
+    {
+      "id": "39c",
+      "bloque": "Bloque 7: Médicos Interconsultantes",
+      "logica": "for m in lista: if m.nombre != '' and m.especialidad == ''",
+      "mensaje": "Falta la especialidad del médico interconsultante.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "39d",
+      "bloque": "Bloque 7: Médicos Interconsultantes",
+      "logica": "for m in lista: if m.especialidad != '' and m.cedula_especialidad == ''",
+      "mensaje": "Falta la cédula de especialidad del médico interconsultante.",
+      "severidad": "Importante"
+    },
+    {
+      "id": "40",
+      "bloque": "Bloque 7: Médicos Interconsultantes",
+      "logica": "for m in lista: if m.nombre != '' and m.presupuesto == ''",
+      "mensaje": "Falta el presupuesto de honorarios para el interconsultante.",
+      "severidad": "Importante"
+    },
+    {
+      "id": "40b",
+      "bloque": "Bloque 7: Médicos Interconsultantes",
+      "logica": "for m in lista: if m.nombre != '' and count(m.participacion) < 1",
+      "mensaje": "Seleccione al menos un rol de participación para el interconsultante.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "41",
+      "bloque": "Bloque 8: Dependencias y Complicaciones",
+      "logica": "if relacionado == 'SÍ' and padecimiento_relacionado == ''",
+      "mensaje": "Especifique detalladamente el padecimiento relacionado.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "42",
+      "bloque": "Bloque 8: Dependencias y Complicaciones",
+      "logica": "if relacionado == 'NO' and padecimiento_relacionado != 'Ninguno'",
+      "mensaje": "Si no hay relación, escriba 'Ninguno' por coherencia administrativa.",
+      "severidad": "Moderado"
+    },
+    {
+      "id": "43",
+      "bloque": "Bloque 8: Dependencias y Complicaciones",
+      "logica": "count(complicaciones_si_no) != 1",
+      "mensaje": "Debe marcar obligatoriamente si hubo o no complicaciones.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "43b",
+      "bloque": "Bloque 8: Dependencias y Complicaciones",
+      "logica": "if hubo_complicaciones == 'SÍ' and (descripcion_comp == '' or fecha_comp == '')",
+      "mensaje": "Si hay complicaciones, es obligatorio describirlas y poner la fecha.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "44",
+      "bloque": "Bloque 8: Dependencias y Complicaciones",
+      "logica": "if participacion == 'Otra' and especificacion_rol == ''",
+      "mensaje": "Especifique detalladamente el rol del médico en 'Otra'.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "45",
+      "bloque": "Bloque 8: Dependencias y Complicaciones",
+      "logica": "if regex_search('(quir|cirugía|intervención)', tratamiento) and equipo_qx == ''",
+      "mensaje": "Se menciona cirugía: describa el equipo o técnica utilizada.",
+      "severidad": "Importante"
+    },
+    {
+      "id": "46",
+      "bloque": "Bloque 9: Cronología Estricta",
+      "logica": "f_inicio_padecimiento > f_diagnostico",
+      "mensaje": "Inconsistencia: El inicio de síntomas no puede ser posterior al diagnóstico.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "47",
+      "bloque": "Bloque 9: Cronología Estricta",
+      "logica": "f_diagnostico > f_inicio_tratamiento",
+      "mensaje": "Inconsistencia: El tratamiento no puede haber iniciado antes del diagnóstico.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "48",
+      "bloque": "Bloque 9: Cronología Estricta",
+      "logica": "f_ingreso_hosp < f_diagnostico",
+      "mensaje": "Inconsistencia: El ingreso hospitalario es previo a la fecha de diagnóstico.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "49",
+      "bloque": "Bloque 9: Cronología Estricta",
+      "logica": "f_emision_informe < f_diagnostico",
+      "mensaje": "El informe médico no puede tener fecha anterior a la del diagnóstico.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "50",
+      "bloque": "Bloque 9: Cronología Estricta",
+      "logica": "f_emision_informe > fecha_actual",
+      "mensaje": "La fecha de emisión del informe no puede ser una fecha futura.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "51",
+      "bloque": "Bloque 10: Integridad Documental y Legal",
+      "logica": "lugar_y_fecha_firma == ''",
+      "mensaje": "Falta el lugar y la fecha de la firma al final del informe.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "52",
+      "bloque": "Bloque 10: Integridad Documental y Legal",
+      "logica": "firma_autografa_detectada == False",
+      "mensaje": "No se detecta firma autógrafa o el trazo es ilegible.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "53",
+      "bloque": "Bloque 10: Integridad Documental y Legal",
+      "logica": "deteccion_tachaduras == True",
+      "mensaje": "El documento no es válido porque presenta tachaduras o enmendaduras.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "54",
+      "bloque": "Bloque 10: Integridad Documental y Legal",
+      "logica": "texto_aviso_privacidad != texto_original_gnp",
+      "mensaje": "El texto legal del Aviso de Privacidad ha sido alterado o recortado.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "55",
+      "bloque": "Bloque 10: Integridad Documental y Legal",
+      "logica": "declaracion_protesta != texto_original_gnp",
+      "mensaje": "La declaración 'Bajo protesta de decir verdad' ha sido modificada.",
+      "severidad": "Crítico"
+    },
+    {
+      "id": "56",
+      "bloque": "Bloque 10: Integridad Documental y Legal",
+      "logica": "medico_nombre_declarado != nombre_firma_ocr",
+      "mensaje": "El médico que firma el documento no coincide con el tratante declarado.",
+      "severidad": "Importante"
+    },
+    {
+      "id": "58",
+      "bloque": "Bloque 10: Integridad Documental y Legal",
+      "logica": "paciente.edad > 110",
+      "mensaje": "Paciente con edad centenaria detectado. Verificar veracidad del dato.",
+      "severidad": "Nota"
+    },
+    {
+      "id": "59",
+      "bloque": "Bloque 10: Integridad Documental y Legal",
+      "logica": "f_inicio_pad < (fecha_actual - 100 años)",
+      "mensaje": "Fecha de inicio de padecimiento improbable (muy antigua).",
+      "severidad": "Nota"
+    },
+    {
+      "id": "60",
+      "bloque": "Bloque 10: Integridad Documental y Legal",
+      "logica": "any_field_in_form == None or any_field_in_form == ''",
+      "mensaje": "Error de integridad: El formato prohíbe dejar espacios sin contestar.",
+      "severidad": "Crítico"
+    }
+  ]
+}
