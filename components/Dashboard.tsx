@@ -227,15 +227,20 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
 
     const handleToggle = (option: string) => {
       const optionLower = option.toLowerCase();
-      // Selección única: si ya está seleccionado, deseleccionar (array vacío)
-      // Si no está seleccionado, reemplazar con solo esta opción
+      let newValues: string[];
+      
       if (selectedValues.includes(optionLower)) {
-        // Deseleccionar - array vacío
-        handleInputChange(path, []);
+        // Deseleccionar: remover este valor del array
+        newValues = selectedValues
+          .filter(v => v !== optionLower)
+          .map(v => options.find(o => o.toLowerCase() === v) || v);
       } else {
-        // Seleccionar solo esta opción (reemplaza cualquier selección previa)
-        handleInputChange(path, [option]);
+        // Seleccionar: agregar este valor al array (permitir múltiples)
+        const currentOriginal = selectedValues.map(v => options.find(o => o.toLowerCase() === v) || v);
+        newValues = [...currentOriginal, option];
       }
+      
+      handleInputChange(path, newValues);
     };
 
     return (
