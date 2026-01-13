@@ -109,18 +109,25 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, report }) =>
       // --- HEADER ---
       // Draw Logo (Veryka.ai)
       try {
-        const logoUrl = '/veryka-logo.png'; // Assuming this exists or using a text-based logo if not
-        // Since I don't have a confirmed logo file path and can't easily embed images without knowing they exist,
-        // I will use a styled text logo for consistency if the image fails or as a placeholder.
-        page.drawText("VERYKA", { x: margin, y, size: 20, font: fontBold, color: hexToRgb('#1A2B56') });
-        page.drawText(".AI", { x: margin + 85, y, size: 20, font: fontBold, color: hexToRgb('#00D1E0') });
+        const logoUrl = '/attached_assets/Veryka_Logo_1767919213039.png';
+        const logoImageBytes = await fetch(logoUrl).then(res => res.arrayBuffer());
+        const logoImage = await pdfDoc.embedPng(logoImageBytes);
+        const logoDims = logoImage.scale(0.15); // Adjust scale as needed
+        page.drawImage(logoImage, {
+          x: margin,
+          y: y - (logoDims.height / 2),
+          width: logoDims.width,
+          height: logoDims.height,
+        });
       } catch (e) {
-        console.error("Error drawing logo", e);
+        console.error("Error drawing logo image", e);
+        // Fallback to text if image fails
+        page.drawText("VERYKA.AI", { x: margin, y, size: 20, font: fontBold, color: hexToRgb('#1A2B56') });
       }
 
-      page.drawText("REPORTE DE AUDITORÍA", { x: margin, y: y - 30, size: 16, font: fontBold, color: slate800 });
-      page.drawText(`Generado: ${new Date().toLocaleDateString()}`, { x: width - margin - 100, y: y - 30, size: 10, font: fontRegular, color: slate500 });
-      y -= 60;
+      page.drawText("REPORTE DE AUDITORÍA", { x: margin, y: y - 50, size: 16, font: fontBold, color: slate800 });
+      page.drawText(`Generado: ${new Date().toLocaleDateString()}`, { x: width - margin - 100, y: y - 50, size: 10, font: fontRegular, color: slate500 });
+      y -= 80;
 
       // --- SCORE CARD BANNER (Full Width) ---
       // Background Rect
