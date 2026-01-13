@@ -78,6 +78,36 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
             current = current[path[i]];
         }
         current[path[path.length - 1]] = processedValue;
+        
+        // Sincronizar campos derivados para tipo_padecimiento
+        if (pathString === 'padecimiento_actual.tipo_padecimiento') {
+          const valuesArray: string[] = Array.isArray(processedValue) 
+            ? processedValue.map((v: string) => v.toLowerCase())
+            : [];
+          
+          // Derivar tipo_padecimiento_congenito_adquirido
+          let congenitoAdquirido = '';
+          if (valuesArray.includes('congénito') || valuesArray.includes('congenito')) {
+            congenitoAdquirido = 'Congénito';
+          } else if (valuesArray.includes('adquirido')) {
+            congenitoAdquirido = 'Adquirido';
+          }
+          
+          // Derivar tipo_padecimiento_agudo_cronico
+          let agudoCronico = '';
+          if (valuesArray.includes('agudo')) {
+            agudoCronico = 'Agudo';
+          } else if (valuesArray.includes('crónico') || valuesArray.includes('cronico')) {
+            agudoCronico = 'Crónico';
+          }
+          
+          if (!newData.padecimiento_actual) {
+            newData.padecimiento_actual = {} as any;
+          }
+          newData.padecimiento_actual.tipo_padecimiento_congenito_adquirido = congenitoAdquirido;
+          newData.padecimiento_actual.tipo_padecimiento_agudo_cronico = agudoCronico;
+        }
+        
         return newData;
     });
 
