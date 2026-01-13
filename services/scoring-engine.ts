@@ -1,46 +1,29 @@
 import { ExtractedData, ScoringRule, ScoringResult, ProviderType } from "../types";
-import { REGLAS_GENERALES } from './scoring-rules-general';
-import { REGLAS_GNP } from './scoring-rules-gnp';
-import { REGLAS_METLIFE } from './scoring-rules-metlife';
 import { validateRule } from './rule-validator';
 import { fetchRulesFromDatabase, clearRulesCache } from './database-rules-loader';
 
-export function getReglasParaAseguradoraLocal(provider: ProviderType | 'ALL'): ScoringRule[] {
-  if (provider === 'GNP') {
-    return [...REGLAS_GENERALES, ...REGLAS_GNP];
-  }
-  if (provider === 'METLIFE') {
-    return [...REGLAS_GENERALES, ...REGLAS_METLIFE];
-  }
-  return [...REGLAS_GENERALES, ...REGLAS_GNP, ...REGLAS_METLIFE];
-}
-
 export async function getReglasParaAseguradora(provider: ProviderType | 'ALL'): Promise<ScoringRule[]> {
-  try {
-    const providerToFetch = provider === 'ALL' || provider === 'UNKNOWN' ? undefined : provider;
-    const dbRules = await fetchRulesFromDatabase(providerToFetch as ProviderType | undefined);
-    if (dbRules && dbRules.length > 0) {
-      return dbRules;
-    }
-  } catch (error) {
-    console.warn('Error loading rules from database, falling back to local rules:', error);
+  const providerToFetch = provider === 'ALL' || provider === 'UNKNOWN' ? undefined : provider;
+  const dbRules = await fetchRulesFromDatabase(providerToFetch as ProviderType | undefined);
+  
+  if (!dbRules || dbRules.length === 0) {
+    throw new Error('No se pudieron cargar las reglas de validación desde la base de datos');
   }
-  return getReglasParaAseguradoraLocal(provider);
+  
+  return dbRules;
 }
-
-export function getReglasParaAseguradoraSync(provider: ProviderType | 'ALL'): ScoringRule[] {
-  return getReglasParaAseguradoraLocal(provider);
-}
-
-export const DEFAULT_SCORING_RULES: ScoringRule[] = getReglasParaAseguradoraLocal('ALL');
 
 export { clearRulesCache };
 
 export function calculateScore(
   data: ExtractedData,
-  previousScore?: number,
-  rules: ScoringRule[] = DEFAULT_SCORING_RULES
+  previousScore: number | undefined,
+  rules: ScoringRule[]
 ): ScoringResult {
+  if (!rules || rules.length === 0) {
+    throw new Error('No se proporcionaron reglas de validación. Las reglas deben cargarse desde la base de datos.');
+  }
+
   const baseScore = 100;
   let totalDeducted = 0;
   const deductions: ScoringResult['deductions'] = [];
@@ -87,9 +70,7 @@ export function calculateScore(
 export function reEvaluateScore(
   newData: ExtractedData,
   previousScore: number,
-  rules: ScoringRule[] = DEFAULT_SCORING_RULES
+  rules: ScoringRule[]
 ): ScoringResult {
   return calculateScore(newData, previousScore, rules);
 }
-
-export { REGLAS_GENERALES, REGLAS_GNP, REGLAS_METLIFE };

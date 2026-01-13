@@ -7,7 +7,7 @@ import PdfViewer from './components/PdfViewer';
 import ProviderSelector, { ProviderOption } from './components/ProviderSelector';
 import LoginPage from './components/LoginPage';
 import { analyzeReportImage, reEvaluateReport } from './services/geminiService';
-import { DEFAULT_SCORING_RULES } from './services/scoring-engine';
+import { getReglasParaAseguradora } from './services/scoring-engine';
 import { AnalysisReport, AnalysisStatus, ExtractedData, ScoringRule, SavedReport } from './types';
 import { detectProviderFromPdf, DetectedProvider } from './services/providerDetection';
 import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw, AlignLeft, Image as ImageIcon, Loader2, Building2, LogOut, ChevronDown, User as UserIcon } from 'lucide-react';
@@ -30,21 +30,30 @@ const App: React.FC = () => {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [savedReports, setSavedReports] = useState<SavedReport[]>([]);
   
-  // State for Rules
-  const [rules, setRules] = useState<ScoringRule[]>(() => {
-    try {
-      const savedRules = localStorage.getItem('custom-rules');
-      if (savedRules) {
-        const parsed = JSON.parse(savedRules) as ScoringRule[];
-        return [...DEFAULT_SCORING_RULES, ...parsed];
-      }
-    } catch (e) {
-      console.error('Error loading custom rules from localStorage:', e);
-    }
-    return DEFAULT_SCORING_RULES;
-  });
+  // State for Rules (loaded from database)
+  const [rules, setRules] = useState<ScoringRule[]>([]);
+  const [isLoadingRules, setIsLoadingRules] = useState(true);
+  const [rulesError, setRulesError] = useState<string | null>(null);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const [isInsuranceAuditorOpen, setIsInsuranceAuditorOpen] = useState(false);
+
+  // Load rules from database on mount
+  useEffect(() => {
+    const loadRules = async () => {
+      try {
+        setIsLoadingRules(true);
+        setRulesError(null);
+        const dbRules = await getReglasParaAseguradora('ALL');
+        setRules(dbRules);
+      } catch (e) {
+        console.error('Error loading rules from database:', e);
+        setRulesError('No se pudieron cargar las reglas de validación');
+      } finally {
+        setIsLoadingRules(false);
+      }
+    };
+    loadRules();
+  }, []);
 
   // State for Provider Selection
   const [selectedProvider, setSelectedProvider] = useState<ProviderOption>('UNKNOWN');
@@ -194,6 +203,17 @@ const App: React.FC = () => {
   const handleStartAnalysis = async () => {
     if (!pendingFile || selectedProvider === 'UNKNOWN') return;
     
+    if (isLoadingRules) {
+      setError("Cargando reglas de validación, espera un momento...");
+      return;
+    }
+    
+    if (rulesError || rules.length === 0) {
+      setError("No se pudieron cargar las reglas de validación desde la base de datos. Contacta soporte.");
+      setStatus('error');
+      return;
+    }
+    
     setStatus('analyzing');
     setError(null);
     
@@ -208,6 +228,8 @@ const App: React.FC = () => {
         setError("Error: Modelo de IA no disponible. Contacta soporte.");
       } else if (errorMessage.includes('400')) {
         setError("Error en la configuración. Intenta con otra aseguradora.");
+      } else if (errorMessage.includes('reglas de validación')) {
+        setError("Error: No hay reglas de validación disponibles. Contacta soporte.");
       } else {
         setError("Error al procesar el documento. Asegúrate de usar una API Key válida o intenta con una imagen más clara.");
       }
@@ -217,6 +239,12 @@ const App: React.FC = () => {
 
   const handleReevaluate = async (updatedData: ExtractedData) => {
     if (!report) return;
+    
+    if (rules.length === 0) {
+      setError("No hay reglas de validación disponibles para re-evaluar.");
+      return;
+    }
+    
     const previousStatus = status;
     setStatus('re-evaluating');
     try {

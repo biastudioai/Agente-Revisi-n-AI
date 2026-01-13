@@ -182,8 +182,8 @@ POST /api/rules/:ruleId/activate - Activate rule (requires auth)
 ### Validator Registry Pattern
 Rules with JavaScript validator functions are handled via `VALIDATORS_REGISTRY` in `database-rules-loader.ts`. Functions cannot be stored in JSON, so they are referenced by `validatorKey` in the database and resolved at runtime.
 
-### Fallback Mechanism
-If database is unavailable, the scoring engine falls back to static rules from:
-- `services/scoring-rules-general.ts`
-- `services/scoring-rules-gnp.ts`
-- `services/scoring-rules-metlife.ts`
+### Database-Only Architecture (January 2026)
+All validation rules are stored exclusively in PostgreSQL. There are no static fallback files - if the database is unavailable, the application will show an error message. This ensures:
+- **Security**: Rules cannot be modified without database access
+- **Consistency**: Single source of truth for all validation logic
+- **Auditability**: All rule changes are tracked in the database

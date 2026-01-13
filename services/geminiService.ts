@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { AnalysisReport, ExtractedData, ScoringRule } from "../types";
-import { calculateScore, reEvaluateScore, DEFAULT_SCORING_RULES } from "./scoring-engine";
+import { calculateScore, reEvaluateScore } from "./scoring-engine";
 import { getProviderGeminiSchema, buildProviderSystemPrompt, ProviderType } from "../providers";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -10,7 +10,7 @@ export const analyzeReportImage = async (
     base64Data: string, 
     mimeType: string,
     provider: ProviderType,
-    rules: ScoringRule[] = DEFAULT_SCORING_RULES
+    rules: ScoringRule[]
 ): Promise<AnalysisReport> => {
   try {
     console.log("Starting analysis with model:", MODEL_NAME);
@@ -119,7 +119,7 @@ export const analyzeReportImage = async (
 export const reEvaluateReport = async (
   previousReport: AnalysisReport, 
   updatedData: ExtractedData,
-  rules: ScoringRule[] = DEFAULT_SCORING_RULES
+  rules: ScoringRule[]
 ): Promise<AnalysisReport> => {
     const newScoringResult = reEvaluateScore(
         updatedData, 
