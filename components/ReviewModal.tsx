@@ -107,9 +107,20 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, report }) =>
       const margin = 40;
       
       // --- HEADER ---
-      page.drawText("REPORTE DE AUDITORÍA MÉDICA", { x: margin, y, size: 16, font: fontBold, color: slate800 });
-      page.drawText(`Generado: ${new Date().toLocaleDateString()}`, { x: width - margin - 100, y, size: 10, font: fontRegular, color: slate500 });
-      y -= 30;
+      // Draw Logo (Veryka.ai)
+      try {
+        const logoUrl = '/veryka-logo.png'; // Assuming this exists or using a text-based logo if not
+        // Since I don't have a confirmed logo file path and can't easily embed images without knowing they exist,
+        // I will use a styled text logo for consistency if the image fails or as a placeholder.
+        page.drawText("VERYKA", { x: margin, y, size: 20, font: fontBold, color: hexToRgb('#1A2B56') });
+        page.drawText(".AI", { x: margin + 85, y, size: 20, font: fontBold, color: hexToRgb('#00D1E0') });
+      } catch (e) {
+        console.error("Error drawing logo", e);
+      }
+
+      page.drawText("REPORTE DE AUDITORÍA", { x: margin, y: y - 30, size: 16, font: fontBold, color: slate800 });
+      page.drawText(`Generado: ${new Date().toLocaleDateString()}`, { x: width - margin - 100, y: y - 30, size: 10, font: fontRegular, color: slate500 });
+      y -= 60;
 
       // --- SCORE CARD BANNER (Full Width) ---
       // Background Rect
