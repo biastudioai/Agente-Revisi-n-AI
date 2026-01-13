@@ -74,6 +74,7 @@ export function validateCondition(
       return isEmpty(fieldValue);
     
     case 'IS_NOT_EMPTY':
+    case 'NOT_EMPTY':
       return !isEmpty(fieldValue);
     
     case 'REQUIRES': {
@@ -111,6 +112,16 @@ export function validateCondition(
       return Number(fieldValue) < Number(cond.value);
     }
     
+    case 'GREATER_THAN_OR_EQUAL': {
+      if (!isNumeric(fieldValue) || !isNumeric(cond.value)) return false;
+      return Number(fieldValue) >= Number(cond.value);
+    }
+    
+    case 'LESS_THAN_OR_EQUAL': {
+      if (!isNumeric(fieldValue) || !isNumeric(cond.value)) return false;
+      return Number(fieldValue) <= Number(cond.value);
+    }
+    
     case 'DATE_MISSING':
       return isEmpty(fieldValue);
     
@@ -124,16 +135,30 @@ export function validateCondition(
     
     case 'DATE_BEFORE': {
       const dateA = parseDate(String(fieldValue));
-      const dateB = cond.compareField ? parseDate(String(getNestedField(data, cond.compareField))) : null;
+      let dateB: Date | null = null;
+      if (cond.value === 'TODAY') {
+        dateB = new Date();
+      } else if (cond.compareField) {
+        dateB = parseDate(String(getNestedField(data, cond.compareField)));
+      } else if (cond.value) {
+        dateB = parseDate(String(cond.value));
+      }
       if (!dateA || !dateB) return false;
-      return dateA >= dateB;
+      return dateA < dateB;
     }
     
     case 'DATE_AFTER': {
       const dateA = parseDate(String(fieldValue));
-      const dateB = cond.compareField ? parseDate(String(getNestedField(data, cond.compareField))) : null;
+      let dateB: Date | null = null;
+      if (cond.value === 'TODAY') {
+        dateB = new Date();
+      } else if (cond.compareField) {
+        dateB = parseDate(String(getNestedField(data, cond.compareField)));
+      } else if (cond.value) {
+        dateB = parseDate(String(cond.value));
+      }
       if (!dateA || !dateB) return false;
-      return dateA <= dateB;
+      return dateA > dateB;
     }
     
     case 'IS_NUMBER':
@@ -155,11 +180,33 @@ export function validateCondition(
     case 'REGEX': {
       if (isEmpty(fieldValue) || !cond.value) return false;
       try {
-        const regex = new RegExp(String(cond.value));
+        const regex = new RegExp(String(cond.value), 'i');
         return !regex.test(String(fieldValue));
       } catch {
         return false;
       }
+    }
+    
+    case 'CONTAINS': {
+      if (isEmpty(fieldValue) || !cond.value) return false;
+      return String(fieldValue).toLowerCase().includes(String(cond.value).toLowerCase());
+    }
+    
+    case 'NOT_CONTAINS': {
+      if (isEmpty(fieldValue) || !cond.value) return true;
+      return !String(fieldValue).toLowerCase().includes(String(cond.value).toLowerCase());
+    }
+    
+    case 'LENGTH_LESS_THAN': {
+      if (isEmpty(fieldValue)) return true;
+      const strValue = String(fieldValue);
+      return strValue.length < Number(cond.value);
+    }
+    
+    case 'LENGTH_GREATER_THAN': {
+      if (isEmpty(fieldValue)) return false;
+      const strValue = String(fieldValue);
+      return strValue.length > Number(cond.value);
     }
     
     case 'MUTUALLY_EXCLUSIVE': {
@@ -291,6 +338,8 @@ export const AVAILABLE_FIELDS: string[] = [
   'padecimiento_actual.descripcion',
   'padecimiento_actual.fecha_inicio',
   'padecimiento_actual.tipo_padecimiento',
+  'padecimiento_actual.tipo_padecimiento_congenito_adquirido',
+  'padecimiento_actual.tipo_padecimiento_agudo_cronico',
   'padecimiento_actual.tiempo_evolucion',
   'padecimiento_actual.causa_etiologia',
   'padecimiento_actual.estado_actual',
@@ -413,18 +462,25 @@ export const AVAILABLE_FIELDS: string[] = [
   'firma.nombre_firma',
   'firma.firma_autografa_detectada',
   'metadata.existe_coherencia_clinica',
-  'metadata.observacion_coherencia'
+  'metadata.observacion_coherencia',
+  'metadata.tachaduras_detectadas',
+  'metadata.firma_coincide_con_tratante',
+  'metadata.diagnostico_severidad',
+  'otros_medicos'
 ];
 
 export const OPERATOR_LABELS: Record<RuleOperator, string> = {
   'IS_EMPTY': 'Está vacío (falta valor)',
   'IS_NOT_EMPTY': 'Tiene valor (no debería)',
+  'NOT_EMPTY': 'Tiene valor (alias)',
   'REQUIRES': 'Requiere par (bidireccional)',
   'IF_THEN': 'Si A existe, B falta',
   'EQUALS': 'Es igual a',
   'NOT_EQUALS': 'Es diferente a',
   'GREATER_THAN': 'Mayor que',
   'LESS_THAN': 'Menor que',
+  'GREATER_THAN_OR_EQUAL': 'Mayor o igual que',
+  'LESS_THAN_OR_EQUAL': 'Menor o igual que',
   'DATE_MISSING': 'Fecha faltante',
   'DATE_INVALID': 'Fecha inválida',
   'IS_DATE': 'No es fecha válida',
@@ -434,20 +490,24 @@ export const OPERATOR_LABELS: Record<RuleOperator, string> = {
   'IS_EMAIL': 'No es email válido',
   'IS_RFC': 'No es RFC válido',
   'IS_PHONE': 'No es teléfono válido',
-  'REGEX': 'No cumple patrón (regex)',
+  'REGEX': 'Cumple patrón (regex)',
   'MUTUALLY_EXCLUSIVE': 'Ambos existen (excluyentes)',
   'ONE_OF_REQUIRED': 'Ninguno de la lista tiene valor',
-  'ALL_REQUIRED': 'No todos tienen valor'
+  'ALL_REQUIRED': 'No todos tienen valor',
+  'CONTAINS': 'Contiene texto',
+  'NOT_CONTAINS': 'No contiene texto',
+  'LENGTH_LESS_THAN': 'Longitud menor que',
+  'LENGTH_GREATER_THAN': 'Longitud mayor que'
 };
 
 export const OPERATOR_GROUPS: { name: string; operators: RuleOperator[] }[] = [
   {
     name: 'Existencia',
-    operators: ['IS_EMPTY', 'IS_NOT_EMPTY', 'REQUIRES', 'IF_THEN']
+    operators: ['IS_EMPTY', 'IS_NOT_EMPTY', 'NOT_EMPTY', 'REQUIRES', 'IF_THEN']
   },
   {
     name: 'Comparación',
-    operators: ['EQUALS', 'NOT_EQUALS', 'GREATER_THAN', 'LESS_THAN']
+    operators: ['EQUALS', 'NOT_EQUALS', 'GREATER_THAN', 'LESS_THAN', 'GREATER_THAN_OR_EQUAL', 'LESS_THAN_OR_EQUAL']
   },
   {
     name: 'Fechas',
@@ -458,13 +518,17 @@ export const OPERATOR_GROUPS: { name: string; operators: RuleOperator[] }[] = [
     operators: ['IS_NUMBER', 'IS_EMAIL', 'IS_RFC', 'IS_PHONE', 'REGEX']
   },
   {
+    name: 'Strings',
+    operators: ['CONTAINS', 'NOT_CONTAINS', 'LENGTH_LESS_THAN', 'LENGTH_GREATER_THAN']
+  },
+  {
     name: 'Lógica Múltiple',
     operators: ['MUTUALLY_EXCLUSIVE', 'ONE_OF_REQUIRED', 'ALL_REQUIRED']
   }
 ];
 
 export function operatorNeedsValue(op: RuleOperator): boolean {
-  return ['EQUALS', 'NOT_EQUALS', 'GREATER_THAN', 'LESS_THAN', 'REGEX'].includes(op);
+  return ['EQUALS', 'NOT_EQUALS', 'GREATER_THAN', 'LESS_THAN', 'GREATER_THAN_OR_EQUAL', 'LESS_THAN_OR_EQUAL', 'REGEX', 'CONTAINS', 'NOT_CONTAINS', 'LENGTH_LESS_THAN', 'LENGTH_GREATER_THAN'].includes(op);
 }
 
 export function operatorNeedsCompareField(op: RuleOperator): boolean {

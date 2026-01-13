@@ -47,6 +47,8 @@ export interface PadecimientoActualData {
   descripcion?: string; // Signos y síntomas
   fecha_inicio?: string;
   tipo_padecimiento?: string; // Congénito, Adquirido, etc.
+  tipo_padecimiento_congenito_adquirido?: string; // GNP: Congénito o Adquirido (casilla individual)
+  tipo_padecimiento_agudo_cronico?: string; // GNP: Agudo o Crónico (casilla individual)
   tiempo_evolucion?: string;
   causa_etiologia?: string; // MetLife
   estado_actual?: string; // MetLife
@@ -200,6 +202,9 @@ export interface FirmaData {
 export interface ExtractedMetadata {
   existe_coherencia_clinica?: boolean;
   observacion_coherencia?: string;
+  tachaduras_detectadas?: boolean;
+  firma_coincide_con_tratante?: boolean;
+  diagnostico_severidad?: 'leve' | 'moderado' | 'grave';
 }
 
 export interface ExtractedData {
@@ -224,18 +229,21 @@ export interface ExtractedData {
   metadata?: ExtractedMetadata;
 }
 
-// Rule Condition Operators (21 total)
+// Rule Condition Operators (28 total)
 export type RuleOperator = 
-  // Grupo 1: Validación de Existencia (4)
+  // Grupo 1: Validación de Existencia (5)
   | 'IS_EMPTY'           // Campo vacío
   | 'IS_NOT_EMPTY'       // Campo tiene valor
+  | 'NOT_EMPTY'          // Alias de IS_NOT_EMPTY
   | 'REQUIRES'           // Bidireccional: Si A existe, B debe existir Y viceversa
   | 'IF_THEN'            // Unidireccional: Si A existe, entonces B debe existir
-  // Grupo 2: Comparación de Valores (4)
+  // Grupo 2: Comparación de Valores (6)
   | 'EQUALS'             // Igual a valor específico
   | 'NOT_EQUALS'         // Diferente a valor
   | 'GREATER_THAN'       // Mayor que (numérico)
   | 'LESS_THAN'          // Menor que (numérico)
+  | 'GREATER_THAN_OR_EQUAL' // Mayor o igual que (numérico)
+  | 'LESS_THAN_OR_EQUAL' // Menor o igual que (numérico)
   // Grupo 3: Fechas (5)
   | 'DATE_MISSING'       // Fecha faltante
   | 'DATE_INVALID'       // Formato de fecha inválido
@@ -251,7 +259,12 @@ export type RuleOperator =
   // Grupo 5: Lógica Múltiple (3)
   | 'MUTUALLY_EXCLUSIVE' // Solo A o B puede existir, no ambos
   | 'ONE_OF_REQUIRED'    // Al menos 1 campo de una lista debe tener valor
-  | 'ALL_REQUIRED';      // Todos los campos de una lista deben tener valor
+  | 'ALL_REQUIRED'       // Todos los campos de una lista deben tener valor
+  // Grupo 6: Strings (4)
+  | 'CONTAINS'           // String contiene un substring
+  | 'NOT_CONTAINS'       // String NO contiene un substring
+  | 'LENGTH_LESS_THAN'   // Longitud del string menor que
+  | 'LENGTH_GREATER_THAN'; // Longitud del string mayor que
 
 export type LogicOperator = 'AND' | 'OR';
 

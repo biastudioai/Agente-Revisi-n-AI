@@ -334,6 +334,31 @@ FIRMA:
 Si ves algo como "Ciudad de México 04/12/2025", debes separarlo en:
 - lugar: "Ciudad de México"
 - fecha: "04/12/2025"
+
+🔴🔴🔴 VALIDACIÓN DE INTEGRIDAD DOCUMENTAL 🔴🔴🔴
+
+DETECCIÓN DE TACHADURAS Y ENMENDADURAS:
+Analiza VISUALMENTE todo el documento buscando cualquier evidencia de:
+1. Líneas tachadas sobre texto (───, ╳, o cualquier trazo que cruce texto)
+2. Texto sobrepuesto o escrito encima de otro
+3. Corrector líquido (manchas blancas que cubren texto)
+4. Borrones o intentos de eliminar escritura
+5. Raspado del papel
+6. Cualquier modificación visible al contenido original
+
+metadata.tachaduras_detectadas = true si encuentras CUALQUIERA de estos indicadores
+metadata.tachaduras_detectadas = false si el documento está limpio y sin alteraciones
+
+VERIFICACIÓN DE COINCIDENCIA MÉDICO-FIRMA:
+Compara el nombre del médico declarado en la sección "Datos del Médico Tratante" con el nombre que aparece en la firma del documento.
+- Si coinciden (mismo nombre completo o iniciales coherentes) → firma_coincide_con_tratante = true
+- Si NO coinciden o hay discrepancia → firma_coincide_con_tratante = false
+
+EVALUACIÓN DE SEVERIDAD DEL DIAGNÓSTICO:
+Basándote en el diagnóstico definitivo, clasifica la severidad como:
+- "leve": Condiciones menores, tratamiento ambulatorio simple
+- "moderado": Requiere seguimiento médico, posible hospitalización corta
+- "grave": Condiciones serias, hospitalización prolongada, cirugía mayor, riesgo vital
 `,
 
   requiredFields: [
@@ -410,7 +435,9 @@ Si ves algo como "Ciudad de México 04/12/2025", debes separarlo en:
                 type: Type.ARRAY,
                 items: { type: Type.STRING },
                 description: "Array de valores extraídos de casillas marcadas: puede contener ['Congénito', 'Adquirido', 'Agudo', 'Crónico']. SOLO extrae los valores que VES marcados visualmente. Si ninguna casilla está marcada, devuelve array vacío []."
-              }
+              },
+              tipo_padecimiento_congenito_adquirido: { type: Type.STRING, description: "Valor de la primera pareja de casillas: 'Congénito' o 'Adquirido'. SOLO extrae si VES una casilla marcada. Si ninguna está marcada, dejar vacío." },
+              tipo_padecimiento_agudo_cronico: { type: Type.STRING, description: "Valor de la segunda pareja de casillas: 'Agudo' o 'Crónico'. SOLO extrae si VES una casilla marcada. Si ninguna está marcada, dejar vacío." }
             }
           },
 
@@ -539,7 +566,10 @@ Si ves algo como "Ciudad de México 04/12/2025", debes separarlo en:
             type: Type.OBJECT,
             properties: {
               existe_coherencia_clinica: { type: Type.BOOLEAN, description: "¿Existe coherencia clínica en el documento?" },
-              observacion_coherencia: { type: Type.STRING, description: "Observaciones sobre coherencia clínica" }
+              observacion_coherencia: { type: Type.STRING, description: "Observaciones sobre coherencia clínica" },
+              tachaduras_detectadas: { type: Type.BOOLEAN, description: "¿Se detectaron tachaduras, enmendaduras o correcciones visibles en el documento? Analiza visualmente el documento buscando: líneas tachadas, texto sobrepuesto, corrector líquido, borrones, o cualquier intento de modificar el texto original." },
+              firma_coincide_con_tratante: { type: Type.BOOLEAN, description: "¿El nombre en la firma coincide con el médico tratante declarado? Compara el nombre escrito/impreso en la firma con el médico tratante registrado en el formulario." },
+              diagnostico_severidad: { type: Type.STRING, description: "Evalúa la severidad del diagnóstico: 'leve', 'moderado' o 'grave'. Basado en el diagnóstico definitivo y la descripción clínica." }
             }
           }
         },
