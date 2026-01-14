@@ -60,7 +60,7 @@ model MedicalForm {
   user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   formPdfs FormPdf[]
 
-  @@unique([userId, insuranceCompany])
+  @@index([userId])
   @@index([insuranceCompany])
   @@map("medical_forms")
 }

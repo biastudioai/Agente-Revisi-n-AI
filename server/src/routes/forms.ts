@@ -12,6 +12,7 @@ interface CreateFormRequest {
   formData: any;
   fileBase64?: string;
   fileMimeType?: string;
+  formId?: string; // Si se proporciona, actualiza un formulario existente
 }
 
 function getPrivateObjectDir(): string {
@@ -42,7 +43,7 @@ router.post(
   '/',
   requireAuth,
   expressAsyncHandler(async (req: Request, res: Response) => {
-    const { insuranceCompany, formData, fileBase64, fileMimeType } = req.body as CreateFormRequest;
+    const { insuranceCompany, formData, fileBase64, fileMimeType, formId } = req.body as CreateFormRequest;
     const userId = (req as any).user?.id;
 
     if (!userId) {
@@ -59,24 +60,9 @@ router.post(
       const privateDir = getPrivateObjectDir();
       let newPdfUrl: string | null = null;
       let newFilePath: string | null = null;
-      let oldPdfUrl: string | null = null;
+      let isNewReport = false;
 
-      const existingForm = await prisma.medicalForm.findUnique({
-        where: {
-          userId_insuranceCompany: {
-            userId,
-            insuranceCompany,
-          },
-        },
-        include: {
-          formPdfs: true,
-        },
-      });
-
-      if (existingForm?.formPdfs[0]?.pdfUrl) {
-        oldPdfUrl = existingForm.formPdfs[0].pdfUrl;
-      }
-
+      // Subir archivo si se proporciona
       if (fileBase64 && fileMimeType) {
         const objectId = randomUUID();
         const extension = fileMimeType === 'application/pdf' ? '.pdf' : 
@@ -110,43 +96,62 @@ router.post(
       let medicalForm;
       try {
         medicalForm = await prisma.$transaction(async (tx) => {
-          const form = await tx.medicalForm.upsert({
-            where: {
-              userId_insuranceCompany: {
-                userId,
-                insuranceCompany,
-              },
-            },
-            update: {
-              formData,
-              status: 'PENDING',
-            },
-            create: {
-              userId,
-              insuranceCompany,
-              formData,
-              status: 'PENDING',
-            },
-          });
-
-          if (newPdfUrl) {
-            await tx.formPdf.upsert({
-              where: {
-                formId: form.id,
-              },
-              update: {
-                pdfUrl: newPdfUrl,
-              },
-              create: {
-                formId: form.id,
-                pdfUrl: newPdfUrl,
+          let form;
+          
+          // Si se proporciona formId, es una actualización de un formulario existente
+          if (formId) {
+            const existingForm = await tx.medicalForm.findFirst({
+              where: { id: formId, userId },
+            });
+            
+            if (!existingForm) {
+              throw new Error('Formulario no encontrado');
+            }
+            
+            form = await tx.medicalForm.update({
+              where: { id: formId },
+              data: {
+                formData,
+                status: 'PENDING',
               },
             });
+            isNewReport = false;
+          } else {
+            // Nuevo procesamiento: siempre crear un nuevo registro
+            form = await tx.medicalForm.create({
+              data: {
+                userId,
+                insuranceCompany,
+                formData,
+                status: 'PENDING',
+              },
+            });
+            isNewReport = true;
+          }
+
+          // Si hay nuevo PDF, guardarlo
+          if (newPdfUrl) {
+            if (formId) {
+              // Actualizar PDF existente
+              await tx.formPdf.upsert({
+                where: { formId: form.id },
+                update: { pdfUrl: newPdfUrl },
+                create: { formId: form.id, pdfUrl: newPdfUrl },
+              });
+            } else {
+              // Crear nuevo PDF para nuevo formulario
+              await tx.formPdf.create({
+                data: {
+                  formId: form.id,
+                  pdfUrl: newPdfUrl,
+                },
+              });
+            }
           }
 
           return form;
         });
-      } catch (dbError) {
+      } catch (dbError: any) {
         console.error('Error in database transaction:', dbError);
         if (newFilePath) {
           try {
@@ -159,32 +164,19 @@ router.post(
             console.error('Error cleaning up orphaned file:', cleanupError);
           }
         }
+        if (dbError.message === 'Formulario no encontrado') {
+          res.status(404).json({ error: 'Formulario no encontrado' });
+          return;
+        }
         res.status(500).json({ error: 'Error al guardar el formulario' });
         return;
-      }
-
-      if (newPdfUrl && oldPdfUrl && oldPdfUrl.startsWith('/objects/') && oldPdfUrl !== newPdfUrl) {
-        try {
-          const oldEntityPath = oldPdfUrl.slice('/objects/'.length);
-          const oldFullPath = `${privateDir}/${oldEntityPath}`;
-          const { bucketName: oldBucketName, objectName: oldObjectName } = parseObjectPath(oldFullPath);
-          const oldBucket = objectStorageClient.bucket(oldBucketName);
-          const oldFile = oldBucket.file(oldObjectName);
-          const [exists] = await oldFile.exists();
-          if (exists) {
-            await oldFile.delete();
-            console.log('Deleted old file from Object Storage:', oldPdfUrl);
-          }
-        } catch (deleteError) {
-          console.error('Error deleting old file from Object Storage (non-critical):', deleteError);
-        }
       }
 
       res.status(201).json({
         success: true,
         formId: medicalForm.id,
         pdfUrl: newPdfUrl,
-        isNew: !existingForm,
+        isNew: isNewReport,
         message: 'Formulario guardado exitosamente',
       });
     } catch (error) {

@@ -426,9 +426,11 @@ const App: React.FC = () => {
       const requestBody: {
         insuranceCompany: string;
         formData: any;
+        formId: string;
       } = {
         insuranceCompany: report.extracted.provider || 'UNKNOWN',
         formData: formData,
+        formId: currentFormId,
       };
 
       const response = await fetch('/api/forms', {
