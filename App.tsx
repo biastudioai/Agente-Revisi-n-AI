@@ -584,10 +584,13 @@ const App: React.FC = () => {
         flags: formData.flags || []
       };
       
-      setReport(loadedReport);
+      // Set provider first for proper form rendering
+      setSelectedProvider(form.insuranceCompany || 'GNP');
       setCurrentFormId(form.id);
-      setSelectedProvider(form.insuranceCompany || 'UNKNOWN');
+      setPendingChanges({});
       
+      // Load PDF before switching views
+      let pdfLoaded = false;
       if (form.formPdfs?.[0]?.pdfUrl) {
         try {
           const pdfResponse = await fetch(form.formPdfs[0].pdfUrl, {
@@ -595,24 +598,32 @@ const App: React.FC = () => {
           });
           if (pdfResponse.ok) {
             const blob = await pdfResponse.blob();
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              const base64 = (reader.result as string).split(',')[1];
-              setFilePreview({ data: base64, type: blob.type || 'application/pdf' });
-            };
-            reader.readAsDataURL(blob);
+            // Convert to base64 using Promise for better async handling
+            const base64 = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                const result = (reader.result as string).split(',')[1];
+                resolve(result);
+              };
+              reader.readAsDataURL(blob);
+            });
+            setFilePreview({ data: base64, type: blob.type || 'application/pdf' });
+            pdfLoaded = true;
           }
         } catch (pdfError) {
           console.error('Error loading PDF:', pdfError);
-          setFilePreview(null);
         }
-      } else {
+      }
+      
+      if (!pdfLoaded) {
         setFilePreview(null);
       }
       
+      // Set report and switch to complete view AFTER PDF is loaded
+      setReport(loadedReport);
       setStatus('complete');
-      setPendingChanges({});
       setIsHistoryViewOpen(false);
+      setIsPanelOpen(true); // Ensure left panel is visible
     } catch (err) {
       console.error('Error loading report from history:', err);
       alert('Error al cargar el informe');
