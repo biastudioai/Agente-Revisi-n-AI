@@ -45,8 +45,16 @@ const VALIDATORS_REGISTRY: Record<string, (data: any) => boolean> = {
   'gnp_sexo_seleccion_unica': (data) => {
     const sexo = data.identificacion?.sexo;
     if (!sexo) return false;
-    if (Array.isArray(sexo)) return sexo.length > 1;
-    if (typeof sexo === 'string' && sexo.includes(',')) return true;
+    if (Array.isArray(sexo)) {
+      // Filtrar valores vacíos o solo espacios
+      const valoresValidos = sexo.filter((v: string) => v && v.trim().length > 0);
+      return valoresValidos.length > 1;
+    }
+    if (typeof sexo === 'string' && sexo.includes(',')) {
+      // Verificar que realmente hay 2 valores separados por coma
+      const partes = sexo.split(',').filter(p => p.trim().length > 0);
+      return partes.length > 1;
+    }
     return false;
   },
   'gnp_causa_atencion_seleccion_unica': (data) => {
