@@ -49,11 +49,6 @@ export class BillingService {
       const activeSubscriptions = await prisma.subscription.findMany({
         where: {
           status: SubscriptionStatus.ACTIVE,
-          currentPeriodStart: { lte: new Date(year, month, 0) },
-          OR: [
-            { currentPeriodEnd: { gte: new Date(year, month - 1, 1) } },
-            { currentPeriodEnd: null },
-          ],
         },
       });
 

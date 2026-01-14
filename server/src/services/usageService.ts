@@ -1,5 +1,5 @@
 import prisma from '../config/database';
-import { PlanType, Rol } from '../generated/prisma';
+import { PlanType } from '../generated/prisma';
 import { getReportsLimit, getExtraReportPrice, PLAN_CONFIGS } from '../config/plans';
 import { subscriptionService } from './subscriptionService';
 
@@ -26,7 +26,7 @@ export class UsageService {
       where: { id: userId },
       select: { rol: true },
     });
-    return user?.rol === Rol.ADMIN;
+    return user?.rol === 'ADMIN';
   }
 
   async getCurrentUsage(userId: string): Promise<UsageInfo> {
