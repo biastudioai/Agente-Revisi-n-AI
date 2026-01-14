@@ -417,10 +417,14 @@ const App: React.FC = () => {
     if (!report || !currentFormId) return;
     
     try {
+      // Recalcular el score con los datos actuales antes de guardar
+      const updatedReport = await reEvaluateReport(report, report.extracted, rules);
+      setReport(updatedReport);
+      
       const formData = {
-        ...report.extracted,
-        score: report.score,
-        flags: report.flags,
+        ...updatedReport.extracted,
+        score: updatedReport.score,
+        flags: updatedReport.flags,
       };
 
       const requestBody: {
@@ -428,7 +432,7 @@ const App: React.FC = () => {
         formData: any;
         formId: string;
       } = {
-        insuranceCompany: report.extracted.provider || 'UNKNOWN',
+        insuranceCompany: updatedReport.extracted.provider || 'UNKNOWN',
         formData: formData,
         formId: currentFormId,
       };
@@ -449,21 +453,21 @@ const App: React.FC = () => {
 
       const result = await response.json();
       
-      const updatedReport: SavedReport = {
+      const savedReportData: SavedReport = {
         id: result.formId,
         timestamp: Date.now(),
         fileName: 'Informe Médico',
-        provider: report.extracted.provider,
-        extractedData: report.extracted,
-        score: report.score,
-        flags: report.flags
+        provider: updatedReport.extracted.provider,
+        extractedData: updatedReport.extracted,
+        score: updatedReport.score,
+        flags: updatedReport.flags
       };
 
       setSavedReports(prev => {
         const existingIndex = prev.findIndex(r => r.id === result.formId);
         if (existingIndex >= 0) {
           const updated = [...prev];
-          updated[existingIndex] = updatedReport;
+          updated[existingIndex] = savedReportData;
           return updated;
         }
         return prev;
