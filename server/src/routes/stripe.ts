@@ -68,9 +68,9 @@ router.post(
       return;
     }
 
-    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-    const host = req.get('host');
-    const baseUrl = `${protocol}://${host}`;
+    const replitDomains = process.env.REPLIT_DEV_DOMAIN || process.env.REPLIT_DOMAINS || '';
+    const primaryDomain = replitDomains.split(',')[0]?.trim();
+    const baseUrl = primaryDomain ? `https://${primaryDomain}` : `${req.headers['x-forwarded-proto'] || req.protocol}://${req.get('host')}`;
 
     const session = await subscriptionService.createCheckoutSession(
       userId,
@@ -95,9 +95,9 @@ router.post(
       return;
     }
 
-    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-    const host = req.get('host');
-    const baseUrl = `${protocol}://${host}`;
+    const replitDomains = process.env.REPLIT_DEV_DOMAIN || process.env.REPLIT_DOMAINS || '';
+    const primaryDomain = replitDomains.split(',')[0]?.trim();
+    const baseUrl = primaryDomain ? `https://${primaryDomain}` : `${req.headers['x-forwarded-proto'] || req.protocol}://${req.get('host')}`;
 
     try {
       const session = await subscriptionService.createCustomerPortalSession(
@@ -141,6 +141,22 @@ router.get(
 
     const history = await usageService.getUsageHistory(userId, months);
     res.json({ history });
+  })
+);
+
+router.post(
+  '/sync-subscriptions',
+  requireAuth,
+  expressAsyncHandler(async (req: Request, res: Response) => {
+    const userRol = (req as any).user?.rol;
+
+    if (userRol !== 'ADMIN') {
+      res.status(403).json({ error: 'Solo administradores pueden sincronizar suscripciones' });
+      return;
+    }
+
+    const result = await subscriptionService.syncStripeSubscriptions();
+    res.json(result);
   })
 );
 

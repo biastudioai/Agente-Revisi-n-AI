@@ -99,7 +99,8 @@ export class SubscriptionService {
 
   async handleSubscriptionCreated(stripeSubscriptionId: string, customerId: string, planType: PlanType) {
     const stripe = await getUncachableStripeClient();
-    const subscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+    const subscriptionResponse = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+    const subscription = subscriptionResponse as any;
     
     const stripeCustomer = await prisma.stripeCustomer.findFirst({
       where: { stripeCustomerId: customerId },
@@ -129,7 +130,8 @@ export class SubscriptionService {
 
   async handleSubscriptionUpdated(stripeSubscriptionId: string) {
     const stripe = await getUncachableStripeClient();
-    const subscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+    const subscriptionResponse = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+    const subscription = subscriptionResponse as any;
     
     const existingSub = await prisma.subscription.findUnique({
       where: { stripeSubscriptionId },
@@ -297,6 +299,85 @@ export class SubscriptionService {
     });
 
     return paymentIntent;
+  }
+
+  async syncStripeSubscriptions(): Promise<{ synced: number; errors: string[] }> {
+    const errors: string[] = [];
+    let synced = 0;
+
+    const stripeSubscriptions = await prisma.$queryRaw<Array<{
+      id: string;
+      customer: string;
+      status: string;
+      metadata: any;
+      created: number;
+      current_period_start: number | null;
+      current_period_end: number | null;
+    }>>`SELECT id, customer, status, metadata, created, current_period_start, current_period_end FROM stripe.subscriptions WHERE status = 'active'`;
+
+    for (const stripeSub of stripeSubscriptions) {
+      try {
+        const existing = await prisma.subscription.findUnique({
+          where: { stripeSubscriptionId: stripeSub.id },
+        });
+
+        if (existing) {
+          continue;
+        }
+
+        const metadata = typeof stripeSub.metadata === 'string' 
+          ? JSON.parse(stripeSub.metadata) 
+          : stripeSub.metadata;
+
+        const userId = metadata?.userId;
+        const planType = metadata?.planType as PlanType;
+
+        if (!userId || !planType) {
+          errors.push(`Subscription ${stripeSub.id}: Missing userId or planType in metadata`);
+          continue;
+        }
+
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) {
+          errors.push(`Subscription ${stripeSub.id}: User ${userId} not found`);
+          continue;
+        }
+
+        const createdAt = new Date(stripeSub.created * 1000);
+        const periodStart = stripeSub.current_period_start 
+          ? new Date(stripeSub.current_period_start * 1000) 
+          : createdAt;
+        const periodEnd = stripeSub.current_period_end 
+          ? new Date(stripeSub.current_period_end * 1000) 
+          : new Date(createdAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+        const promotionEndsAt = new Date(createdAt);
+        promotionEndsAt.setMonth(promotionEndsAt.getMonth() + 3);
+
+        const now = new Date();
+        const isInPromotion = now < promotionEndsAt;
+
+        await prisma.subscription.create({
+          data: {
+            userId,
+            stripeSubscriptionId: stripeSub.id,
+            planType,
+            status: SubscriptionStatus.ACTIVE,
+            currentPeriodStart: periodStart,
+            currentPeriodEnd: periodEnd,
+            promotionEndsAt,
+            isInPromotion,
+          },
+        });
+
+        synced++;
+        console.log(`Synced subscription ${stripeSub.id} for user ${userId}`);
+      } catch (error: any) {
+        errors.push(`Subscription ${stripeSub.id}: ${error.message}`);
+      }
+    }
+
+    return { synced, errors };
   }
 }
 

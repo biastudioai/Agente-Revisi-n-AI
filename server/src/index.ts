@@ -45,28 +45,36 @@ app.post(
       await WebhookHandlers.processWebhook(req.body as Buffer, sig);
 
       const event = JSON.parse(req.body.toString());
+      console.log(`Stripe webhook received: ${event.type}`);
       
       if (event.type === 'customer.subscription.created') {
         const subscription = event.data.object;
         const planType = subscription.metadata?.planType as PlanType;
+        console.log(`Subscription created: ${subscription.id}, customer: ${subscription.customer}, planType: ${planType}`);
         if (planType) {
           await subscriptionService.handleSubscriptionCreated(
             subscription.id,
             subscription.customer,
             planType
           );
+          console.log(`Subscription ${subscription.id} created successfully in database`);
+        } else {
+          console.warn(`No planType in subscription metadata for ${subscription.id}`);
         }
       } else if (event.type === 'customer.subscription.updated') {
+        console.log(`Subscription updated: ${event.data.object.id}`);
         await subscriptionService.handleSubscriptionUpdated(event.data.object.id);
       } else if (event.type === 'customer.subscription.deleted') {
+        console.log(`Subscription deleted: ${event.data.object.id}`);
         await subscriptionService.handleSubscriptionDeleted(event.data.object.id);
       } else if (event.type === 'invoice.payment_failed') {
+        console.log(`Invoice payment failed for customer: ${event.data.object.customer}`);
         await subscriptionService.handleInvoicePaymentFailed(event.data.object.customer);
       }
 
       res.status(200).json({ received: true });
     } catch (error: any) {
-      console.error('Webhook error:', error.message);
+      console.error('Webhook error:', error.message, error.stack);
       res.status(400).json({ error: 'Webhook processing error' });
     }
   }
@@ -107,8 +115,7 @@ async function initStripe() {
   try {
     console.log('Initializing Stripe schema...');
     await runMigrations({ 
-      databaseUrl,
-      schema: 'stripe'
+      databaseUrl
     });
     console.log('Stripe schema ready');
 
