@@ -60,14 +60,18 @@ model MedicalForm {
   insuranceCompany String      @map("insurance_company")
   formData         Json        @map("form_data") @db.JsonB
   status           FormStatus  @default(PENDING)
+  ruleVersionId    String?     @map("rule_version_id")
+  originalScore    Int?        @map("original_score")
   createdAt        DateTime    @default(now()) @map("created_at")
   updatedAt        DateTime    @updatedAt @map("updated_at")
 
-  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  formPdfs FormPdf[]
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  formPdfs    FormPdf[]
+  ruleVersion RuleVersion? @relation(fields: [ruleVersionId], references: [id])
 
   @@index([userId])
   @@index([insuranceCompany])
+  @@index([ruleVersionId])
   @@map("medical_forms")
 }
 
@@ -243,4 +247,45 @@ model UsageRecord {
   @@unique([userId, periodYear, periodMonth])
   @@index([userId])
   @@map("usage_records")
+}
+
+enum RuleChangeType {
+  CREATED
+  UPDATED
+  DELETED
+  ACTIVATED
+  DEACTIVATED
+}
+
+model RuleVersion {
+  id              String   @id @default(uuid())
+  versionNumber   Int      @map("version_number")
+  rulesSnapshot   Json     @map("rules_snapshot") @db.JsonB
+  rulesHash       String   @map("rules_hash")
+  description     String?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  medicalForms    MedicalForm[]
+
+  @@unique([versionNumber])
+  @@index([rulesHash])
+  @@map("rule_versions")
+}
+
+model RuleChangeLog {
+  id              String         @id @default(uuid())
+  ruleId          String         @map("rule_id")
+  ruleName        String         @map("rule_name")
+  changeType      RuleChangeType @map("change_type")
+  previousValue   Json?          @map("previous_value") @db.JsonB
+  newValue        Json?          @map("new_value") @db.JsonB
+  changedBy       String?        @map("changed_by")
+  changeReason    String?        @map("change_reason")
+  versionNumber   Int            @map("version_number")
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  @@index([ruleId])
+  @@index([versionNumber])
+  @@index([createdAt])
+  @@map("rule_change_logs")
 }

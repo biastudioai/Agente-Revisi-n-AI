@@ -1,5 +1,6 @@
 import prisma from '../config/database';
 import { RuleLevel, RuleCategory, ScoringRuleRecord } from '../generated/prisma';
+import { logRuleChange, createRulesVersion } from './ruleVersioningService';
 
 export interface ScoringRuleInput {
   ruleId: string;
@@ -137,7 +138,7 @@ export async function getRulesForAseguradora(aseguradora: 'GNP' | 'METLIFE' | 'N
   return rules.map(transformToOutput);
 }
 
-export async function createRule(input: ScoringRuleInput): Promise<ScoringRuleOutput> {
+export async function createRule(input: ScoringRuleInput, changedBy?: string): Promise<ScoringRuleOutput> {
   const rule = await prisma.scoringRuleRecord.create({
     data: {
       ruleId: input.ruleId,
@@ -155,7 +156,21 @@ export async function createRule(input: ScoringRuleInput): Promise<ScoringRuleOu
       validatorKey: input.validatorKey || null,
     },
   });
-  return transformToOutput(rule);
+  
+  const output = transformToOutput(rule);
+  
+  await logRuleChange(
+    input.ruleId,
+    input.name,
+    'CREATED',
+    null,
+    output,
+    changedBy
+  );
+  
+  await createRulesVersion(`Nueva regla: ${input.name}`);
+  
+  return output;
 }
 
 export async function createManyRules(inputs: ScoringRuleInput[]): Promise<number> {
@@ -180,7 +195,7 @@ export async function createManyRules(inputs: ScoringRuleInput[]): Promise<numbe
   return result.count;
 }
 
-export async function updateRule(ruleId: string, updates: Partial<ScoringRuleInput>): Promise<ScoringRuleOutput | null> {
+export async function updateRule(ruleId: string, updates: Partial<ScoringRuleInput>, changedBy?: string): Promise<ScoringRuleOutput | null> {
   const existing = await prisma.scoringRuleRecord.findUnique({
     where: { ruleId },
   });
@@ -188,6 +203,8 @@ export async function updateRule(ruleId: string, updates: Partial<ScoringRuleInp
   if (!existing) {
     return null;
   }
+
+  const previousValue = transformToOutput(existing);
 
   const updateData: any = {};
   if (updates.name !== undefined) updateData.name = updates.name;
@@ -207,38 +224,108 @@ export async function updateRule(ruleId: string, updates: Partial<ScoringRuleInp
     where: { ruleId },
     data: updateData,
   });
-  return transformToOutput(rule);
+  
+  const newValue = transformToOutput(rule);
+  
+  await logRuleChange(
+    ruleId,
+    newValue.name,
+    'UPDATED',
+    previousValue,
+    newValue,
+    changedBy
+  );
+  
+  await createRulesVersion(`Regla actualizada: ${newValue.name}`);
+  
+  return newValue;
 }
 
-export async function deactivateRule(ruleId: string): Promise<boolean> {
+export async function deactivateRule(ruleId: string, changedBy?: string): Promise<boolean> {
   try {
+    const existing = await prisma.scoringRuleRecord.findUnique({
+      where: { ruleId },
+    });
+    
+    if (!existing) return false;
+    
     await prisma.scoringRuleRecord.update({
       where: { ruleId },
       data: { isActive: false },
     });
+    
+    await logRuleChange(
+      ruleId,
+      existing.name,
+      'DEACTIVATED',
+      { isActive: true },
+      { isActive: false },
+      changedBy
+    );
+    
+    await createRulesVersion(`Regla desactivada: ${existing.name}`);
+    
     return true;
   } catch {
     return false;
   }
 }
 
-export async function activateRule(ruleId: string): Promise<boolean> {
+export async function activateRule(ruleId: string, changedBy?: string): Promise<boolean> {
   try {
+    const existing = await prisma.scoringRuleRecord.findUnique({
+      where: { ruleId },
+    });
+    
+    if (!existing) return false;
+    
     await prisma.scoringRuleRecord.update({
       where: { ruleId },
       data: { isActive: true },
     });
+    
+    await logRuleChange(
+      ruleId,
+      existing.name,
+      'ACTIVATED',
+      { isActive: false },
+      { isActive: true },
+      changedBy
+    );
+    
+    await createRulesVersion(`Regla activada: ${existing.name}`);
+    
     return true;
   } catch {
     return false;
   }
 }
 
-export async function deleteRule(ruleId: string): Promise<boolean> {
+export async function deleteRule(ruleId: string, changedBy?: string): Promise<boolean> {
   try {
+    const existing = await prisma.scoringRuleRecord.findUnique({
+      where: { ruleId },
+    });
+    
+    if (!existing) return false;
+    
+    const previousValue = transformToOutput(existing);
+    
     await prisma.scoringRuleRecord.delete({
       where: { ruleId },
     });
+    
+    await logRuleChange(
+      ruleId,
+      existing.name,
+      'DELETED',
+      previousValue,
+      null,
+      changedBy
+    );
+    
+    await createRulesVersion(`Regla eliminada: ${existing.name}`);
+    
     return true;
   } catch {
     return false;
