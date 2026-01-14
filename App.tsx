@@ -6,11 +6,12 @@ import InsuranceAuditor from './components/InsuranceAuditor';
 import PdfViewer from './components/PdfViewer';
 import ProviderSelector, { ProviderOption } from './components/ProviderSelector';
 import LoginPage from './components/LoginPage';
+import SubscriptionPlans from './components/SubscriptionPlans';
 import { analyzeReportImage, reEvaluateReport } from './services/geminiService';
 import { getReglasParaAseguradora } from './services/scoring-engine';
 import { AnalysisReport, AnalysisStatus, ExtractedData, ScoringRule, SavedReport } from './types';
 import { detectProviderFromPdf, DetectedProvider } from './services/providerDetection';
-import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw, AlignLeft, Image as ImageIcon, Loader2, Building2, LogOut, ChevronDown, User as UserIcon } from 'lucide-react';
+import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw, AlignLeft, Image as ImageIcon, Loader2, Building2, LogOut, ChevronDown, User as UserIcon, CreditCard } from 'lucide-react';
 
 interface User {
   id: string;
@@ -39,6 +40,12 @@ const App: React.FC = () => {
     reportsUsed: number;
     reportsLimit: number;
     remaining: number;
+    extraReportsUsed: number;
+    extraChargesMxn: number;
+    planType: string | null;
+    isInPromotion: boolean;
+    extraReportPriceMxn: number;
+    hasActiveSubscription: boolean;
   } | null>(null);
   
   // State for Rules (loaded from database)
@@ -82,6 +89,10 @@ const App: React.FC = () => {
   // State for User Dropdown
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
+  // State for Subscription Modal
+  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+  const [subscription, setSubscription] = useState<any>(null);
+
   // Check authentication on mount
   useEffect(() => {
     const checkAuth = async () => {
@@ -116,7 +127,7 @@ const App: React.FC = () => {
     setUser(null);
   };
 
-  // Cargar uso mensual
+  // Cargar uso mensual y suscripción
   const loadUsage = async () => {
     try {
       const response = await fetch('/api/usage/current', {
@@ -131,9 +142,24 @@ const App: React.FC = () => {
     }
   };
 
+  const loadSubscription = async () => {
+    try {
+      const response = await fetch('/api/stripe/subscription', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSubscription(data.subscription);
+      }
+    } catch (e) {
+      console.error('Error loading subscription:', e);
+    }
+  };
+
   useEffect(() => {
     if (user) {
       loadUsage();
+      loadSubscription();
     }
   }, [user]);
 
@@ -246,11 +272,24 @@ const App: React.FC = () => {
       return;
     }
 
-    // Verificar límite de uso
-    if (usage && usage.remaining <= 0) {
-      setError("Has alcanzado el límite de informes de este mes. Contacta a soporte para aumentar tu límite.");
+    // Verificar suscripción activa
+    if (!usage?.hasActiveSubscription) {
+      setError("Necesitas una suscripción activa para procesar informes. Haz clic en tu perfil para ver los planes disponibles.");
       setStatus('error');
       return;
+    }
+
+    // Verificar límite de uso (ahora permite extras con cobro)
+    if (usage && usage.remaining <= 0) {
+      const extraPrice = usage.extraReportPriceMxn;
+      const confirmExtra = window.confirm(
+        `Has alcanzado tu límite de ${usage.reportsLimit} informes. ` +
+        `El siguiente informe tendrá un costo adicional de $${extraPrice} MXN. ` +
+        `¿Deseas continuar?`
+      );
+      if (!confirmExtra) {
+        return;
+      }
     }
     
     setStatus('analyzing');
@@ -986,11 +1025,41 @@ const App: React.FC = () => {
                 className="fixed inset-0 z-10" 
                 onClick={() => setIsUserMenuOpen(false)}
               />
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1 z-20">
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-200 py-1 z-20">
                 <div className="px-4 py-2 border-b border-slate-100">
                   <p className="text-xs text-slate-500">Conectado como</p>
                   <p className="text-sm font-medium text-slate-700 truncate">{user?.email}</p>
+                  {subscription ? (
+                    <p className="text-xs text-green-600 mt-1">
+                      Plan: {subscription.planConfig?.name || subscription.planType}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-amber-600 mt-1">Sin suscripción activa</p>
+                  )}
                 </div>
+                {usage && (
+                  <div className="px-4 py-2 border-b border-slate-100">
+                    <p className="text-xs text-slate-500">Uso este mes</p>
+                    <p className="text-sm font-medium">
+                      {usage.reportsUsed} / {usage.reportsLimit} informes
+                    </p>
+                    {usage.extraReportsUsed > 0 && (
+                      <p className="text-xs text-amber-600">
+                        +{usage.extraReportsUsed} extras (${usage.extraChargesMxn} MXN)
+                      </p>
+                    )}
+                  </div>
+                )}
+                <button
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    setIsSubscriptionModalOpen(true);
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
+                >
+                  <CreditCard className="w-4 h-4" />
+                  {subscription ? 'Administrar suscripción' : 'Ver planes'}
+                </button>
                 <button
                   onClick={() => {
                     setIsUserMenuOpen(false);
@@ -1063,6 +1132,22 @@ const App: React.FC = () => {
         isOpen={isInsuranceAuditorOpen}
         onClose={() => setIsInsuranceAuditorOpen(false)}
       />
+
+      {/* Subscription Plans Modal */}
+      {isSubscriptionModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="relative max-h-[90vh] overflow-auto">
+            <SubscriptionPlans 
+              currentSubscription={subscription}
+              onClose={() => {
+                setIsSubscriptionModalOpen(false);
+                loadSubscription();
+                loadUsage();
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

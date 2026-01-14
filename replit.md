@@ -149,7 +149,10 @@ GET  /objects/* - Serve uploaded files from Object Storage
 - `sessions` - Session tokens
 - `password_resets` - Reset tokens
 - `audit_logs` - Action tracking
-- `stripe_customers`, `subscriptions`, `payment_history` - Ready for Stripe
+- `stripe_customers` - Stripe customer IDs linked to users
+- `subscriptions` - User subscriptions with plan type, status, promotion tracking
+- `payment_history` - Payment records for tracking
+- `usage_records` - Monthly usage tracking with extra reports and charges
 - `scoring_rules` - Validation rules stored in PostgreSQL (migrated January 2026)
 - `aseguradora_configs` - Insurance provider configurations
 
@@ -188,3 +191,45 @@ All validation rules are stored exclusively in PostgreSQL. There are no static f
 - **Security**: Rules cannot be modified without database access
 - **Consistency**: Single source of truth for all validation logic
 - **Auditability**: All rule changes are tracked in the database
+
+## Stripe Subscription System (January 2026)
+
+### Subscription Plans
+| Plan | Price (MXN/mes) | Informes | Promoción (3 meses) | Extra Normal | Extra Promo |
+|------|-----------------|----------|---------------------|--------------|-------------|
+| Básico | $499 | 25 | 50 | $30 | $20 |
+| Profesional | $999 | 55 | 110 | $25 | $20 |
+| Empresarial | $2,999 | 170 | 340 | $20 | $19 |
+
+### Architecture
+- **Stripe Integration**: Uses `stripe-replit-sync` for automatic data synchronization
+- **Plan Configuration**: `server/src/config/plans.ts` defines all plan limits and pricing
+- **Services**:
+  - `subscriptionService.ts` - Handles checkout, customer creation, webhook events
+  - `usageService.ts` - Tracks monthly usage, calculates extras
+- **Webhooks**: Handles subscription create/update/delete and payment failures
+
+### API Endpoints (Stripe)
+```
+GET  /api/stripe/plans - List available plans
+GET  /api/stripe/subscription - Get user's active subscription
+POST /api/stripe/create-checkout - Create Stripe checkout session
+POST /api/stripe/customer-portal - Open Stripe billing portal
+GET  /api/stripe/usage - Get current month usage
+GET  /api/stripe/usage/history - Get usage history
+POST /api/stripe/webhook - Stripe webhook handler
+```
+
+### Promotion System
+- New subscribers get double reports for first 3 months
+- `promotionEndsAt` field tracks when promotion expires
+- `isInPromotion` boolean updated on each subscription check
+- Extra report pricing adjusts based on promotion status
+
+### Usage Tracking Flow
+1. User processes a report
+2. System checks for active subscription
+3. If no subscription, blocks with prompt to subscribe
+4. If limit reached, confirms extra charge with user
+5. Usage incremented and extra charges tracked
+6. Monthly reset on new billing period

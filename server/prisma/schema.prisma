@@ -27,6 +27,12 @@ enum SubscriptionStatus {
   UNPAID
 }
 
+enum PlanType {
+  PLAN_1
+  PLAN_2
+  PLAN_3
+}
+
 model User {
   id            String    @id @default(uuid())
   email         String    @unique
@@ -136,9 +142,12 @@ model Subscription {
   id                   String             @id @default(uuid())
   userId               String             @map("user_id")
   stripeSubscriptionId String             @unique @map("stripe_subscription_id")
-  planType             String             @map("plan_type")
+  planType             PlanType           @map("plan_type")
   status               SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart   DateTime           @map("current_period_start")
   currentPeriodEnd     DateTime           @map("current_period_end")
+  promotionEndsAt      DateTime?          @map("promotion_ends_at")
+  isInPromotion        Boolean            @default(true) @map("is_in_promotion")
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")
 
@@ -218,14 +227,16 @@ model AseguradoraConfig {
 }
 
 model UsageRecord {
-  id           String   @id @default(uuid())
-  userId       String   @map("user_id")
-  periodYear   Int      @map("period_year")
-  periodMonth  Int      @map("period_month")
-  reportsUsed  Int      @default(0) @map("reports_used")
-  reportsLimit Int      @default(20) @map("reports_limit")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id               String   @id @default(uuid())
+  userId           String   @map("user_id")
+  periodYear       Int      @map("period_year")
+  periodMonth      Int      @map("period_month")
+  reportsUsed      Int      @default(0) @map("reports_used")
+  reportsLimit     Int      @default(20) @map("reports_limit")
+  extraReportsUsed Int      @default(0) @map("extra_reports_used")
+  extraChargesMxn  Int      @default(0) @map("extra_charges_mxn")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

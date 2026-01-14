@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import expressAsyncHandler from 'express-async-handler';
-import prisma from '../config/database';
 import { requireAuth } from '../middlewares/auth';
+import { usageService } from '../services/usageService';
 
 const router = Router();
 
@@ -17,39 +17,8 @@ router.get(
     }
 
     try {
-      const now = new Date();
-      const periodYear = now.getFullYear();
-      const periodMonth = now.getMonth() + 1;
-
-      let usageRecord = await prisma.usageRecord.findUnique({
-        where: {
-          userId_periodYear_periodMonth: {
-            userId,
-            periodYear,
-            periodMonth,
-          },
-        },
-      });
-
-      if (!usageRecord) {
-        usageRecord = await prisma.usageRecord.create({
-          data: {
-            userId,
-            periodYear,
-            periodMonth,
-            reportsUsed: 0,
-            reportsLimit: 20,
-          },
-        });
-      }
-
-      res.json({
-        periodYear,
-        periodMonth,
-        reportsUsed: usageRecord.reportsUsed,
-        reportsLimit: usageRecord.reportsLimit,
-        remaining: usageRecord.reportsLimit - usageRecord.reportsUsed,
-      });
+      const usage = await usageService.getCurrentUsage(userId);
+      res.json(usage);
     } catch (error) {
       console.error('Error fetching usage:', error);
       res.status(500).json({ error: 'Error al obtener uso' });
@@ -69,48 +38,21 @@ router.post(
     }
 
     try {
-      const now = new Date();
-      const periodYear = now.getFullYear();
-      const periodMonth = now.getMonth() + 1;
+      const result = await usageService.incrementUsage(userId);
 
-      const usageRecord = await prisma.usageRecord.upsert({
-        where: {
-          userId_periodYear_periodMonth: {
-            userId,
-            periodYear,
-            periodMonth,
-          },
-        },
-        update: {
-          reportsUsed: {
-            increment: 1,
-          },
-        },
-        create: {
-          userId,
-          periodYear,
-          periodMonth,
-          reportsUsed: 1,
-          reportsLimit: 20,
-        },
-      });
-
-      if (usageRecord.reportsUsed > usageRecord.reportsLimit) {
+      if (!result.success) {
         res.status(403).json({ 
-          error: 'Límite de informes alcanzado',
-          reportsUsed: usageRecord.reportsUsed - 1,
-          reportsLimit: usageRecord.reportsLimit,
+          error: result.error,
+          usage: result.usage,
         });
         return;
       }
 
       res.json({
         success: true,
-        periodYear,
-        periodMonth,
-        reportsUsed: usageRecord.reportsUsed,
-        reportsLimit: usageRecord.reportsLimit,
-        remaining: usageRecord.reportsLimit - usageRecord.reportsUsed,
+        isExtra: result.isExtra,
+        extraChargeMxn: result.extraChargeMxn,
+        ...result.usage,
       });
     } catch (error) {
       console.error('Error incrementing usage:', error);
