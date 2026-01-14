@@ -114,14 +114,32 @@ export class SubscriptionService {
     const promotionEndsAt = new Date(now);
     promotionEndsAt.setMonth(promotionEndsAt.getMonth() + 3);
 
+    const periodStartTimestamp = subscription.current_period_start;
+    const periodEndTimestamp = subscription.current_period_end;
+    
+    const currentPeriodStart = periodStartTimestamp && !isNaN(periodStartTimestamp) 
+      ? new Date(periodStartTimestamp * 1000) 
+      : now;
+    
+    const currentPeriodEnd = periodEndTimestamp && !isNaN(periodEndTimestamp) 
+      ? new Date(periodEndTimestamp * 1000) 
+      : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    console.log('Creating subscription with dates:', {
+      periodStartTimestamp,
+      periodEndTimestamp,
+      currentPeriodStart,
+      currentPeriodEnd
+    });
+
     await prisma.subscription.create({
       data: {
         userId: stripeCustomer.userId,
         stripeSubscriptionId,
         planType,
         status: SubscriptionStatus.ACTIVE,
-        currentPeriodStart: new Date(subscription.current_period_start * 1000),
-        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        currentPeriodStart,
+        currentPeriodEnd,
         promotionEndsAt,
         isInPromotion: true,
       },
