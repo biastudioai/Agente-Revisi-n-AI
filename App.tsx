@@ -737,21 +737,25 @@ const App: React.FC = () => {
               <img src="/attached_assets/Veryka_Logo_1767919213039.png" alt="Veryka.ai" className="h-12 object-contain" />
            </div>
            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => setIsInsuranceAuditorOpen(true)}
-                className="text-xs text-veryka-dark bg-accent-50 border border-accent-200 hover:bg-accent-100 hover:border-accent-300 font-bold px-3 py-1.5 rounded-veryka transition-all flex items-center gap-2 shadow-sm"
-              >
-                <Building2 className="w-3.5 h-3.5" />
-                Auditoría de aseguradoras
-              </button>
+              {user?.rol === 'ADMIN' && (
+                <>
+                  <button 
+                    onClick={() => setIsInsuranceAuditorOpen(true)}
+                    className="text-xs text-veryka-dark bg-accent-50 border border-accent-200 hover:bg-accent-100 hover:border-accent-300 font-bold px-3 py-1.5 rounded-veryka transition-all flex items-center gap-2 shadow-sm"
+                  >
+                    <Building2 className="w-3.5 h-3.5" />
+                    Auditoría de aseguradoras
+                  </button>
 
-              <button 
-                onClick={() => setIsRulesModalOpen(true)}
-                className="text-xs text-veryka-dark bg-brand-50 border border-brand-200 hover:bg-brand-100 hover:border-brand-300 font-bold px-3 py-1.5 rounded-veryka transition-all flex items-center gap-2 shadow-sm"
-              >
-                <Settings className="w-3.5 h-3.5" />
-                Auditoría de reglas
-              </button>
+                  <button 
+                    onClick={() => setIsRulesModalOpen(true)}
+                    className="text-xs text-veryka-dark bg-brand-50 border border-brand-200 hover:bg-brand-100 hover:border-brand-300 font-bold px-3 py-1.5 rounded-veryka transition-all flex items-center gap-2 shadow-sm"
+                  >
+                    <Settings className="w-3.5 h-3.5" />
+                    Auditoría de reglas
+                  </button>
+                </>
+              )}
 
               <button 
                 onClick={() => setIsHistoryViewOpen(true)}
