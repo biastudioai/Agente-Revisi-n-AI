@@ -7,12 +7,13 @@ import PdfViewer from './components/PdfViewer';
 import ProviderSelector, { ProviderOption } from './components/ProviderSelector';
 import LoginPage from './components/LoginPage';
 import SubscriptionPlans from './components/SubscriptionPlans';
+import ReportHistory from './components/ReportHistory';
 import { analyzeReportImage, reEvaluateReport } from './services/geminiService';
 import { getReglasParaAseguradora } from './services/scoring-engine';
 import { AnalysisReport, AnalysisStatus, ExtractedData, ScoringRule, SavedReport } from './types';
 import { detectProviderFromPdf, DetectedProvider } from './services/providerDetection';
 import AdminBillingDashboard from './components/AdminBillingDashboard';
-import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw, AlignLeft, Image as ImageIcon, Loader2, Building2, LogOut, ChevronDown, User as UserIcon, CreditCard, BarChart3 } from 'lucide-react';
+import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw, AlignLeft, Image as ImageIcon, Loader2, Building2, LogOut, ChevronDown, User as UserIcon, CreditCard, BarChart3, History } from 'lucide-react';
 
 interface User {
   id: string;
@@ -100,6 +101,9 @@ const App: React.FC = () => {
   
   // State for Admin Billing Dashboard
   const [isBillingDashboardOpen, setIsBillingDashboardOpen] = useState(false);
+  
+  // State for Report History View
+  const [isHistoryViewOpen, setIsHistoryViewOpen] = useState(false);
 
   // Check authentication on mount
   useEffect(() => {
@@ -555,9 +559,64 @@ const App: React.FC = () => {
     };
     
     setReport(loadedReport);
-    setFilePreview(null); // No hay PDF/imagen disponible
+    setFilePreview(null);
     setStatus('complete');
     setPendingChanges({});
+  };
+
+  // Cargar reporte desde historial por ID (con PDF)
+  const handleViewReportFromHistory = async (reportId: string) => {
+    try {
+      const response = await fetch(`/api/forms/${reportId}`, {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Error al cargar el informe');
+      }
+      
+      const form = await response.json();
+      const formData = form.formData || {};
+      
+      const loadedReport: AnalysisReport = {
+        extracted: formData,
+        score: formData.score || { finalScore: 0, categoryScores: [] },
+        flags: formData.flags || []
+      };
+      
+      setReport(loadedReport);
+      setCurrentFormId(form.id);
+      setSelectedProvider(form.insuranceCompany || 'UNKNOWN');
+      
+      if (form.formPdfs?.[0]?.pdfUrl) {
+        try {
+          const pdfResponse = await fetch(form.formPdfs[0].pdfUrl, {
+            credentials: 'include',
+          });
+          if (pdfResponse.ok) {
+            const blob = await pdfResponse.blob();
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const base64 = (reader.result as string).split(',')[1];
+              setFilePreview({ data: base64, type: blob.type || 'application/pdf' });
+            };
+            reader.readAsDataURL(blob);
+          }
+        } catch (pdfError) {
+          console.error('Error loading PDF:', pdfError);
+          setFilePreview(null);
+        }
+      } else {
+        setFilePreview(null);
+      }
+      
+      setStatus('complete');
+      setPendingChanges({});
+      setIsHistoryViewOpen(false);
+    } catch (err) {
+      console.error('Error loading report from history:', err);
+      alert('Error al cargar el informe');
+    }
   };
 
   // Eliminar reporte del historial
@@ -594,6 +653,16 @@ const App: React.FC = () => {
   // Show login page if not authenticated
   if (!user) {
     return <LoginPage onLoginSuccess={setUser} />;
+  }
+
+  // Show Report History view
+  if (isHistoryViewOpen) {
+    return (
+      <ReportHistory 
+        onViewReport={handleViewReportFromHistory}
+        onBack={() => setIsHistoryViewOpen(false)}
+      />
+    );
   }
 
   // Determine approval status
@@ -671,6 +740,14 @@ const App: React.FC = () => {
               >
                 <Settings className="w-3.5 h-3.5" />
                 Auditoría de reglas
+              </button>
+
+              <button 
+                onClick={() => setIsHistoryViewOpen(true)}
+                className="text-xs text-veryka-dark bg-cyan-50 border border-cyan-200 hover:bg-cyan-100 hover:border-cyan-300 font-bold px-3 py-1.5 rounded-veryka transition-all flex items-center gap-2 shadow-sm"
+              >
+                <History className="w-3.5 h-3.5" />
+                Historial
               </button>
 
               <button 
@@ -1052,6 +1129,13 @@ const App: React.FC = () => {
           <Settings className="w-4 h-4" />
           Auditoría de reglas
         </button>
+        <button 
+          onClick={() => setIsHistoryViewOpen(true)}
+          className="text-xs text-cyan-700 bg-white/90 backdrop-blur border border-cyan-200 hover:bg-cyan-50 hover:border-cyan-300 font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-cyan-500/10 hover:shadow-cyan-500/20"
+        >
+          <History className="w-4 h-4" />
+          Historial
+        </button>
         
         {/* User Dropdown */}
         <div className="relative">
@@ -1097,6 +1181,16 @@ const App: React.FC = () => {
                     )}
                   </div>
                 )}
+                <button
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    setIsHistoryViewOpen(true);
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
+                >
+                  <History className="w-4 h-4" />
+                  Historial de Informes
+                </button>
                 <button
                   onClick={() => {
                     setIsUserMenuOpen(false);

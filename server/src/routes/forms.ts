@@ -215,6 +215,64 @@ router.get(
 );
 
 router.get(
+  '/reports',
+  requireAuth,
+  expressAsyncHandler(async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id;
+    const userRole = (req as any).user?.rol;
+
+    if (!userId) {
+      res.status(401).json({ error: 'No autorizado' });
+      return;
+    }
+
+    try {
+      const forms = await prisma.medicalForm.findMany({
+        where: { userId },
+        include: {
+          formPdfs: true,
+          user: {
+            select: {
+              id: true,
+              nombre: true,
+              email: true,
+              rol: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      const reports = forms.map((form: any) => {
+        const formData = form.formData || {};
+        const identificacion = formData.identificacion || {};
+        const patientName = [
+          identificacion.nombres || '',
+          identificacion.primer_apellido || '',
+          identificacion.segundo_apellido || ''
+        ].filter(Boolean).join(' ').trim() || 'Sin nombre';
+
+        return {
+          id: form.id,
+          patientName,
+          broker: form.insuranceCompany || 'Sin asignar',
+          approvalScore: formData.score?.finalScore ?? 0,
+          processedAt: form.createdAt,
+          status: form.status,
+          pdfUrl: form.formPdfs?.[0]?.pdfUrl || null,
+          userRole: userRole,
+        };
+      });
+
+      res.json(reports);
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+      res.status(500).json({ error: 'Error al obtener informes' });
+    }
+  })
+);
+
+router.get(
   '/:id',
   requireAuth,
   expressAsyncHandler(async (req: Request, res: Response) => {
