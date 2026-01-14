@@ -347,9 +347,9 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
          </div>
       </div>
 
-      <div className="flex-1 flex flex-col xl:flex-row gap-6 p-6 min-h-0 overflow-auto custom-scrollbar">
+      <div className="flex-1 flex flex-col-reverse lg:flex-row gap-6 p-6 min-h-0 overflow-auto custom-scrollbar">
          {/* Left column: Form/Text with scroll */}
-         <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
+         <div className="flex-1 overflow-y-auto custom-scrollbar min-h-[400px] lg:min-h-0">
                 {viewMode === 'form' ? (
                 <>
                     <div className="sticky top-0 z-10 flex flex-wrap gap-1 mb-6 bg-slate-100/50 p-1.5 rounded-xl border border-slate-200 shadow-inner backdrop-blur-sm">
@@ -1334,8 +1334,8 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
          </div>
 
          {/* Right column: Sticky ScoreCard */}
-         <div className="w-full xl:w-80 shrink-0 xl:overflow-y-auto xl:max-h-full">
-            <div className="xl:sticky xl:top-0">
+         <div className="w-full lg:w-72 xl:w-80 shrink-0 lg:overflow-y-auto lg:max-h-full">
+            <div className="lg:sticky lg:top-0">
                 <ScoreCard scoreData={report.score} flags={report.flags} hasChanges={Object.keys(modifiedFields).length > 0} onReevaluate={() => onReevaluate(formData)} isReevaluating={isReevaluating} onIssueClick={handleIssueClick} onOpenReview={() => setIsReviewModalOpen(true)} />
             </div>
          </div>
