@@ -233,3 +233,27 @@ POST /api/stripe/webhook - Stripe webhook handler
 4. If limit reached, confirms extra charge with user
 5. Usage incremented and extra charges tracked
 6. Monthly reset on new billing period
+
+### Admin Privileges (January 2026)
+- **Unlimited Access**: Administrators (rol=ADMIN) do not need a subscription
+- **No Report Limits**: Admins have unlimited reports, bypass subscription checks
+- **Billing Dashboard**: Admins see "Panel de Facturación" button in user menu
+- **Usage Display**: Shows "∞ informes" and "Acceso ilimitado (Admin)" for admins
+
+### Admin Billing Dashboard
+- **Location**: `components/AdminBillingDashboard.tsx`
+- **Access**: Only visible to users with rol=ADMIN
+- **Features**:
+  - Monthly revenue summary with comparison to previous month
+  - Subscription vs extra reports breakdown
+  - Revenue chart (last 6 months)
+  - Subscription distribution by plan
+  - Active subscribers table with usage stats
+
+### API Endpoints (Billing - Admin Only)
+```
+GET /api/billing/summary - Current month summary with comparisons
+GET /api/billing/revenue?months=6 - Monthly revenue history
+GET /api/billing/stats - Subscription statistics by plan
+GET /api/billing/subscribers?limit=50 - Active subscribers list
+```
