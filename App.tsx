@@ -29,6 +29,17 @@ const App: React.FC = () => {
   const [isPanelOpen, setIsPanelOpen] = useState(true);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [savedReports, setSavedReports] = useState<SavedReport[]>([]);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [currentFormId, setCurrentFormId] = useState<string | null>(null);
+  
+  // State for usage tracking
+  const [usage, setUsage] = useState<{
+    periodYear: number;
+    periodMonth: number;
+    reportsUsed: number;
+    reportsLimit: number;
+    remaining: number;
+  } | null>(null);
   
   // State for Rules (loaded from database)
   const [rules, setRules] = useState<ScoringRule[]>([]);
@@ -104,6 +115,27 @@ const App: React.FC = () => {
     }
     setUser(null);
   };
+
+  // Cargar uso mensual
+  const loadUsage = async () => {
+    try {
+      const response = await fetch('/api/usage/current', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setUsage(data);
+      }
+    } catch (e) {
+      console.error('Error loading usage:', e);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      loadUsage();
+    }
+  }, [user]);
 
   // Cargar reportes guardados desde el backend al montar
   useEffect(() => {
@@ -213,14 +245,28 @@ const App: React.FC = () => {
       setStatus('error');
       return;
     }
+
+    // Verificar límite de uso
+    if (usage && usage.remaining <= 0) {
+      setError("Has alcanzado el límite de informes de este mes. Contacta a soporte para aumentar tu límite.");
+      setStatus('error');
+      return;
+    }
     
     setStatus('analyzing');
     setError(null);
+    setCurrentFormId(null);
     
     try {
       const data = await analyzeReportImage(pendingFile.data, pendingFile.type, selectedProvider, rules);
       setReport(data);
       setStatus('complete');
+      
+      // Auto-guardar automáticamente después de procesar
+      const savedFormId = await autoSaveReport(data, pendingFile);
+      if (savedFormId) {
+        setCurrentFormId(savedFormId);
+      }
     } catch (err: any) {
       console.error(err);
       const errorMessage = err?.message || '';
@@ -285,15 +331,15 @@ const App: React.FC = () => {
       setPendingChanges(changes);
   };
 
-  // Guardar reporte en base de datos y archivo en Object Storage
-  const handleSaveReport = async () => {
-    if (!report) return;
-    
+  // Auto-guardar reporte (sin alertas, usado después de procesamiento)
+  const autoSaveReport = async (reportData: AnalysisReport, file: {data: string, type: string} | null): Promise<string | null> => {
     try {
+      setIsAutoSaving(true);
+      
       const formData = {
-        ...report.extracted,
-        score: report.score,
-        flags: report.flags,
+        ...reportData.extracted,
+        score: reportData.score,
+        flags: reportData.flags,
       };
 
       const requestBody: {
@@ -302,13 +348,13 @@ const App: React.FC = () => {
         fileBase64?: string;
         fileMimeType?: string;
       } = {
-        insuranceCompany: report.extracted.provider || 'UNKNOWN',
+        insuranceCompany: reportData.extracted.provider || 'UNKNOWN',
         formData: formData,
       };
 
-      if (filePreview) {
-        requestBody.fileBase64 = filePreview.data;
-        requestBody.fileMimeType = filePreview.type;
+      if (file) {
+        requestBody.fileBase64 = file.data;
+        requestBody.fileMimeType = file.type;
       }
 
       const response = await fetch('/api/forms', {
@@ -331,17 +377,98 @@ const App: React.FC = () => {
         id: result.formId,
         timestamp: Date.now(),
         fileName: 'Informe Médico',
+        provider: reportData.extracted.provider,
+        extractedData: reportData.extracted,
+        score: reportData.score,
+        flags: reportData.flags
+      };
+
+      setSavedReports(prev => {
+        const existingIndex = prev.findIndex(r => r.id === result.formId);
+        if (existingIndex >= 0) {
+          const updated = [...prev];
+          updated[existingIndex] = newReport;
+          return updated;
+        }
+        return [newReport, ...prev];
+      });
+      
+      // Incrementar uso
+      await fetch('/api/usage/increment', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      await loadUsage();
+      
+      return result.formId;
+    } catch (e: any) {
+      console.error('Error auto-saving report:', e);
+      return null;
+    } finally {
+      setIsAutoSaving(false);
+    }
+  };
+
+  // Guardar cambios manuales (cuando el usuario modifica datos)
+  const handleSaveChanges = async () => {
+    if (!report || !currentFormId) return;
+    
+    try {
+      const formData = {
+        ...report.extracted,
+        score: report.score,
+        flags: report.flags,
+      };
+
+      const requestBody: {
+        insuranceCompany: string;
+        formData: any;
+      } = {
+        insuranceCompany: report.extracted.provider || 'UNKNOWN',
+        formData: formData,
+      };
+
+      const response = await fetch('/api/forms', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al guardar');
+      }
+
+      const result = await response.json();
+      
+      const updatedReport: SavedReport = {
+        id: result.formId,
+        timestamp: Date.now(),
+        fileName: 'Informe Médico',
         provider: report.extracted.provider,
         extractedData: report.extracted,
         score: report.score,
         flags: report.flags
       };
 
-      setSavedReports(prev => [newReport, ...prev]);
-      alert('Reporte guardado exitosamente en la base de datos');
+      setSavedReports(prev => {
+        const existingIndex = prev.findIndex(r => r.id === result.formId);
+        if (existingIndex >= 0) {
+          const updated = [...prev];
+          updated[existingIndex] = updatedReport;
+          return updated;
+        }
+        return prev;
+      });
+      
+      setPendingChanges({});
+      alert('Cambios guardados exitosamente');
     } catch (e: any) {
-      console.error('Error saving report:', e);
-      alert('Error al guardar reporte: ' + (e.message || 'Error desconocido'));
+      console.error('Error saving changes:', e);
+      alert('Error al guardar cambios: ' + (e.message || 'Error desconocido'));
     }
   };
 
@@ -480,6 +607,29 @@ const App: React.FC = () => {
                 <RefreshCw className="w-4 h-4" />
               </button>
 
+              {usage && (
+                <div className="flex items-center gap-2 ml-2 pl-2 border-l border-slate-200">
+                  <div className="flex flex-col items-end">
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wide">Uso mensual</span>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-xs font-bold ${usage.remaining <= 5 ? 'text-amber-600' : 'text-slate-700'}`}>
+                        {usage.reportsUsed}/{usage.reportsLimit}
+                      </span>
+                      <span className="text-[10px] text-slate-400">informes</span>
+                    </div>
+                  </div>
+                  <div className="w-16 h-2 bg-slate-200 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all ${
+                        usage.remaining <= 5 ? 'bg-amber-500' : 
+                        usage.remaining <= 10 ? 'bg-brand-400' : 'bg-emerald-500'
+                      }`}
+                      style={{ width: `${Math.min((usage.reportsUsed / usage.reportsLimit) * 100, 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center gap-2 ml-2 pl-2 border-l border-slate-200">
                 <span className="text-xs text-slate-500">{user.nombre}</span>
                 <button
@@ -608,7 +758,9 @@ const App: React.FC = () => {
                   onReevaluate={handleReevaluate} 
                   isReevaluating={status === 're-evaluating'}
                   onSyncChanges={handleSyncChanges}
-                  onSaveReport={handleSaveReport}
+                  onSaveChanges={handleSaveChanges}
+                  hasUnsavedChanges={Object.keys(pendingChanges).length > 0}
+                  isAutoSaving={isAutoSaving}
                 />
              )}
           </div>

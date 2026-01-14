@@ -43,6 +43,7 @@ model User {
   stripeCustomer  StripeCustomer?
   subscriptions   Subscription[]
   paymentHistory  PaymentHistory[]
+  usageRecords    UsageRecord[]
 
   @@map("users")
 }
@@ -214,4 +215,21 @@ model AseguradoraConfig {
 
   @@index([codigo])
   @@map("aseguradora_configs")
+}
+
+model UsageRecord {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  periodYear   Int      @map("period_year")
+  periodMonth  Int      @map("period_month")
+  reportsUsed  Int      @default(0) @map("reports_used")
+  reportsLimit Int      @default(20) @map("reports_limit")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, periodYear, periodMonth])
+  @@index([userId])
+  @@map("usage_records")
 }

@@ -9,10 +9,12 @@ interface DashboardProps {
   onReevaluate: (updatedData: ExtractedData) => void;
   isReevaluating: boolean;
   onSyncChanges: (changes: Record<string, { old: any, new: any }>) => void;
-  onSaveReport?: () => void; // Callback para guardar reporte
+  onSaveChanges?: () => void;
+  hasUnsavedChanges?: boolean;
+  isAutoSaving?: boolean;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluating, onSyncChanges, onSaveReport }) => {
+const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluating, onSyncChanges, onSaveChanges, hasUnsavedChanges, isAutoSaving }) => {
   const [viewMode, setViewMode] = useState<'form' | 'text'>('form');
   const [formData, setFormData] = useState<ExtractedData>(report.extracted);
   const [modifiedFields, setModifiedFields] = useState<Record<string, { old: any, new: any }>>({});
@@ -44,10 +46,16 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
       <div className="flex justify-between items-center">
          <h2 className="text-xl font-bold text-slate-700">Análisis del Reporte</h2>
          <div className="flex items-center gap-2">
-             {onSaveReport && (
-                <button onClick={onSaveReport} className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 shadow-sm flex items-center gap-1.5">
+             {isAutoSaving && (
+                <span className="text-xs text-slate-400 flex items-center gap-1.5">
+                   <span className="w-2 h-2 bg-brand-400 rounded-full animate-pulse"></span>
+                   Guardando...
+                </span>
+             )}
+             {hasUnsavedChanges && onSaveChanges && !isAutoSaving && (
+                <button onClick={onSaveChanges} className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 shadow-sm flex items-center gap-1.5">
                    <ShieldCheck className="w-3.5 h-3.5" />
-                   Guardar Reporte
+                   Guardar cambios
                 </button>
              )}
              <button onClick={() => setViewMode(prev => prev === 'form' ? 'text' : 'form')} className="px-3 py-1.5 border rounded-lg text-xs font-bold bg-white text-slate-600 border-slate-200 hover:bg-slate-50 shadow-sm">
