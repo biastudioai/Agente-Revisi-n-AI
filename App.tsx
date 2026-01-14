@@ -413,16 +413,16 @@ const App: React.FC = () => {
   };
 
   // Guardar cambios manuales (cuando el usuario modifica datos)
-  const handleSaveChanges = async () => {
+  const handleSaveChanges = async (updatedFormData: ExtractedData) => {
     if (!report || !currentFormId) return;
     
     try {
-      // Recalcular el score con los datos actuales antes de guardar
-      const updatedReport = await reEvaluateReport(report, report.extracted, rules);
+      // Recalcular el score con los datos actualizados del formulario
+      const updatedReport = await reEvaluateReport(report, updatedFormData, rules);
       setReport(updatedReport);
       
       const formData = {
-        ...updatedReport.extracted,
+        ...updatedFormData,
         score: updatedReport.score,
         flags: updatedReport.flags,
       };
@@ -432,7 +432,7 @@ const App: React.FC = () => {
         formData: any;
         formId: string;
       } = {
-        insuranceCompany: updatedReport.extracted.provider || 'UNKNOWN',
+        insuranceCompany: updatedFormData.provider || 'UNKNOWN',
         formData: formData,
         formId: currentFormId,
       };
@@ -457,8 +457,8 @@ const App: React.FC = () => {
         id: result.formId,
         timestamp: Date.now(),
         fileName: 'Informe Médico',
-        provider: updatedReport.extracted.provider,
-        extractedData: updatedReport.extracted,
+        provider: updatedFormData.provider,
+        extractedData: updatedFormData,
         score: updatedReport.score,
         flags: updatedReport.flags
       };
