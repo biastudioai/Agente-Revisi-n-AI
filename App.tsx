@@ -1126,20 +1126,24 @@ const App: React.FC = () => {
         
         {/* Botones a la derecha */}
         <div className="flex items-center gap-2">
-        <button 
-          onClick={() => setIsInsuranceAuditorOpen(true)}
-          className="text-xs text-purple-700 bg-white/90 backdrop-blur border border-purple-200 hover:bg-purple-50 hover:border-purple-300 font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-purple-500/10 hover:shadow-purple-500/20"
-        >
-          <Building2 className="w-4 h-4" />
-          Auditoría de aseguradoras
-        </button>
-        <button 
-          onClick={() => setIsRulesModalOpen(true)}
-          className="text-xs text-brand-700 bg-white/90 backdrop-blur border border-brand-200 hover:bg-brand-50 hover:border-brand-300 font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20"
-        >
-          <Settings className="w-4 h-4" />
-          Auditoría de reglas
-        </button>
+        {user?.rol === 'ADMIN' && (
+          <>
+            <button 
+              onClick={() => setIsInsuranceAuditorOpen(true)}
+              className="text-xs text-purple-700 bg-white/90 backdrop-blur border border-purple-200 hover:bg-purple-50 hover:border-purple-300 font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-purple-500/10 hover:shadow-purple-500/20"
+            >
+              <Building2 className="w-4 h-4" />
+              Auditoría de aseguradoras
+            </button>
+            <button 
+              onClick={() => setIsRulesModalOpen(true)}
+              className="text-xs text-brand-700 bg-white/90 backdrop-blur border border-brand-200 hover:bg-brand-50 hover:border-brand-300 font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20"
+            >
+              <Settings className="w-4 h-4" />
+              Auditoría de reglas
+            </button>
+          </>
+        )}
         <button 
           onClick={() => setIsHistoryViewOpen(true)}
           className="text-xs text-cyan-700 bg-white/90 backdrop-blur border border-cyan-200 hover:bg-cyan-50 hover:border-cyan-300 font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-cyan-500/10 hover:shadow-cyan-500/20"
