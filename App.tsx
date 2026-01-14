@@ -58,9 +58,9 @@ const App: React.FC = () => {
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const [isInsuranceAuditorOpen, setIsInsuranceAuditorOpen] = useState(false);
 
-  // Load rules from database on mount
+  // Load rules from database on mount with retry logic
   useEffect(() => {
-    const loadRules = async () => {
+    const loadRules = async (retryCount = 0, maxRetries = 3) => {
       try {
         setIsLoadingRules(true);
         setRulesError(null);
@@ -68,6 +68,11 @@ const App: React.FC = () => {
         setRules(dbRules);
       } catch (e) {
         console.error('Error loading rules from database:', e);
+        if (retryCount < maxRetries) {
+          console.log(`Retrying rules load... attempt ${retryCount + 1}/${maxRetries}`);
+          setTimeout(() => loadRules(retryCount + 1, maxRetries), 1000 * (retryCount + 1));
+          return;
+        }
         setRulesError('No se pudieron cargar las reglas de validación');
       } finally {
         setIsLoadingRules(false);
@@ -562,6 +567,10 @@ const App: React.FC = () => {
     setFilePreview(null);
     setStatus('complete');
     setPendingChanges({});
+    setCurrentFormId(saved.id);
+    if (saved.provider) {
+      setSelectedProvider(saved.provider);
+    }
   };
 
   // Cargar reporte desde historial por ID (con PDF)
