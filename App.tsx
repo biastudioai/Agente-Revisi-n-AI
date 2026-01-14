@@ -393,16 +393,19 @@ const App: React.FC = () => {
         return [newReport, ...prev];
       });
       
-      // Incrementar uso
-      await fetch('/api/usage/increment', {
-        method: 'POST',
-        credentials: 'include',
-      });
-      await loadUsage();
+      // Solo incrementar uso si es un nuevo informe (no un update)
+      if (result.isNew) {
+        await fetch('/api/usage/increment', {
+          method: 'POST',
+          credentials: 'include',
+        });
+        await loadUsage();
+      }
       
       return result.formId;
     } catch (e: any) {
       console.error('Error auto-saving report:', e);
+      setError('Error al guardar automáticamente. Por favor, intenta de nuevo.');
       return null;
     } finally {
       setIsAutoSaving(false);

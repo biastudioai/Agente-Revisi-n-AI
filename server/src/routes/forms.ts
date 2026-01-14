@@ -184,6 +184,7 @@ router.post(
         success: true,
         formId: medicalForm.id,
         pdfUrl: newPdfUrl,
+        isNew: !existingForm,
         message: 'Formulario guardado exitosamente',
       });
     } catch (error) {
