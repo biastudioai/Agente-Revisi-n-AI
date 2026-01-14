@@ -11,6 +11,8 @@ import ReportHistory from './components/ReportHistory';
 import { analyzeReportImage, reEvaluateReport } from './services/geminiService';
 import { getReglasParaAseguradora } from './services/scoring-engine';
 import { AnalysisReport, AnalysisStatus, ExtractedData, ScoringRule, SavedReport } from './types';
+import { getCurrentRulesVersion, checkIfRulesChanged, RulesChangedResult } from './services/ruleVersionService';
+import { RuleVersionInfo } from './components/RuleVersionIndicator';
 import { detectProviderFromPdf, DetectedProvider } from './services/providerDetection';
 import AdminBillingDashboard from './components/AdminBillingDashboard';
 import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw, AlignLeft, Image as ImageIcon, Loader2, Building2, LogOut, ChevronDown, User as UserIcon, CreditCard, BarChart3, History } from 'lucide-react';
@@ -109,6 +111,11 @@ const App: React.FC = () => {
   
   // State for Report History View
   const [isHistoryViewOpen, setIsHistoryViewOpen] = useState(false);
+
+  // State for Rule Versioning
+  const [ruleVersionInfo, setRuleVersionInfo] = useState<RuleVersionInfo | null>(null);
+  const [currentRuleVersionId, setCurrentRuleVersionId] = useState<string | null>(null);
+  const [isRecalculatingWithNewRules, setIsRecalculatingWithNewRules] = useState(false);
 
   // Check authentication on mount
   useEffect(() => {
@@ -216,6 +223,8 @@ const App: React.FC = () => {
             score: form.formData?.score || { finalScore: 0, categoryScores: [] },
             flags: form.formData?.flags || [],
             pdfUrl: form.formPdfs?.[0]?.pdfUrl || null,
+            ruleVersionId: form.ruleVersionId || undefined,
+            originalScore: form.originalScore || undefined,
           }));
           setSavedReports(reports);
         }
@@ -336,8 +345,27 @@ const App: React.FC = () => {
       setReport(data);
       setStatus('complete');
       
-      // Auto-guardar automáticamente después de procesar
-      const savedFormId = await autoSaveReport(data, pendingFile);
+      // Capture and set current rule version
+      let capturedRuleVersionId: string | undefined;
+      try {
+        const currentVersion = await getCurrentRulesVersion();
+        if (currentVersion) {
+          capturedRuleVersionId = currentVersion.id;
+          setCurrentRuleVersionId(currentVersion.id);
+          setRuleVersionInfo({
+            hasChanges: false,
+            originalVersionNumber: currentVersion.versionNumber,
+            currentVersionNumber: currentVersion.versionNumber,
+            changeCount: 0,
+            originalDate: new Date(currentVersion.createdAt),
+          });
+        }
+      } catch (e) {
+        console.error('Error capturing rule version:', e);
+      }
+      
+      // Auto-guardar automáticamente después de procesar - pass version directly
+      const savedFormId = await autoSaveReport(data, pendingFile, capturedRuleVersionId);
       if (savedFormId) {
         setCurrentFormId(savedFormId);
       }
@@ -390,6 +418,24 @@ const App: React.FC = () => {
         console.error('Error saving custom rules to localStorage:', e);
       }
       
+      // Refresh rule version info after update
+      try {
+        const currentVersion = await getCurrentRulesVersion();
+        if (currentVersion) {
+          setCurrentRuleVersionId(currentVersion.id);
+          // Update version info to show no changes (since we just updated with current rules)
+          setRuleVersionInfo({
+            hasChanges: false,
+            originalVersionNumber: currentVersion.versionNumber,
+            currentVersionNumber: currentVersion.versionNumber,
+            changeCount: 0,
+            originalDate: new Date(currentVersion.createdAt),
+          });
+        }
+      } catch (e) {
+        console.error('Error refreshing rule version info:', e);
+      }
+      
       if (report && status === 'complete') {
           // Trigger immediate re-calc without "loading" state if it's just local rule change
           try {
@@ -401,12 +447,132 @@ const App: React.FC = () => {
       }
   };
 
+  // Handler for recalculating with current rules when original rules have changed
+  const handleRecalculateWithCurrentRules = async () => {
+    if (!report || status !== 'complete') return;
+    
+    setIsRecalculatingWithNewRules(true);
+    try {
+      // Reload rules from database
+      const dbRules = await getReglasParaAseguradora('ALL');
+      setRules(dbRules);
+      
+      // Recalculate score with new rules
+      const updatedReport = await reEvaluateReport(report, report.extracted, dbRules);
+      setReport(updatedReport);
+      
+      // Get current version and update state
+      const currentVersion = await getCurrentRulesVersion();
+      let capturedVersionId: string | undefined;
+      if (currentVersion) {
+        capturedVersionId = currentVersion.id;
+        setCurrentRuleVersionId(currentVersion.id);
+        setRuleVersionInfo({
+          hasChanges: false,
+          originalVersionNumber: currentVersion.versionNumber,
+          currentVersionNumber: currentVersion.versionNumber,
+          changeCount: 0,
+          originalDate: new Date(currentVersion.createdAt),
+        });
+      }
+      
+      // Persist the updated rule version and score to the backend
+      if (currentFormId && capturedVersionId) {
+        try {
+          const formData = {
+            ...updatedReport.extracted,
+            score: updatedReport.score,
+            flags: updatedReport.flags,
+          };
+          
+          await fetch('/api/forms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              insuranceCompany: updatedReport.extracted.provider || 'UNKNOWN',
+              formData,
+              formId: currentFormId,
+              ruleVersionId: capturedVersionId,
+              originalScore: updatedReport.score?.finalScore ?? 0,
+            }),
+          });
+          
+          // Update savedReports with new version info
+          setSavedReports(prev => prev.map(r => 
+            r.id === currentFormId 
+              ? { ...r, ruleVersionId: capturedVersionId, originalScore: updatedReport.score?.finalScore ?? 0, score: updatedReport.score }
+              : r
+          ));
+        } catch (persistError) {
+          console.error('Error persisting recalculation:', persistError);
+        }
+      }
+    } catch (e) {
+      console.error('Error recalculating with current rules:', e);
+    } finally {
+      setIsRecalculatingWithNewRules(false);
+    }
+  };
+
+  // Effect to check for rule changes when report changes
+  useEffect(() => {
+    const checkRuleChanges = async () => {
+      if (!report || status !== 'complete') {
+        setRuleVersionInfo(null);
+        return;
+      }
+      
+      try {
+        // Get current rule version
+        const currentVersion = await getCurrentRulesVersion();
+        if (!currentVersion) {
+          setRuleVersionInfo(null);
+          return;
+        }
+        
+        // If no previous version was saved, use current version
+        if (!currentRuleVersionId) {
+          setCurrentRuleVersionId(currentVersion.id);
+          setRuleVersionInfo({
+            hasChanges: false,
+            originalVersionNumber: currentVersion.versionNumber,
+            currentVersionNumber: currentVersion.versionNumber,
+            changeCount: 0,
+            originalDate: new Date(currentVersion.createdAt),
+          });
+          return;
+        }
+        
+        // Check if rules changed since original processing
+        const result = await checkIfRulesChanged(currentRuleVersionId);
+        
+        setRuleVersionInfo({
+          hasChanges: result.changed,
+          originalVersionNumber: result.originalVersion?.versionNumber || null,
+          currentVersionNumber: result.currentVersion?.versionNumber || null,
+          changeCount: result.changeCount,
+          originalDate: result.originalVersion?.createdAt ? new Date(result.originalVersion.createdAt) : null,
+        });
+      } catch (e) {
+        console.error('Error checking rule changes:', e);
+        setRuleVersionInfo(null);
+      }
+    };
+    
+    checkRuleChanges();
+  }, [report, status, currentRuleVersionId]);
+
   const handleSyncChanges = (changes: Record<string, { old: any, new: any }>) => {
       setPendingChanges(changes);
   };
 
   // Auto-guardar reporte (sin alertas, usado después de procesamiento)
-  const autoSaveReport = async (reportData: AnalysisReport, file: {data: string, type: string} | null): Promise<string | null> => {
+  const autoSaveReport = async (
+    reportData: AnalysisReport, 
+    file: {data: string, type: string} | null,
+    ruleVersionIdOverride?: string  // Allow passing ruleVersionId directly to avoid stale state
+  ): Promise<string | null> => {
     try {
       setIsAutoSaving(true);
       
@@ -421,6 +587,8 @@ const App: React.FC = () => {
         formData: any;
         fileBase64?: string;
         fileMimeType?: string;
+        ruleVersionId?: string;
+        originalScore?: number;
       } = {
         insuranceCompany: reportData.extracted.provider || 'UNKNOWN',
         formData: formData,
@@ -429,6 +597,14 @@ const App: React.FC = () => {
       if (file) {
         requestBody.fileBase64 = file.data;
         requestBody.fileMimeType = file.type;
+      }
+      
+      // Include rule version tracking - use override if provided, otherwise use state
+      const versionToUse = ruleVersionIdOverride || currentRuleVersionId;
+      if (versionToUse) {
+        requestBody.ruleVersionId = versionToUse;
+        // Use ?? to preserve zero scores
+        requestBody.originalScore = reportData.score?.finalScore ?? 0;
       }
 
       const response = await fetch('/api/forms', {
@@ -454,7 +630,9 @@ const App: React.FC = () => {
         provider: reportData.extracted.provider,
         extractedData: reportData.extracted,
         score: reportData.score,
-        flags: reportData.flags
+        flags: reportData.flags,
+        ruleVersionId: currentRuleVersionId || undefined,
+        originalScore: reportData.score?.finalScore || undefined,
       };
 
       setSavedReports(prev => {
@@ -556,7 +734,7 @@ const App: React.FC = () => {
   };
 
   // Cargar reporte desde historial
-  const handleLoadReport = (saved: SavedReport) => {
+  const handleLoadReport = async (saved: SavedReport) => {
     const loadedReport: AnalysisReport = {
       extracted: saved.extractedData,
       score: saved.score,
@@ -570,6 +748,39 @@ const App: React.FC = () => {
     setCurrentFormId(saved.id);
     if (saved.provider) {
       setSelectedProvider(saved.provider);
+    }
+    
+    // Initialize rule version - use stored version if available
+    try {
+      if (saved.ruleVersionId) {
+        // Use stored version for change detection
+        setCurrentRuleVersionId(saved.ruleVersionId);
+        const result = await checkIfRulesChanged(saved.ruleVersionId);
+        setRuleVersionInfo({
+          hasChanges: result.changed,
+          originalVersionNumber: result.originalVersion?.versionNumber || null,
+          currentVersionNumber: result.currentVersion?.versionNumber || null,
+          changeCount: result.changeCount,
+          originalDate: result.originalVersion?.createdAt ? new Date(result.originalVersion.createdAt) : null,
+        });
+      } else {
+        // No stored version - use current version as baseline
+        const currentVersion = await getCurrentRulesVersion();
+        if (currentVersion) {
+          setCurrentRuleVersionId(currentVersion.id);
+          setRuleVersionInfo({
+            hasChanges: false,
+            originalVersionNumber: currentVersion.versionNumber,
+            currentVersionNumber: currentVersion.versionNumber,
+            changeCount: 0,
+            originalDate: new Date(currentVersion.createdAt),
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Error loading rule version:', e);
+      setCurrentRuleVersionId(null);
+      setRuleVersionInfo(null);
     }
   };
 
@@ -633,6 +844,41 @@ const App: React.FC = () => {
       setStatus('complete');
       setIsHistoryViewOpen(false);
       setIsPanelOpen(true); // Ensure left panel is visible
+      
+      // Initialize rule version - use stored version if available for change detection
+      try {
+        const storedRuleVersionId = form.ruleVersionId;
+        
+        if (storedRuleVersionId) {
+          // Use the stored version to check for changes
+          setCurrentRuleVersionId(storedRuleVersionId);
+          const result = await checkIfRulesChanged(storedRuleVersionId);
+          setRuleVersionInfo({
+            hasChanges: result.changed,
+            originalVersionNumber: result.originalVersion?.versionNumber || null,
+            currentVersionNumber: result.currentVersion?.versionNumber || null,
+            changeCount: result.changeCount,
+            originalDate: result.originalVersion?.createdAt ? new Date(result.originalVersion.createdAt) : null,
+          });
+        } else {
+          // No stored version - use current version as baseline
+          const currentVersion = await getCurrentRulesVersion();
+          if (currentVersion) {
+            setCurrentRuleVersionId(currentVersion.id);
+            setRuleVersionInfo({
+              hasChanges: false,
+              originalVersionNumber: currentVersion.versionNumber,
+              currentVersionNumber: currentVersion.versionNumber,
+              changeCount: 0,
+              originalDate: new Date(currentVersion.createdAt),
+            });
+          }
+        }
+      } catch (e) {
+        console.error('Error loading rule version:', e);
+        setCurrentRuleVersionId(null);
+        setRuleVersionInfo(null);
+      }
     } catch (err) {
       console.error('Error loading report from history:', err);
       alert('Error al cargar el informe');
@@ -936,6 +1182,9 @@ const App: React.FC = () => {
                   onSaveChanges={handleSaveChanges}
                   hasUnsavedChanges={Object.keys(pendingChanges).length > 0}
                   isAutoSaving={isAutoSaving}
+                  ruleVersionInfo={ruleVersionInfo}
+                  isRecalculatingWithNewRules={isRecalculatingWithNewRules}
+                  onRecalculateWithCurrentRules={handleRecalculateWithCurrentRules}
                 />
              )}
           </div>

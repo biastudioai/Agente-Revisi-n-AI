@@ -5,6 +5,7 @@ import DateInput from './DateInput';
 import ReviewModal from './ReviewModal';
 import { getProviderTheme } from '../providers';
 import { RotateCcw, Activity, User, FileText, Hospital, Users, PenTool, ShieldCheck, HeartPulse, ClipboardList, BadgeCheck, Building2, Stethoscope, Syringe, Save } from 'lucide-react';
+import { RuleVersionInfo } from './RuleVersionIndicator';
 
 interface DashboardProps {
   report: AnalysisReport;
@@ -14,6 +15,9 @@ interface DashboardProps {
   onSaveChanges?: (updatedData: ExtractedData) => void;
   hasUnsavedChanges?: boolean;
   isAutoSaving?: boolean;
+  ruleVersionInfo?: RuleVersionInfo | null;
+  isRecalculatingWithNewRules?: boolean;
+  onRecalculateWithCurrentRules?: () => void;
 }
 
 type TabId = 
@@ -27,7 +31,18 @@ type TabId =
   | 'medico' 
   | 'validacion';
 
-const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluating, onSyncChanges, onSaveChanges, hasUnsavedChanges, isAutoSaving }) => {
+const Dashboard: React.FC<DashboardProps> = ({ 
+  report, 
+  onReevaluate, 
+  isReevaluating, 
+  onSyncChanges, 
+  onSaveChanges, 
+  hasUnsavedChanges, 
+  isAutoSaving,
+  ruleVersionInfo,
+  isRecalculatingWithNewRules,
+  onRecalculateWithCurrentRules,
+}) => {
   const [formData, setFormData] = useState<ExtractedData>(report.extracted);
   const [modifiedFields, setModifiedFields] = useState<Record<string, { old: any, new: any }>>({});
   const [highlightedField, setHighlightedField] = useState<string | null>(null);
@@ -1336,7 +1351,18 @@ const Dashboard: React.FC<DashboardProps> = ({ report, onReevaluate, isReevaluat
          {/* Right column: Sticky ScoreCard */}
          <div className="w-full lg:w-72 xl:w-80 shrink-0 lg:overflow-y-auto lg:max-h-full">
             <div className="lg:sticky lg:top-0">
-                <ScoreCard scoreData={report.score} flags={report.flags} hasChanges={Object.keys(modifiedFields).length > 0} onReevaluate={() => onReevaluate(formData)} isReevaluating={isReevaluating} onIssueClick={handleIssueClick} onOpenReview={() => setIsReviewModalOpen(true)} />
+                <ScoreCard 
+                  scoreData={report.score} 
+                  flags={report.flags} 
+                  hasChanges={Object.keys(modifiedFields).length > 0} 
+                  onReevaluate={() => onReevaluate(formData)} 
+                  isReevaluating={isReevaluating} 
+                  onIssueClick={handleIssueClick} 
+                  onOpenReview={() => setIsReviewModalOpen(true)}
+                  ruleVersionInfo={ruleVersionInfo}
+                  isRecalculatingWithNewRules={isRecalculatingWithNewRules}
+                  onRecalculateWithCurrentRules={onRecalculateWithCurrentRules}
+                />
             </div>
          </div>
       </div>

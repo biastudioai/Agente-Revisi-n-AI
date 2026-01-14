@@ -2,6 +2,11 @@ import { ExtractedData, ScoringRule, ScoringResult, ProviderType } from "../type
 import { validateRule } from './rule-validator';
 import { fetchRulesFromDatabase, clearRulesCache } from './database-rules-loader';
 
+export interface ScoringResultWithVersion extends ScoringResult {
+  ruleVersionId?: string;
+  ruleVersionNumber?: number;
+}
+
 export async function getReglasParaAseguradora(provider: ProviderType | 'ALL'): Promise<ScoringRule[]> {
   const providerToFetch = provider === 'ALL' || provider === 'UNKNOWN' ? undefined : provider;
   const dbRules = await fetchRulesFromDatabase(providerToFetch as ProviderType | undefined);

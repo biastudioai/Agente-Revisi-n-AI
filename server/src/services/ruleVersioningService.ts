@@ -106,7 +106,7 @@ export async function getCurrentRulesVersion(): Promise<RuleVersionOutput | null
   return {
     id: version.id,
     versionNumber: version.versionNumber,
-    rulesSnapshot: version.rulesSnapshot as ScoringRuleOutput[],
+    rulesSnapshot: version.rulesSnapshot as unknown as ScoringRuleOutput[],
     rulesHash: version.rulesHash,
     description: version.description,
     createdAt: version.createdAt,
@@ -123,7 +123,7 @@ export async function getVersionByNumber(versionNumber: number): Promise<RuleVer
   return {
     id: version.id,
     versionNumber: version.versionNumber,
-    rulesSnapshot: version.rulesSnapshot as ScoringRuleOutput[],
+    rulesSnapshot: version.rulesSnapshot as unknown as ScoringRuleOutput[],
     rulesHash: version.rulesHash,
     description: version.description,
     createdAt: version.createdAt,
@@ -140,7 +140,7 @@ export async function getVersionById(versionId: string): Promise<RuleVersionOutp
   return {
     id: version.id,
     versionNumber: version.versionNumber,
-    rulesSnapshot: version.rulesSnapshot as ScoringRuleOutput[],
+    rulesSnapshot: version.rulesSnapshot as unknown as ScoringRuleOutput[],
     rulesHash: version.rulesHash,
     description: version.description,
     createdAt: version.createdAt,
@@ -160,7 +160,7 @@ export async function createRulesVersion(description?: string): Promise<RuleVers
     return {
       id: existingVersion.id,
       versionNumber: existingVersion.versionNumber,
-      rulesSnapshot: existingVersion.rulesSnapshot as ScoringRuleOutput[],
+      rulesSnapshot: existingVersion.rulesSnapshot as unknown as ScoringRuleOutput[],
       rulesHash: existingVersion.rulesHash,
       description: existingVersion.description,
       createdAt: existingVersion.createdAt,
@@ -185,7 +185,7 @@ export async function createRulesVersion(description?: string): Promise<RuleVers
   return {
     id: version.id,
     versionNumber: version.versionNumber,
-    rulesSnapshot: version.rulesSnapshot as ScoringRuleOutput[],
+    rulesSnapshot: version.rulesSnapshot as unknown as ScoringRuleOutput[],
     rulesHash: version.rulesHash,
     description: version.description,
     createdAt: version.createdAt,
@@ -314,7 +314,7 @@ export async function getAllVersions(): Promise<RuleVersionOutput[]> {
   return versions.map(v => ({
     id: v.id,
     versionNumber: v.versionNumber,
-    rulesSnapshot: v.rulesSnapshot as ScoringRuleOutput[],
+    rulesSnapshot: v.rulesSnapshot as unknown as ScoringRuleOutput[],
     rulesHash: v.rulesHash,
     description: v.description,
     createdAt: v.createdAt,

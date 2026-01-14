@@ -2,6 +2,7 @@
 import React from 'react';
 import { ScoringResult, Flag } from '../types';
 import { TrendingUp, TrendingDown, RefreshCw, Save, AlertCircle, AlertTriangle, CheckCircle2, XCircle, MousePointerClick, Send } from 'lucide-react';
+import RuleVersionIndicator, { RuleVersionInfo } from './RuleVersionIndicator';
 
 interface ScoreCardProps {
   scoreData: ScoringResult;
@@ -11,9 +12,23 @@ interface ScoreCardProps {
   onReevaluate: () => void;
   onIssueClick: (fieldPath: string) => void;
   onOpenReview: () => void;
+  ruleVersionInfo?: RuleVersionInfo | null;
+  isRecalculatingWithNewRules?: boolean;
+  onRecalculateWithCurrentRules?: () => void;
 }
 
-const ScoreCard: React.FC<ScoreCardProps> = ({ scoreData, flags, hasChanges, isReevaluating, onReevaluate, onIssueClick, onOpenReview }) => {
+const ScoreCard: React.FC<ScoreCardProps> = ({ 
+  scoreData, 
+  flags, 
+  hasChanges, 
+  isReevaluating, 
+  onReevaluate, 
+  onIssueClick, 
+  onOpenReview,
+  ruleVersionInfo,
+  isRecalculatingWithNewRules = false,
+  onRecalculateWithCurrentRules,
+}) => {
   const { finalScore, delta } = scoreData;
   
   // Determine Visual Status
@@ -210,6 +225,16 @@ const ScoreCard: React.FC<ScoreCardProps> = ({ scoreData, flags, hasChanges, isR
               );
             })}
           </div>
+        </div>
+      )}
+      
+      {ruleVersionInfo && onRecalculateWithCurrentRules && (
+        <div className="px-4 pb-4">
+          <RuleVersionIndicator
+            versionInfo={ruleVersionInfo}
+            isRecalculating={isRecalculatingWithNewRules}
+            onRecalculateWithCurrentRules={onRecalculateWithCurrentRules}
+          />
         </div>
       )}
       

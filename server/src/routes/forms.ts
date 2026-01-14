@@ -13,6 +13,8 @@ interface CreateFormRequest {
   fileBase64?: string;
   fileMimeType?: string;
   formId?: string; // Si se proporciona, actualiza un formulario existente
+  ruleVersionId?: string; // ID de la versión de reglas usada para procesar
+  originalScore?: number; // Score original al momento del procesamiento
 }
 
 function getPrivateObjectDir(): string {
@@ -43,7 +45,7 @@ router.post(
   '/',
   requireAuth,
   expressAsyncHandler(async (req: Request, res: Response) => {
-    const { insuranceCompany, formData, fileBase64, fileMimeType, formId } = req.body as CreateFormRequest;
+    const { insuranceCompany, formData, fileBase64, fileMimeType, formId, ruleVersionId, originalScore } = req.body as CreateFormRequest;
     const userId = (req as any).user?.id;
 
     if (!userId) {
@@ -108,12 +110,21 @@ router.post(
               throw new Error('Formulario no encontrado');
             }
             
+            const updateData: any = {
+              formData,
+              status: 'PENDING',
+            };
+            // Update rule version if provided (e.g., after recalculation)
+            if (ruleVersionId) {
+              updateData.ruleVersionId = ruleVersionId;
+            }
+            if (originalScore !== undefined) {
+              updateData.originalScore = originalScore;
+            }
+            
             form = await tx.medicalForm.update({
               where: { id: formId },
-              data: {
-                formData,
-                status: 'PENDING',
-              },
+              data: updateData,
             });
             isNewReport = false;
           } else {
@@ -124,6 +135,8 @@ router.post(
                 insuranceCompany,
                 formData,
                 status: 'PENDING',
+                ruleVersionId: ruleVersionId ?? null,
+                originalScore: originalScore ?? null,
               },
             });
             isNewReport = true;
@@ -261,6 +274,8 @@ router.get(
           status: form.status,
           pdfUrl: form.formPdfs?.[0]?.pdfUrl || null,
           userRole: userRole,
+          ruleVersionId: form.ruleVersionId || null,
+          originalScore: form.originalScore || null,
         };
       });
 

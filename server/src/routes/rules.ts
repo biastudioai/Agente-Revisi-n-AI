@@ -12,6 +12,18 @@ import {
   countRules,
   ScoringRuleInput,
 } from '../services/rulesService';
+import {
+  getCurrentRulesVersion,
+  getVersionByNumber,
+  getVersionById,
+  getAllVersions,
+  createRulesVersion,
+  ensureInitialVersion,
+  getRecentChangeLogs,
+  getChangeLogForRule,
+  checkIfRulesChanged,
+  getChangesBetweenVersions,
+} from '../services/ruleVersioningService';
 
 const router = Router();
 
@@ -172,6 +184,162 @@ router.post(
     } catch (error: any) {
       console.error('Error activating rule:', error);
       res.status(500).json({ success: false, error: 'Error al activar regla' });
+    }
+  })
+);
+
+router.get(
+  '/versions/current',
+  expressAsyncHandler(async (req: Request, res: Response) => {
+    try {
+      const version = await getCurrentRulesVersion();
+      if (!version) {
+        const newVersion = await ensureInitialVersion();
+        res.json({ success: true, data: newVersion });
+        return;
+      }
+      res.json({ success: true, data: version });
+    } catch (error: any) {
+      console.error('Error fetching current version:', error);
+      res.status(500).json({ success: false, error: 'Error al obtener versión actual' });
+    }
+  })
+);
+
+router.get(
+  '/versions/all',
+  expressAsyncHandler(async (req: Request, res: Response) => {
+    try {
+      const versions = await getAllVersions();
+      res.json({ success: true, data: versions, count: versions.length });
+    } catch (error: any) {
+      console.error('Error fetching all versions:', error);
+      res.status(500).json({ success: false, error: 'Error al obtener versiones' });
+    }
+  })
+);
+
+router.get(
+  '/versions/by-number/:versionNumber',
+  expressAsyncHandler(async (req: Request, res: Response) => {
+    const versionNumber = parseInt(req.params.versionNumber, 10);
+    
+    if (isNaN(versionNumber)) {
+      res.status(400).json({ success: false, error: 'Número de versión inválido' });
+      return;
+    }
+
+    try {
+      const version = await getVersionByNumber(versionNumber);
+      if (!version) {
+        res.status(404).json({ success: false, error: 'Versión no encontrada' });
+        return;
+      }
+      res.json({ success: true, data: version });
+    } catch (error: any) {
+      console.error('Error fetching version by number:', error);
+      res.status(500).json({ success: false, error: 'Error al obtener versión' });
+    }
+  })
+);
+
+router.get(
+  '/versions/by-id/:versionId',
+  expressAsyncHandler(async (req: Request, res: Response) => {
+    const { versionId } = req.params;
+
+    try {
+      const version = await getVersionById(versionId);
+      if (!version) {
+        res.status(404).json({ success: false, error: 'Versión no encontrada' });
+        return;
+      }
+      res.json({ success: true, data: version });
+    } catch (error: any) {
+      console.error('Error fetching version by id:', error);
+      res.status(500).json({ success: false, error: 'Error al obtener versión' });
+    }
+  })
+);
+
+router.post(
+  '/versions/create',
+  requireAuth,
+  expressAsyncHandler(async (req: Request, res: Response) => {
+    const { description } = req.body;
+
+    try {
+      const version = await createRulesVersion(description);
+      res.status(201).json({ success: true, data: version });
+    } catch (error: any) {
+      console.error('Error creating version:', error);
+      res.status(500).json({ success: false, error: 'Error al crear versión' });
+    }
+  })
+);
+
+router.get(
+  '/versions/check-changes/:versionId',
+  expressAsyncHandler(async (req: Request, res: Response) => {
+    const { versionId } = req.params;
+
+    try {
+      const result = await checkIfRulesChanged(versionId);
+      res.json({ success: true, data: result });
+    } catch (error: any) {
+      console.error('Error checking changes:', error);
+      res.status(500).json({ success: false, error: 'Error al verificar cambios' });
+    }
+  })
+);
+
+router.get(
+  '/versions/changes-between/:fromVersion/:toVersion',
+  expressAsyncHandler(async (req: Request, res: Response) => {
+    const fromVersion = parseInt(req.params.fromVersion, 10);
+    const toVersion = parseInt(req.params.toVersion, 10);
+    
+    if (isNaN(fromVersion) || isNaN(toVersion)) {
+      res.status(400).json({ success: false, error: 'Números de versión inválidos' });
+      return;
+    }
+
+    try {
+      const changes = await getChangesBetweenVersions(fromVersion, toVersion);
+      res.json({ success: true, data: changes, count: changes.length });
+    } catch (error: any) {
+      console.error('Error fetching changes between versions:', error);
+      res.status(500).json({ success: false, error: 'Error al obtener cambios' });
+    }
+  })
+);
+
+router.get(
+  '/changelog/recent',
+  expressAsyncHandler(async (req: Request, res: Response) => {
+    const limit = parseInt(req.query.limit as string, 10) || 50;
+
+    try {
+      const logs = await getRecentChangeLogs(limit);
+      res.json({ success: true, data: logs, count: logs.length });
+    } catch (error: any) {
+      console.error('Error fetching recent changelog:', error);
+      res.status(500).json({ success: false, error: 'Error al obtener historial' });
+    }
+  })
+);
+
+router.get(
+  '/changelog/rule/:ruleId',
+  expressAsyncHandler(async (req: Request, res: Response) => {
+    const { ruleId } = req.params;
+
+    try {
+      const logs = await getChangeLogForRule(ruleId);
+      res.json({ success: true, data: logs, count: logs.length });
+    } catch (error: any) {
+      console.error('Error fetching rule changelog:', error);
+      res.status(500).json({ success: false, error: 'Error al obtener historial de regla' });
     }
   })
 );
