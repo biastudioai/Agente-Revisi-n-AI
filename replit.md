@@ -56,6 +56,7 @@ Preferred communication style: Simple, everyday language.
 - **Authentication**: Secure, bcrypt-hashed passwords, session management via HttpOnly cookies (web) or Bearer tokens (API), and password reset functionality.
 - **Authorization**: Role-based access control (`ADMIN`, `REVIEWER`, `USER`) for API endpoints.
 - **Audit Logging**: Comprehensive tracking of user actions (LOGIN, LOGOUT, VIEW_FORM, EDIT_JSON) for compliance and security.
+- **Usage Tracking (January 2026)**: Monthly report usage tracking per user with configurable limits. Auto-saves reports after processing and only counts new reports (not updates). Visual progress bar in header shows usage vs limit.
 
 ## External Dependencies
 
