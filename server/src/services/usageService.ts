@@ -1,5 +1,5 @@
 import prisma from '../config/database';
-import { PlanType } from '../generated/prisma';
+import { PlanType, Rol } from '../generated/prisma';
 import { getReportsLimit, getExtraReportPrice, PLAN_CONFIGS } from '../config/plans';
 import { subscriptionService } from './subscriptionService';
 
@@ -15,13 +15,53 @@ export interface UsageInfo {
   isInPromotion: boolean;
   extraReportPriceMxn: number;
   hasActiveSubscription: boolean;
+  isAdmin?: boolean;
 }
 
+const ADMIN_UNLIMITED_LIMIT = 999999;
+
 export class UsageService {
+  private async isUserAdmin(userId: string): Promise<boolean> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { rol: true },
+    });
+    return user?.rol === Rol.ADMIN;
+  }
+
   async getCurrentUsage(userId: string): Promise<UsageInfo> {
     const now = new Date();
     const periodYear = now.getFullYear();
     const periodMonth = now.getMonth() + 1;
+
+    const isAdmin = await this.isUserAdmin(userId);
+    
+    if (isAdmin) {
+      let usageRecord = await prisma.usageRecord.findUnique({
+        where: {
+          userId_periodYear_periodMonth: {
+            userId,
+            periodYear,
+            periodMonth,
+          },
+        },
+      });
+
+      return {
+        periodYear,
+        periodMonth,
+        reportsUsed: usageRecord?.reportsUsed || 0,
+        reportsLimit: ADMIN_UNLIMITED_LIMIT,
+        remaining: ADMIN_UNLIMITED_LIMIT,
+        extraReportsUsed: 0,
+        extraChargesMxn: 0,
+        planType: null,
+        isInPromotion: false,
+        extraReportPriceMxn: 0,
+        hasActiveSubscription: true,
+        isAdmin: true,
+      };
+    }
 
     const subscription = await subscriptionService.getActiveSubscription(userId);
     
@@ -82,6 +122,44 @@ export class UsageService {
     usage: UsageInfo;
     error?: string;
   }> {
+    const now = new Date();
+    const periodYear = now.getFullYear();
+    const periodMonth = now.getMonth() + 1;
+
+    const isAdmin = await this.isUserAdmin(userId);
+    
+    if (isAdmin) {
+      await prisma.usageRecord.upsert({
+        where: {
+          userId_periodYear_periodMonth: {
+            userId,
+            periodYear,
+            periodMonth,
+          },
+        },
+        update: {
+          reportsUsed: { increment: 1 },
+        },
+        create: {
+          userId,
+          periodYear,
+          periodMonth,
+          reportsUsed: 1,
+          reportsLimit: ADMIN_UNLIMITED_LIMIT,
+          extraReportsUsed: 0,
+          extraChargesMxn: 0,
+        },
+      });
+
+      const usage = await this.getCurrentUsage(userId);
+      return {
+        success: true,
+        isExtra: false,
+        extraChargeMxn: 0,
+        usage,
+      };
+    }
+
     const subscription = await subscriptionService.getActiveSubscription(userId);
 
     if (!subscription) {
@@ -94,10 +172,6 @@ export class UsageService {
         error: 'No tienes una suscripción activa',
       };
     }
-
-    const now = new Date();
-    const periodYear = now.getFullYear();
-    const periodMonth = now.getMonth() + 1;
 
     const reportsLimit = subscription.reportsLimit;
     const extraReportPrice = subscription.extraReportPrice;

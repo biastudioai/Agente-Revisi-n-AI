@@ -11,7 +11,8 @@ import { analyzeReportImage, reEvaluateReport } from './services/geminiService';
 import { getReglasParaAseguradora } from './services/scoring-engine';
 import { AnalysisReport, AnalysisStatus, ExtractedData, ScoringRule, SavedReport } from './types';
 import { detectProviderFromPdf, DetectedProvider } from './services/providerDetection';
-import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw, AlignLeft, Image as ImageIcon, Loader2, Building2, LogOut, ChevronDown, User as UserIcon, CreditCard } from 'lucide-react';
+import AdminBillingDashboard from './components/AdminBillingDashboard';
+import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw, AlignLeft, Image as ImageIcon, Loader2, Building2, LogOut, ChevronDown, User as UserIcon, CreditCard, BarChart3 } from 'lucide-react';
 
 interface User {
   id: string;
@@ -46,6 +47,7 @@ const App: React.FC = () => {
     isInPromotion: boolean;
     extraReportPriceMxn: number;
     hasActiveSubscription: boolean;
+    isAdmin?: boolean;
   } | null>(null);
   
   // State for Rules (loaded from database)
@@ -92,6 +94,12 @@ const App: React.FC = () => {
   // State for Subscription Modal
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [subscription, setSubscription] = useState<any>(null);
+  
+  // State for Subscription Success Notification
+  const [subscriptionNotification, setSubscriptionNotification] = useState<string | null>(null);
+  
+  // State for Admin Billing Dashboard
+  const [isBillingDashboardOpen, setIsBillingDashboardOpen] = useState(false);
 
   // Check authentication on mount
   useEffect(() => {
@@ -113,6 +121,24 @@ const App: React.FC = () => {
       }
     };
     checkAuth();
+  }, []);
+
+  // Check for subscription result in URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const subscriptionResult = params.get('subscription');
+    
+    if (subscriptionResult === 'success') {
+      setSubscriptionNotification('Tu suscripción se ha activado correctamente. Ya puedes procesar informes.');
+      window.history.replaceState({}, '', window.location.pathname);
+      loadUsage();
+      loadSubscription();
+      setTimeout(() => setSubscriptionNotification(null), 8000);
+    } else if (subscriptionResult === 'cancelled') {
+      setSubscriptionNotification('El proceso de suscripción fue cancelado.');
+      window.history.replaceState({}, '', window.location.pathname);
+      setTimeout(() => setSubscriptionNotification(null), 5000);
+    }
   }, []);
 
   const handleLogout = async () => {
@@ -983,8 +1009,27 @@ const App: React.FC = () => {
   // Render: UPLOAD SCREEN (Default - idle)
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex flex-col font-sans text-slate-900 overflow-auto">
+      {/* Subscription Notification Banner */}
+      {subscriptionNotification && (
+        <div className={`fixed top-0 left-0 right-0 z-50 px-4 py-3 text-center font-medium shadow-lg transition-all ${
+          subscriptionNotification.includes('cancelado') 
+            ? 'bg-amber-100 text-amber-800 border-b border-amber-200' 
+            : 'bg-green-100 text-green-800 border-b border-green-200'
+        }`}>
+          <div className="max-w-4xl mx-auto flex items-center justify-center gap-3">
+            <span>{subscriptionNotification}</span>
+            <button 
+              onClick={() => setSubscriptionNotification(null)}
+              className="text-current opacity-60 hover:opacity-100 font-bold"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+      
       {/* Header con logo y botones */}
-      <header className="sticky top-0 z-30 bg-gradient-to-b from-slate-50 to-transparent backdrop-blur-sm px-6 py-4 flex items-center justify-between">
+      <header className={`sticky ${subscriptionNotification ? 'top-12' : 'top-0'} z-30 bg-gradient-to-b from-slate-50 to-transparent backdrop-blur-sm px-6 py-4 flex items-center justify-between`}>
         {/* Logo a la izquierda */}
         <div className="flex flex-col items-start">
           <img src="/attached_assets/Veryka_Logo_1767919213039.png" alt="Veryka.ai" className="h-12 object-contain" />
@@ -1041,9 +1086,11 @@ const App: React.FC = () => {
                   <div className="px-4 py-2 border-b border-slate-100">
                     <p className="text-xs text-slate-500">Uso este mes</p>
                     <p className="text-sm font-medium">
-                      {usage.reportsUsed} / {usage.reportsLimit} informes
+                      {usage.reportsUsed} / {usage.isAdmin ? '∞' : usage.reportsLimit} informes
                     </p>
-                    {usage.extraReportsUsed > 0 && (
+                    {usage.isAdmin ? (
+                      <p className="text-xs text-veryka-cyan">Acceso ilimitado (Admin)</p>
+                    ) : usage.extraReportsUsed > 0 && (
                       <p className="text-xs text-amber-600">
                         +{usage.extraReportsUsed} extras (${usage.extraChargesMxn} MXN)
                       </p>
@@ -1060,6 +1107,18 @@ const App: React.FC = () => {
                   <CreditCard className="w-4 h-4" />
                   {subscription ? 'Administrar suscripción' : 'Ver planes'}
                 </button>
+                {user?.rol === 'ADMIN' && (
+                  <button
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      setIsBillingDashboardOpen(true);
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-veryka-dark hover:bg-veryka-cyan/10 flex items-center gap-2 transition-colors"
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    Panel de Facturación
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     setIsUserMenuOpen(false);
@@ -1148,6 +1207,12 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Admin Billing Dashboard */}
+      <AdminBillingDashboard
+        isOpen={isBillingDashboardOpen}
+        onClose={() => setIsBillingDashboardOpen(false)}
+      />
     </div>
   );
 };

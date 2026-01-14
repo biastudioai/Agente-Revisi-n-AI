@@ -72,3 +72,4 @@ export function requireRole(...roles: string[]) {
 }
 
 export const requireAuth = authMiddleware;
+export const requireAdmin = requireRole('ADMIN');

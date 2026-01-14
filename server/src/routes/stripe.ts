@@ -76,8 +76,8 @@ router.post(
       userId,
       email,
       planType as PlanType,
-      `${baseUrl}/subscription/success`,
-      `${baseUrl}/subscription/cancel`
+      `${baseUrl}/?subscription=success`,
+      `${baseUrl}/?subscription=cancelled`
     );
 
     res.json({ url: session.url });
@@ -102,7 +102,7 @@ router.post(
     try {
       const session = await subscriptionService.createCustomerPortalSession(
         userId,
-        `${baseUrl}/dashboard`
+        `${baseUrl}/`
       );
       res.json({ url: session.url });
     } catch (error: any) {
