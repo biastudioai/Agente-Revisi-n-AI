@@ -444,8 +444,7 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport, onBack }) =
                   {filteredReports.map((report) => (
                     <tr 
                       key={report.id} 
-                      className="hover:bg-slate-50/50 transition-colors cursor-pointer"
-                      onClick={() => handleViewReport(report.id)}
+                      className="hover:bg-slate-50/50 transition-colors"
                     >
                       <td className="px-6 py-4">
                         <span className="text-sm font-mono text-slate-600 bg-slate-100 px-2 py-1 rounded">
@@ -491,10 +490,7 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport, onBack }) =
                       </td>
                       <td className="px-6 py-4 text-center">
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewReport(report.id);
-                          }}
+                          onClick={() => handleViewReport(report.id)}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-cyan-700 bg-cyan-50 hover:bg-cyan-100 rounded-lg transition-colors"
                         >
                           <Eye className="w-4 h-4" />
