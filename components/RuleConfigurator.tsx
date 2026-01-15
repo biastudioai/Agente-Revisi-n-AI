@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ScoringRule, ProviderType, ExtractedData } from '../types';
-import { Settings, AlertTriangle, ShieldAlert, AlertCircle, Info, X, ChevronDown, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Settings, AlertTriangle, ShieldAlert, AlertCircle, Info, X, ChevronDown, Plus, Pencil, Trash2, Search } from 'lucide-react';
 import { PROVIDER_REGISTRY } from '../providers';
 import RuleEditor from './RuleEditor';
 
@@ -19,18 +19,30 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
   const [selectedProvider, setSelectedProvider] = useState<ProviderType>('GNP');
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<ScoringRule | undefined>(undefined);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const getProviderTargets = (rule: ScoringRule): string[] => {
     return rule.providerTargets || (rule.providerTarget ? [rule.providerTarget] : ['ALL']);
   };
 
   const filteredRules = useMemo(() => {
+    let result;
     if (activeTab === 'generales') {
-      return rules.filter(r => getProviderTargets(r).includes('ALL'));
+      result = rules.filter(r => getProviderTargets(r).includes('ALL'));
     } else {
-      return rules.filter(r => getProviderTargets(r).includes(selectedProvider));
+      result = rules.filter(r => getProviderTargets(r).includes(selectedProvider));
     }
-  }, [rules, activeTab, selectedProvider]);
+    
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(r => 
+        r.name.toLowerCase().includes(term) || 
+        r.description.toLowerCase().includes(term)
+      );
+    }
+    
+    return result;
+  }, [rules, activeTab, selectedProvider, searchTerm]);
 
   if (!isOpen) return null;
 
@@ -170,7 +182,7 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
                   <select
                     value={selectedProvider}
                     onChange={(e) => setSelectedProvider(e.target.value as ProviderType)}
-                    className="appearance-none pl-4 pr-10 py-2 text-sm font-medium bg-white border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-brand-200 focus:border-brand-500 outline-none cursor-pointer"
+                    className="appearance-none pl-3 pr-8 py-2 text-sm font-medium bg-white border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-brand-200 focus:border-brand-500 outline-none cursor-pointer w-36"
                   >
                     {Object.keys(PROVIDER_REGISTRY).map((providerKey) => (
                       <option key={providerKey} value={providerKey}>
@@ -178,9 +190,20 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
                 </div>
               )}
+              
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar reglas..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 pr-4 py-2 text-sm bg-white border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-brand-200 focus:border-brand-500 outline-none w-48"
+                />
+              </div>
             </div>
 
             {/* Botón Crear Nueva Regla - Alineado a la derecha */}
