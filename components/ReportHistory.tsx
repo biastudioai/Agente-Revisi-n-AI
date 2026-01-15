@@ -59,6 +59,13 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport, onBack }) =
     fetchReports();
   }, []);
 
+  const normalizeText = (text: string): string => {
+    return text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  };
+
   const uniqueBrokers = useMemo(() => {
     const brokers = new Set(reports.map(r => r.broker).filter(Boolean));
     return Array.from(brokers).sort();
@@ -66,16 +73,17 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport, onBack }) =
 
   const filteredReports = useMemo(() => {
     return reports.filter(report => {
-      // Patient name filter
-      if (patientSearch && !report.patientName.toLowerCase().includes(patientSearch.toLowerCase())) {
+      // Patient name filter (accent and case insensitive)
+      if (patientSearch && !normalizeText(report.patientName).includes(normalizeText(patientSearch))) {
         return false;
       }
 
-      // Creator filter
+      // Creator filter (accent and case insensitive)
       if (creatorSearch) {
-        const creatorName = report.creatorName?.toLowerCase() || '';
-        const creatorEmail = report.creatorEmail?.toLowerCase() || '';
-        if (!creatorName.includes(creatorSearch.toLowerCase()) && !creatorEmail.includes(creatorSearch.toLowerCase())) {
+        const normalizedSearch = normalizeText(creatorSearch);
+        const creatorName = normalizeText(report.creatorName || '');
+        const creatorEmail = normalizeText(report.creatorEmail || '');
+        if (!creatorName.includes(normalizedSearch) && !creatorEmail.includes(normalizedSearch)) {
           return false;
         }
       }
