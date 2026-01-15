@@ -116,7 +116,12 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileSelected, isProcessing, s
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-slate-900 group-hover:text-brand-700">{report.fileName}</p>
+                        <p className="text-sm font-medium text-slate-900 group-hover:text-brand-700">
+                          {report.fileName}
+                          {report.extractedData?.identificacion?.nombres && (
+                            <span className="text-slate-500 font-normal"> - {report.extractedData.identificacion.nombres} {report.extractedData.identificacion.primer_apellido || ''}</span>
+                          )}
+                        </p>
                         <p className="text-xs text-slate-500 mt-1">
                           {report.provider} • {new Date(report.timestamp).toLocaleDateString('es-MX', { 
                             day: 'numeric', 
