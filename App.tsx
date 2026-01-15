@@ -60,7 +60,7 @@ const App: React.FC = () => {
   const [rulesError, setRulesError] = useState<string | null>(null);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const [isInsuranceAuditorOpen, setIsInsuranceAuditorOpen] = useState(false);
-
+  
   // Load rules from database on mount with retry logic
   useEffect(() => {
     const loadRules = async (retryCount = 0, maxRetries = 3) => {
@@ -90,6 +90,9 @@ const App: React.FC = () => {
   const [detectionConfidence, setDetectionConfidence] = useState<'high' | 'medium' | 'low'>('low');
   const [pendingFile, setPendingFile] = useState<{data: string, type: string} | null>(null);
   const [isDetecting, setIsDetecting] = useState(false);
+  
+  // State for dynamic analyzing messages
+  const [analyzingStep, setAnalyzingStep] = useState(0);
 
   // State for Pending Changes (Sync Form -> PDF)
   const [pendingChanges, setPendingChanges] = useState<Record<string, { old: any, new: any }>>({});
@@ -117,6 +120,28 @@ const App: React.FC = () => {
   const [ruleVersionInfo, setRuleVersionInfo] = useState<RuleVersionInfo | null>(null);
   const [currentRuleVersionId, setCurrentRuleVersionId] = useState<string | null>(null);
   const [isRecalculatingWithNewRules, setIsRecalculatingWithNewRules] = useState(false);
+
+  // Dynamic analyzing messages (defined after selectedProvider)
+  const analyzingMessages = [
+    { title: 'Analizando Documento', subtitle: `Extrayendo datos con IA de ${selectedProvider}...` },
+    { title: 'Procesando Información', subtitle: 'Identificando campos clave del documento...' },
+    { title: 'Validando Datos', subtitle: 'Verificando consistencia de la información...' },
+    { title: 'Evaluando Reglas Generales', subtitle: 'Aplicando criterios de validación estándar...' },
+    { title: 'Evaluando Reglas Específicas', subtitle: `Aplicando reglas de ${selectedProvider}...` },
+    { title: 'Calculando Score', subtitle: 'Determinando puntuación de viabilidad...' },
+    { title: 'Finalizando Análisis', subtitle: 'Preparando resultados del dictamen...' },
+  ];
+
+  // Effect to cycle through analyzing messages
+  useEffect(() => {
+    if (status === 'analyzing') {
+      setAnalyzingStep(0);
+      const interval = setInterval(() => {
+        setAnalyzingStep(prev => (prev + 1) % analyzingMessages.length);
+      }, 2500);
+      return () => clearInterval(interval);
+    }
+  }, [status]);
 
   // Check authentication on mount
   useEffect(() => {
@@ -1330,6 +1355,7 @@ const App: React.FC = () => {
 
   // Render: ANALYZING SCREEN
   if (status === 'analyzing') {
+    const currentMessage = analyzingMessages[analyzingStep];
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex flex-col font-sans text-slate-900">
         <main className="flex-grow flex flex-col items-center justify-center p-6 relative overflow-hidden">
@@ -1340,8 +1366,33 @@ const App: React.FC = () => {
 
           <div className="text-center relative z-10">
             <Loader2 className="w-16 h-16 text-brand-600 animate-spin mx-auto mb-6" />
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">Analizando Documento</h2>
-            <p className="text-slate-500">Extrayendo datos con IA de {selectedProvider}...</p>
+            <h2 
+              key={`title-${analyzingStep}`}
+              className="text-2xl font-bold text-slate-900 mb-2 animate-fade-in"
+            >
+              {currentMessage.title}
+            </h2>
+            <p 
+              key={`subtitle-${analyzingStep}`}
+              className="text-slate-500 animate-fade-in"
+            >
+              {currentMessage.subtitle}
+            </p>
+            
+            <div className="flex justify-center gap-2 mt-6">
+              {analyzingMessages.map((_, index) => (
+                <div
+                  key={index}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    index === analyzingStep 
+                      ? 'bg-brand-600 scale-125' 
+                      : index < analyzingStep 
+                        ? 'bg-brand-300' 
+                        : 'bg-slate-200'
+                  }`}
+                />
+              ))}
+            </div>
           </div>
         </main>
       </div>
