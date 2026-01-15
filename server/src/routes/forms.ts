@@ -240,8 +240,10 @@ router.get(
     }
 
     try {
+      const isAdmin = userRole === 'ADMIN';
+      
       const forms = await prisma.medicalForm.findMany({
-        where: { userId },
+        where: isAdmin ? {} : { userId },
         include: {
           formPdfs: true,
           user: {
@@ -276,6 +278,8 @@ router.get(
           userRole: userRole,
           ruleVersionId: form.ruleVersionId || null,
           originalScore: form.originalScore || null,
+          creatorName: isAdmin ? form.user?.nombre || 'Sin nombre' : null,
+          creatorEmail: isAdmin ? form.user?.email || '' : null,
         };
       });
 

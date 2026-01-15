@@ -10,6 +10,8 @@ interface Report {
   status: string;
   pdfUrl: string | null;
   userRole: string;
+  creatorName: string | null;
+  creatorEmail: string | null;
 }
 
 interface ReportHistoryProps {
@@ -140,6 +142,14 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport, onBack }) =
                         ID del Informe
                       </div>
                     </th>
+                    {reports[0]?.userRole === 'ADMIN' && (
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4" />
+                          Creador
+                        </div>
+                      </th>
+                    )}
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       <div className="flex items-center gap-2">
                         <User className="w-4 h-4" />
@@ -181,6 +191,18 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport, onBack }) =
                           {report.id.slice(0, 8)}...
                         </span>
                       </td>
+                      {report.userRole === 'ADMIN' && (
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-slate-900">
+                              {report.creatorName}
+                            </span>
+                            <span className="text-xs text-slate-400">
+                              {report.creatorEmail}
+                            </span>
+                          </div>
+                        </td>
+                      )}
                       <td className="px-6 py-4">
                         <span className="text-sm font-medium text-slate-900">
                           {report.patientName}
