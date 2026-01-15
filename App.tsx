@@ -492,6 +492,9 @@ const App: React.FC = () => {
     
     setIsRecalculatingWithNewRules(true);
     try {
+      // Clear cache first to ensure we get fresh rules from database
+      clearRulesCache();
+      
       // Reload rules from database
       const dbRules = await getReglasParaAseguradora('ALL');
       setRules(dbRules);
