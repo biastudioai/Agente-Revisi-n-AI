@@ -66,27 +66,35 @@ const Dashboard: React.FC<DashboardProps> = ({
         const timer = setTimeout(() => {
             const element = document.getElementById(`field-${highlightedField}`);
             if (element) {
-                // Calcular offset para posicionar justo debajo de la barra de tabs sticky
-                const stickyHeader = document.querySelector('.sticky.top-0');
-                const headerHeight = stickyHeader ? stickyHeader.getBoundingClientRect().height : 0;
-                const extraPadding = 20; // Espacio adicional para mejor visibilidad
+                // Encontrar el contenedor padre que tiene el scroll (overflow-y-auto)
+                const scrollContainer = element.closest('.overflow-y-auto');
+                const stickyHeader = scrollContainer?.querySelector('.sticky.top-0');
+                const headerHeight = stickyHeader ? stickyHeader.getBoundingClientRect().height : 60;
+                const extraPadding = 16;
                 
-                const elementPosition = element.getBoundingClientRect().top + window.scrollY;
-                const offsetPosition = elementPosition - headerHeight - extraPadding;
-                
-                window.scrollTo({
-                    top: offsetPosition,
-                    behavior: 'smooth'
-                });
+                if (scrollContainer) {
+                    // Calcular posición relativa al contenedor de scroll
+                    const containerRect = scrollContainer.getBoundingClientRect();
+                    const elementRect = element.getBoundingClientRect();
+                    const currentScrollTop = scrollContainer.scrollTop;
+                    
+                    // Calcular la posición objetivo: justo debajo del header sticky
+                    const targetScrollTop = currentScrollTop + elementRect.top - containerRect.top - headerHeight - extraPadding;
+                    
+                    scrollContainer.scrollTo({
+                        top: targetScrollTop,
+                        behavior: 'smooth'
+                    });
+                }
                 
                 // Agregar clase de animación de resaltado
                 element.classList.add('highlight-flash');
                 setTimeout(() => {
                     element.classList.remove('highlight-flash');
-                }, 2000);
+                }, 2500);
             }
-        }, 150); 
-        const clearTimer = setTimeout(() => setHighlightedField(null), 3000);
+        }, 200); 
+        const clearTimer = setTimeout(() => setHighlightedField(null), 3500);
         return () => { clearTimeout(timer); clearTimeout(clearTimer); };
     }
   }, [highlightedField, viewMode]);
