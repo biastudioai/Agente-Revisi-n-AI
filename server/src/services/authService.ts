@@ -1,7 +1,8 @@
 import prisma from '../config/database';
 import { hashPassword, verifyPassword } from '../utils/password';
 import { generateSessionToken, generateResetToken, hashToken, getSessionExpiry, getResetTokenExpiry } from '../utils/token';
-import { UserRole } from '../generated/prisma';
+import { UserRole, SubscriptionStatus } from '../generated/prisma';
+import { getPlanConfig } from '../config/plans';
 
 export interface RegisterData {
   email: string;
@@ -76,6 +77,9 @@ export async function registerUser(data: RegisterData): Promise<AuthResult> {
 export async function loginUser(data: LoginData): Promise<AuthResult> {
   const user = await prisma.user.findUnique({
     where: { email: data.email.toLowerCase() },
+    include: {
+      parent: true,
+    },
   });
 
   if (!user) {
@@ -86,6 +90,48 @@ export async function loginUser(data: LoginData): Promise<AuthResult> {
   
   if (!isValidPassword) {
     throw new Error('Invalid credentials');
+  }
+
+  if (user.rol === UserRole.AUDITOR) {
+    if (!user.isActive) {
+      throw new Error('Tu cuenta de auditor ha sido desactivada por tu broker. Contacta a tu broker para más información.');
+    }
+
+    if (user.parentId) {
+      const brokerSubscription = await prisma.subscription.findFirst({
+        where: {
+          userId: user.parentId,
+          status: { in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING] },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (!brokerSubscription) {
+        throw new Error('El broker asociado a tu cuenta no tiene una suscripción activa.');
+      }
+
+      const planConfig = getPlanConfig(brokerSubscription.planType);
+      if (planConfig.maxAuditors === 0) {
+        throw new Error('El plan actual de tu broker no incluye auditores. No puedes acceder a tu cuenta.');
+      }
+
+      const activeAuditorsAboveThis = await prisma.user.findMany({
+        where: {
+          parentId: user.parentId,
+          rol: UserRole.AUDITOR,
+          isActive: true,
+        },
+        orderBy: { createdAt: 'asc' },
+        select: { id: true },
+      });
+
+      const activeIds = activeAuditorsAboveThis.map(a => a.id);
+      const allowedIds = activeIds.slice(0, planConfig.maxAuditors);
+
+      if (!allowedIds.includes(user.id)) {
+        throw new Error('Tu cuenta de auditor excede el límite del plan actual. Contacta a tu broker para reactivar tu cuenta.');
+      }
+    }
   }
 
   const sessionToken = generateSessionToken();

@@ -90,8 +90,13 @@ router.post('/login', asyncHandler(async (req: AuthenticatedRequest, res: Respon
       user: result.user,
     });
   } catch (error) {
-    if ((error as Error).message === 'Invalid credentials') {
-      res.status(401).json({ error: 'Invalid credentials' });
+    const errorMessage = (error as Error).message;
+    if (errorMessage === 'Invalid credentials') {
+      res.status(401).json({ error: 'Credenciales inválidas' });
+      return;
+    }
+    if (errorMessage.includes('auditor') || errorMessage.includes('broker') || errorMessage.includes('plan')) {
+      res.status(403).json({ error: errorMessage });
       return;
     }
     throw error;

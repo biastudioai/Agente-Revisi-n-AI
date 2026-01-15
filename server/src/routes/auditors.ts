@@ -22,6 +22,7 @@ router.get('/', authMiddleware, requireBroker, asyncHandler(async (req: Authenti
         id: true,
         email: true,
         nombre: true,
+        isActive: true,
         createdAt: true,
         parentId: true,
         parent: {
@@ -44,6 +45,7 @@ router.get('/', authMiddleware, requireBroker, asyncHandler(async (req: Authenti
         id: true,
         email: true,
         nombre: true,
+        isActive: true,
         createdAt: true,
       },
       orderBy: { createdAt: 'desc' },
@@ -169,17 +171,27 @@ router.get('/limits', authMiddleware, requireBroker, asyncHandler(async (req: Au
     planName = planConfig.name;
   }
 
-  const currentAuditors = await prisma.user.count({
+  const totalAuditors = await prisma.user.count({
     where: {
       parentId: userId,
       rol: UserRole.AUDITOR,
     },
   });
 
+  const activeAuditors = await prisma.user.count({
+    where: {
+      parentId: userId,
+      rol: UserRole.AUDITOR,
+      isActive: true,
+    },
+  });
+
   res.json({
     maxAuditors,
-    currentAuditors,
-    canAddMore: currentAuditors < maxAuditors,
+    currentAuditors: activeAuditors,
+    totalAuditors,
+    canAddMore: activeAuditors < maxAuditors,
+    hasExcessAuditors: totalAuditors > maxAuditors,
     planName,
     isAdmin: false,
   });
@@ -380,6 +392,98 @@ router.delete('/:id', authMiddleware, requireBroker, asyncHandler(async (req: Au
   });
 
   res.json({ message: 'Auditor eliminado correctamente' });
+}));
+
+router.patch('/:id/toggle-active', authMiddleware, requireBroker, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const { id } = req.params;
+  const { isActive } = req.body;
+  const userId = req.user!.id;
+  const userRole = req.user!.rol;
+
+  if (typeof isActive !== 'boolean') {
+    res.status(400).json({ error: 'El campo isActive es requerido y debe ser booleano' });
+    return;
+  }
+
+  const auditor = await prisma.user.findUnique({
+    where: { id },
+  });
+
+  if (!auditor) {
+    res.status(404).json({ error: 'Auditor no encontrado' });
+    return;
+  }
+
+  if (userRole !== 'ADMIN' && auditor.parentId !== userId) {
+    res.status(403).json({ error: 'No tienes permiso para modificar este auditor' });
+    return;
+  }
+
+  if (auditor.rol !== UserRole.AUDITOR) {
+    res.status(400).json({ error: 'Solo puedes modificar usuarios con rol de auditor' });
+    return;
+  }
+
+  if (isActive && userRole !== 'ADMIN') {
+    const subscription = await prisma.subscription.findFirst({
+      where: {
+        userId,
+        status: { in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING] },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    let maxAuditors = 0;
+    if (subscription) {
+      const planConfig = getPlanConfig(subscription.planType);
+      maxAuditors = planConfig.maxAuditors;
+    }
+
+    const currentActiveAuditors = await prisma.user.count({
+      where: {
+        parentId: userId,
+        rol: UserRole.AUDITOR,
+        isActive: true,
+        id: { not: id },
+      },
+    });
+
+    if (currentActiveAuditors >= maxAuditors) {
+      res.status(403).json({ 
+        error: `No puedes activar más auditores. Tu plan permite ${maxAuditors} auditor(es) activos. Desactiva otro auditor primero o mejora tu plan.`
+      });
+      return;
+    }
+  }
+
+  const updatedAuditor = await prisma.user.update({
+    where: { id },
+    data: { isActive },
+    select: {
+      id: true,
+      email: true,
+      nombre: true,
+      isActive: true,
+      createdAt: true,
+    },
+  });
+
+  if (!isActive) {
+    await prisma.session.deleteMany({
+      where: { userId: id },
+    });
+  }
+
+  await createAuditLog({
+    userId,
+    action: isActive ? 'AUDITOR_ACTIVATED' : 'AUDITOR_DEACTIVATED',
+    entityId: id,
+    entityType: 'User',
+    ipAddress: getClientIP(req),
+    metadata: { auditorEmail: auditor.email, isActive } as any,
+  });
+
+  res.json({ auditor: updatedAuditor });
 }));
 
 export default router;

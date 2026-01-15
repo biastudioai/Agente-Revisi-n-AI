@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Edit2, Trash2, Users, FileText, Eye, EyeOff, AlertCircle, CheckCircle, Loader2, TrendingUp } from 'lucide-react';
+import { X, Plus, Edit2, Trash2, Users, FileText, Eye, EyeOff, AlertCircle, CheckCircle, Loader2, TrendingUp, ToggleLeft, ToggleRight } from 'lucide-react';
 
 interface Auditor {
   id: string;
   email: string;
   nombre: string;
+  isActive: boolean;
   createdAt: string;
 }
 
@@ -19,7 +20,9 @@ interface AuditorUsage {
 interface AuditorLimits {
   maxAuditors: number;
   currentAuditors: number;
+  totalAuditors?: number;
   canAddMore: boolean;
+  hasExcessAuditors?: boolean;
   planName: string;
   isAdmin: boolean;
 }
@@ -209,6 +212,36 @@ const AuditorManager: React.FC<AuditorManagerProps> = ({ isOpen, onClose, onOpen
     return auditorUsage.find(u => u.userId === auditorId);
   };
 
+  const [togglingAuditor, setTogglingAuditor] = useState<string | null>(null);
+
+  const handleToggleActive = async (auditor: Auditor) => {
+    setError(null);
+    setSuccess(null);
+    setTogglingAuditor(auditor.id);
+
+    try {
+      const response = await fetch(`/api/auditors/${auditor.id}/toggle-active`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ isActive: !auditor.isActive }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Error al cambiar estado');
+      }
+
+      setSuccess(auditor.isActive ? 'Auditor desactivado' : 'Auditor activado');
+      await loadAuditors();
+      await loadLimits();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setTogglingAuditor(null);
+    }
+  };
+
   const getMonthName = (month: number) => {
     const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
                     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -299,6 +332,34 @@ const AuditorManager: React.FC<AuditorManagerProps> = ({ isOpen, onClose, onOpen
                 </div>
               )}
 
+              {limits && limits.hasExcessAuditors && !limits.isAdmin && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-300 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-red-800 font-medium">Tienes auditores que exceden tu plan actual</p>
+                      <p className="text-xs text-red-700 mt-1">
+                        Tu plan permite {limits.maxAuditors} auditor(es) activos, pero tienes {limits.totalAuditors} registrados. 
+                        Los auditores inactivos <strong>no pueden iniciar sesión ni procesar informes</strong>.
+                        Usa los toggles para seleccionar cuáles auditores deseas mantener activos.
+                      </p>
+                      {onOpenPlans && (
+                        <button
+                          onClick={() => {
+                            onClose();
+                            onOpenPlans();
+                          }}
+                          className="mt-2 flex items-center gap-1 text-sm text-red-700 hover:text-red-800 font-medium underline"
+                        >
+                          <TrendingUp className="w-4 h-4" />
+                          Mejorar plan para más auditores
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {limits && limits.maxAuditors === 0 && !limits.isAdmin && (
                 <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                   <div className="flex items-start gap-3">
@@ -306,7 +367,10 @@ const AuditorManager: React.FC<AuditorManagerProps> = ({ isOpen, onClose, onOpen
                     <div>
                       <p className="text-sm text-amber-800 font-medium">Tu plan no incluye auditores</p>
                       <p className="text-xs text-amber-700 mt-1">
-                        Para agregar auditores que generen informes bajo tu cuenta, actualiza a Plan Profesional (3 auditores) o Empresarial (10 auditores).
+                        {auditors.length > 0 
+                          ? 'Tus auditores existentes no pueden iniciar sesión ni procesar informes hasta que mejores tu plan.'
+                          : 'Para agregar auditores que generen informes bajo tu cuenta, actualiza a Plan Profesional (3 auditores) o Empresarial (10 auditores).'
+                        }
                       </p>
                       {onOpenPlans && (
                         <button
@@ -469,7 +533,8 @@ const AuditorManager: React.FC<AuditorManagerProps> = ({ isOpen, onClose, onOpen
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="bg-slate-100 text-slate-600">
-                          <th className="text-left px-4 py-3 rounded-tl-lg font-semibold">Auditor</th>
+                          <th className="text-center px-3 py-3 rounded-tl-lg font-semibold">Activo</th>
+                          <th className="text-left px-4 py-3 font-semibold">Auditor</th>
                           <th className="text-left px-4 py-3 font-semibold">Email</th>
                           <th className="text-center px-4 py-3 font-semibold">Informes este mes</th>
                           <th className="text-left px-4 py-3 font-semibold">Fecha de registro</th>
@@ -479,9 +544,35 @@ const AuditorManager: React.FC<AuditorManagerProps> = ({ isOpen, onClose, onOpen
                       <tbody className="divide-y divide-slate-200">
                         {auditors.map((auditor) => {
                           const usage = getUsageForAuditor(auditor.id);
+                          const isToggling = togglingAuditor === auditor.id;
                           return (
-                            <tr key={auditor.id} className="hover:bg-slate-50 transition-colors">
-                              <td className="px-4 py-3 font-medium text-slate-800">{auditor.nombre}</td>
+                            <tr key={auditor.id} className={`hover:bg-slate-50 transition-colors ${!auditor.isActive ? 'bg-slate-50 opacity-60' : ''}`}>
+                              <td className="px-3 py-3 text-center">
+                                <button
+                                  onClick={() => handleToggleActive(auditor)}
+                                  disabled={isToggling}
+                                  className={`p-1 rounded-lg transition-colors ${
+                                    auditor.isActive 
+                                      ? 'text-green-600 hover:bg-green-50' 
+                                      : 'text-slate-400 hover:bg-slate-100'
+                                  } ${isToggling ? 'opacity-50' : ''}`}
+                                  title={auditor.isActive ? 'Desactivar auditor' : 'Activar auditor'}
+                                >
+                                  {isToggling ? (
+                                    <Loader2 className="w-6 h-6 animate-spin" />
+                                  ) : auditor.isActive ? (
+                                    <ToggleRight className="w-6 h-6" />
+                                  ) : (
+                                    <ToggleLeft className="w-6 h-6" />
+                                  )}
+                                </button>
+                              </td>
+                              <td className="px-4 py-3 font-medium text-slate-800">
+                                {auditor.nombre}
+                                {!auditor.isActive && (
+                                  <span className="ml-2 px-1.5 py-0.5 text-xs bg-slate-200 text-slate-600 rounded">Inactivo</span>
+                                )}
+                              </td>
                               <td className="px-4 py-3 text-slate-600">{auditor.email}</td>
                               <td className="px-4 py-3 text-center">
                                 <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-100 text-indigo-700 rounded-full font-semibold text-xs">
