@@ -81,7 +81,22 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, report }) =>
     let y = height - 40;
     const margin = 40;
     
-    page.drawText("VERYKA.AI", { x: margin, y, size: 20, font: fontBold, color: hexToRgb('#1A2B56') });
+    try {
+      const logoUrl = '/attached_assets/Veryka_Logo_1767919213039.png';
+      const logoImageBytes = await fetch(logoUrl).then(res => res.arrayBuffer());
+      const logoImage = await pdfDoc.embedPng(logoImageBytes);
+      const logoDims = logoImage.scale(0.15);
+      page.drawImage(logoImage, {
+        x: margin,
+        y: y - (logoDims.height / 2),
+        width: logoDims.width,
+        height: logoDims.height,
+      });
+    } catch (e) {
+      console.error("Error drawing logo image", e);
+      page.drawText("VERYKA.AI", { x: margin, y, size: 20, font: fontBold, color: hexToRgb('#1A2B56') });
+    }
+    
     page.drawText("REPORTE DE AUDITORÍA", { x: margin, y: y - 50, size: 16, font: fontBold, color: slate800 });
     page.drawText(`Generado: ${new Date().toLocaleDateString()}`, { x: width - margin - 100, y: y - 50, size: 10, font: fontRegular, color: slate500 });
     y -= 80;
