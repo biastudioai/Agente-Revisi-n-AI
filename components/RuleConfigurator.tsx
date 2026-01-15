@@ -8,7 +8,7 @@ interface RuleConfiguratorProps {
   isOpen: boolean;
   onClose: () => void;
   rules: ScoringRule[];
-  onUpdateRules: (newRules: ScoringRule[]) => void;
+  onUpdateRules: (newRules: ScoringRule[], changedRule?: ScoringRule, action?: 'update' | 'create' | 'delete') => void;
   currentReport?: ExtractedData | null;
 }
 
@@ -47,33 +47,41 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
   if (!isOpen) return null;
 
   const handleLevelChange = (ruleId: string, newLevel: ScoringRule['level']) => {
+    const rule = rules.find(r => r.id === ruleId);
+    if (!rule) return;
+    const updatedRule = { ...rule, level: newLevel };
     const updatedRules = rules.map(r => 
-      r.id === ruleId ? { ...r, level: newLevel } : r
+      r.id === ruleId ? updatedRule : r
     );
-    onUpdateRules(updatedRules);
+    onUpdateRules(updatedRules, updatedRule, 'update');
   };
 
   const handlePointsChange = (ruleId: string, newPoints: string) => {
     const points = parseInt(newPoints) || 0;
+    const rule = rules.find(r => r.id === ruleId);
+    if (!rule) return;
+    const updatedRule = { ...rule, points };
     const updatedRules = rules.map(r => 
-      r.id === ruleId ? { ...r, points: points } : r
+      r.id === ruleId ? updatedRule : r
     );
-    onUpdateRules(updatedRules);
+    onUpdateRules(updatedRules, updatedRule, 'update');
   };
 
   const handleDeleteRule = (ruleId: string) => {
-    if (confirm('¿Estás seguro de eliminar esta regla personalizada?')) {
+    const rule = rules.find(r => r.id === ruleId);
+    if (!rule) return;
+    if (confirm('¿Estás seguro de eliminar esta regla?')) {
       const updatedRules = rules.filter(r => r.id !== ruleId);
-      onUpdateRules(updatedRules);
+      onUpdateRules(updatedRules, rule, 'delete');
     }
   };
 
   const handleSaveRule = (newRule: ScoringRule) => {
     if (editingRule) {
       const updatedRules = rules.map(r => r.id === editingRule.id ? newRule : r);
-      onUpdateRules(updatedRules);
+      onUpdateRules(updatedRules, newRule, 'update');
     } else {
-      onUpdateRules([...rules, newRule]);
+      onUpdateRules([...rules, newRule], newRule, 'create');
     }
     setIsEditorOpen(false);
     setEditingRule(undefined);

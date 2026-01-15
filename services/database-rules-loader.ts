@@ -190,3 +190,123 @@ export async function getRulesForProvider(provider: ProviderType): Promise<Scori
 export function getValidatorForRule(ruleId: string): ((data: any) => boolean) | undefined {
   return VALIDATORS_REGISTRY[ruleId];
 }
+
+interface RuleUpdatePayload {
+  name?: string;
+  level?: string;
+  points?: number;
+  description?: string;
+  providerTarget?: string;
+  category?: string;
+  isCustom?: boolean;
+  conditions?: RuleCondition[];
+  logicOperator?: string;
+  affectedFields?: string[];
+  hasValidator?: boolean;
+  validatorKey?: string | null;
+}
+
+interface RuleCreatePayload {
+  ruleId: string;
+  name: string;
+  level: string;
+  points: number;
+  description: string;
+  providerTarget: string;
+  category: string;
+  isCustom: boolean;
+  conditions?: RuleCondition[];
+  logicOperator?: string;
+  affectedFields: string[];
+  hasValidator?: boolean;
+  validatorKey?: string | null;
+}
+
+export async function updateRuleInDatabase(ruleId: string, updates: RuleUpdatePayload): Promise<ScoringRule> {
+  try {
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/rules/${ruleId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(updates),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error ${response.status}`);
+    }
+
+    const result = await response.json();
+    if (!result.success || !result.data) {
+      throw new Error(result.error || 'Invalid response format');
+    }
+
+    clearRulesCache();
+    return transformDbRuleToScoringRule(result.data);
+  } catch (error) {
+    console.error('Error updating rule in database:', error);
+    throw error;
+  }
+}
+
+export async function createRuleInDatabase(rule: RuleCreatePayload): Promise<ScoringRule> {
+  try {
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/rules`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(rule),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error ${response.status}`);
+    }
+
+    const result = await response.json();
+    if (!result.success || !result.data) {
+      throw new Error(result.error || 'Invalid response format');
+    }
+
+    clearRulesCache();
+    return transformDbRuleToScoringRule(result.data);
+  } catch (error) {
+    console.error('Error creating rule in database:', error);
+    throw error;
+  }
+}
+
+export async function deleteRuleInDatabase(ruleId: string): Promise<boolean> {
+  try {
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/rules/${ruleId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error ${response.status}`);
+    }
+
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to delete rule');
+    }
+
+    clearRulesCache();
+    return true;
+  } catch (error) {
+    console.error('Error deleting rule in database:', error);
+    throw error;
+  }
+}

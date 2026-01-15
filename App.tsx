@@ -10,6 +10,7 @@ import SubscriptionPlans from './components/SubscriptionPlans';
 import ReportHistory from './components/ReportHistory';
 import { analyzeReportImage, reEvaluateReport } from './services/geminiService';
 import { getReglasParaAseguradora } from './services/scoring-engine';
+import { updateRuleInDatabase, createRuleInDatabase, deleteRuleInDatabase, clearRulesCache } from './services/database-rules-loader';
 import { AnalysisReport, AnalysisStatus, ExtractedData, ScoringRule, SavedReport } from './types';
 import { getCurrentRulesVersion, checkIfRulesChanged, RulesChangedResult } from './services/ruleVersionService';
 import { RuleVersionInfo } from './components/RuleVersionIndicator';
@@ -406,24 +407,62 @@ const App: React.FC = () => {
     }
   };
   
-  // When rules update, re-run score calculation against current data if available
-  const handleRulesUpdate = async (newRules: ScoringRule[]) => {
-      setRules(newRules);
-      
-      // Save custom rules to localStorage
-      const customRules = newRules.filter(r => r.isCustom);
-      try {
-        localStorage.setItem('custom-rules', JSON.stringify(customRules));
-      } catch (e) {
-        console.error('Error saving custom rules to localStorage:', e);
+  // When rules update, persist changes to database and re-run score calculation
+  const handleRulesUpdate = async (newRules: ScoringRule[], changedRule?: ScoringRule, action?: 'update' | 'create' | 'delete') => {
+      // If we have a specific changed rule and action, persist to database
+      if (changedRule && action) {
+        try {
+          if (action === 'update') {
+            // Update existing rule in database
+            await updateRuleInDatabase(changedRule.id, {
+              name: changedRule.name,
+              level: changedRule.level,
+              points: changedRule.points,
+              description: changedRule.description,
+              providerTarget: changedRule.providerTarget,
+              category: changedRule.providerTarget === 'ALL' ? 'GENERAL' : changedRule.providerTarget,
+              isCustom: changedRule.isCustom || false,
+              conditions: changedRule.conditions,
+              logicOperator: changedRule.logicOperator,
+              affectedFields: changedRule.affectedFields || [],
+            });
+          } else if (action === 'create') {
+            // Create new rule in database
+            await createRuleInDatabase({
+              ruleId: changedRule.id,
+              name: changedRule.name,
+              level: changedRule.level,
+              points: changedRule.points,
+              description: changedRule.description,
+              providerTarget: changedRule.providerTarget || 'ALL',
+              category: (changedRule.providerTarget && changedRule.providerTarget !== 'ALL') ? changedRule.providerTarget : 'GENERAL',
+              isCustom: true,
+              conditions: changedRule.conditions,
+              logicOperator: changedRule.logicOperator,
+              affectedFields: changedRule.affectedFields || [],
+            });
+          } else if (action === 'delete') {
+            // Delete rule from database
+            await deleteRuleInDatabase(changedRule.id);
+          }
+          
+          // Clear cache to ensure fresh data on next fetch
+          clearRulesCache();
+        } catch (e) {
+          console.error(`Error ${action}ing rule in database:`, e);
+          setError(`Error al ${action === 'update' ? 'actualizar' : action === 'create' ? 'crear' : 'eliminar'} la regla. Intenta nuevamente.`);
+          return;
+        }
       }
+      
+      // Update local state
+      setRules(newRules);
       
       // Refresh rule version info after update
       try {
         const currentVersion = await getCurrentRulesVersion();
         if (currentVersion) {
           setCurrentRuleVersionId(currentVersion.id);
-          // Update version info to show no changes (since we just updated with current rules)
           setRuleVersionInfo({
             hasChanges: false,
             originalVersionNumber: currentVersion.versionNumber,
