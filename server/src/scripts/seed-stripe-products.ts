@@ -10,7 +10,7 @@ async function seedProducts() {
     {
       id: 'PLAN_1',
       name: 'Plan Básico',
-      description: '1 Broker + 1 Auditor. 25 informes (50 en promo). Soporte por correo.',
+      description: '1 Broker. 25 informes (50 en promo). Soporte por correo.',
       priceMxn: 499,
       reportsIncluded: 25,
       reportsPromotion: 50,
@@ -20,7 +20,7 @@ async function seedProducts() {
     {
       id: 'PLAN_2',
       name: 'Plan Profesional',
-      description: '1 Broker + 5 Auditores. 55 informes (110 en promo). Soporte prioritario + Dashboard.',
+      description: '1 Broker + 3 Auditores. 55 informes (110 en promo). Soporte prioritario + Dashboard.',
       priceMxn: 999,
       reportsIncluded: 55,
       reportsPromotion: 110,
@@ -30,7 +30,7 @@ async function seedProducts() {
     {
       id: 'PLAN_3',
       name: 'Plan Empresarial',
-      description: '1 Broker + 15 Auditores. 170 informes (340 en promo). Soporte 24/7 + Capacitación.',
+      description: '1 Broker + 10 Auditores. 170 informes (340 en promo). Soporte personalizado + Capacitación.',
       priceMxn: 2999,
       reportsIncluded: 170,
       reportsPromotion: 340,

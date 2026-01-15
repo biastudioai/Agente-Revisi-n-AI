@@ -4,7 +4,8 @@ import { authMiddleware, AuthenticatedRequest, requireBroker } from '../middlewa
 import { createAuditLog, getClientIP } from '../middlewares/audit';
 import prisma from '../config/database';
 import bcrypt from 'bcrypt';
-import { UserRole } from '../generated/prisma';
+import { UserRole, PlanType } from '../generated/prisma';
+import { getPlanConfig, PLAN_CONFIGS } from '../config/plans';
 
 const router = Router();
 
@@ -142,9 +143,52 @@ router.get('/usage', authMiddleware, requireBroker, asyncHandler(async (req: Aut
   });
 }));
 
+router.get('/limits', authMiddleware, requireBroker, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const userId = req.user!.id;
+  const userRole = req.user!.rol;
+
+  if (userRole === 'ADMIN') {
+    res.json({ maxAuditors: -1, currentAuditors: 0, canAddMore: true, isAdmin: true });
+    return;
+  }
+
+  const subscription = await prisma.subscription.findFirst({
+    where: {
+      userId,
+      status: { in: ['active', 'trialing'] },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  let maxAuditors = 0;
+  let planName = 'Sin plan';
+
+  if (subscription) {
+    const planConfig = getPlanConfig(subscription.planType);
+    maxAuditors = planConfig.maxAuditors;
+    planName = planConfig.name;
+  }
+
+  const currentAuditors = await prisma.user.count({
+    where: {
+      parentId: userId,
+      rol: UserRole.AUDITOR,
+    },
+  });
+
+  res.json({
+    maxAuditors,
+    currentAuditors,
+    canAddMore: currentAuditors < maxAuditors,
+    planName,
+    isAdmin: false,
+  });
+}));
+
 router.post('/', authMiddleware, requireBroker, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { email, password, nombre } = req.body;
   const parentId = req.user!.id;
+  const userRole = req.user!.rol;
 
   if (!email || !password || !nombre) {
     res.status(400).json({ error: 'Email, contraseña y nombre son requeridos' });
@@ -154,6 +198,38 @@ router.post('/', authMiddleware, requireBroker, asyncHandler(async (req: Authent
   if (password.length < 8) {
     res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
     return;
+  }
+
+  if (userRole !== 'ADMIN') {
+    const subscription = await prisma.subscription.findFirst({
+      where: {
+        userId: parentId,
+        status: { in: ['active', 'trialing'] },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    let maxAuditors = 0;
+    if (subscription) {
+      const planConfig = getPlanConfig(subscription.planType);
+      maxAuditors = planConfig.maxAuditors;
+    }
+
+    const currentAuditors = await prisma.user.count({
+      where: {
+        parentId,
+        rol: UserRole.AUDITOR,
+      },
+    });
+
+    if (currentAuditors >= maxAuditors) {
+      res.status(403).json({ 
+        error: maxAuditors === 0 
+          ? 'Tu plan actual no incluye auditores. Actualiza a Plan Profesional o Empresarial para agregar auditores.'
+          : `Has alcanzado el límite de ${maxAuditors} auditores de tu plan. Actualiza tu plan para agregar más.`
+      });
+      return;
+    }
   }
 
   const existingUser = await prisma.user.findUnique({

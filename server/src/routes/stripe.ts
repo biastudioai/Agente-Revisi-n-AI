@@ -29,6 +29,9 @@ router.get(
       extraReportPriceMxn: plan.extraReportPriceMxn,
       extraReportPricePromotionMxn: plan.extraReportPricePromotionMxn,
       promotionDurationMonths: plan.promotionDurationMonths,
+      maxBrokers: plan.maxBrokers,
+      maxAuditors: plan.maxAuditors,
+      benefits: plan.benefits,
     }));
     res.json({ plans });
   })

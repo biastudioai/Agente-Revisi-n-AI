@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Edit2, Trash2, Users, FileText, Eye, EyeOff, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { X, Plus, Edit2, Trash2, Users, FileText, Eye, EyeOff, AlertCircle, CheckCircle, Loader2, TrendingUp } from 'lucide-react';
 
 interface Auditor {
   id: string;
@@ -16,14 +16,24 @@ interface AuditorUsage {
   reportsFromForms: number;
 }
 
+interface AuditorLimits {
+  maxAuditors: number;
+  currentAuditors: number;
+  canAddMore: boolean;
+  planName: string;
+  isAdmin: boolean;
+}
+
 interface AuditorManagerProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenPlans?: () => void;
 }
 
-const AuditorManager: React.FC<AuditorManagerProps> = ({ isOpen, onClose }) => {
+const AuditorManager: React.FC<AuditorManagerProps> = ({ isOpen, onClose, onOpenPlans }) => {
   const [auditors, setAuditors] = useState<Auditor[]>([]);
   const [auditorUsage, setAuditorUsage] = useState<AuditorUsage[]>([]);
+  const [limits, setLimits] = useState<AuditorLimits | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -76,10 +86,24 @@ const AuditorManager: React.FC<AuditorManagerProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  const loadLimits = async () => {
+    try {
+      const response = await fetch('/api/auditors/limits', { credentials: 'include' });
+      if (response.status === 403 || response.status === 401) {
+        return;
+      }
+      if (!response.ok) throw new Error('Error al cargar límites');
+      const data = await response.json();
+      setLimits(data);
+    } catch (err) {
+      console.error('Error loading limits:', err);
+    }
+  };
+
   useEffect(() => {
     if (isOpen) {
       setIsLoading(true);
-      Promise.all([loadAuditors(), loadUsage()]).finally(() => setIsLoading(false));
+      Promise.all([loadAuditors(), loadUsage(), loadLimits()]).finally(() => setIsLoading(false));
     }
   }, [isOpen]);
 
@@ -135,6 +159,7 @@ const AuditorManager: React.FC<AuditorManagerProps> = ({ isOpen, onClose }) => {
       resetForm();
       await loadAuditors();
       await loadUsage();
+      await loadLimits();
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -162,6 +187,7 @@ const AuditorManager: React.FC<AuditorManagerProps> = ({ isOpen, onClose }) => {
       setDeletingAuditor(null);
       await loadAuditors();
       await loadUsage();
+      await loadLimits();
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -242,7 +268,59 @@ const AuditorManager: React.FC<AuditorManagerProps> = ({ isOpen, onClose }) => {
             </div>
           ) : (
             <>
-              {!isAddingAuditor && !editingAuditor && (
+              {limits && !limits.isAdmin && (
+                <div className="mb-4 p-3 bg-slate-100 border border-slate-200 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-slate-600" />
+                      <span className="text-sm text-slate-700">
+                        <strong>{limits.currentAuditors}</strong> de <strong>{limits.maxAuditors}</strong> auditores utilizados
+                      </span>
+                      <span className="text-xs text-slate-500">({limits.planName})</span>
+                    </div>
+                    {!limits.canAddMore && limits.maxAuditors > 0 && onOpenPlans && (
+                      <button
+                        onClick={() => {
+                          onClose();
+                          onOpenPlans();
+                        }}
+                        className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                      >
+                        <TrendingUp className="w-3 h-3" />
+                        Mejorar plan
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {limits && limits.maxAuditors === 0 && !limits.isAdmin && (
+                <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-amber-800 font-medium">Tu plan no incluye auditores</p>
+                      <p className="text-xs text-amber-700 mt-1">
+                        Para agregar auditores que generen informes bajo tu cuenta, actualiza a Plan Profesional (3 auditores) o Empresarial (10 auditores).
+                      </p>
+                      {onOpenPlans && (
+                        <button
+                          onClick={() => {
+                            onClose();
+                            onOpenPlans();
+                          }}
+                          className="mt-2 flex items-center gap-1 text-sm text-amber-700 hover:text-amber-800 font-medium underline"
+                        >
+                          <TrendingUp className="w-4 h-4" />
+                          Ver planes disponibles
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {!isAddingAuditor && !editingAuditor && (limits?.canAddMore || limits?.isAdmin) && (
                 <button
                   onClick={() => {
                     setIsAddingAuditor(true);
@@ -253,6 +331,25 @@ const AuditorManager: React.FC<AuditorManagerProps> = ({ isOpen, onClose }) => {
                   <Plus className="w-4 h-4" />
                   Agregar Auditor
                 </button>
+              )}
+
+              {!isAddingAuditor && !editingAuditor && limits && !limits.canAddMore && limits.maxAuditors > 0 && !limits.isAdmin && (
+                <div className="mb-6 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                  <p className="text-sm text-orange-700">
+                    <strong>Límite alcanzado:</strong> Has llegado al máximo de {limits.maxAuditors} auditores de tu plan.
+                    {onOpenPlans && (
+                      <button
+                        onClick={() => {
+                          onClose();
+                          onOpenPlans();
+                        }}
+                        className="ml-2 text-orange-800 underline font-medium"
+                      >
+                        Actualiza tu plan
+                      </button>
+                    )}
+                  </p>
+                </div>
               )}
 
               {(isAddingAuditor || editingAuditor) && (

@@ -1694,6 +1694,7 @@ const App: React.FC = () => {
       <AuditorManager
         isOpen={isAuditorManagerOpen}
         onClose={() => setIsAuditorManagerOpen(false)}
+        onOpenPlans={() => setIsSubscriptionModalOpen(true)}
       />
     </div>
   );
