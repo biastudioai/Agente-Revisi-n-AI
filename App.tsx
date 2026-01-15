@@ -16,7 +16,8 @@ import { getCurrentRulesVersion, checkIfRulesChanged, RulesChangedResult } from 
 import { RuleVersionInfo } from './components/RuleVersionIndicator';
 import { detectProviderFromPdf, DetectedProvider } from './services/providerDetection';
 import AdminBillingDashboard from './components/AdminBillingDashboard';
-import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw, AlignLeft, Image as ImageIcon, Loader2, Building2, LogOut, ChevronDown, User as UserIcon, CreditCard, BarChart3, History } from 'lucide-react';
+import AuditorManager from './components/AuditorManager';
+import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw, AlignLeft, Image as ImageIcon, Loader2, Building2, LogOut, ChevronDown, User as UserIcon, CreditCard, BarChart3, History, Users } from 'lucide-react';
 
 interface User {
   id: string;
@@ -115,6 +116,9 @@ const App: React.FC = () => {
   
   // State for Report History View
   const [isHistoryViewOpen, setIsHistoryViewOpen] = useState(false);
+  
+  // State for Auditor Manager
+  const [isAuditorManagerOpen, setIsAuditorManagerOpen] = useState(false);
 
   // State for Rule Versioning
   const [ruleVersionInfo, setRuleVersionInfo] = useState<RuleVersionInfo | null>(null);
@@ -1567,6 +1571,18 @@ const App: React.FC = () => {
                   <CreditCard className="w-4 h-4" />
                   {subscription ? 'Administrar suscripción' : 'Ver planes'}
                 </button>
+                {(user?.rol === 'BROKER' || user?.rol === 'ADMIN') && (
+                  <button
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      setIsAuditorManagerOpen(true);
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
+                  >
+                    <Users className="w-4 h-4" />
+                    Administrar usuarios
+                  </button>
+                )}
                 {user?.rol === 'ADMIN' && (
                   <button
                     onClick={() => {
@@ -1672,6 +1688,12 @@ const App: React.FC = () => {
       <AdminBillingDashboard
         isOpen={isBillingDashboardOpen}
         onClose={() => setIsBillingDashboardOpen(false)}
+      />
+
+      {/* Auditor Manager */}
+      <AuditorManager
+        isOpen={isAuditorManagerOpen}
+        onClose={() => setIsAuditorManagerOpen(false)}
       />
     </div>
   );
