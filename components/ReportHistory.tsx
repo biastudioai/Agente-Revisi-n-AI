@@ -22,7 +22,13 @@ interface ReportHistoryProps {
 const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport, onBack }) => {
   const [reports, setReports] = useState<Report[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isNavigating, setIsNavigating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleViewReport = (reportId: string) => {
+    setIsNavigating(true);
+    onViewReport(reportId);
+  };
 
   // Filter states
   const [patientSearch, setPatientSearch] = useState('');
@@ -160,6 +166,20 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport, onBack }) =
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-cyan-50/30">
+      {isNavigating && (
+        <div className="fixed inset-0 z-[100] bg-white/60 backdrop-blur-[2px] flex items-center justify-center transition-all duration-300">
+          <div className="bg-white p-6 rounded-2xl shadow-xl border border-slate-100 flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-300">
+            <div className="relative">
+              <div className="w-12 h-12 border-4 border-cyan-100 border-t-cyan-500 rounded-full animate-spin" />
+              <Eye className="w-5 h-5 text-cyan-500 absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2" />
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-slate-900 font-semibold">Cargando Informe</span>
+              <span className="text-slate-500 text-sm">Preparando análisis detallado...</span>
+            </div>
+          </div>
+        </div>
+      )}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -425,7 +445,7 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport, onBack }) =
                     <tr 
                       key={report.id} 
                       className="hover:bg-slate-50/50 transition-colors cursor-pointer"
-                      onClick={() => onViewReport(report.id)}
+                      onClick={() => handleViewReport(report.id)}
                     >
                       <td className="px-6 py-4">
                         <span className="text-sm font-mono text-slate-600 bg-slate-100 px-2 py-1 rounded">
@@ -473,7 +493,7 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport, onBack }) =
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            onViewReport(report.id);
+                            handleViewReport(report.id);
                           }}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-cyan-700 bg-cyan-50 hover:bg-cyan-100 rounded-lg transition-colors"
                         >
