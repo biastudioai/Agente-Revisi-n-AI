@@ -73,3 +73,6 @@ export function requireRole(...roles: string[]) {
 
 export const requireAuth = authMiddleware;
 export const requireAdmin = requireRole('ADMIN');
+export const requireAseguradora = requireRole('ADMIN', 'ASEGURADORA');
+export const requireBroker = requireRole('ADMIN', 'ASEGURADORA', 'BROKER');
+export const requireAuditor = requireRole('ADMIN', 'ASEGURADORA', 'BROKER', 'AUDITOR');

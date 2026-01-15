@@ -155,7 +155,8 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport, onBack }) =
     );
   }
 
-  const isAdmin = reports[0]?.userRole === 'ADMIN';
+  const userRole = reports[0]?.userRole;
+  const canSeeCreatorInfo = userRole === 'ADMIN' || userRole === 'ASEGURADORA' || userRole === 'BROKER';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-cyan-50/30">
@@ -191,8 +192,8 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport, onBack }) =
         {/* Filters Section */}
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Creator Search (Admin Only) */}
-            {isAdmin && (
+            {/* Creator Search (Admin, Aseguradora, Broker) */}
+            {canSeeCreatorInfo && (
               <div className="relative">
                 <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
@@ -382,7 +383,7 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport, onBack }) =
                         ID del Informe
                       </div>
                     </th>
-                    {isAdmin && (
+                    {canSeeCreatorInfo && (
                       <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                         <div className="flex items-center gap-2">
                           <User className="w-4 h-4" />
@@ -431,7 +432,7 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport, onBack }) =
                           {report.id.slice(0, 8)}...
                         </span>
                       </td>
-                      {isAdmin && (
+                      {canSeeCreatorInfo && (
                         <td className="px-6 py-4">
                           <div className="flex flex-col">
                             <span className="text-sm font-medium text-slate-900">

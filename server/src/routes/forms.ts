@@ -240,10 +240,66 @@ router.get(
     }
 
     try {
-      const isAdmin = userRole === 'ADMIN';
+      // Obtener usuario actual con sus relaciones
+      const currentUser = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          children: {
+            select: { id: true }
+          }
+        }
+      });
+
+      if (!currentUser) {
+        res.status(401).json({ error: 'Usuario no encontrado' });
+        return;
+      }
+
+      // Construir filtro según rol (RBAC)
+      let whereCondition: any = {};
+
+      switch (userRole) {
+        case 'ADMIN':
+          // ADMIN: ve todos los informes
+          whereCondition = {};
+          break;
+
+        case 'ASEGURADORA':
+          // ASEGURADORA: ve solo informes de su aseguradora
+          // Los informes tienen insuranceCompany que debe coincidir con el código de la aseguradora
+          if (currentUser.aseguradoraId) {
+            const aseguradora = await prisma.aseguradoraConfig.findUnique({
+              where: { id: currentUser.aseguradoraId }
+            });
+            if (aseguradora) {
+              whereCondition = { insuranceCompany: aseguradora.codigo };
+            }
+          } else {
+            // Si no tiene aseguradora asignada, no ve nada
+            whereCondition = { id: 'none' };
+          }
+          break;
+
+        case 'BROKER':
+          // BROKER: ve sus propios informes + los de sus auditores (children)
+          const brokerChildIds = currentUser.children?.map(c => c.id) || [];
+          whereCondition = {
+            userId: { in: [userId, ...brokerChildIds] }
+          };
+          break;
+
+        case 'AUDITOR':
+          // AUDITOR: solo ve sus propios informes
+          whereCondition = { userId };
+          break;
+
+        default:
+          // Por defecto, solo sus propios informes
+          whereCondition = { userId };
+      }
       
       const forms = await prisma.medicalForm.findMany({
-        where: isAdmin ? {} : { userId },
+        where: whereCondition,
         include: {
           formPdfs: true,
           user: {
@@ -257,6 +313,8 @@ router.get(
         },
         orderBy: { createdAt: 'desc' },
       });
+
+      const canSeeCreatorInfo = userRole === 'ADMIN' || userRole === 'ASEGURADORA' || userRole === 'BROKER';
 
       const reports = forms.map((form: any) => {
         const formData = form.formData || {};
@@ -278,8 +336,8 @@ router.get(
           userRole: userRole,
           ruleVersionId: form.ruleVersionId || null,
           originalScore: form.originalScore || null,
-          creatorName: isAdmin ? (form.user?.nombre || 'Sin nombre') : null,
-          creatorEmail: isAdmin ? (form.user?.email || '') : null,
+          creatorName: canSeeCreatorInfo ? (form.user?.nombre || 'Sin nombre') : null,
+          creatorEmail: canSeeCreatorInfo ? (form.user?.email || '') : null,
         };
       });
 

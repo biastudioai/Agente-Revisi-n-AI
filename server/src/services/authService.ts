@@ -8,6 +8,8 @@ export interface RegisterData {
   password: string;
   nombre: string;
   rol?: UserRole;
+  parentId?: string;
+  aseguradoraId?: string;
 }
 
 export interface LoginData {
@@ -42,7 +44,9 @@ export async function registerUser(data: RegisterData): Promise<AuthResult> {
       email: data.email.toLowerCase(),
       passwordHash,
       nombre: data.nombre,
-      rol: data.rol || 'USER',
+      rol: data.rol || UserRole.BROKER,
+      parentId: data.parentId,
+      aseguradoraId: data.aseguradoraId,
     },
   });
 
