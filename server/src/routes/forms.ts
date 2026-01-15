@@ -278,8 +278,8 @@ router.get(
           userRole: userRole,
           ruleVersionId: form.ruleVersionId || null,
           originalScore: form.originalScore || null,
-          creatorName: isAdmin ? form.user?.nombre || 'Sin nombre' : null,
-          creatorEmail: isAdmin ? form.user?.email || '' : null,
+          creatorName: isAdmin ? (form.user?.nombre || 'Sin nombre') : null,
+          creatorEmail: isAdmin ? (form.user?.email || '') : null,
         };
       });
 
