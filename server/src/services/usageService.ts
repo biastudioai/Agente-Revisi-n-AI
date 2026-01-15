@@ -29,6 +29,28 @@ export class UsageService {
     return user?.rol === 'ADMIN';
   }
 
+  private async getUserWithParent(userId: string) {
+    return await prisma.user.findUnique({
+      where: { id: userId },
+      select: { 
+        id: true, 
+        rol: true, 
+        parentId: true,
+        parent: {
+          select: { id: true, rol: true }
+        }
+      },
+    });
+  }
+
+  private async getSubscriptionOwnerId(userId: string): Promise<string> {
+    const user = await this.getUserWithParent(userId);
+    if (user?.rol === 'AUDITOR' && user.parentId) {
+      return user.parentId;
+    }
+    return userId;
+  }
+
   async getCurrentUsage(userId: string): Promise<UsageInfo> {
     const now = new Date();
     const periodYear = now.getFullYear();
@@ -63,7 +85,8 @@ export class UsageService {
       };
     }
 
-    const subscription = await subscriptionService.getActiveSubscription(userId);
+    const subscriptionOwnerId = await this.getSubscriptionOwnerId(userId);
+    const subscription = await subscriptionService.getActiveSubscription(subscriptionOwnerId);
     
     const hasActiveSubscription = !!subscription;
     const planType = subscription?.planType || null;
@@ -74,7 +97,7 @@ export class UsageService {
     let usageRecord = await prisma.usageRecord.findUnique({
       where: {
         userId_periodYear_periodMonth: {
-          userId,
+          userId: subscriptionOwnerId,
           periodYear,
           periodMonth,
         },
@@ -84,7 +107,7 @@ export class UsageService {
     if (!usageRecord) {
       usageRecord = await prisma.usageRecord.create({
         data: {
-          userId,
+          userId: subscriptionOwnerId,
           periodYear,
           periodMonth,
           reportsUsed: 0,
@@ -160,7 +183,8 @@ export class UsageService {
       };
     }
 
-    const subscription = await subscriptionService.getActiveSubscription(userId);
+    const subscriptionOwnerId = await this.getSubscriptionOwnerId(userId);
+    const subscription = await subscriptionService.getActiveSubscription(subscriptionOwnerId);
 
     if (!subscription) {
       const usage = await this.getCurrentUsage(userId);
@@ -179,7 +203,7 @@ export class UsageService {
     let usageRecord = await prisma.usageRecord.upsert({
       where: {
         userId_periodYear_periodMonth: {
-          userId,
+          userId: subscriptionOwnerId,
           periodYear,
           periodMonth,
         },
@@ -188,7 +212,7 @@ export class UsageService {
         reportsUsed: { increment: 1 },
       },
       create: {
-        userId,
+        userId: subscriptionOwnerId,
         periodYear,
         periodMonth,
         reportsUsed: 1,
