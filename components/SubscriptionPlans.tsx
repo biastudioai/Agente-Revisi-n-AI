@@ -219,20 +219,22 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, currentS
                   <li className="flex items-start gap-2">
                     <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
                     <div>
-                      <span className="font-medium">{plan.reportsIncluded} informes</span>
+                      <span className="font-medium text-gray-800">{plan.reportsIncluded} informes</span>
                       <span className="text-gray-500 text-sm"> incluidos/mes</span>
                     </div>
                   </li>
-                  {plan.benefits?.map((benefit, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-                      <span className="text-gray-700 text-sm">{benefit}</span>
-                    </li>
-                  ))}
+                  {plan.benefits && plan.benefits.length > 0 ? (
+                    plan.benefits.map((benefit, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <Check className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
+                        <span className="text-gray-700 text-sm">{benefit}</span>
+                      </li>
+                    ))
+                  ) : null}
                   <li className="flex items-start gap-2">
                     <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
                     <div>
-                      <span className="font-medium">${plan.extraReportPriceMxn} MXN</span>
+                      <span className="font-medium text-gray-800">${plan.extraReportPriceMxn} MXN</span>
                       <span className="text-gray-500 text-sm"> por informe extra</span>
                     </div>
                   </li>
