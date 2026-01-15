@@ -1,4 +1,6 @@
 import nodemailer from 'nodemailer';
+import * as fs from 'fs';
+import * as path from 'path';
 
 interface ReportEmailData {
   recipientEmail: string;
@@ -104,7 +106,7 @@ function generateEmailHTML(data: ReportEmailData): string {
     
     <!-- Header -->
     <div style="background: linear-gradient(135deg, #1A2B56 0%, #2d4a8a 100%); padding: 30px; text-align: center; border-radius: 16px 16px 0 0;">
-      <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700;">VERYKA.AI</h1>
+      <img src="cid:veryka-logo" alt="Veryka.ai" style="max-width: 180px; height: auto; margin-bottom: 12px;" />
       <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.8); font-size: 14px;">Reporte de Auditoría Médica</p>
     </div>
     
@@ -181,15 +183,32 @@ export async function sendReportEmail(data: ReportEmailData): Promise<{ success:
   try {
     const transporter = await createTransporter();
     
+    const logoPath = path.join(process.cwd(), '..', 'attached_assets', 'Veryka_Logo_1767919213039.png');
+    let logoAttachment: nodemailer.SendMailOptions['attachments'] = [];
+    
+    try {
+      if (fs.existsSync(logoPath)) {
+        logoAttachment = [{
+          filename: 'veryka-logo.png',
+          path: logoPath,
+          cid: 'veryka-logo'
+        }];
+      }
+    } catch (e) {
+      console.warn('Could not attach logo:', e);
+    }
+
     const mailOptions: nodemailer.SendMailOptions = {
-      from: '"Agente AI" <agente@veryka.ai>',
+      from: '"Veryka AI" <agente@veryka.ai>',
       to: data.recipientEmail,
       subject: `Reporte de Auditoría - ${data.patientName} - Score: ${data.score}/100`,
       html: generateEmailHTML(data),
+      attachments: [...logoAttachment],
     };
 
     if (data.pdfBase64) {
       mailOptions.attachments = [
+        ...logoAttachment,
         {
           filename: `Reporte_Auditoria_${Date.now()}.pdf`,
           content: data.pdfBase64,
