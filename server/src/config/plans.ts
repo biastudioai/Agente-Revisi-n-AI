@@ -9,6 +9,9 @@ export interface PlanConfig {
   extraReportPriceMxn: number;
   extraReportPricePromotionMxn: number;
   promotionDurationMonths: number;
+  maxBrokers: number;
+  maxAuditors: number;
+  benefits: string[];
 }
 
 export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
@@ -21,6 +24,14 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
     extraReportPriceMxn: 30,
     extraReportPricePromotionMxn: 20,
     promotionDurationMonths: 3,
+    maxBrokers: 1,
+    maxAuditors: 1,
+    benefits: [
+      '1 Usuario Broker',
+      '1 Usuario Auditor',
+      'Soporte por correo',
+      'Acceso a reglas estándar'
+    ],
   },
   [PlanType.PLAN_2]: {
     planType: PlanType.PLAN_2,
@@ -31,6 +42,15 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
     extraReportPriceMxn: 25,
     extraReportPricePromotionMxn: 20,
     promotionDurationMonths: 3,
+    maxBrokers: 1,
+    maxAuditors: 5,
+    benefits: [
+      '1 Usuario Broker',
+      'Hasta 5 Usuarios Auditores',
+      'Soporte prioritario',
+      'Reglas personalizables',
+      'Dashboard de estadísticas'
+    ],
   },
   [PlanType.PLAN_3]: {
     planType: PlanType.PLAN_3,
@@ -41,6 +61,16 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
     extraReportPriceMxn: 20,
     extraReportPricePromotionMxn: 19,
     promotionDurationMonths: 3,
+    maxBrokers: 1,
+    maxAuditors: 15,
+    benefits: [
+      '1 Usuario Broker',
+      'Hasta 15 Usuarios Auditores',
+      'Soporte 24/7 personalizado',
+      'API access (próximamente)',
+      'Capacitación inicial',
+      'Reportes ejecutivos mensuales'
+    ],
   },
 };
 
