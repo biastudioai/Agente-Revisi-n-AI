@@ -229,31 +229,48 @@ const Dashboard: React.FC<DashboardProps> = ({
     const isModified = modifiedFields[path] !== undefined;
     const isHighlighted = highlightedField === path;
     
+    // Alias para normalizar valores abreviados a sus formas completas
+    const valueAliases: Record<string, string> = {
+      'f': 'femenino',
+      'm': 'masculino',
+      'fem': 'femenino',
+      'masc': 'masculino',
+      'acc': 'accidente',
+      'enf': 'enfermedad',
+      'emb': 'embarazo'
+    };
+    
+    // Función para normalizar un valor usando los alias
+    const normalizeWithAlias = (v: string): string => {
+      const lower = String(v).toLowerCase().trim();
+      return valueAliases[lower] || lower;
+    };
+    
     // Manejar arrays, strings separados por comas y booleanos (backward compatibility)
     let selectedValues: string[];
     if (Array.isArray(value)) {
-      selectedValues = value.map(v => String(v).toLowerCase());
+      selectedValues = value.map(v => normalizeWithAlias(String(v)));
     } else if (typeof value === 'boolean') {
       // Convertir booleanos a Sí/No para campos como complicaciones
       selectedValues = [value ? 'sí' : 'no'];
     } else if (typeof value === 'string' && value) {
-      selectedValues = value.split(',').map(v => v.trim().toLowerCase());
+      selectedValues = value.split(',').map(v => normalizeWithAlias(v.trim()));
     } else {
       selectedValues = [];
     }
 
     const handleToggle = (option: string) => {
-      const optionLower = option.toLowerCase();
+      const optionNormalized = normalizeWithAlias(option);
       let newValues: string[];
       
-      if (selectedValues.includes(optionLower)) {
+      if (selectedValues.includes(optionNormalized)) {
         // Deseleccionar: remover este valor del array
         newValues = selectedValues
-          .filter(v => v !== optionLower)
-          .map(v => options.find(o => o.toLowerCase() === v) || v);
+          .filter(v => v !== optionNormalized)
+          .map(v => options.find(o => normalizeWithAlias(o) === v) || v);
       } else {
         // Seleccionar: agregar este valor al array (permitir múltiples)
-        const currentOriginal = selectedValues.map(v => options.find(o => o.toLowerCase() === v) || v);
+        const currentOriginal = selectedValues.map(v => options.find(o => normalizeWithAlias(o) === v) || v);
         newValues = [...currentOriginal, option];
       }
       
@@ -270,7 +287,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
         <div className="flex flex-wrap gap-3">
           {options.map((option) => {
-            const isSelected = selectedValues.includes(option.toLowerCase());
+            const isSelected = selectedValues.includes(normalizeWithAlias(option));
             return (
               <label key={option} className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${isSelected ? `${theme.light} ${theme.border} ring-1 ${theme.border}` : 'bg-slate-50 border-slate-200 hover:bg-slate-100'}`}>
                 <input 

@@ -242,6 +242,24 @@ export function validateCondition(
       return !fields.every(f => !isEmpty(getNestedField(data, f)));
     }
     
+    case 'INVALID_SEX': {
+      // Verifica si el valor del sexo es inválido (vacío o no reconocido)
+      // Valores válidos: F, M, Femenino, Masculino (case insensitive)
+      if (isEmpty(fieldValue)) return true;
+      
+      const validSexValues = ['f', 'm', 'femenino', 'masculino', 'fem', 'masc'];
+      
+      if (Array.isArray(fieldValue)) {
+        // Si es array, debe tener al menos un valor válido
+        const hasValidValue = fieldValue.some(v => 
+          validSexValues.includes(String(v).toLowerCase().trim())
+        );
+        return !hasValidValue;
+      }
+      
+      return !validSexValues.includes(String(fieldValue).toLowerCase().trim());
+    }
+    
     default:
       return true;
   }

@@ -402,7 +402,7 @@ Basándote en el diagnóstico definitivo, clasifica la severidad como:
               sexo: { 
                 type: Type.ARRAY, 
                 items: { type: Type.STRING },
-                description: "Array con el sexo marcado: ['Femenino'] o ['Masculino']. SOLO extrae lo que VES marcado visualmente. Si hay ambos marcados (error en documento), incluir ambos."
+                description: "Array con el sexo marcado: ['F'] o ['M']. Extrae EXACTAMENTE la letra marcada, no escribas 'Femenino' o 'Masculino'. SOLO extrae lo que VES marcado visualmente (X, palomita, círculo, punto, tachado o cualquier marca al lado izquierdo de la opción). Si no hay ninguna marca clara visible, deja el array vacío []."
               },
               causa_atencion: { 
                 type: Type.ARRAY, 

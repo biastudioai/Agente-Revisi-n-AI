@@ -68,7 +68,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     description: 'Debe seleccionarse un sexo válido (F o M).',
     providerTarget: 'ALL',
     isCustom: false,
-    conditions: [{ id: 'cond_paciente_sexo_1', field: 'identificacion.sexo', operator: 'IS_EMPTY' }],
+    conditions: [{ id: 'cond_paciente_sexo_1', field: 'identificacion.sexo', operator: 'INVALID_SEX' }],
     logicOperator: 'AND',
     affectedFields: ['identificacion.sexo']
   },
