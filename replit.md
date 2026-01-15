@@ -27,7 +27,12 @@ Preferred communication style: Simple, everyday language.
 ### Core Features
 - **Multi-Provider Support**: A "Provider Registry Pattern" enables easy integration of new insurance providers through configuration files, including provider-specific extraction instructions and Gemini schemas.
 - **AI Integration**: Leverages Google Gemini AI (`gemini-2.5-flash`) for document analysis, configured for consistent extractions and structured JSON output based on dynamic provider schemas.
-- **Scoring Engine**: A rule-based validation system with configurable rules categorized by severity. It supports general and provider-specific rules, calculates a final score, and flags violations.
+- **Scoring Engine**: A rule-based validation system with configurable rules categorized by severity. Each severity level has a defined point range:
+  - CRÍTICO: 16-20 points (default: 18) - Ensures critical violations always result in rejection
+  - IMPORTANTE: 8-12 points (default: 10)
+  - MODERADO: 5-8 points (default: 6)
+  - DISCRETO: 1-3 points (default: 2)
+  Points are automatically adjusted when changing severity levels, and the system validates ranges on both frontend and backend.
 - **Editable Rules System**: A UI allows dynamic creation and modification of validation rules, supporting 28 operators, AND/OR logic, and real-time previews. Rules can apply to single or multiple providers via dynamic field mapping. Rules are stored in PostgreSQL.
 - **Rule Versioning System**: Automatic versioning tracks rule changes over time. Each form stores the rule version used during processing, enabling detection of rule drift. When rules change after a form was processed, users see an indicator and can either keep the original evaluation or recalculate with current rules. Database tables: `RuleVersion` (snapshots), `RuleChangeLog` (audit trail).
 - **GNP Audit Rules**: Includes a comprehensive set of ~63 rules for GNP insurance, covering universal aspects, GNP-specific requirements, visual document tampering detection, signature verification, and diagnosis severity classification.
