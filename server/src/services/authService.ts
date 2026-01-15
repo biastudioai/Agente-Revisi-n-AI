@@ -223,11 +223,15 @@ export async function validateSession(sessionToken: string) {
   }
 
   return {
+    id: session.id,
+    sessionToken: session.sessionToken,
     user: {
       id: session.user.id,
       email: session.user.email,
       nombre: session.user.nombre,
       rol: session.user.rol,
+      isActive: session.user.isActive,
+      parentId: session.user.parentId,
     },
     expiresAt: session.expiresAt,
   };

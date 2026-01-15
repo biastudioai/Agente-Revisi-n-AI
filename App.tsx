@@ -147,6 +147,30 @@ const App: React.FC = () => {
     }
   }, [status]);
 
+  // State for blocked auditor message
+  const [blockedMessage, setBlockedMessage] = useState<string | null>(null);
+
+  // Handle 403 errors from API calls (auditor deactivated, etc.)
+  const handleApiResponse = async (response: Response): Promise<boolean> => {
+    if (response.status === 403) {
+      try {
+        const data = await response.json();
+        if (data.code === 'AUDITOR_DEACTIVATED' || data.code === 'BROKER_NO_SUBSCRIPTION' || data.code === 'PLAN_NO_AUDITORS') {
+          setBlockedMessage(data.error);
+          setUser(null);
+          return false;
+        }
+      } catch (e) {
+        // Not JSON, ignore
+      }
+    }
+    if (response.status === 401) {
+      setUser(null);
+      return false;
+    }
+    return true;
+  };
+
   // Check authentication on mount
   useEffect(() => {
     const checkAuth = async () => {
@@ -158,6 +182,13 @@ const App: React.FC = () => {
           const data = await response.json();
           if (data.valid && data.user) {
             setUser(data.user);
+            setBlockedMessage(null);
+          }
+        } else if (response.status === 403) {
+          const data = await response.json();
+          if (data.code) {
+            setBlockedMessage(data.error);
+            setUser(null);
           }
         }
       } catch (e) {
@@ -233,6 +264,33 @@ const App: React.FC = () => {
       loadUsage();
       loadSubscription();
     }
+  }, [user]);
+
+  // Periodic session validation for auditors (check every 30 seconds)
+  useEffect(() => {
+    if (!user || user.rol !== 'AUDITOR') return;
+
+    const validateAuditorSession = async () => {
+      try {
+        const response = await fetch('/api/auth/validate', {
+          credentials: 'include',
+        });
+        if (response.status === 403) {
+          const data = await response.json();
+          if (data.code) {
+            setBlockedMessage(data.error);
+            setUser(null);
+          }
+        } else if (response.status === 401) {
+          setUser(null);
+        }
+      } catch (e) {
+        console.error('Error validating session:', e);
+      }
+    };
+
+    const interval = setInterval(validateAuditorSession, 30000);
+    return () => clearInterval(interval);
   }, [user]);
 
   // Cargar reportes guardados desde el backend al montar
@@ -989,7 +1047,7 @@ const App: React.FC = () => {
 
   // Show login page if not authenticated
   if (!user) {
-    return <LoginPage onLoginSuccess={setUser} />;
+    return <LoginPage onLoginSuccess={(u) => { setUser(u); setBlockedMessage(null); }} blockedMessage={blockedMessage} />;
   }
 
   // Show Report History view

@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database';
+import { UserRole, SubscriptionStatus } from '../generated/prisma';
+import { getPlanConfig } from '../config/plans';
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -38,6 +40,46 @@ export async function authMiddleware(
       await prisma.session.delete({ where: { id: session.id } });
       res.status(401).json({ error: 'Session expired' });
       return;
+    }
+
+    if (session.user.rol === UserRole.AUDITOR) {
+      if (!session.user.isActive) {
+        await prisma.session.delete({ where: { id: session.id } });
+        res.status(403).json({ 
+          error: 'Tu cuenta de auditor ha sido desactivada. Contacta a tu broker para más información.',
+          code: 'AUDITOR_DEACTIVATED'
+        });
+        return;
+      }
+
+      if (session.user.parentId) {
+        const brokerSubscription = await prisma.subscription.findFirst({
+          where: {
+            userId: session.user.parentId,
+            status: { in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING] },
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        if (!brokerSubscription) {
+          await prisma.session.delete({ where: { id: session.id } });
+          res.status(403).json({ 
+            error: 'El broker asociado a tu cuenta no tiene una suscripción activa.',
+            code: 'BROKER_NO_SUBSCRIPTION'
+          });
+          return;
+        }
+
+        const planConfig = getPlanConfig(brokerSubscription.planType);
+        if (planConfig.maxAuditors === 0) {
+          await prisma.session.delete({ where: { id: session.id } });
+          res.status(403).json({ 
+            error: 'El plan actual de tu broker no incluye auditores.',
+            code: 'PLAN_NO_AUDITORS'
+          });
+          return;
+        }
+      }
     }
 
     req.user = {

@@ -3,20 +3,21 @@ import { Stethoscope, Mail, Lock, Eye, EyeOff, Loader2, ArrowLeft } from 'lucide
 
 interface LoginPageProps {
   onLoginSuccess: (user: { id: string; email: string; nombre: string; rol: string }) => void;
+  blockedMessage?: string | null;
 }
 
 type View = 'login' | 'forgot-password' | 'reset-password';
 
 const API_URL = '/api';
 
-const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
+const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, blockedMessage }) => {
   const [view, setView] = useState<View>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [nombre, setNombre] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(blockedMessage || null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isRegister, setIsRegister] = useState(false);
   
