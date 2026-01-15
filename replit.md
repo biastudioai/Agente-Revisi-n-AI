@@ -37,6 +37,7 @@ Preferred communication style: Simple, everyday language.
 - **Report History System**: Displays processed reports in a table format, allowing users to view their own reports and access detailed views with associated PDFs.
 - **File Storage System**: Integrates with Replit Object Storage for automatic upload and secure serving of PDFs and images, with transactional saving and cleanup.
 - **Stripe Subscription System**: Manages subscription plans (Basic, Profesional, Empresarial) with tiered report limits, promotional offers, extra report charges, and usage tracking. Administrators have unlimited access and a dedicated billing dashboard.
+- **Email Report Sending**: Sends audit reports via email with PDF attachments using Titan SMTP (smtp.titan.email:587). Emails are sent from "Agente AI <agente@veryka.ai>" with professional HTML formatting. Includes failover to smtpout.secureserver.net if primary server fails. Credentials stored in Email_User and Email_Pass secrets.
 
 ## External Dependencies
 
@@ -59,5 +60,6 @@ Preferred communication style: Simple, everyday language.
 - **Express.js**: Backend server framework.
 - **bcrypt**: For password hashing.
 - **googleapis**: For Gmail API (password reset emails).
+- **nodemailer**: For SMTP email sending (Titan Email).
 - **Replit Object Storage**: For file storage.
 - **Stripe**: For subscription and payment processing.
