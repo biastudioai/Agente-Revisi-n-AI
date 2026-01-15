@@ -3,6 +3,11 @@ import { ScoringRule, ProviderType, ExtractedData } from '../types';
 import { Settings, AlertTriangle, ShieldAlert, AlertCircle, Info, X, ChevronDown, Plus, Pencil, Trash2, Search } from 'lucide-react';
 import { PROVIDER_REGISTRY } from '../providers';
 import RuleEditor from './RuleEditor';
+import { 
+  getPointsRangeForLevel, 
+  adjustPointsForLevelChange,
+  SeverityLevel 
+} from '../services/severity-points';
 
 interface RuleConfiguratorProps {
   isOpen: boolean;
@@ -49,18 +54,21 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
   const handleLevelChange = (ruleId: string, newLevel: ScoringRule['level']) => {
     const rule = rules.find(r => r.id === ruleId);
     if (!rule) return;
-    const updatedRule = { ...rule, level: newLevel };
+    const adjustedPoints = adjustPointsForLevelChange(rule.points, newLevel as SeverityLevel);
+    const updatedRule = { ...rule, level: newLevel, points: adjustedPoints };
     const updatedRules = rules.map(r => 
       r.id === ruleId ? updatedRule : r
     );
     onUpdateRules(updatedRules, updatedRule, 'update');
   };
 
-  const handlePointsChange = (ruleId: string, newPoints: string) => {
+  const handlePointsChange = (ruleId: string, newPoints: string, level: ScoringRule['level']) => {
     const points = parseInt(newPoints) || 0;
+    const range = getPointsRangeForLevel(level as SeverityLevel);
+    const clampedPoints = Math.max(range.min, Math.min(range.max, points));
     const rule = rules.find(r => r.id === ruleId);
     if (!rule) return;
-    const updatedRule = { ...rule, points };
+    const updatedRule = { ...rule, points: clampedPoints };
     const updatedRules = rules.map(r => 
       r.id === ruleId ? updatedRule : r
     );
@@ -287,14 +295,15 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
 
                       {/* Points Input */}
                       <div className="col-span-2 flex justify-center">
-                          <div className="relative w-16">
+                          <div className="relative w-20">
                                <input 
                                   type="number" 
-                                  min="0" 
-                                  max="100"
+                                  min={getPointsRangeForLevel(rule.level as SeverityLevel).min}
+                                  max={getPointsRangeForLevel(rule.level as SeverityLevel).max}
                                   value={rule.points}
-                                  onChange={(e) => handlePointsChange(rule.id, e.target.value)}
+                                  onChange={(e) => handlePointsChange(rule.id, e.target.value, rule.level)}
                                   className="w-full text-center font-mono font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-lg py-2 text-xs focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"
+                                  title={`Rango: ${getPointsRangeForLevel(rule.level as SeverityLevel).min}-${getPointsRangeForLevel(rule.level as SeverityLevel).max}`}
                               />
                           </div>
                       </div>

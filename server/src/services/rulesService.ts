@@ -1,6 +1,7 @@
 import prisma from '../config/database';
 import { RuleLevel, RuleCategory, ScoringRuleRecord } from '../generated/prisma';
 import { logRuleChange, createRulesVersion } from './ruleVersioningService';
+import { validateAndAdjustPoints } from '../utils/severity-points';
 
 export interface ScoringRuleInput {
   ruleId: string;
@@ -139,12 +140,14 @@ export async function getRulesForAseguradora(aseguradora: 'GNP' | 'METLIFE' | 'N
 }
 
 export async function createRule(input: ScoringRuleInput, changedBy?: string): Promise<ScoringRuleOutput> {
+  const { adjustedPoints } = validateAndAdjustPoints(input.level, input.points);
+  
   const rule = await prisma.scoringRuleRecord.create({
     data: {
       ruleId: input.ruleId,
       name: input.name,
       level: mapLevelToEnum(input.level),
-      points: input.points,
+      points: adjustedPoints,
       description: input.description,
       providerTarget: input.providerTarget.toUpperCase(),
       category: mapCategoryToEnum(input.category),
@@ -175,21 +178,24 @@ export async function createRule(input: ScoringRuleInput, changedBy?: string): P
 
 export async function createManyRules(inputs: ScoringRuleInput[]): Promise<number> {
   const result = await prisma.scoringRuleRecord.createMany({
-    data: inputs.map(input => ({
-      ruleId: input.ruleId,
-      name: input.name,
-      level: mapLevelToEnum(input.level),
-      points: input.points,
-      description: input.description,
-      providerTarget: input.providerTarget.toUpperCase(),
-      category: mapCategoryToEnum(input.category),
-      isCustom: input.isCustom || false,
-      conditions: input.conditions || undefined,
-      logicOperator: input.logicOperator || null,
-      affectedFields: input.affectedFields,
-      hasValidator: input.hasValidator || false,
-      validatorKey: input.validatorKey || null,
-    })),
+    data: inputs.map(input => {
+      const { adjustedPoints } = validateAndAdjustPoints(input.level, input.points);
+      return {
+        ruleId: input.ruleId,
+        name: input.name,
+        level: mapLevelToEnum(input.level),
+        points: adjustedPoints,
+        description: input.description,
+        providerTarget: input.providerTarget.toUpperCase(),
+        category: mapCategoryToEnum(input.category),
+        isCustom: input.isCustom || false,
+        conditions: input.conditions || undefined,
+        logicOperator: input.logicOperator || null,
+        affectedFields: input.affectedFields,
+        hasValidator: input.hasValidator || false,
+        validatorKey: input.validatorKey || null,
+      };
+    }),
     skipDuplicates: true,
   });
   return result.count;
@@ -209,7 +215,14 @@ export async function updateRule(ruleId: string, updates: Partial<ScoringRuleInp
   const updateData: any = {};
   if (updates.name !== undefined) updateData.name = updates.name;
   if (updates.level !== undefined) updateData.level = mapLevelToEnum(updates.level);
-  if (updates.points !== undefined) updateData.points = updates.points;
+  
+  if (updates.points !== undefined || updates.level !== undefined) {
+    const level = updates.level || mapEnumToLevel(existing.level);
+    const points = updates.points ?? existing.points;
+    const { adjustedPoints } = validateAndAdjustPoints(level, points);
+    updateData.points = adjustedPoints;
+  }
+  
   if (updates.description !== undefined) updateData.description = updates.description;
   if (updates.providerTarget !== undefined) updateData.providerTarget = updates.providerTarget.toUpperCase();
   if (updates.category !== undefined) updateData.category = mapCategoryToEnum(updates.category);
