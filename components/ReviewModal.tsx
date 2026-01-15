@@ -211,7 +211,14 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, report }) =>
       else if (isRejectedStatus) statusText = "ALTO RIESGO";
 
       const pdfBytes = await generatePDFBytes();
-      const pdfBase64 = btoa(String.fromCharCode(...pdfBytes));
+      // Convert Uint8Array to base64 in chunks to avoid stack overflow
+      let binary = '';
+      const chunkSize = 8192;
+      for (let i = 0; i < pdfBytes.length; i += chunkSize) {
+        const chunk = pdfBytes.subarray(i, i + chunkSize);
+        binary += String.fromCharCode.apply(null, chunk as unknown as number[]);
+      }
+      const pdfBase64 = btoa(binary);
 
       const response = await fetch('/api/reports/send-report', {
         method: 'POST',
