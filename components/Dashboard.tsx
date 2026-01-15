@@ -66,9 +66,26 @@ const Dashboard: React.FC<DashboardProps> = ({
         const timer = setTimeout(() => {
             const element = document.getElementById(`field-${highlightedField}`);
             if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Calcular offset para posicionar justo debajo de la barra de tabs sticky
+                const stickyHeader = document.querySelector('.sticky.top-0');
+                const headerHeight = stickyHeader ? stickyHeader.getBoundingClientRect().height : 0;
+                const extraPadding = 20; // Espacio adicional para mejor visibilidad
+                
+                const elementPosition = element.getBoundingClientRect().top + window.scrollY;
+                const offsetPosition = elementPosition - headerHeight - extraPadding;
+                
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                });
+                
+                // Agregar clase de animación de resaltado
+                element.classList.add('highlight-flash');
+                setTimeout(() => {
+                    element.classList.remove('highlight-flash');
+                }, 2000);
             }
-        }, 100); 
+        }, 150); 
         const clearTimer = setTimeout(() => setHighlightedField(null), 3000);
         return () => { clearTimeout(timer); clearTimeout(clearTimer); };
     }
