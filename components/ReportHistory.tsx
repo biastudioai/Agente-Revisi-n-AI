@@ -490,5 +490,3 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport, onBack }) =
 };
 
 export default ReportHistory;
-
-export default ReportHistory;
