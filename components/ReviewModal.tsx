@@ -20,6 +20,168 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, report }) =>
 
   if (!isOpen) return null;
 
+  const generatePDFBytes = async (): Promise<Uint8Array> => {
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage();
+    const { width, height } = page.getSize();
+    
+    const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    
+    const hexToRgb = (hex: string) => {
+      const r = parseInt(hex.slice(1, 3), 16) / 255;
+      const g = parseInt(hex.slice(3, 5), 16) / 255;
+      const b = parseInt(hex.slice(5, 7), 16) / 255;
+      return rgb(r, g, b);
+    };
+
+    const wrapText = (text: string, maxWidth: number, size: number, font: any) => {
+      const words = text.split(' ');
+      let lines: string[] = [];
+      let currentLine = words[0] || '';
+      for (let i = 1; i < words.length; i++) {
+        const word = words[i];
+        const testWidth = font.widthOfTextAtSize(currentLine + " " + word, size);
+        if (testWidth < maxWidth) {
+          currentLine += " " + word;
+        } else {
+          lines.push(currentLine);
+          currentLine = word;
+        }
+      }
+      lines.push(currentLine);
+      return lines;
+    };
+
+    const slate50 = hexToRgb('#f8fafc');
+    const slate200 = hexToRgb('#e2e8f0');
+    const slate400 = hexToRgb('#94a3b8');
+    const slate500 = hexToRgb('#64748b');
+    const slate700 = hexToRgb('#334155');
+    const slate800 = hexToRgb('#1e293b');
+    const white = hexToRgb('#ffffff');
+
+    const isApprovedPdf = report.score.finalScore >= 85;
+    const isRejectedPdf = report.score.finalScore < 50;
+    
+    let primaryColor = hexToRgb('#d97706');
+    let lightBgColor = hexToRgb('#fffbeb');
+    let statusTextPdf = "REVISIÓN REQUERIDA";
+
+    if (isApprovedPdf) {
+      primaryColor = hexToRgb('#059669');
+      lightBgColor = hexToRgb('#ecfdf5');
+      statusTextPdf = "PRE-APROBADO";
+    } else if (isRejectedPdf) {
+      primaryColor = hexToRgb('#dc2626');
+      lightBgColor = hexToRgb('#fef2f2');
+      statusTextPdf = "ALTO RIESGO";
+    }
+
+    let y = height - 40;
+    const margin = 40;
+    
+    page.drawText("VERYKA.AI", { x: margin, y, size: 20, font: fontBold, color: hexToRgb('#1A2B56') });
+    page.drawText("REPORTE DE AUDITORÍA", { x: margin, y: y - 50, size: 16, font: fontBold, color: slate800 });
+    page.drawText(`Generado: ${new Date().toLocaleDateString()}`, { x: width - margin - 100, y: y - 50, size: 10, font: fontRegular, color: slate500 });
+    y -= 80;
+
+    page.drawRectangle({
+      x: margin, y: y - 80, width: width - (margin * 2), height: 80,
+      color: lightBgColor, borderColor: primaryColor, borderWidth: 1,
+    });
+
+    page.drawText(statusTextPdf, { x: margin + 20, y: y - 35, size: 18, font: fontBold, color: primaryColor });
+    page.drawText("ESTADO DE VALIDACIÓN", { x: margin + 20, y: y - 55, size: 8, font: fontBold, color: primaryColor });
+
+    const scoreText = report.score.finalScore.toString();
+    const scoreWidth = fontBold.widthOfTextAtSize(scoreText, 40);
+    page.drawText(scoreText, { x: width - margin - scoreWidth - 40, y: y - 50, size: 40, font: fontBold, color: primaryColor });
+    page.drawText("/ 100", { x: width - margin - 35, y: y - 45, size: 12, font: fontBold, color: primaryColor, opacity: 0.6 });
+    y -= 100;
+
+    const leftColX = margin;
+    const leftColWidth = (width - (margin * 2)) * 0.60;
+    const rightColX = leftColX + leftColWidth + 20;
+    const rightColWidth = (width - (margin * 2)) * 0.35;
+    let leftY = y;
+    let rightY = y;
+
+    page.drawRectangle({ x: rightColX - 10, y: 50, width: rightColWidth + 10, height: y - 50, color: slate50 });
+
+    page.drawText("INFORMACIÓN DEL CASO", { x: rightColX, y: rightY, size: 9, font: fontBold, color: slate400 });
+    rightY -= 15;
+
+    const infoFields = [
+      { label: "Paciente", val: `${report.extracted.identificacion?.nombres || ''} ${report.extracted.identificacion?.primer_apellido || ''}` },
+      { label: "Hospital", val: report.extracted.hospital?.nombre_hospital || "N/A" },
+      { label: "Médico", val: report.extracted.medico_tratante?.nombres || "N/A" },
+      { label: "Póliza", val: report.extracted.tramite?.numero_poliza || "N/A" }
+    ];
+
+    infoFields.forEach(field => {
+      page.drawText(field.label.toUpperCase(), { x: rightColX, y: rightY, size: 7, font: fontBold, color: slate400 });
+      rightY -= 10;
+      const lines = wrapText(field.val, rightColWidth, 10, fontRegular);
+      lines.forEach(line => {
+        page.drawText(line, { x: rightColX, y: rightY, size: 10, font: fontRegular, color: slate700 });
+        rightY -= 12;
+      });
+      rightY -= 5;
+    });
+
+    rightY -= 10;
+    page.drawLine({ start: { x: rightColX, y: rightY }, end: { x: rightColX + rightColWidth, y: rightY }, thickness: 1, color: slate200 });
+    rightY -= 20;
+
+    page.drawText("ENVIADO A", { x: rightColX, y: rightY, size: 9, font: fontBold, color: slate400 });
+    rightY -= 15;
+    page.drawText(email || "No especificado", { x: rightColX, y: rightY, size: 10, font: fontRegular, color: slate700 });
+    rightY -= 30;
+
+    if (comments) {
+      page.drawText("COMENTARIOS DEL REVISOR", { x: rightColX, y: rightY, size: 9, font: fontBold, color: slate400 });
+      rightY -= 15;
+      const commentLines = wrapText(comments, rightColWidth, 9, fontRegular);
+      commentLines.forEach(line => {
+        page.drawText(line, { x: rightColX, y: rightY, size: 9, font: fontRegular, color: slate700 });
+        rightY -= 12;
+      });
+    }
+
+    page.drawText("HALLAZGOS DETECTADOS", { x: leftColX, y: leftY, size: 10, font: fontBold, color: slate500 });
+    leftY -= 20;
+
+    if (report.flags.length === 0) {
+      page.drawText("No se detectaron hallazgos negativos.", { x: leftColX, y: leftY, size: 10, font: fontRegular, color: slate500 });
+    }
+
+    report.flags.forEach(issue => {
+      let badgeColor = hexToRgb('#3b82f6');
+      let badgeText = "NOTA";
+      if (issue.type === 'ERROR_CRÍTICO') { badgeColor = hexToRgb('#ef4444'); badgeText = "CRÍTICO"; }
+      else if (issue.type === 'ALERTA') { badgeColor = hexToRgb('#f59e0b'); badgeText = "ALERTA"; }
+
+      page.drawRectangle({ x: leftColX, y: leftY - 2, width: 50, height: 12, color: badgeColor });
+      page.drawText(badgeText, { x: leftColX + 5, y: leftY + 1, size: 7, font: fontBold, color: white });
+      page.drawText(issue.rule, { x: leftColX + 60, y: leftY, size: 10, font: fontBold, color: slate700 });
+      leftY -= 14;
+
+      const descLines = wrapText(issue.message, leftColWidth, 9, fontRegular);
+      descLines.forEach(line => {
+        page.drawText(line, { x: leftColX, y: leftY, size: 9, font: fontRegular, color: slate500 });
+        leftY -= 11;
+      });
+      leftY -= 12;
+    });
+
+    const footerY = 30;
+    page.drawLine({ start: { x: margin, y: footerY + 10 }, end: { x: width - margin, y: footerY + 10 }, thickness: 0.5, color: slate200 });
+    page.drawText("VERYKA.AI - Documento Confidencial", { x: margin, y: footerY, size: 8, font: fontRegular, color: slate500 });
+
+    return await pdfDoc.save();
+  };
+
   const handleSend = async () => {
     if (!email) return;
     setIsSending(true);
@@ -32,6 +194,9 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, report }) =>
       let statusText = "REVISIÓN REQUERIDA";
       if (isApprovedStatus) statusText = "PRE-APROBADO";
       else if (isRejectedStatus) statusText = "ALTO RIESGO";
+
+      const pdfBytes = await generatePDFBytes();
+      const pdfBase64 = btoa(String.fromCharCode(...pdfBytes));
 
       const response = await fetch('/api/reports/send-report', {
         method: 'POST',
@@ -51,7 +216,8 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, report }) =>
             rule: f.rule,
             message: f.message
           })),
-          comments: comments || undefined
+          comments: comments || undefined,
+          pdfBase64
         }),
       });
 
