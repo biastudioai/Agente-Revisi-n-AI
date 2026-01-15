@@ -21,7 +21,11 @@ Preferred communication style: Simple, everyday language.
 - **ORM**: Prisma 7
 - **Database**: PostgreSQL
 - **Authentication**: Secure, token-based (HttpOnly cookies for web, Bearer tokens for API), with bcrypt-hashed passwords and password reset functionality.
-- **Authorization**: Role-based access control (`ADMIN`, `REVIEWER`, `USER`).
+- **Authorization**: Role-based access control (RBAC) with hierarchical roles:
+  - `ADMIN`: Full system access, manages rules and insurance provider configurations
+  - `ASEGURADORA`: Insurance company users, can only view reports from their company
+  - `BROKER`: Insurance brokers, can view their own reports + reports from their AUDITORs
+  - `AUDITOR`: Auditors assigned to a BROKER, can only view their own reports
 - **Audit Logging**: Comprehensive tracking of user actions.
 
 ### Core Features
