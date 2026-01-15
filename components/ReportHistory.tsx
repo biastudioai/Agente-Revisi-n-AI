@@ -191,18 +191,6 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport, onBack }) =
         {/* Filters Section */}
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Patient Search */}
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Buscar por paciente..."
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all"
-                value={patientSearch}
-                onChange={(e) => setPatientSearch(e.target.value)}
-              />
-            </div>
-
             {/* Creator Search (Admin Only) */}
             {isAdmin && (
               <div className="relative">
@@ -216,6 +204,18 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport, onBack }) =
                 />
               </div>
             )}
+
+            {/* Patient Search */}
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Buscar por paciente..."
+                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all"
+                value={patientSearch}
+                onChange={(e) => setPatientSearch(e.target.value)}
+              />
+            </div>
 
             {/* Broker Checkbox Filter */}
             <div className="relative">
