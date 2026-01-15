@@ -10,6 +10,9 @@ interface Plan {
   extraReportPriceMxn: number;
   extraReportPricePromotionMxn: number;
   promotionDurationMonths: number;
+  maxBrokers: number;
+  maxAuditors: number;
+  benefits: string[];
 }
 
 interface Subscription {
@@ -220,6 +223,12 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, currentS
                       <span className="text-gray-500 text-sm"> incluidos/mes</span>
                     </div>
                   </li>
+                  {plan.benefits?.map((benefit, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <Check className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                      <span className="text-gray-700 text-sm">{benefit}</span>
+                    </li>
+                  ))}
                   <li className="flex items-start gap-2">
                     <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
                     <div>
