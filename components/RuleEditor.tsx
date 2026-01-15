@@ -17,6 +17,13 @@ import {
   getPreviewResult
 } from '../services/rule-validator';
 import { getPathsByProvider, PROVIDER_REGISTRY } from '../providers';
+import { 
+  SEVERITY_POINTS_RANGES, 
+  getDefaultPointsForLevel, 
+  getPointsRangeForLevel,
+  adjustPointsForLevelChange,
+  SeverityLevel 
+} from '../services/severity-points';
 
 const PROVIDER_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   ALL: { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-300' },
@@ -81,7 +88,7 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
         setName('');
         setDescription('');
         setLevel('MODERADO');
-        setPoints(10);
+        setPoints(getDefaultPointsForLevel('MODERADO'));
         setProviderTargets(['ALL']);
         setFieldMappings({});
         setNormalizedFieldName('');
@@ -393,7 +400,12 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
               <div className="relative">
                 <select
                   value={level}
-                  onChange={(e) => setLevel(e.target.value as ScoringRule['level'])}
+                  onChange={(e) => {
+                    const newLevel = e.target.value as SeverityLevel;
+                    setLevel(newLevel);
+                    const adjustedPoints = adjustPointsForLevelChange(points, newLevel);
+                    setPoints(adjustedPoints);
+                  }}
                   className={`w-full appearance-none px-3 py-2 pr-8 border rounded-lg text-sm font-medium cursor-pointer ${getLevelColor(level)}`}
                 >
                   <option value="CRÍTICO">CRÍTICO</option>
@@ -408,13 +420,21 @@ const RuleEditor: React.FC<RuleEditorProps> = ({
             <div>
               <label className="block text-xs font-bold text-slate-600 mb-1.5">
                 Puntos a Deducir
+                <span className="font-normal text-slate-400 ml-1">
+                  ({getPointsRangeForLevel(level as SeverityLevel).min}-{getPointsRangeForLevel(level as SeverityLevel).max})
+                </span>
               </label>
               <input
                 type="number"
-                min="0"
-                max="100"
+                min={getPointsRangeForLevel(level as SeverityLevel).min}
+                max={getPointsRangeForLevel(level as SeverityLevel).max}
                 value={points}
-                onChange={(e) => setPoints(parseInt(e.target.value) || 0)}
+                onChange={(e) => {
+                  const newPoints = parseInt(e.target.value) || 0;
+                  const range = getPointsRangeForLevel(level as SeverityLevel);
+                  const clampedPoints = Math.max(range.min, Math.min(range.max, newPoints));
+                  setPoints(clampedPoints);
+                }}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono focus:ring-2 focus:ring-brand-200 outline-none"
               />
             </div>
