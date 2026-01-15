@@ -4,7 +4,7 @@ import ScoreCard from './ScoreCard';
 import DateInput from './DateInput';
 import ReviewModal from './ReviewModal';
 import { getProviderTheme } from '../providers';
-import { RotateCcw, Activity, User, FileText, Hospital, Users, PenTool, ShieldCheck, HeartPulse, ClipboardList, BadgeCheck, Building2, Stethoscope, Syringe, Save } from 'lucide-react';
+import { RotateCcw, Activity, User, FileText, Hospital, Users, PenTool, ShieldCheck, HeartPulse, ClipboardList, BadgeCheck, Stethoscope, Syringe, Save } from 'lucide-react';
 import { RuleVersionInfo } from './RuleVersionIndicator';
 
 interface DashboardProps {
@@ -324,18 +324,13 @@ const Dashboard: React.FC<DashboardProps> = ({
       <ReviewModal isOpen={isReviewModalOpen} onClose={() => setIsReviewModalOpen(false)} report={{ ...report, extracted: formData }} />
 
       <div className={`border-b px-6 py-4 flex justify-between items-center shrink-0 ${theme.border} ${theme.light}`}>
-         <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg shadow-md ${theme.primary}`}>
-                <Building2 className="w-5 h-5 text-white" />
-            </div>
-            <div>
-                <h1 className="text-lg font-black text-slate-900 leading-none tracking-tight">
-                    INFORME <span className={theme.secondary}>{provider}</span>
-                </h1>
-                <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest">
-                    {provider === 'METLIFE' ? 'Mapeo por Secciones 1-7' : provider === 'NYLIFE' ? 'Formato NY Life Monterrey' : 'Formato Estándar GNP'}
-                </p>
-            </div>
+         <div>
+            <h1 className="text-lg font-black text-slate-900 leading-none tracking-tight">
+                INFORME <span className={theme.secondary}>{provider}</span>
+            </h1>
+            <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest">
+                {provider === 'METLIFE' ? 'Mapeo por Secciones 1-7' : provider === 'NYLIFE' ? 'Formato NY Life Monterrey' : 'Formato Estándar GNP'}
+            </p>
          </div>
          <div className="flex items-center gap-2">
              <button onClick={() => setViewMode(prev => prev === 'form' ? 'text' : 'form')} className="px-3 py-1.5 border rounded-lg text-xs font-bold bg-white text-slate-600 border-slate-200 hover:bg-slate-50 shadow-sm">
