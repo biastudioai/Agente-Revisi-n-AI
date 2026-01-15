@@ -16,26 +16,64 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, report }) =>
   const [isSending, setIsSending] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [sentSuccess, setSentSuccess] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   const handleSend = async () => {
     if (!email) return;
     setIsSending(true);
+    setSendError(null);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setIsSending(false);
-    setSentSuccess(true);
-    
-    // Auto close after success
-    setTimeout(() => {
-      setSentSuccess(false);
-      onClose();
-      setEmail('');
-      setComments('');
-    }, 2000);
+    try {
+      const isApprovedStatus = report.score.finalScore >= 85;
+      const isRejectedStatus = report.score.finalScore < 50;
+      
+      let statusText = "REVISIÓN REQUERIDA";
+      if (isApprovedStatus) statusText = "PRE-APROBADO";
+      else if (isRejectedStatus) statusText = "ALTO RIESGO";
+
+      const response = await fetch('/api/reports/send-report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recipientEmail: email,
+          patientName: `${report.extracted.identificacion?.nombres || ''} ${report.extracted.identificacion?.primer_apellido || ''}`.trim() || 'No especificado',
+          hospital: report.extracted.hospital?.nombre_hospital || 'No especificado',
+          doctor: report.extracted.medico_tratante?.nombres || 'No especificado',
+          policyNumber: report.extracted.tramite?.numero_poliza || 'No especificado',
+          score: report.score.finalScore,
+          status: statusText,
+          findings: report.flags.map(f => ({
+            type: f.type,
+            rule: f.rule,
+            message: f.message
+          })),
+          comments: comments || undefined
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setIsSending(false);
+        setSentSuccess(true);
+        
+        setTimeout(() => {
+          setSentSuccess(false);
+          onClose();
+          setEmail('');
+          setComments('');
+        }, 2000);
+      } else {
+        throw new Error(result.error || 'Error al enviar el reporte');
+      }
+    } catch (error) {
+      setIsSending(false);
+      setSendError(error instanceof Error ? error.message : 'Error al enviar el reporte');
+    }
   };
 
   const generateAndDownloadPDF = async () => {
@@ -484,6 +522,16 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, report }) =>
                             />
                         </div>
                     </div>
+
+                    {sendError && (
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
+                            <XCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                            <div>
+                                <p className="text-sm font-semibold text-red-700">Error al enviar</p>
+                                <p className="text-xs text-red-600">{sendError}</p>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         )}
