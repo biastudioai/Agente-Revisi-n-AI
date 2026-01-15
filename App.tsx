@@ -1075,11 +1075,6 @@ const App: React.FC = () => {
           >
             {/* Header Controls for Left Panel */}
             <div className="absolute top-4 left-4 z-20 flex items-center gap-3">
-               <div className="bg-black/60 backdrop-blur text-white text-xs px-3 py-1.5 rounded-full flex items-center border border-white/10 shadow-lg select-none">
-                  {leftPanelView === 'visual' ? <Eye className="w-3.5 h-3.5 mr-2 text-brand-400" /> : <AlignLeft className="w-3.5 h-3.5 mr-2 text-brand-400" />}
-                  <span className="font-medium tracking-wide">Documento Original</span>
-               </div>
-               
                {/* View Toggle */}
                <div className="bg-black/60 backdrop-blur rounded-full flex items-center border border-white/10 shadow-lg p-1">
                   <button 
