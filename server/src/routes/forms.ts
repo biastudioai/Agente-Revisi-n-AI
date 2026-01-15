@@ -90,24 +90,6 @@ router.post(
           res.status(403).json({ error: 'El plan actual de tu broker no incluye auditores. No puedes procesar informes.' });
           return;
         }
-
-        const activeAuditors = await prisma.user.findMany({
-          where: {
-            parentId: user.parentId,
-            rol: UserRole.AUDITOR,
-            isActive: true,
-          },
-          orderBy: { createdAt: 'asc' },
-          select: { id: true },
-        });
-
-        const activeIds = activeAuditors.map(a => a.id);
-        const allowedIds = activeIds.slice(0, planConfig.maxAuditors);
-
-        if (!allowedIds.includes(user.id)) {
-          res.status(403).json({ error: 'Tu cuenta de auditor excede el límite del plan actual. Contacta a tu broker.' });
-          return;
-        }
       }
     }
 

@@ -171,6 +171,37 @@ router.get('/limits', authMiddleware, requireBroker, asyncHandler(async (req: Au
     planName = planConfig.name;
   }
 
+  const activeAuditorsData = await prisma.user.findMany({
+    where: {
+      parentId: userId,
+      rol: UserRole.AUDITOR,
+      isActive: true,
+    },
+    orderBy: { createdAt: 'asc' },
+    select: { id: true },
+  });
+
+  const activeAuditorCount = activeAuditorsData.length;
+
+  if (activeAuditorCount > maxAuditors) {
+    const auditorsToDeactivate = activeAuditorsData.slice(maxAuditors).map(a => a.id);
+    
+    await prisma.user.updateMany({
+      where: {
+        id: { in: auditorsToDeactivate },
+      },
+      data: { isActive: false },
+    });
+
+    await prisma.session.deleteMany({
+      where: {
+        userId: { in: auditorsToDeactivate },
+      },
+    });
+
+    console.log(`Auto-deactivated ${auditorsToDeactivate.length} auditors for broker ${userId} due to plan limit`);
+  }
+
   const totalAuditors = await prisma.user.count({
     where: {
       parentId: userId,
@@ -178,7 +209,7 @@ router.get('/limits', authMiddleware, requireBroker, asyncHandler(async (req: Au
     },
   });
 
-  const activeAuditors = await prisma.user.count({
+  const finalActiveAuditors = await prisma.user.count({
     where: {
       parentId: userId,
       rol: UserRole.AUDITOR,
@@ -188,10 +219,10 @@ router.get('/limits', authMiddleware, requireBroker, asyncHandler(async (req: Au
 
   res.json({
     maxAuditors,
-    currentAuditors: activeAuditors,
+    currentAuditors: finalActiveAuditors,
     totalAuditors,
-    canAddMore: activeAuditors < maxAuditors,
-    hasExcessAuditors: totalAuditors > maxAuditors,
+    canAddMore: finalActiveAuditors < maxAuditors,
+    hasExcessAuditors: totalAuditors > maxAuditors && finalActiveAuditors >= maxAuditors,
     planName,
     isAdmin: false,
   });

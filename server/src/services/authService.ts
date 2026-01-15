@@ -94,7 +94,7 @@ export async function loginUser(data: LoginData): Promise<AuthResult> {
 
   if (user.rol === UserRole.AUDITOR) {
     if (!user.isActive) {
-      throw new Error('Tu cuenta de auditor ha sido desactivada por tu broker. Contacta a tu broker para más información.');
+      throw new Error('Tu cuenta de auditor ha sido desactivada. Contacta a tu broker para más información.');
     }
 
     if (user.parentId) {
@@ -113,23 +113,6 @@ export async function loginUser(data: LoginData): Promise<AuthResult> {
       const planConfig = getPlanConfig(brokerSubscription.planType);
       if (planConfig.maxAuditors === 0) {
         throw new Error('El plan actual de tu broker no incluye auditores. No puedes acceder a tu cuenta.');
-      }
-
-      const activeAuditorsAboveThis = await prisma.user.findMany({
-        where: {
-          parentId: user.parentId,
-          rol: UserRole.AUDITOR,
-          isActive: true,
-        },
-        orderBy: { createdAt: 'asc' },
-        select: { id: true },
-      });
-
-      const activeIds = activeAuditorsAboveThis.map(a => a.id);
-      const allowedIds = activeIds.slice(0, planConfig.maxAuditors);
-
-      if (!allowedIds.includes(user.id)) {
-        throw new Error('Tu cuenta de auditor excede el límite del plan actual. Contacta a tu broker para reactivar tu cuenta.');
       }
     }
   }
