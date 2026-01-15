@@ -268,23 +268,28 @@ const AuditorManager: React.FC<AuditorManagerProps> = ({ isOpen, onClose, onOpen
             </div>
           ) : (
             <>
-              {limits && !limits.isAdmin && (
-                <div className="mb-4 p-3 bg-slate-100 border border-slate-200 rounded-lg">
+              {limits && !limits.isAdmin && limits.maxAuditors > 0 && (
+                <div className="mb-4 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-slate-600" />
-                      <span className="text-sm text-slate-700">
-                        <strong>{limits.currentAuditors}</strong> de <strong>{limits.maxAuditors}</strong> auditores utilizados
-                      </span>
-                      <span className="text-xs text-slate-500">({limits.planName})</span>
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-indigo-100 rounded-lg">
+                        <Users className="w-5 h-5 text-indigo-600" />
+                      </div>
+                      <div>
+                        <span className="text-lg font-bold text-indigo-800">
+                          {limits.currentAuditors}/{limits.maxAuditors}
+                        </span>
+                        <span className="text-sm text-indigo-600 ml-2">perfiles de auditor</span>
+                        <p className="text-xs text-slate-500">{limits.planName}</p>
+                      </div>
                     </div>
-                    {!limits.canAddMore && limits.maxAuditors > 0 && onOpenPlans && (
+                    {!limits.canAddMore && onOpenPlans && (
                       <button
                         onClick={() => {
                           onClose();
                           onOpenPlans();
                         }}
-                        className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors"
                       >
                         <TrendingUp className="w-3 h-3" />
                         Mejorar plan

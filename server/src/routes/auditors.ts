@@ -4,7 +4,7 @@ import { authMiddleware, AuthenticatedRequest, requireBroker } from '../middlewa
 import { createAuditLog, getClientIP } from '../middlewares/audit';
 import prisma from '../config/database';
 import bcrypt from 'bcrypt';
-import { UserRole, PlanType } from '../generated/prisma';
+import { UserRole, PlanType, SubscriptionStatus } from '../generated/prisma';
 import { getPlanConfig, PLAN_CONFIGS } from '../config/plans';
 
 const router = Router();
@@ -155,7 +155,7 @@ router.get('/limits', authMiddleware, requireBroker, asyncHandler(async (req: Au
   const subscription = await prisma.subscription.findFirst({
     where: {
       userId,
-      status: { in: ['active', 'trialing'] },
+      status: { in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING] },
     },
     orderBy: { createdAt: 'desc' },
   });
@@ -204,7 +204,7 @@ router.post('/', authMiddleware, requireBroker, asyncHandler(async (req: Authent
     const subscription = await prisma.subscription.findFirst({
       where: {
         userId: parentId,
-        status: { in: ['active', 'trialing'] },
+        status: { in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING] },
       },
       orderBy: { createdAt: 'desc' },
     });
