@@ -105,9 +105,9 @@ function generateEmailHTML(data: ReportEmailData): string {
   <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
     
     <!-- Header -->
-    <div style="background: linear-gradient(135deg, #1A2B56 0%, #2d4a8a 100%); padding: 30px; text-align: center; border-radius: 16px 16px 0 0;">
+    <div style="background: #ffffff; padding: 30px; text-align: center; border-radius: 16px 16px 0 0; border: 1px solid #e2e8f0; border-bottom: none;">
       <img src="cid:veryka-logo" alt="Veryka.ai" style="max-width: 180px; height: auto; margin-bottom: 12px;" />
-      <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.8); font-size: 14px;">Reporte de Auditoría Médica</p>
+      <p style="margin: 8px 0 0 0; color: #64748b; font-size: 14px;">Reporte de Auditoría Médica</p>
     </div>
     
     <!-- Main Content -->
