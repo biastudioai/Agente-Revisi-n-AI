@@ -94,15 +94,24 @@ router.post(
     const primaryDomain = replitDomains.split(',')[0]?.trim();
     const baseUrl = primaryDomain ? `https://${primaryDomain}` : `${req.headers['x-forwarded-proto'] || req.protocol}://${req.get('host')}`;
 
-    const session = await subscriptionService.createCheckoutSession(
-      userId,
-      email,
-      planType as PlanType,
-      `${baseUrl}/?subscription=success`,
-      `${baseUrl}/?subscription=cancelled`
-    );
+    try {
+      const session = await subscriptionService.createCheckoutSession(
+        userId,
+        email,
+        planType as PlanType,
+        `${baseUrl}/?subscription=success`,
+        `${baseUrl}/?subscription=cancelled`
+      );
 
-    res.json({ url: session.url });
+      res.json({ url: session.url });
+    } catch (error: any) {
+      // Return user-friendly error for active subscription
+      if (error.message.includes('suscripción activa')) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+      throw error;
+    }
   })
 );
 
@@ -178,6 +187,22 @@ router.post(
     }
 
     const result = await subscriptionService.syncStripeSubscriptions();
+    res.json(result);
+  })
+);
+
+router.post(
+  '/cancel-duplicates',
+  requireAuth,
+  expressAsyncHandler(async (req: Request, res: Response) => {
+    const userRol = (req as any).user?.rol;
+
+    if (userRol !== 'ADMIN') {
+      res.status(403).json({ error: 'Solo administradores pueden cancelar suscripciones duplicadas' });
+      return;
+    }
+
+    const result = await subscriptionService.cancelDuplicateStripeSubscriptions();
     res.json(result);
   })
 );

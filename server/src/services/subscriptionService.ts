@@ -41,6 +41,18 @@ export class SubscriptionService {
     successUrl: string,
     cancelUrl: string
   ) {
+    // Check if user already has an active subscription
+    const existingSubscription = await prisma.subscription.findFirst({
+      where: {
+        userId,
+        status: SubscriptionStatus.ACTIVE,
+      },
+    });
+
+    if (existingSubscription) {
+      throw new Error('Ya tienes una suscripción activa. Por favor administra tu suscripción actual antes de crear una nueva.');
+    }
+
     const stripe = await getUncachableStripeClient();
     const customerId = await this.getOrCreateCustomer(userId, email);
     const planConfig = PLAN_CONFIGS[planType];
@@ -108,6 +120,50 @@ export class SubscriptionService {
 
     if (!stripeCustomer) {
       throw new Error(`Customer not found: ${customerId}`);
+    }
+
+    // Check if this exact subscription already exists in our database
+    const existingThisSubscription = await prisma.subscription.findUnique({
+      where: { stripeSubscriptionId },
+    });
+
+    if (existingThisSubscription) {
+      console.log(`Subscription ${stripeSubscriptionId} already exists in database, skipping creation`);
+      return;
+    }
+
+    // Find and cancel any existing ACTIVE subscriptions for this user in Stripe
+    const existingActiveSubscriptions = await prisma.subscription.findMany({
+      where: {
+        userId: stripeCustomer.userId,
+        status: SubscriptionStatus.ACTIVE,
+      },
+    });
+
+    for (const existingSub of existingActiveSubscriptions) {
+      try {
+        // Cancel the old subscription in Stripe
+        await stripe.subscriptions.cancel(existingSub.stripeSubscriptionId);
+        console.log(`Cancelled previous Stripe subscription ${existingSub.stripeSubscriptionId} for user ${stripeCustomer.userId}`);
+        
+        // Update our database
+        await prisma.subscription.update({
+          where: { id: existingSub.id },
+          data: { status: SubscriptionStatus.CANCELED },
+        });
+      } catch (error: any) {
+        // If cancellation fails and it's not because the subscription is already canceled/missing, abort
+        if (error.code !== 'resource_missing' && error.raw?.code !== 'resource_missing') {
+          console.error(`Failed to cancel subscription ${existingSub.stripeSubscriptionId}: ${error.message}`);
+          throw new Error(`No se pudo cancelar la suscripción anterior. Por favor contacte a soporte.`);
+        }
+        // If resource is missing, just mark it as canceled in our database
+        await prisma.subscription.update({
+          where: { id: existingSub.id },
+          data: { status: SubscriptionStatus.CANCELED },
+        });
+        console.log(`Subscription ${existingSub.stripeSubscriptionId} already canceled in Stripe, marked as canceled in database`);
+      }
     }
 
     const now = new Date();
@@ -361,6 +417,43 @@ export class SubscriptionService {
     });
 
     return paymentIntent;
+  }
+
+  async cancelDuplicateStripeSubscriptions(): Promise<{ cancelled: number; errors: string[] }> {
+    const stripe = await getUncachableStripeClient();
+    const errors: string[] = [];
+    let cancelled = 0;
+
+    // Find all subscriptions marked as CANCELED in our database that might still be active in Stripe
+    const canceledSubscriptions = await prisma.subscription.findMany({
+      where: {
+        status: SubscriptionStatus.CANCELED,
+      },
+      select: {
+        stripeSubscriptionId: true,
+        userId: true,
+      },
+    });
+
+    for (const sub of canceledSubscriptions) {
+      try {
+        const stripeSub = await stripe.subscriptions.retrieve(sub.stripeSubscriptionId);
+        
+        // If the subscription is still active in Stripe, cancel it
+        if (stripeSub.status === 'active' || stripeSub.status === 'trialing') {
+          await stripe.subscriptions.cancel(sub.stripeSubscriptionId);
+          cancelled++;
+          console.log(`Cancelled duplicate Stripe subscription ${sub.stripeSubscriptionId} for user ${sub.userId}`);
+        }
+      } catch (error: any) {
+        // Subscription might not exist in Stripe anymore, which is fine
+        if (error.code !== 'resource_missing') {
+          errors.push(`Failed to cancel ${sub.stripeSubscriptionId}: ${error.message}`);
+        }
+      }
+    }
+
+    return { cancelled, errors };
   }
 
   async syncStripeSubscriptions(): Promise<{ synced: number; errors: string[] }> {
