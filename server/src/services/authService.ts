@@ -36,11 +36,19 @@ export class NoSubscriptionError extends Error {
     nombre: string;
     rol: string;
   };
+  sessionToken: string;
+  expiresAt: Date;
   code: string = 'NO_SUBSCRIPTION';
   
-  constructor(user: { id: string; email: string; nombre: string; rol: string }) {
+  constructor(
+    user: { id: string; email: string; nombre: string; rol: string },
+    sessionToken: string,
+    expiresAt: Date
+  ) {
     super('No tienes una suscripción activa. Por favor, contrata un plan para acceder a la plataforma.');
     this.user = user;
+    this.sessionToken = sessionToken;
+    this.expiresAt = expiresAt;
     this.name = 'NoSubscriptionError';
   }
 }
@@ -154,12 +162,16 @@ export async function loginUser(data: LoginData): Promise<AuthResult> {
         },
       });
 
-      throw new NoSubscriptionError({
-        id: user.id,
-        email: user.email,
-        nombre: user.nombre,
-        rol: user.rol,
-      });
+      throw new NoSubscriptionError(
+        {
+          id: user.id,
+          email: user.email,
+          nombre: user.nombre,
+          rol: user.rol,
+        },
+        sessionToken,
+        expiresAt
+      );
     }
   }
 
