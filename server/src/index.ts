@@ -13,7 +13,7 @@ import auditorsRoutes from './routes/auditors';
 import prisma from './config/database';
 import { registerObjectStorageRoutes } from '../replit_integrations/object_storage';
 import { runMigrations } from 'stripe-replit-sync';
-import { getStripeSync } from './services/stripeClient';
+import { getStripeSync, getUncachableStripeClient } from './services/stripeClient';
 import { WebhookHandlers } from './services/webhookHandlers';
 import { subscriptionService } from './services/subscriptionService';
 import { discountCodeService } from './services/discountCodeService';
@@ -86,22 +86,39 @@ app.post(
         console.log(`Invoice payment failed for customer: ${event.data.object.customer}`);
         await subscriptionService.handleInvoicePaymentFailed(event.data.object.customer);
       } else if (event.type === 'checkout.session.completed') {
-        const session = event.data.object;
-        console.log(`Checkout session completed: ${session.id}`);
+        const sessionFromEvent = event.data.object as any;
+        console.log(`Checkout session completed: ${sessionFromEvent.id}`);
         
-        if (session.total_details?.breakdown?.discounts?.length > 0) {
-          const discount = session.total_details.breakdown.discounts[0];
-          const promoCodeId = discount.discount?.promotion_code;
+        // Retrieve the full session with expanded data to get discount info
+        const stripe = await getUncachableStripeClient();
+        const session = await stripe.checkout.sessions.retrieve(sessionFromEvent.id, {
+          expand: ['discounts', 'total_details.breakdown'],
+        });
+        
+        console.log(`Session discounts:`, JSON.stringify(session.discounts, null, 2));
+        console.log(`Session total_details:`, JSON.stringify(session.total_details, null, 2));
+        
+        // Check for applied discounts - Stripe puts them in session.discounts array
+        if (session.discounts && session.discounts.length > 0) {
+          const discountObj = session.discounts[0] as any;
+          // discountObj can be a string (promo code ID) or an object with promotion_code
+          const promoCodeId = typeof discountObj === 'string' 
+            ? discountObj 
+            : (discountObj.promotion_code || discountObj);
+          
+          console.log(`Promo code ID from session: ${promoCodeId}, userId: ${session.metadata?.userId}`);
           
           if (promoCodeId && session.metadata?.userId) {
-            console.log(`Promo code used: ${promoCodeId} by user ${session.metadata.userId}`);
             try {
               const discountCode = await discountCodeService.findByStripePromoCodeId(promoCodeId);
+              console.log(`Found discount code in DB:`, discountCode ? discountCode.code : 'not found');
+              
               if (discountCode) {
+                const amountDiscounted = (session.total_details as any)?.amount_discount || 0;
                 await discountCodeService.recordUsage(
                   discountCode.id,
                   session.metadata.userId,
-                  discount.amount
+                  amountDiscounted
                 );
                 console.log(`Discount code usage recorded: ${discountCode.code} by user ${session.metadata.userId}`);
               }
