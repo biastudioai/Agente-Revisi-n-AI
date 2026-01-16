@@ -57,6 +57,7 @@ model User {
   subscriptions   Subscription[]
   paymentHistory  PaymentHistory[]
   usageRecords    UsageRecord[]
+  discountCodeUsages DiscountCodeUsage[]
 
   @@index([parentId])
   @@index([aseguradoraId])
@@ -304,4 +305,53 @@ model RuleChangeLog {
   @@index([versionNumber])
   @@index([createdAt])
   @@map("rule_change_logs")
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+enum DiscountUsageType {
+  SINGLE_USE
+  TIME_PERIOD
+}
+
+model DiscountCode {
+  id                 String            @id @default(uuid())
+  code               String            @unique
+  description        String?
+  discountType       DiscountType      @map("discount_type")
+  discountValue      Int               @map("discount_value")
+  usageType          DiscountUsageType @map("usage_type")
+  maxRedemptions     Int?              @map("max_redemptions")
+  timesRedeemed      Int               @default(0) @map("times_redeemed")
+  validFrom          DateTime?         @map("valid_from")
+  validUntil         DateTime?         @map("valid_until")
+  isActive           Boolean           @default(true) @map("is_active")
+  stripeCouponId     String            @unique @map("stripe_coupon_id")
+  stripePromoCodeId  String            @unique @map("stripe_promo_code_id")
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+
+  usages             DiscountCodeUsage[]
+
+  @@index([code])
+  @@index([isActive])
+  @@map("discount_codes")
+}
+
+model DiscountCodeUsage {
+  id              String       @id @default(uuid())
+  discountCodeId  String       @map("discount_code_id")
+  userId          String       @map("user_id")
+  usedAt          DateTime     @default(now()) @map("used_at")
+  amountDiscounted Int?        @map("amount_discounted")
+
+  discountCode    DiscountCode @relation(fields: [discountCodeId], references: [id], onDelete: Cascade)
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([discountCodeId, userId])
+  @@index([userId])
+  @@map("discount_code_usages")
 }

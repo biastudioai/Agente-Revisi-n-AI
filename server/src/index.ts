@@ -16,6 +16,7 @@ import { runMigrations } from 'stripe-replit-sync';
 import { getStripeSync } from './services/stripeClient';
 import { WebhookHandlers } from './services/webhookHandlers';
 import { subscriptionService } from './services/subscriptionService';
+import { discountCodeService } from './services/discountCodeService';
 import { PlanType } from './generated/prisma';
 
 const app = express();
@@ -84,6 +85,31 @@ app.post(
       } else if (event.type === 'invoice.payment_failed') {
         console.log(`Invoice payment failed for customer: ${event.data.object.customer}`);
         await subscriptionService.handleInvoicePaymentFailed(event.data.object.customer);
+      } else if (event.type === 'checkout.session.completed') {
+        const session = event.data.object;
+        console.log(`Checkout session completed: ${session.id}`);
+        
+        if (session.total_details?.breakdown?.discounts?.length > 0) {
+          const discount = session.total_details.breakdown.discounts[0];
+          const promoCodeId = discount.discount?.promotion_code;
+          
+          if (promoCodeId && session.metadata?.userId) {
+            console.log(`Promo code used: ${promoCodeId} by user ${session.metadata.userId}`);
+            try {
+              const discountCode = await discountCodeService.findByStripePromoCodeId(promoCodeId);
+              if (discountCode) {
+                await discountCodeService.recordUsage(
+                  discountCode.id,
+                  session.metadata.userId,
+                  discount.amount
+                );
+                console.log(`Discount code usage recorded: ${discountCode.code} by user ${session.metadata.userId}`);
+              }
+            } catch (error: any) {
+              console.error(`Error recording discount code usage: ${error.message}`);
+            }
+          }
+        }
       }
 
       res.status(200).json({ received: true });

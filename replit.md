@@ -51,6 +51,15 @@ Preferred communication style: Simple, everyday language.
   - **Plan Empresarial** ($2,999/mes): 1 Broker + 10 auditores, 170 informes/mes (340 en promo), soporte personalizado, capacitación inicial
   Promotional offers, extra report charges, and usage tracking. Administrators have unlimited access and a dedicated billing dashboard.
   - **Usage Tracking Based on Stripe Billing Periods**: The UsageRecord model includes a `periodStart` field that stores the Stripe billing period start date. When a subscription renews or a new subscription starts (even in the same calendar month), the system detects that `currentPeriodStart` from Stripe is newer than the stored `periodStart` and automatically resets the usage counters (reportsUsed, extraReportsUsed, extraChargesMxn). This ensures accurate billing per Stripe period, not calendar month. Uses database transactions to prevent race conditions.
+  - **Discount Code System**: Admins can create and manage discount codes from the billing dashboard:
+    - Codes can be percentage-based (e.g., 20% off) or fixed amount (e.g., $100 MXN off)
+    - Two usage types: Single Use (limited by quantity) or Time Period (valid until a date)
+    - Each code can only be used once per user account (enforced by database unique constraint)
+    - Discounts apply only for one month (Stripe coupon duration: 'once')
+    - Integrated with Stripe Coupons and Promotion Codes
+    - Users enter codes directly in Stripe Checkout's payment page (allow_promotion_codes: true)
+    - Webhook records usage when checkout completes with a discount applied
+    - Database models: DiscountCode (stores code details + Stripe IDs), DiscountCodeUsage (tracks per-user redemptions)
   - **Subscription Change Management**:
     - **Upgrades**: Applied immediately with new checkout, old subscription cancelled, used reports transferred to new plan
     - **Downgrades**: Scheduled for period end using `cancel_at_period_end`, applied when period ends
