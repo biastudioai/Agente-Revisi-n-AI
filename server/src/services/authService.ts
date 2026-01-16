@@ -29,6 +29,22 @@ export interface AuthResult {
   expiresAt: Date;
 }
 
+export class NoSubscriptionError extends Error {
+  user: {
+    id: string;
+    email: string;
+    nombre: string;
+    rol: string;
+  };
+  code: string = 'NO_SUBSCRIPTION';
+  
+  constructor(user: { id: string; email: string; nombre: string; rol: string }) {
+    super('No tienes una suscripción activa. Por favor, contrata un plan para acceder a la plataforma.');
+    this.user = user;
+    this.name = 'NoSubscriptionError';
+  }
+}
+
 export async function registerUser(data: RegisterData): Promise<AuthResult> {
   const existingUser = await prisma.user.findUnique({
     where: { email: data.email.toLowerCase() },
@@ -127,7 +143,23 @@ export async function loginUser(data: LoginData): Promise<AuthResult> {
     });
 
     if (!subscription) {
-      throw new Error('No tienes una suscripción activa. Por favor, contrata un plan para acceder a la plataforma.');
+      const sessionToken = generateSessionToken();
+      const expiresAt = getSessionExpiry(7);
+
+      await prisma.session.create({
+        data: {
+          userId: user.id,
+          sessionToken,
+          expiresAt,
+        },
+      });
+
+      throw new NoSubscriptionError({
+        id: user.id,
+        email: user.email,
+        nombre: user.nombre,
+        rol: user.rol,
+      });
     }
   }
 

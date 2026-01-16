@@ -6,7 +6,8 @@ import {
   logoutUser, 
   requestPasswordReset, 
   resetPassword,
-  validateSession
+  validateSession,
+  NoSubscriptionError
 } from '../services/authService';
 import { authMiddleware, AuthenticatedRequest } from '../middlewares/auth';
 import { createAuditLog, getClientIP } from '../middlewares/audit';
@@ -90,6 +91,14 @@ router.post('/login', asyncHandler(async (req: AuthenticatedRequest, res: Respon
       user: result.user,
     });
   } catch (error) {
+    if (error instanceof NoSubscriptionError) {
+      res.status(403).json({ 
+        error: error.message,
+        code: error.code,
+        user: error.user
+      });
+      return;
+    }
     const errorMessage = (error as Error).message;
     if (errorMessage === 'Invalid credentials') {
       res.status(401).json({ error: 'Credenciales inválidas' });

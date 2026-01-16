@@ -1,12 +1,26 @@
-import React, { useState } from 'react';
-import { Stethoscope, Mail, Lock, Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Mail, Lock, Eye, EyeOff, Loader2, ArrowLeft, Check, Sparkles, Crown, Building2, AlertTriangle, CreditCard } from 'lucide-react';
 
 interface LoginPageProps {
   onLoginSuccess: (user: { id: string; email: string; nombre: string; rol: string }) => void;
   blockedMessage?: string | null;
 }
 
-type View = 'login' | 'forgot-password' | 'reset-password';
+interface Plan {
+  planType: string;
+  name: string;
+  priceMonthlyMxn: number;
+  reportsIncluded: number;
+  reportsIncludedPromotion: number;
+  extraReportPriceMxn: number;
+  extraReportPricePromotionMxn: number;
+  promotionDurationMonths: number;
+  maxBrokers: number;
+  maxAuditors: number;
+  benefits: string[];
+}
+
+type View = 'login' | 'forgot-password' | 'reset-password' | 'select-plan';
 
 const API_URL = '/api';
 
@@ -24,8 +38,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, blockedMessage })
   const [resetToken, setResetToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [plansLoading, setPlansLoading] = useState(false);
+  const [planActionLoading, setPlanActionLoading] = useState<string | null>(null);
+  const [pendingUser, setPendingUser] = useState<{ id: string; email: string; nombre: string; rol: string } | null>(null);
+  const [noSubscriptionMode, setNoSubscriptionMode] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
     if (token) {
@@ -34,6 +54,21 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, blockedMessage })
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
+
+  const fetchPlans = async () => {
+    setPlansLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/stripe/plans`);
+      if (response.ok) {
+        const data = await response.json();
+        setPlans(data.plans);
+      }
+    } catch (e) {
+      console.error('Error fetching plans:', e);
+    } finally {
+      setPlansLoading(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +86,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, blockedMessage })
       const data = await response.json();
 
       if (!response.ok) {
+        if (data.code === 'NO_SUBSCRIPTION' && data.user) {
+          setPendingUser(data.user);
+          setNoSubscriptionMode(true);
+          setView('select-plan');
+          fetchPlans();
+          return;
+        }
         throw new Error(data.error || 'Error al iniciar sesión');
       }
 
@@ -81,7 +123,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, blockedMessage })
         throw new Error(data.error || 'Error al registrarse');
       }
 
-      onLoginSuccess(data.user);
+      setPendingUser(data.user);
+      setNoSubscriptionMode(false);
+      setView('select-plan');
+      fetchPlans();
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -156,6 +201,226 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, blockedMessage })
       setIsLoading(false);
     }
   };
+
+  const handleSubscribe = async (planType: string) => {
+    setPlanActionLoading(planType);
+    setError(null);
+    
+    try {
+      const response = await fetch(`${API_URL}/stripe/create-checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ planType }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.url) {
+          window.location.href = data.url;
+        }
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || 'Error al crear la suscripción');
+      }
+    } catch (e) {
+      console.error('Error creating checkout:', e);
+      setError('Error al procesar el pago');
+    } finally {
+      setPlanActionLoading(null);
+    }
+  };
+
+  const getPlanIcon = (planType: string) => {
+    switch (planType) {
+      case 'PLAN_1':
+        return <Sparkles className="w-6 h-6" />;
+      case 'PLAN_2':
+        return <Crown className="w-6 h-6" />;
+      case 'PLAN_3':
+        return <Building2 className="w-6 h-6" />;
+      default:
+        return <Sparkles className="w-6 h-6" />;
+    }
+  };
+
+  const getPlanColor = (planType: string) => {
+    switch (planType) {
+      case 'PLAN_1':
+        return 'from-blue-500 to-blue-600';
+      case 'PLAN_2':
+        return 'from-purple-500 to-purple-600';
+      case 'PLAN_3':
+        return 'from-amber-500 to-amber-600';
+      default:
+        return 'from-gray-500 to-gray-600';
+    }
+  };
+
+  const renderPlanSelection = () => (
+    <div className="w-full max-w-5xl">
+      <div className="text-center mb-8">
+        <img src="/attached_assets/Veryka_Logo_1767919213039.png" alt="Veryka.ai" className="h-16 mx-auto mb-4" />
+        
+        {noSubscriptionMode ? (
+          <>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+              <div className="flex items-center justify-center gap-2 text-amber-700 mb-2">
+                <AlertTriangle className="w-5 h-5" />
+                <span className="font-medium">Tu suscripción ha expirado</span>
+              </div>
+              <p className="text-amber-600 text-sm">
+                Hola {pendingUser?.nombre || pendingUser?.email}, para continuar usando Veryka.ai necesitas elegir un plan.
+              </p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
+              <div className="flex items-center justify-center gap-2 text-green-700 mb-2">
+                <Check className="w-5 h-5" />
+                <span className="font-medium">¡Cuenta creada exitosamente!</span>
+              </div>
+              <p className="text-green-600 text-sm">
+                Bienvenido {pendingUser?.nombre || pendingUser?.email}, elige un plan para comenzar a usar Veryka.ai
+              </p>
+            </div>
+          </>
+        )}
+        
+        <h2 className="text-2xl font-bold text-gray-800">Elige tu Plan</h2>
+        <p className="text-gray-600 mt-2">
+          Selecciona el plan que mejor se adapte a tus necesidades
+        </p>
+        <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full text-sm font-medium">
+          <Sparkles className="w-4 h-4" />
+          Promoción: ¡Doble de informes durante 3 meses!
+        </div>
+      </div>
+
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg text-center flex items-center justify-center gap-2">
+          <AlertTriangle className="w-5 h-5" />
+          {error}
+        </div>
+      )}
+
+      {plansLoading ? (
+        <div className="flex items-center justify-center p-8">
+          <Loader2 className="w-8 h-8 animate-spin text-[#00D1E0]" />
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-3 gap-6">
+          {plans.map((plan) => {
+            const planColor = getPlanColor(plan.planType);
+
+            return (
+              <div
+                key={plan.planType}
+                className="relative rounded-xl border-2 border-gray-200 overflow-hidden transition-all hover:border-[#00D1E0] hover:shadow-lg bg-white"
+              >
+                <div className={`bg-gradient-to-r ${planColor} text-white p-6`}>
+                  <div className="flex items-center gap-3 mb-2">
+                    {getPlanIcon(plan.planType)}
+                    <h3 className="text-xl font-bold">{plan.name}</h3>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-bold">${plan.priceMonthlyMxn.toLocaleString()}</span>
+                    <span className="text-white/80">MXN/mes</span>
+                  </div>
+                </div>
+
+                <div className="p-6">
+                  <ul className="space-y-3 mb-6">
+                    <li className="flex items-start gap-2">
+                      <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-medium text-gray-800">{plan.reportsIncluded} informes</span>
+                        <span className="text-gray-500 text-sm"> incluidos/mes</span>
+                      </div>
+                    </li>
+                    {plan.maxAuditors > 0 && (
+                      <li className="flex items-start gap-2">
+                        <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="font-medium text-gray-800">{plan.maxAuditors} auditores</span>
+                          <span className="text-gray-500 text-sm"> incluidos</span>
+                        </div>
+                      </li>
+                    )}
+                    {plan.benefits && plan.benefits.length > 0 ? (
+                      plan.benefits.map((benefit, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <Check className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
+                          <span className="text-gray-700 text-sm">{benefit}</span>
+                        </li>
+                      ))
+                    ) : null}
+                    <li className="flex items-start gap-2">
+                      <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-medium text-gray-800">${plan.extraReportPriceMxn} MXN</span>
+                        <span className="text-gray-500 text-sm"> por informe extra</span>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-2 bg-green-50 -mx-2 px-2 py-1 rounded">
+                      <Sparkles className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-medium text-green-700">{plan.reportsIncludedPromotion} informes</span>
+                        <span className="text-green-600 text-sm"> por 3 meses</span>
+                      </div>
+                    </li>
+                  </ul>
+
+                  <button
+                    onClick={() => handleSubscribe(plan.planType)}
+                    disabled={planActionLoading === plan.planType}
+                    className={`w-full py-3 rounded-[14px] font-medium transition-all bg-gradient-to-r ${planColor} text-white hover:opacity-90 flex items-center justify-center gap-2`}
+                  >
+                    {planActionLoading === plan.planType ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <>
+                        <CreditCard className="w-5 h-5" />
+                        Suscribirse
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="mt-8 text-center">
+        <button
+          onClick={() => {
+            setView('login');
+            setPendingUser(null);
+            setNoSubscriptionMode(false);
+            setError(null);
+          }}
+          className="text-gray-500 hover:text-gray-700 transition-colors flex items-center gap-2 mx-auto"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Volver al inicio de sesión
+        </button>
+      </div>
+
+      <p className="text-center text-gray-500 text-sm mt-6">
+        © {new Date().getFullYear()} Veryka.ai
+      </p>
+    </div>
+  );
+
+  if (view === 'select-plan') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#F8FAFC] via-white to-[#e8f7f8] flex items-center justify-center p-4">
+        {renderPlanSelection()}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F8FAFC] via-white to-[#e8f7f8] flex items-center justify-center p-4">
