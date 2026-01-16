@@ -50,6 +50,7 @@ Preferred communication style: Simple, everyday language.
   - **Plan Profesional** ($999/mes): 1 Broker + 3 auditores, 55 informes/mes (110 en promo), soporte prioritario, dashboard de estadísticas
   - **Plan Empresarial** ($2,999/mes): 1 Broker + 10 auditores, 170 informes/mes (340 en promo), soporte personalizado, capacitación inicial
   Promotional offers, extra report charges, and usage tracking. Administrators have unlimited access and a dedicated billing dashboard.
+  - **Usage Tracking Based on Stripe Billing Periods**: The UsageRecord model includes a `periodStart` field that stores the Stripe billing period start date. When a subscription renews or a new subscription starts (even in the same calendar month), the system detects that `currentPeriodStart` from Stripe is newer than the stored `periodStart` and automatically resets the usage counters (reportsUsed, extraReportsUsed, extraChargesMxn). This ensures accurate billing per Stripe period, not calendar month. Uses database transactions to prevent race conditions.
   - **Subscription Change Management**:
     - **Upgrades**: Applied immediately with new checkout, old subscription cancelled, used reports transferred to new plan
     - **Downgrades**: Scheduled for period end using `cancel_at_period_end`, applied when period ends
