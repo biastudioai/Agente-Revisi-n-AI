@@ -394,6 +394,7 @@ router.get(
   requireAuth,
   expressAsyncHandler(async (req: Request, res: Response) => {
     const userId = (req as any).user?.id;
+    const userRole = (req as any).user?.rol;
     const formId = req.params.id;
 
     if (!userId) {
@@ -402,8 +403,63 @@ router.get(
     }
 
     try {
+      // Obtener usuario actual con sus relaciones para RBAC
+      const currentUser = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          children: {
+            select: { id: true }
+          }
+        }
+      });
+
+      if (!currentUser) {
+        res.status(401).json({ error: 'Usuario no encontrado' });
+        return;
+      }
+
+      // Construir filtro según rol (RBAC) - misma lógica que /reports
+      let whereCondition: any = { id: formId };
+
+      switch (userRole) {
+        case 'ADMIN':
+          // ADMIN: puede ver cualquier informe
+          // Solo necesita el ID
+          break;
+
+        case 'ASEGURADORA':
+          // ASEGURADORA: solo puede ver informes de su aseguradora
+          if (currentUser.aseguradoraId) {
+            const aseguradora = await prisma.aseguradoraConfig.findUnique({
+              where: { id: currentUser.aseguradoraId }
+            });
+            if (aseguradora) {
+              whereCondition.insuranceCompany = aseguradora.codigo;
+            } else {
+              res.status(403).json({ error: 'No tienes permiso para ver este informe' });
+              return;
+            }
+          } else {
+            res.status(403).json({ error: 'No tienes permiso para ver este informe' });
+            return;
+          }
+          break;
+
+        case 'BROKER':
+          // BROKER: puede ver sus propios informes + los de sus auditores
+          const brokerChildIds = currentUser.children?.map(c => c.id) || [];
+          whereCondition.userId = { in: [userId, ...brokerChildIds] };
+          break;
+
+        case 'AUDITOR':
+        default:
+          // AUDITOR y otros: solo sus propios informes
+          whereCondition.userId = userId;
+          break;
+      }
+
       const form = await prisma.medicalForm.findFirst({
-        where: { id: formId, userId },
+        where: whereCondition,
         include: {
           formPdfs: true,
         },
