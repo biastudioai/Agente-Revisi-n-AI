@@ -42,13 +42,32 @@ router.get(
   requireAuth,
   expressAsyncHandler(async (req: Request, res: Response) => {
     const userId = (req as any).user?.id;
+    const userRole = (req as any).user?.rol;
     
     if (!userId) {
       res.status(401).json({ error: 'No autorizado' });
       return;
     }
 
-    const subscription = await subscriptionService.getActiveSubscription(userId);
+    let subscriptionUserId = userId;
+
+    if (userRole === 'AUDITOR') {
+      const prisma = (await import('../config/database')).default;
+      const auditor = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { parentId: true },
+      });
+      if (auditor?.parentId) {
+        subscriptionUserId = auditor.parentId;
+      }
+    }
+
+    const subscription = await subscriptionService.getActiveSubscription(subscriptionUserId);
+    
+    if (subscription && userRole === 'AUDITOR') {
+      (subscription as any).isFromBroker = true;
+    }
+
     res.json({ subscription });
   })
 );

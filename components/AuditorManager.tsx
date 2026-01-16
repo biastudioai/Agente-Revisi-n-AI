@@ -106,7 +106,9 @@ const AuditorManager: React.FC<AuditorManagerProps> = ({ isOpen, onClose, onOpen
   useEffect(() => {
     if (isOpen) {
       setIsLoading(true);
-      Promise.all([loadAuditors(), loadUsage(), loadLimits()]).finally(() => setIsLoading(false));
+      loadLimits()
+        .then(() => Promise.all([loadAuditors(), loadUsage()]))
+        .finally(() => setIsLoading(false));
     }
   }, [isOpen]);
 
