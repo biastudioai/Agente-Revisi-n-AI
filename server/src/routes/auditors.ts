@@ -222,7 +222,7 @@ router.get('/limits', authMiddleware, requireBroker, asyncHandler(async (req: Au
     currentAuditors: finalActiveAuditors,
     totalAuditors,
     canAddMore: finalActiveAuditors < maxAuditors,
-    hasExcessAuditors: totalAuditors > maxAuditors && finalActiveAuditors >= maxAuditors,
+    hasExcessAuditors: finalActiveAuditors > maxAuditors,
     planName,
     isAdmin: false,
   });

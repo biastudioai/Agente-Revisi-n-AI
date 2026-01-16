@@ -159,6 +159,9 @@ export class SubscriptionService {
       return;
     }
 
+    const newPlanType = subscription.metadata?.planType as PlanType | undefined;
+    const oldPlanType = existingSub.planType;
+
     const now = new Date();
     const isInPromotion = existingSub.promotionEndsAt 
       ? now < existingSub.promotionEndsAt 
@@ -188,18 +191,59 @@ export class SubscriptionService {
         status = SubscriptionStatus.ACTIVE;
     }
 
+    const updateData: any = {
+      status,
+      currentPeriodStart: new Date(subscription.current_period_start * 1000),
+      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+      isInPromotion,
+    };
+
+    if (newPlanType && newPlanType !== oldPlanType) {
+      updateData.planType = newPlanType;
+      console.log(`Plan type changed from ${oldPlanType} to ${newPlanType} for user ${existingSub.userId}`);
+    }
+
     await prisma.subscription.update({
       where: { stripeSubscriptionId },
-      data: {
-        status,
-        currentPeriodStart: new Date(subscription.current_period_start * 1000),
-        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-        isInPromotion,
-      },
+      data: updateData,
     });
 
+    const effectivePlanType = newPlanType || oldPlanType;
+    const planConfig = PLAN_CONFIGS[effectivePlanType];
+    const maxAuditors = planConfig?.maxAuditors ?? 0;
+
+    if (newPlanType && newPlanType !== oldPlanType) {
+      const { UserRole } = await import('../generated/prisma');
+      
+      const activeAuditors = await prisma.user.findMany({
+        where: {
+          parentId: existingSub.userId,
+          rol: UserRole.AUDITOR,
+          isActive: true,
+        },
+        orderBy: { createdAt: 'asc' },
+        select: { id: true, email: true },
+      });
+
+      if (activeAuditors.length > maxAuditors) {
+        const auditorsToDeactivate = activeAuditors.slice(maxAuditors);
+        const idsToDeactivate = auditorsToDeactivate.map(a => a.id);
+
+        await prisma.user.updateMany({
+          where: { id: { in: idsToDeactivate } },
+          data: { isActive: false },
+        });
+
+        await prisma.session.deleteMany({
+          where: { userId: { in: idsToDeactivate } },
+        });
+
+        console.log(`Auto-deactivated ${auditorsToDeactivate.length} auditors for user ${existingSub.userId} due to plan downgrade from ${oldPlanType} to ${newPlanType}. Deactivated: ${auditorsToDeactivate.map(a => a.email).join(', ')}`);
+      }
+    }
+
     if (status === SubscriptionStatus.ACTIVE) {
-      const reportsLimit = getReportsLimit(existingSub.planType, isInPromotion);
+      const reportsLimit = getReportsLimit(effectivePlanType, isInPromotion);
       const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
       
