@@ -51,6 +51,11 @@ export class UsageService {
     return userId;
   }
 
+  private isSamePeriod(periodStart1: Date | null | undefined, periodStart2: Date | null | undefined): boolean {
+    if (!periodStart1 || !periodStart2) return false;
+    return periodStart1.getTime() === periodStart2.getTime();
+  }
+
   async getCurrentUsage(userId: string): Promise<UsageInfo> {
     const now = new Date();
     const periodYear = now.getFullYear();
@@ -59,7 +64,7 @@ export class UsageService {
     const isAdmin = await this.isUserAdmin(userId);
     
     if (isAdmin) {
-      let usageRecord = await prisma.usageRecord.findUnique({
+      const usageRecord = await prisma.usageRecord.findUnique({
         where: {
           userId_periodYear_periodMonth: {
             userId,
@@ -93,35 +98,15 @@ export class UsageService {
     const isInPromotion = subscription?.isInPromotion || false;
     const reportsLimit = subscription?.reportsLimit || 0;
     const extraReportPriceMxn = subscription?.extraReportPrice || 0;
+    const currentPeriodStart = subscription?.currentPeriodStart || null;
 
-    let usageRecord = await prisma.usageRecord.findUnique({
-      where: {
-        userId_periodYear_periodMonth: {
-          userId: subscriptionOwnerId,
-          periodYear,
-          periodMonth,
-        },
-      },
-    });
-
-    if (!usageRecord) {
-      usageRecord = await prisma.usageRecord.create({
-        data: {
-          userId: subscriptionOwnerId,
-          periodYear,
-          periodMonth,
-          reportsUsed: 0,
-          reportsLimit,
-          extraReportsUsed: 0,
-          extraChargesMxn: 0,
-        },
-      });
-    } else if (usageRecord.reportsLimit !== reportsLimit) {
-      usageRecord = await prisma.usageRecord.update({
-        where: { id: usageRecord.id },
-        data: { reportsLimit },
-      });
-    }
+    const usageRecord = await this.getOrCreateUsageRecord(
+      subscriptionOwnerId,
+      periodYear,
+      periodMonth,
+      reportsLimit,
+      currentPeriodStart
+    );
 
     return {
       periodYear,
@@ -136,6 +121,73 @@ export class UsageService {
       extraReportPriceMxn,
       hasActiveSubscription,
     };
+  }
+
+  private async getOrCreateUsageRecord(
+    userId: string,
+    periodYear: number,
+    periodMonth: number,
+    reportsLimit: number,
+    currentPeriodStart: Date | null
+  ) {
+    return await prisma.$transaction(async (tx) => {
+      let usageRecord = await tx.usageRecord.findUnique({
+        where: {
+          userId_periodYear_periodMonth: {
+            userId,
+            periodYear,
+            periodMonth,
+          },
+        },
+      });
+
+      if (!usageRecord) {
+        usageRecord = await tx.usageRecord.create({
+          data: {
+            userId,
+            periodYear,
+            periodMonth,
+            periodStart: currentPeriodStart,
+            reportsUsed: 0,
+            reportsLimit,
+            extraReportsUsed: 0,
+            extraChargesMxn: 0,
+          },
+        });
+      } else {
+        const recordPeriodReference = usageRecord.periodStart || usageRecord.createdAt;
+        const needsReset = currentPeriodStart && 
+          currentPeriodStart.getTime() > recordPeriodReference.getTime();
+
+        if (needsReset) {
+          usageRecord = await tx.usageRecord.update({
+            where: { id: usageRecord.id },
+            data: {
+              periodStart: currentPeriodStart,
+              reportsUsed: 0,
+              reportsLimit,
+              extraReportsUsed: 0,
+              extraChargesMxn: 0,
+            },
+          });
+        } else if (!usageRecord.periodStart && currentPeriodStart) {
+          usageRecord = await tx.usageRecord.update({
+            where: { id: usageRecord.id },
+            data: { 
+              periodStart: currentPeriodStart,
+              reportsLimit: usageRecord.reportsLimit !== reportsLimit ? reportsLimit : usageRecord.reportsLimit,
+            },
+          });
+        } else if (usageRecord.reportsLimit !== reportsLimit) {
+          usageRecord = await tx.usageRecord.update({
+            where: { id: usageRecord.id },
+            data: { reportsLimit },
+          });
+        }
+      }
+
+      return usageRecord;
+    });
   }
 
   async incrementUsage(userId: string): Promise<{
@@ -199,50 +251,86 @@ export class UsageService {
 
     const reportsLimit = subscription.reportsLimit;
     const extraReportPrice = subscription.extraReportPrice;
+    const currentPeriodStart = subscription.currentPeriodStart;
 
-    let usageRecord = await prisma.usageRecord.upsert({
-      where: {
-        userId_periodYear_periodMonth: {
-          userId: subscriptionOwnerId,
-          periodYear,
-          periodMonth,
-        },
-      },
-      update: {
-        reportsUsed: { increment: 1 },
-      },
-      create: {
-        userId: subscriptionOwnerId,
-        periodYear,
-        periodMonth,
-        reportsUsed: 1,
-        reportsLimit,
-        extraReportsUsed: 0,
-        extraChargesMxn: 0,
-      },
-    });
-
-    const isExtra = usageRecord.reportsUsed > reportsLimit;
-    let extraChargeMxn = 0;
-
-    if (isExtra) {
-      extraChargeMxn = extraReportPrice;
-      
-      usageRecord = await prisma.usageRecord.update({
-        where: { id: usageRecord.id },
-        data: {
-          extraReportsUsed: { increment: 1 },
-          extraChargesMxn: { increment: extraReportPrice },
+    const result = await prisma.$transaction(async (tx) => {
+      let usageRecord = await tx.usageRecord.findUnique({
+        where: {
+          userId_periodYear_periodMonth: {
+            userId: subscriptionOwnerId,
+            periodYear,
+            periodMonth,
+          },
         },
       });
-    }
+
+      const recordPeriodReference = usageRecord 
+        ? (usageRecord.periodStart || usageRecord.createdAt)
+        : null;
+      const needsReset = usageRecord && currentPeriodStart && recordPeriodReference &&
+        currentPeriodStart.getTime() > recordPeriodReference.getTime();
+
+      if (!usageRecord) {
+        usageRecord = await tx.usageRecord.create({
+          data: {
+            userId: subscriptionOwnerId,
+            periodYear,
+            periodMonth,
+            periodStart: currentPeriodStart,
+            reportsUsed: 1,
+            reportsLimit,
+            extraReportsUsed: 0,
+            extraChargesMxn: 0,
+          },
+        });
+      } else if (needsReset) {
+        usageRecord = await tx.usageRecord.update({
+          where: { id: usageRecord.id },
+          data: {
+            periodStart: currentPeriodStart,
+            reportsUsed: 1,
+            reportsLimit,
+            extraReportsUsed: 0,
+            extraChargesMxn: 0,
+          },
+        });
+      } else {
+        const updateData: any = {
+          reportsUsed: { increment: 1 },
+        };
+        if (!usageRecord.periodStart && currentPeriodStart) {
+          updateData.periodStart = currentPeriodStart;
+        }
+        usageRecord = await tx.usageRecord.update({
+          where: { id: usageRecord.id },
+          data: updateData,
+        });
+      }
+
+      const isExtra = usageRecord.reportsUsed > reportsLimit;
+      let extraChargeMxn = 0;
+
+      if (isExtra) {
+        extraChargeMxn = extraReportPrice;
+        
+        usageRecord = await tx.usageRecord.update({
+          where: { id: usageRecord.id },
+          data: {
+            extraReportsUsed: { increment: 1 },
+            extraChargesMxn: { increment: extraReportPrice },
+          },
+        });
+      }
+
+      return { usageRecord, isExtra, extraChargeMxn };
+    });
 
     const usage = await this.getCurrentUsage(userId);
 
     return {
       success: true,
-      isExtra,
-      extraChargeMxn,
+      isExtra: result.isExtra,
+      extraChargeMxn: result.extraChargeMxn,
       usage,
     };
   }
