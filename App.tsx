@@ -1655,16 +1655,19 @@ const App: React.FC = () => {
                   <History className="w-4 h-4" />
                   Historial de Informes
                 </button>
-                <button
-                  onClick={() => {
-                    setIsUserMenuOpen(false);
-                    setIsSubscriptionModalOpen(true);
-                  }}
-                  className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
-                >
-                  <CreditCard className="w-4 h-4" />
-                  {subscription ? 'Administrar suscripción' : 'Ver planes'}
-                </button>
+                {/* Solo ADMIN, BROKER y ASEGURADORA pueden administrar suscripción - Lista blanca RBAC */}
+                {user && (user.rol === 'ADMIN' || user.rol === 'BROKER' || user.rol === 'ASEGURADORA') && (
+                  <button
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      setIsSubscriptionModalOpen(true);
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    {subscription ? 'Administrar suscripción' : 'Ver planes'}
+                  </button>
+                )}
                 {(user?.rol === 'BROKER' || user?.rol === 'ADMIN') && (
                   <button
                     onClick={() => {
