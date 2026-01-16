@@ -207,4 +207,87 @@ router.post(
   })
 );
 
+router.post(
+  '/change-plan',
+  requireAuth,
+  expressAsyncHandler(async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id;
+    const email = (req as any).user?.email;
+    const { planType } = req.body;
+
+    if (!userId || !email) {
+      res.status(401).json({ error: 'No autorizado' });
+      return;
+    }
+
+    if (!planType || !Object.values(PlanType).includes(planType)) {
+      res.status(400).json({ error: 'Plan inválido' });
+      return;
+    }
+
+    const replitDomains = process.env.REPLIT_DEV_DOMAIN || process.env.REPLIT_DOMAINS || '';
+    const primaryDomain = replitDomains.split(',')[0]?.trim();
+    const baseUrl = primaryDomain ? `https://${primaryDomain}` : `${req.headers['x-forwarded-proto'] || req.protocol}://${req.get('host')}`;
+
+    const result = await subscriptionService.changePlan(
+      userId,
+      email,
+      planType as PlanType,
+      `${baseUrl}/?subscription=success`,
+      `${baseUrl}/?subscription=cancelled`
+    );
+
+    if (result.type === 'error') {
+      res.status(400).json({ error: result.message });
+      return;
+    }
+
+    res.json(result);
+  })
+);
+
+router.post(
+  '/cancel-subscription',
+  requireAuth,
+  expressAsyncHandler(async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      res.status(401).json({ error: 'No autorizado' });
+      return;
+    }
+
+    const result = await subscriptionService.cancelSubscription(userId);
+    
+    if (!result.success) {
+      res.status(400).json({ error: result.message });
+      return;
+    }
+
+    res.json(result);
+  })
+);
+
+router.post(
+  '/reactivate-subscription',
+  requireAuth,
+  expressAsyncHandler(async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      res.status(401).json({ error: 'No autorizado' });
+      return;
+    }
+
+    const result = await subscriptionService.reactivateSubscription(userId);
+    
+    if (!result.success) {
+      res.status(400).json({ error: result.message });
+      return;
+    }
+
+    res.json(result);
+  })
+);
+
 export default router;

@@ -161,6 +161,9 @@ model Subscription {
   currentPeriodEnd     DateTime           @map("current_period_end")
   promotionEndsAt      DateTime?          @map("promotion_ends_at")
   isInPromotion        Boolean            @default(true) @map("is_in_promotion")
+  cancelAtPeriodEnd    Boolean            @default(false) @map("cancel_at_period_end")
+  scheduledPlanType    PlanType?          @map("scheduled_plan_type")
+  scheduledChangeAt    DateTime?          @map("scheduled_change_at")
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")
 

@@ -67,8 +67,20 @@ app.post(
         console.log(`Subscription updated: ${event.data.object.id}`);
         await subscriptionService.handleSubscriptionUpdated(event.data.object.id);
       } else if (event.type === 'customer.subscription.deleted') {
-        console.log(`Subscription deleted: ${event.data.object.id}`);
-        await subscriptionService.handleSubscriptionDeleted(event.data.object.id);
+        const subscription = event.data.object;
+        console.log(`Subscription deleted: ${subscription.id}`);
+        
+        // Check if there's a scheduled downgrade for this subscription
+        const dbSub = await (await import('./config/database')).default.subscription.findUnique({
+          where: { stripeSubscriptionId: subscription.id },
+        });
+        
+        if (dbSub?.scheduledPlanType) {
+          console.log(`Processing scheduled downgrade from ${dbSub.planType} to ${dbSub.scheduledPlanType} for user ${dbSub.userId}`);
+          await subscriptionService.handleScheduledDowngrade(subscription.id);
+        }
+        
+        await subscriptionService.handleSubscriptionDeleted(subscription.id);
       } else if (event.type === 'invoice.payment_failed') {
         console.log(`Invoice payment failed for customer: ${event.data.object.customer}`);
         await subscriptionService.handleInvoicePaymentFailed(event.data.object.customer);

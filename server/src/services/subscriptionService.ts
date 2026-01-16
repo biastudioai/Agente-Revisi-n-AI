@@ -1,7 +1,21 @@
 import prisma from '../config/database';
-import { PlanType, SubscriptionStatus } from '../generated/prisma';
+import { PlanType, SubscriptionStatus, UserRole } from '../generated/prisma';
 import { getUncachableStripeClient } from './stripeClient';
 import { PLAN_CONFIGS, getReportsLimit, getExtraReportPrice } from '../config/plans';
+
+const PLAN_ORDER: Record<PlanType, number> = {
+  [PlanType.PLAN_1]: 1,
+  [PlanType.PLAN_2]: 2,
+  [PlanType.PLAN_3]: 3,
+};
+
+function isUpgrade(fromPlan: PlanType, toPlan: PlanType): boolean {
+  return PLAN_ORDER[toPlan] > PLAN_ORDER[fromPlan];
+}
+
+function isDowngrade(fromPlan: PlanType, toPlan: PlanType): boolean {
+  return PLAN_ORDER[toPlan] < PLAN_ORDER[fromPlan];
+}
 
 export class SubscriptionService {
   async createCustomer(email: string, userId: string) {
@@ -188,6 +202,11 @@ export class SubscriptionService {
       currentPeriodEnd
     });
 
+    // Check if this is an upgrade with reports transfer
+    const metadata = subscription.metadata || {};
+    const isUpgrade = metadata.isUpgrade === 'true';
+    const reportsUsedTransfer = parseInt(metadata.reportsUsedTransfer || '0', 10);
+
     await prisma.subscription.create({
       data: {
         userId: stripeCustomer.userId,
@@ -200,6 +219,38 @@ export class SubscriptionService {
         isInPromotion: true,
       },
     });
+
+    // If this is an upgrade, transfer the reports used from the previous period
+    if (isUpgrade && reportsUsedTransfer > 0) {
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+      const isInPromotion = now < promotionEndsAt;
+      const newReportsLimit = getReportsLimit(planType, isInPromotion);
+
+      // Create or update usage record with transferred reports
+      await prisma.usageRecord.upsert({
+        where: {
+          userId_periodYear_periodMonth: {
+            userId: stripeCustomer.userId,
+            periodYear: currentYear,
+            periodMonth: currentMonth,
+          },
+        },
+        update: {
+          reportsGenerated: reportsUsedTransfer,
+          reportsLimit: newReportsLimit,
+        },
+        create: {
+          userId: stripeCustomer.userId,
+          periodYear: currentYear,
+          periodMonth: currentMonth,
+          reportsGenerated: reportsUsedTransfer,
+          reportsLimit: newReportsLimit,
+        },
+      });
+
+      console.log(`Transferred ${reportsUsedTransfer} reports used from previous plan to new subscription for user ${stripeCustomer.userId}`);
+    }
   }
 
   async handleSubscriptionUpdated(stripeSubscriptionId: string) {
@@ -247,12 +298,23 @@ export class SubscriptionService {
         status = SubscriptionStatus.ACTIVE;
     }
 
+    // Sync cancel_at_period_end from Stripe
+    const cancelAtPeriodEnd = subscription.cancel_at_period_end || false;
+
     const updateData: any = {
       status,
       currentPeriodStart: new Date(subscription.current_period_start * 1000),
       currentPeriodEnd: new Date(subscription.current_period_end * 1000),
       isInPromotion,
+      cancelAtPeriodEnd,
     };
+
+    // If the subscription was reactivated (cancel_at_period_end changed to false), clear scheduled changes
+    if (!cancelAtPeriodEnd && existingSub.cancelAtPeriodEnd) {
+      updateData.scheduledPlanType = null;
+      updateData.scheduledChangeAt = null;
+      console.log(`Subscription ${stripeSubscriptionId} was reactivated for user ${existingSub.userId}`);
+    }
 
     if (newPlanType && newPlanType !== oldPlanType) {
       updateData.planType = newPlanType;
@@ -373,11 +435,17 @@ export class SubscriptionService {
     const reportsLimit = getReportsLimit(subscription.planType, isInPromotion);
     const extraReportPrice = getExtraReportPrice(subscription.planType, isInPromotion);
 
+    // Get scheduled plan config if there's a downgrade scheduled
+    const scheduledPlanConfig = subscription.scheduledPlanType 
+      ? PLAN_CONFIGS[subscription.scheduledPlanType]
+      : null;
+
     return {
       ...subscription,
       planConfig,
       reportsLimit,
       extraReportPrice,
+      scheduledPlanConfig,
     };
   }
 
@@ -417,6 +485,359 @@ export class SubscriptionService {
     });
 
     return paymentIntent;
+  }
+
+  async changePlan(
+    userId: string,
+    email: string,
+    newPlanType: PlanType,
+    successUrl: string,
+    cancelUrl: string
+  ): Promise<{ type: 'checkout' | 'scheduled' | 'error'; url?: string; message?: string; scheduledAt?: Date }> {
+    const stripe = await getUncachableStripeClient();
+    
+    const currentSubscription = await prisma.subscription.findFirst({
+      where: {
+        userId,
+        status: SubscriptionStatus.ACTIVE,
+      },
+    });
+
+    if (!currentSubscription) {
+      return { type: 'error', message: 'No tienes una suscripción activa.' };
+    }
+
+    const currentPlanType = currentSubscription.planType;
+
+    if (currentPlanType === newPlanType) {
+      return { type: 'error', message: 'Ya estás suscrito a este plan.' };
+    }
+
+    const stripeCustomer = await prisma.stripeCustomer.findUnique({
+      where: { userId },
+    });
+
+    if (!stripeCustomer) {
+      return { type: 'error', message: 'No se encontró tu información de cliente.' };
+    }
+
+    if (isUpgrade(currentPlanType, newPlanType)) {
+      // UPGRADE: Cancel current subscription immediately and create new one
+      // Transfer the reports used to the new subscription
+      
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+
+      // Get current usage to transfer
+      const currentUsage = await prisma.usageRecord.findFirst({
+        where: {
+          userId,
+          periodYear: currentYear,
+          periodMonth: currentMonth,
+        },
+      });
+
+      const reportsUsed = currentUsage?.reportsGenerated || 0;
+
+      // Cancel current subscription in Stripe immediately
+      try {
+        await stripe.subscriptions.cancel(currentSubscription.stripeSubscriptionId);
+      } catch (error: any) {
+        if (error.code !== 'resource_missing') {
+          console.error(`Failed to cancel subscription for upgrade: ${error.message}`);
+          return { type: 'error', message: 'Error al cancelar la suscripción anterior. Por favor intenta de nuevo.' };
+        }
+      }
+
+      // Mark as canceled in database
+      await prisma.subscription.update({
+        where: { id: currentSubscription.id },
+        data: { status: SubscriptionStatus.CANCELED },
+      });
+
+      // Store the reports used to transfer after checkout completes
+      // We'll use metadata in the checkout session
+      const planConfig = PLAN_CONFIGS[newPlanType];
+      const session = await stripe.checkout.sessions.create({
+        customer: stripeCustomer.stripeCustomerId,
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: 'mxn',
+            product_data: {
+              name: planConfig.name,
+              description: `Upgrade a ${planConfig.name}`,
+            },
+            unit_amount: planConfig.priceMonthlyMxn * 100,
+            recurring: {
+              interval: 'month',
+            },
+          },
+          quantity: 1,
+        }],
+        mode: 'subscription',
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        metadata: {
+          userId,
+          planType: newPlanType,
+          isUpgrade: 'true',
+          reportsUsedTransfer: reportsUsed.toString(),
+          previousPlanType: currentPlanType,
+        },
+        subscription_data: {
+          metadata: {
+            userId,
+            planType: newPlanType,
+            isUpgrade: 'true',
+            reportsUsedTransfer: reportsUsed.toString(),
+            previousPlanType: currentPlanType,
+          },
+        },
+      });
+
+      return { type: 'checkout', url: session.url || undefined };
+
+    } else if (isDowngrade(currentPlanType, newPlanType)) {
+      // DOWNGRADE: Schedule the change for end of current period
+      const periodEnd = currentSubscription.currentPeriodEnd;
+
+      // Update our database to track the scheduled downgrade
+      await prisma.subscription.update({
+        where: { id: currentSubscription.id },
+        data: {
+          scheduledPlanType: newPlanType,
+          scheduledChangeAt: periodEnd,
+        },
+      });
+
+      // In Stripe, we use cancel_at_period_end and will create the new subscription
+      // when the current one ends (handled via webhook)
+      await stripe.subscriptions.update(currentSubscription.stripeSubscriptionId, {
+        cancel_at_period_end: true,
+        metadata: {
+          ...await this.getSubscriptionMetadata(currentSubscription.stripeSubscriptionId),
+          scheduledDowngrade: newPlanType,
+        },
+      });
+
+      return { 
+        type: 'scheduled', 
+        message: `Tu plan cambiará a ${PLAN_CONFIGS[newPlanType].name} el ${periodEnd.toLocaleDateString('es-MX')}. Hasta entonces, seguirás disfrutando de tu plan actual.`,
+        scheduledAt: periodEnd,
+      };
+    }
+
+    return { type: 'error', message: 'No se pudo determinar el tipo de cambio de plan.' };
+  }
+
+  private async getSubscriptionMetadata(stripeSubscriptionId: string): Promise<Record<string, string>> {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const subscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+      return (subscription.metadata as Record<string, string>) || {};
+    } catch {
+      return {};
+    }
+  }
+
+  async cancelSubscription(userId: string): Promise<{ success: boolean; message: string; cancelAt?: Date }> {
+    const stripe = await getUncachableStripeClient();
+    
+    const subscription = await prisma.subscription.findFirst({
+      where: {
+        userId,
+        status: SubscriptionStatus.ACTIVE,
+      },
+    });
+
+    if (!subscription) {
+      return { success: false, message: 'No tienes una suscripción activa.' };
+    }
+
+    // If already scheduled for cancellation
+    if (subscription.cancelAtPeriodEnd) {
+      return { 
+        success: false, 
+        message: `Tu suscripción ya está programada para cancelarse el ${subscription.currentPeriodEnd.toLocaleDateString('es-MX')}.`,
+        cancelAt: subscription.currentPeriodEnd,
+      };
+    }
+
+    try {
+      // Cancel at period end in Stripe
+      await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+        cancel_at_period_end: true,
+      });
+
+      // Update our database
+      await prisma.subscription.update({
+        where: { id: subscription.id },
+        data: {
+          cancelAtPeriodEnd: true,
+          scheduledPlanType: null,
+          scheduledChangeAt: null,
+        },
+      });
+
+      return { 
+        success: true, 
+        message: `Tu suscripción se cancelará el ${subscription.currentPeriodEnd.toLocaleDateString('es-MX')}. Hasta entonces, seguirás teniendo acceso completo a tu plan.`,
+        cancelAt: subscription.currentPeriodEnd,
+      };
+    } catch (error: any) {
+      console.error('Error canceling subscription:', error);
+      return { success: false, message: 'Error al cancelar la suscripción. Por favor intenta de nuevo.' };
+    }
+  }
+
+  async reactivateSubscription(userId: string): Promise<{ success: boolean; message: string }> {
+    const stripe = await getUncachableStripeClient();
+    
+    const subscription = await prisma.subscription.findFirst({
+      where: {
+        userId,
+        status: SubscriptionStatus.ACTIVE,
+      },
+    });
+
+    if (!subscription) {
+      return { success: false, message: 'No tienes una suscripción activa.' };
+    }
+
+    if (!subscription.cancelAtPeriodEnd && !subscription.scheduledPlanType) {
+      return { success: false, message: 'Tu suscripción no está programada para cancelarse o cambiar.' };
+    }
+
+    try {
+      // Reactivate in Stripe
+      await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+        cancel_at_period_end: false,
+        metadata: {
+          userId,
+          planType: subscription.planType,
+        },
+      });
+
+      // Update our database
+      await prisma.subscription.update({
+        where: { id: subscription.id },
+        data: {
+          cancelAtPeriodEnd: false,
+          scheduledPlanType: null,
+          scheduledChangeAt: null,
+        },
+      });
+
+      return { 
+        success: true, 
+        message: 'Tu suscripción ha sido reactivada. Tu plan continuará renovándose normalmente.',
+      };
+    } catch (error: any) {
+      console.error('Error reactivating subscription:', error);
+      return { success: false, message: 'Error al reactivar la suscripción. Por favor intenta de nuevo.' };
+    }
+  }
+
+  async handleScheduledDowngrade(stripeSubscriptionId: string): Promise<void> {
+    // This is called when a subscription with a scheduled downgrade ends
+    const subscription = await prisma.subscription.findUnique({
+      where: { stripeSubscriptionId },
+    });
+
+    if (!subscription || !subscription.scheduledPlanType) {
+      return;
+    }
+
+    const stripe = await getUncachableStripeClient();
+    const stripeCustomer = await prisma.stripeCustomer.findUnique({
+      where: { userId: subscription.userId },
+    });
+
+    if (!stripeCustomer) {
+      console.error(`No Stripe customer found for user ${subscription.userId} during scheduled downgrade`);
+      return;
+    }
+
+    const newPlanType = subscription.scheduledPlanType;
+    const planConfig = PLAN_CONFIGS[newPlanType];
+
+    try {
+      // Deactivate excess auditors before applying the downgrade
+      await this.deactivateExcessAuditors(subscription.userId, newPlanType);
+
+      // Create the new subscription with the downgraded plan
+      const newSubscription = await stripe.subscriptions.create({
+        customer: stripeCustomer.stripeCustomerId,
+        items: [{
+          price_data: {
+            currency: 'mxn',
+            product_data: {
+              name: planConfig.name,
+            },
+            unit_amount: planConfig.priceMonthlyMxn * 100,
+            recurring: {
+              interval: 'month',
+            },
+          },
+        }],
+        metadata: {
+          userId: subscription.userId,
+          planType: newPlanType,
+          isDowngrade: 'true',
+          previousPlanType: subscription.planType,
+        },
+      });
+
+      console.log(`Created new subscription ${newSubscription.id} for user ${subscription.userId} after scheduled downgrade from ${subscription.planType} to ${newPlanType}`);
+    } catch (error: any) {
+      console.error(`Error creating downgraded subscription: ${error.message}`);
+    }
+  }
+
+  async deactivateExcessAuditors(userId: string, newPlanType: PlanType): Promise<{ deactivatedCount: number }> {
+    const planConfig = PLAN_CONFIGS[newPlanType];
+    const maxAuditors = planConfig.maxAuditors;
+
+    // Get all active auditors ordered by creation date (oldest first)
+    const activeAuditors = await prisma.user.findMany({
+      where: {
+        parentId: userId,
+        rol: UserRole.AUDITOR,
+        isActive: true,
+      },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true, email: true },
+    });
+
+    const currentActiveCount = activeAuditors.length;
+
+    if (currentActiveCount <= maxAuditors) {
+      return { deactivatedCount: 0 };
+    }
+
+    // Deactivate the excess auditors (keep the oldest ones active)
+    const auditorsToDeactivate = activeAuditors.slice(maxAuditors);
+    const auditorsToDeactivateIds = auditorsToDeactivate.map(a => a.id);
+
+    await prisma.user.updateMany({
+      where: {
+        id: { in: auditorsToDeactivateIds },
+      },
+      data: { isActive: false },
+    });
+
+    // End their sessions immediately
+    await prisma.session.deleteMany({
+      where: {
+        userId: { in: auditorsToDeactivateIds },
+      },
+    });
+
+    console.log(`Auto-deactivated ${auditorsToDeactivate.length} auditors for broker ${userId} due to plan downgrade to ${newPlanType}. Deactivated: ${auditorsToDeactivate.map(a => a.email).join(', ')}`);
+
+    return { deactivatedCount: auditorsToDeactivate.length };
   }
 
   async cancelDuplicateStripeSubscriptions(): Promise<{ cancelled: number; errors: string[] }> {

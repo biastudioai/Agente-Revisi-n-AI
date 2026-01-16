@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Check, Loader2, Sparkles, Crown, Building2 } from 'lucide-react';
+import { Check, Loader2, Sparkles, Crown, Building2, AlertTriangle, RefreshCw, XCircle, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface Plan {
   planType: string;
@@ -25,18 +25,30 @@ interface Subscription {
   reportsLimit: number;
   extraReportPrice: number;
   planConfig: Plan;
+  cancelAtPeriodEnd?: boolean;
+  scheduledPlanType?: string | null;
+  scheduledChangeAt?: string | null;
+  scheduledPlanConfig?: Plan | null;
 }
 
 interface SubscriptionPlansProps {
   onClose?: () => void;
   currentSubscription?: Subscription | null;
+  onSubscriptionChange?: () => void;
 }
 
-const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, currentSubscription }) => {
+const PLAN_ORDER: Record<string, number> = {
+  'PLAN_1': 1,
+  'PLAN_2': 2,
+  'PLAN_3': 3,
+};
+
+const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, currentSubscription, onSubscriptionChange }) => {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
-  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPlans();
@@ -62,7 +74,10 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, currentS
   };
 
   const handleSubscribe = async (planType: string) => {
-    setCheckoutLoading(planType);
+    setActionLoading(planType);
+    setError(null);
+    setSuccessMessage(null);
+    
     try {
       const response = await fetch('/api/stripe/create-checkout', {
         method: 'POST',
@@ -84,7 +99,98 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, currentS
       console.error('Error creating checkout:', e);
       setError('Error al procesar el pago');
     } finally {
-      setCheckoutLoading(null);
+      setActionLoading(null);
+    }
+  };
+
+  const handleChangePlan = async (planType: string) => {
+    setActionLoading(planType);
+    setError(null);
+    setSuccessMessage(null);
+    
+    try {
+      const response = await fetch('/api/stripe/change-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ planType }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        if (data.type === 'checkout' && data.url) {
+          window.location.href = data.url;
+        } else if (data.type === 'scheduled') {
+          setSuccessMessage(data.message);
+          onSubscriptionChange?.();
+        }
+      } else {
+        setError(data.error || 'Error al cambiar de plan');
+      }
+    } catch (e) {
+      console.error('Error changing plan:', e);
+      setError('Error al cambiar de plan');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!confirm('¿Estás seguro de que deseas cancelar tu suscripción? Podrás seguir usando el servicio hasta el final del período actual.')) {
+      return;
+    }
+
+    setActionLoading('cancel');
+    setError(null);
+    setSuccessMessage(null);
+    
+    try {
+      const response = await fetch('/api/stripe/cancel-subscription', {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccessMessage(data.message);
+        onSubscriptionChange?.();
+      } else {
+        setError(data.error || 'Error al cancelar la suscripción');
+      }
+    } catch (e) {
+      console.error('Error canceling subscription:', e);
+      setError('Error al cancelar la suscripción');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleReactivate = async () => {
+    setActionLoading('reactivate');
+    setError(null);
+    setSuccessMessage(null);
+    
+    try {
+      const response = await fetch('/api/stripe/reactivate-subscription', {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccessMessage(data.message);
+        onSubscriptionChange?.();
+      } else {
+        setError(data.error || 'Error al reactivar la suscripción');
+      }
+    } catch (e) {
+      console.error('Error reactivating subscription:', e);
+      setError('Error al reactivar la suscripción');
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -98,7 +204,6 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, currentS
       if (response.ok) {
         const data = await response.json();
         if (data.url) {
-          // Open in new tab to avoid iframe restrictions from Stripe
           window.open(data.url, '_blank');
         }
       }
@@ -133,6 +238,14 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, currentS
     }
   };
 
+  const isUpgrade = (fromPlan: string, toPlan: string) => {
+    return (PLAN_ORDER[toPlan] || 0) > (PLAN_ORDER[fromPlan] || 0);
+  };
+
+  const isDowngrade = (fromPlan: string, toPlan: string) => {
+    return (PLAN_ORDER[toPlan] || 0) < (PLAN_ORDER[fromPlan] || 0);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -140,6 +253,8 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, currentS
       </div>
     );
   }
+
+  const hasPendingChange = currentSubscription?.cancelAtPeriodEnd || currentSubscription?.scheduledPlanType;
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 max-w-5xl mx-auto">
@@ -155,39 +270,126 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, currentS
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg text-center">
+        <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg text-center flex items-center justify-center gap-2">
+          <AlertTriangle className="w-5 h-5" />
           {error}
         </div>
       )}
 
+      {successMessage && (
+        <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-lg text-center flex items-center justify-center gap-2">
+          <Check className="w-5 h-5" />
+          {successMessage}
+        </div>
+      )}
+
       {currentSubscription && (
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <p className="font-medium text-blue-800">
-                Plan actual: {currentSubscription.planConfig?.name || currentSubscription.planType}
-              </p>
-              <p className="text-sm text-blue-600">
-                {currentSubscription.isInPromotion 
-                  ? `En promoción hasta ${new Date(currentSubscription.promotionEndsAt!).toLocaleDateString()}`
-                  : `Renueva el ${new Date(currentSubscription.currentPeriodEnd).toLocaleDateString()}`
-                }
-              </p>
+        <div className="mb-6 space-y-3">
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <p className="font-medium text-blue-800">
+                  Plan actual: {currentSubscription.planConfig?.name || currentSubscription.planType}
+                </p>
+                <p className="text-sm text-blue-600">
+                  {currentSubscription.isInPromotion 
+                    ? `En promoción hasta ${new Date(currentSubscription.promotionEndsAt!).toLocaleDateString('es-MX')}`
+                    : `Renueva el ${new Date(currentSubscription.currentPeriodEnd).toLocaleDateString('es-MX')}`
+                  }
+                </p>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={handleManageSubscription}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                >
+                  Administrar suscripción
+                </button>
+                {!hasPendingChange && (
+                  <button
+                    onClick={handleCancelSubscription}
+                    disabled={actionLoading === 'cancel'}
+                    className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm flex items-center gap-2"
+                  >
+                    {actionLoading === 'cancel' ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <XCircle className="w-4 h-4" />
+                    )}
+                    Cancelar suscripción
+                  </button>
+                )}
+              </div>
             </div>
-            <button
-              onClick={handleManageSubscription}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Administrar suscripción
-            </button>
           </div>
+
+          {currentSubscription.cancelAtPeriodEnd && !currentSubscription.scheduledPlanType && (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-amber-800">Cancelación programada</p>
+                    <p className="text-sm text-amber-600">
+                      Tu suscripción se cancelará el {new Date(currentSubscription.currentPeriodEnd).toLocaleDateString('es-MX')}. 
+                      Hasta entonces, tienes acceso completo a tu plan.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleReactivate}
+                  disabled={actionLoading === 'reactivate'}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center gap-2"
+                >
+                  {actionLoading === 'reactivate' ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                  Reactivar suscripción
+                </button>
+              </div>
+            </div>
+          )}
+
+          {currentSubscription.scheduledPlanType && currentSubscription.scheduledPlanConfig && (
+            <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-start gap-3">
+                  <ArrowDown className="w-5 h-5 text-purple-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-purple-800">Cambio de plan programado</p>
+                    <p className="text-sm text-purple-600">
+                      Tu plan cambiará a <strong>{currentSubscription.scheduledPlanConfig.name}</strong> el {new Date(currentSubscription.scheduledChangeAt!).toLocaleDateString('es-MX')}.
+                      Hasta entonces, sigues disfrutando de tu plan actual.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleReactivate}
+                  disabled={actionLoading === 'reactivate'}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm flex items-center gap-2"
+                >
+                  {actionLoading === 'reactivate' ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <XCircle className="w-4 h-4" />
+                  )}
+                  Cancelar cambio
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       <div className="grid md:grid-cols-3 gap-6">
         {plans.map((plan) => {
           const isCurrentPlan = currentSubscription?.planType === plan.planType;
+          const isScheduledPlan = currentSubscription?.scheduledPlanType === plan.planType;
           const planColor = getPlanColor(plan.planType);
+          const canUpgrade = currentSubscription && isUpgrade(currentSubscription.planType, plan.planType);
+          const canDowngrade = currentSubscription && isDowngrade(currentSubscription.planType, plan.planType);
 
           return (
             <div
@@ -195,12 +397,19 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, currentS
               className={`relative rounded-xl border-2 overflow-hidden transition-all ${
                 isCurrentPlan 
                   ? 'border-green-500 shadow-lg' 
+                  : isScheduledPlan
+                  ? 'border-purple-500 shadow-lg'
                   : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
               }`}
             >
               {isCurrentPlan && (
                 <div className="absolute top-0 right-0 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
                   ACTUAL
+                </div>
+              )}
+              {isScheduledPlan && (
+                <div className="absolute top-0 right-0 bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
+                  PRÓXIMO
                 </div>
               )}
 
@@ -255,25 +464,64 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, currentS
                   </li>
                 </ul>
 
-                <button
-                  onClick={() => handleSubscribe(plan.planType)}
-                  disabled={isCurrentPlan || checkoutLoading === plan.planType}
-                  className={`w-full py-3 rounded-lg font-medium transition-all ${
-                    isCurrentPlan
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : `bg-gradient-to-r ${planColor} text-white hover:opacity-90`
-                  }`}
-                >
-                  {checkoutLoading === plan.planType ? (
-                    <Loader2 className="w-5 h-5 animate-spin mx-auto" />
-                  ) : isCurrentPlan ? (
-                    'Plan actual'
-                  ) : currentSubscription ? (
-                    'Cambiar a este plan'
-                  ) : (
-                    'Suscribirse'
-                  )}
-                </button>
+                {!currentSubscription ? (
+                  <button
+                    onClick={() => handleSubscribe(plan.planType)}
+                    disabled={actionLoading === plan.planType}
+                    className={`w-full py-3 rounded-lg font-medium transition-all bg-gradient-to-r ${planColor} text-white hover:opacity-90`}
+                  >
+                    {actionLoading === plan.planType ? (
+                      <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                    ) : (
+                      'Suscribirse'
+                    )}
+                  </button>
+                ) : isCurrentPlan ? (
+                  <button
+                    disabled
+                    className="w-full py-3 rounded-lg font-medium bg-gray-100 text-gray-400 cursor-not-allowed"
+                  >
+                    Plan actual
+                  </button>
+                ) : isScheduledPlan ? (
+                  <button
+                    disabled
+                    className="w-full py-3 rounded-lg font-medium bg-purple-100 text-purple-600 cursor-not-allowed"
+                  >
+                    Cambio programado
+                  </button>
+                ) : hasPendingChange ? (
+                  <button
+                    disabled
+                    className="w-full py-3 rounded-lg font-medium bg-gray-100 text-gray-400 cursor-not-allowed text-sm"
+                  >
+                    Cancela el cambio pendiente primero
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleChangePlan(plan.planType)}
+                    disabled={actionLoading === plan.planType}
+                    className={`w-full py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
+                      canUpgrade 
+                        ? 'bg-green-600 text-white hover:bg-green-700' 
+                        : 'bg-amber-600 text-white hover:bg-amber-700'
+                    }`}
+                  >
+                    {actionLoading === plan.planType ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : canUpgrade ? (
+                      <>
+                        <ArrowUp className="w-4 h-4" />
+                        Upgrade ahora
+                      </>
+                    ) : (
+                      <>
+                        <ArrowDown className="w-4 h-4" />
+                        Cambiar al final del período
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           );

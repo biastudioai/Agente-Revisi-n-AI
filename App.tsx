@@ -1737,6 +1737,10 @@ const App: React.FC = () => {
                 loadSubscription();
                 loadUsage();
               }}
+              onSubscriptionChange={() => {
+                loadSubscription();
+                loadUsage();
+              }}
             />
           </div>
         </div>
