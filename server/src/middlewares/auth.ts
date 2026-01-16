@@ -132,7 +132,52 @@ export function requireRole(...roles: string[]) {
   };
 }
 
+export async function authMiddlewareAllowNoSubscription(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const sessionToken = req.cookies?.session_token || req.headers.authorization?.replace('Bearer ', '');
+
+    if (!sessionToken) {
+      res.status(401).json({ error: 'No session token provided' });
+      return;
+    }
+
+    const session = await prisma.session.findUnique({
+      where: { sessionToken },
+      include: { user: true },
+    });
+
+    if (!session) {
+      res.status(401).json({ error: 'Invalid session' });
+      return;
+    }
+
+    if (new Date() > session.expiresAt) {
+      await prisma.session.deleteMany({ where: { id: session.id } });
+      res.status(401).json({ error: 'Session expired' });
+      return;
+    }
+
+    req.user = {
+      id: session.user.id,
+      email: session.user.email,
+      nombre: session.user.nombre,
+      rol: session.user.rol,
+    };
+    req.sessionId = session.id;
+
+    next();
+  } catch (error) {
+    console.error('Auth middleware error:', error);
+    res.status(500).json({ error: 'Authentication error' });
+  }
+}
+
 export const requireAuth = authMiddleware;
+export const requireAuthAllowNoSubscription = authMiddlewareAllowNoSubscription;
 export const requireAdmin = requireRole('ADMIN');
 export const requireAseguradora = requireRole('ADMIN', 'ASEGURADORA');
 export const requireBroker = requireRole('ADMIN', 'ASEGURADORA', 'BROKER');

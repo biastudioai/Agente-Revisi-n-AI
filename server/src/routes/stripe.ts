@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import expressAsyncHandler from 'express-async-handler';
-import { requireAuth } from '../middlewares/auth';
+import { requireAuth, requireAuthAllowNoSubscription } from '../middlewares/auth';
 import { subscriptionService } from '../services/subscriptionService';
 import { usageService } from '../services/usageService';
 import { PLAN_CONFIGS } from '../config/plans';
@@ -74,7 +74,7 @@ router.get(
 
 router.post(
   '/create-checkout',
-  requireAuth,
+  requireAuthAllowNoSubscription,
   expressAsyncHandler(async (req: Request, res: Response) => {
     const userId = (req as any).user?.id;
     const email = (req as any).user?.email;
