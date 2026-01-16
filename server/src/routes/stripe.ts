@@ -39,7 +39,7 @@ router.get(
 
 router.get(
   '/subscription',
-  requireAuth,
+  requireAuthAllowNoSubscription,
   expressAsyncHandler(async (req: Request, res: Response) => {
     const userId = (req as any).user?.id;
     const userRole = (req as any).user?.rol;

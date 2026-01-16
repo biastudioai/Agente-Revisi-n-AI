@@ -1,13 +1,13 @@
 import { Router, Request, Response } from 'express';
 import expressAsyncHandler from 'express-async-handler';
-import { requireAuth } from '../middlewares/auth';
+import { requireAuth, requireAuthAllowNoSubscription } from '../middlewares/auth';
 import { usageService } from '../services/usageService';
 
 const router = Router();
 
 router.get(
   '/current',
-  requireAuth,
+  requireAuthAllowNoSubscription,
   expressAsyncHandler(async (req: Request, res: Response) => {
     const userId = (req as any).user?.id;
 

@@ -1050,6 +1050,42 @@ const App: React.FC = () => {
     return <LoginPage onLoginSuccess={(u) => { setUser(u); setBlockedMessage(null); }} blockedMessage={blockedMessage} />;
   }
 
+  // Show subscription selection for BROKER users without active subscription
+  if (user.rol === 'BROKER' && usage !== null && !usage.hasActiveSubscription) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#F8FAFC] via-white to-[#e8f7f8] flex items-center justify-center p-4">
+        <div className="w-full max-w-5xl">
+          <div className="text-center mb-8">
+            <img src="/attached_assets/Veryka_Logo_1767919213039.png" alt="Veryka.ai" className="h-16 mx-auto mb-4" />
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 max-w-xl mx-auto">
+              <div className="flex items-center justify-center gap-2 text-amber-700 mb-2">
+                <CreditCard className="w-5 h-5" />
+                <span className="font-medium">Suscripción requerida</span>
+              </div>
+              <p className="text-amber-600 text-sm">
+                Hola {user.nombre}, para usar Veryka.ai necesitas elegir un plan de suscripción.
+              </p>
+            </div>
+          </div>
+          <SubscriptionPlans 
+            onClose={handleLogout}
+            currentSubscription={null}
+            onSubscriptionChange={loadSubscription}
+          />
+          <div className="mt-6 text-center">
+            <button
+              onClick={handleLogout}
+              className="text-gray-500 hover:text-gray-700 transition-colors flex items-center gap-2 mx-auto"
+            >
+              <LogOut className="w-4 h-4" />
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Show Report History view
   if (isHistoryViewOpen) {
     return (
