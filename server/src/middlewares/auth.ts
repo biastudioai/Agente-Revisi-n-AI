@@ -82,6 +82,25 @@ export async function authMiddleware(
       }
     }
 
+    if (session.user.rol === UserRole.BROKER) {
+      const subscription = await prisma.subscription.findFirst({
+        where: {
+          userId: session.user.id,
+          status: { in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING] },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (!subscription) {
+        await prisma.session.deleteMany({ where: { id: session.id } });
+        res.status(403).json({ 
+          error: 'No tienes una suscripción activa. Por favor, contrata un plan para acceder a la plataforma.',
+          code: 'NO_SUBSCRIPTION'
+        });
+        return;
+      }
+    }
+
     req.user = {
       id: session.user.id,
       email: session.user.email,

@@ -155,7 +155,7 @@ const App: React.FC = () => {
     if (response.status === 403) {
       try {
         const data = await response.json();
-        if (data.code === 'AUDITOR_DEACTIVATED' || data.code === 'BROKER_NO_SUBSCRIPTION' || data.code === 'PLAN_NO_AUDITORS') {
+        if (data.code === 'AUDITOR_DEACTIVATED' || data.code === 'BROKER_NO_SUBSCRIPTION' || data.code === 'PLAN_NO_AUDITORS' || data.code === 'NO_SUBSCRIPTION') {
           setBlockedMessage(data.error);
           setUser(null);
           return false;

@@ -117,6 +117,20 @@ export async function loginUser(data: LoginData): Promise<AuthResult> {
     }
   }
 
+  if (user.rol === UserRole.BROKER) {
+    const subscription = await prisma.subscription.findFirst({
+      where: {
+        userId: user.id,
+        status: { in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING] },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!subscription) {
+      throw new Error('No tienes una suscripción activa. Por favor, contrata un plan para acceder a la plataforma.');
+    }
+  }
+
   const sessionToken = generateSessionToken();
   const expiresAt = getSessionExpiry(7);
 

@@ -50,6 +50,16 @@ Preferred communication style: Simple, everyday language.
   - **Plan Profesional** ($999/mes): 1 Broker + 3 auditores, 55 informes/mes (110 en promo), soporte prioritario, dashboard de estadísticas
   - **Plan Empresarial** ($2,999/mes): 1 Broker + 10 auditores, 170 informes/mes (340 en promo), soporte personalizado, capacitación inicial
   Promotional offers, extra report charges, and usage tracking. Administrators have unlimited access and a dedicated billing dashboard.
+  - **Subscription Change Management**:
+    - **Upgrades**: Applied immediately with new checkout, old subscription cancelled, used reports transferred to new plan
+    - **Downgrades**: Scheduled for period end using `cancel_at_period_end`, applied when period ends
+    - **Cancellations**: Uses `cancel_at_period_end`, users can continue until period ends, reactivation available before expiry
+    - **Auditor Auto-deactivation**: When downgrade is applied, excess auditors are automatically deactivated (oldest retained)
+  - **Subscription Access Control**:
+    - BROKERs without active subscription cannot login or access the platform
+    - AUDITORs whose BROKER has no active subscription cannot login
+    - Sessions are automatically invalidated when subscription expires
+    - Database fields: `cancelAtPeriodEnd`, `scheduledPlanType`, `scheduledChangeAt` track pending changes
 - **Email Report Sending**: Sends audit reports via email with PDF attachments using Titan SMTP (smtp.titan.email:587). Emails are sent from "Agente AI <agente@veryka.ai>" with professional HTML formatting. Includes failover to smtpout.secureserver.net if primary server fails. Credentials stored in Email_User and Email_Pass secrets.
 - **Auditor Management System**: Brokers can manage their auditors through a dedicated UI accessible from the user profile menu. Features include:
   - Create, edit, and delete auditor accounts (with proper password hashing)
