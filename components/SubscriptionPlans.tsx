@@ -98,7 +98,8 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, currentS
       if (response.ok) {
         const data = await response.json();
         if (data.url) {
-          window.location.href = data.url;
+          // Open in new tab to avoid iframe restrictions from Stripe
+          window.open(data.url, '_blank');
         }
       }
     } catch (e) {
