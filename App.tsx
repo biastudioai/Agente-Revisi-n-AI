@@ -1346,6 +1346,7 @@ const App: React.FC = () => {
                   ruleVersionInfo={ruleVersionInfo}
                   isRecalculatingWithNewRules={isRecalculatingWithNewRules}
                   onRecalculateWithCurrentRules={handleRecalculateWithCurrentRules}
+                  userRole={user?.rol}
                 />
              )}
           </div>

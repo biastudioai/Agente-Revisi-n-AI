@@ -18,6 +18,7 @@ interface DashboardProps {
   ruleVersionInfo?: RuleVersionInfo | null;
   isRecalculatingWithNewRules?: boolean;
   onRecalculateWithCurrentRules?: () => void;
+  userRole?: string;
 }
 
 type TabId = 
@@ -42,6 +43,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   ruleVersionInfo,
   isRecalculatingWithNewRules,
   onRecalculateWithCurrentRules,
+  userRole,
 }) => {
   const [formData, setFormData] = useState<ExtractedData>(report.extracted);
   const [modifiedFields, setModifiedFields] = useState<Record<string, { old: any, new: any }>>({});
@@ -375,9 +377,11 @@ const Dashboard: React.FC<DashboardProps> = ({
             </p>
          </div>
          <div className="flex items-center gap-2">
-             <button onClick={() => setViewMode(prev => prev === 'form' ? 'text' : 'form')} className="px-3 py-1.5 border rounded-lg text-xs font-bold bg-white text-slate-600 border-slate-200 hover:bg-slate-50 shadow-sm">
-                {viewMode === 'form' ? 'Modo Texto' : 'Modo Formulario'}
-             </button>
+             {userRole === 'ADMIN' && (
+               <button onClick={() => setViewMode(prev => prev === 'form' ? 'text' : 'form')} className="px-3 py-1.5 border rounded-lg text-xs font-bold bg-white text-slate-600 border-slate-200 hover:bg-slate-50 shadow-sm">
+                  {viewMode === 'form' ? 'Modo Texto' : 'Modo Formulario'}
+               </button>
+             )}
              {Object.keys(modifiedFields).length > 0 && (
                 <button onClick={() => { setFormData(report.extracted); setModifiedFields({}); }} className="px-3 py-1.5 border border-slate-200 rounded-lg text-slate-500 text-xs font-bold hover:bg-slate-50">
                     <RotateCcw className="w-3 h-3 mr-1.5 inline" />Limpiar
