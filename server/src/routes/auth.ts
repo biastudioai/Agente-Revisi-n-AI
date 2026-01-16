@@ -92,6 +92,13 @@ router.post('/login', asyncHandler(async (req: AuthenticatedRequest, res: Respon
     });
   } catch (error) {
     if (error instanceof NoSubscriptionError) {
+      res.cookie('session_token', error.sessionToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        expires: error.expiresAt,
+      });
+      
       res.status(403).json({ 
         error: error.message,
         code: error.code,
