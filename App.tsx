@@ -1240,23 +1240,25 @@ const App: React.FC = () => {
           >
             {/* Header Controls for Left Panel */}
             <div className="absolute top-4 left-4 z-20 flex items-center gap-3">
-               {/* View Toggle */}
-               <div className="bg-black/60 backdrop-blur rounded-full flex items-center border border-white/10 shadow-lg p-1">
-                  <button 
-                    onClick={() => setLeftPanelView('visual')}
-                    className={`p-1.5 rounded-full transition-all ${leftPanelView === 'visual' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}
-                    title="Vista Visual (PDF/Imagen)"
-                  >
-                    <ImageIcon className="w-3.5 h-3.5" />
-                  </button>
-                  <button 
-                    onClick={() => setLeftPanelView('text')}
-                    className={`p-1.5 rounded-full transition-all ${leftPanelView === 'text' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}
-                    title="Vista Texto (Transcripción)"
-                  >
-                    <AlignLeft className="w-3.5 h-3.5" />
-                  </button>
-               </div>
+               {/* View Toggle - Solo visible para ADMIN */}
+               {user?.rol === 'ADMIN' && (
+                 <div className="bg-black/60 backdrop-blur rounded-full flex items-center border border-white/10 shadow-lg p-1">
+                    <button 
+                      onClick={() => setLeftPanelView('visual')}
+                      className={`p-1.5 rounded-full transition-all ${leftPanelView === 'visual' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}
+                      title="Vista Visual (PDF/Imagen)"
+                    >
+                      <ImageIcon className="w-3.5 h-3.5" />
+                    </button>
+                    <button 
+                      onClick={() => setLeftPanelView('text')}
+                      className={`p-1.5 rounded-full transition-all ${leftPanelView === 'text' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}
+                      title="Vista Texto (Transcripción)"
+                    >
+                      <AlignLeft className="w-3.5 h-3.5" />
+                    </button>
+                 </div>
+               )}
 
                {blobUrl && (
                   <a 
@@ -1281,6 +1283,7 @@ const App: React.FC = () => {
                         base64Data={filePreview.data} 
                         approvalStatus={approvalStatus}
                         pendingChanges={pendingChanges}
+                        userRole={user?.rol}
                     />
                     ) : (
                     <div className="w-full h-full overflow-auto flex items-center justify-center p-8 bg-slate-900/50">

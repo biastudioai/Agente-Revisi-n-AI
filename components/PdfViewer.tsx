@@ -15,6 +15,7 @@ interface PdfViewerProps {
   base64Data: string;
   approvalStatus?: 'APPROVED' | 'REVIEW' | 'REJECTED';
   pendingChanges?: Record<string, { old: any, new: any }>;
+  userRole?: string;
 }
 
 interface TextAnnotation {
@@ -43,7 +44,7 @@ const FIELD_MAPPINGS: Record<string, string[]> = {
   'signos_vitales.altura': ['Talla', 'Estatura'],
 };
 
-const PdfViewer: React.FC<PdfViewerProps> = ({ base64Data, approvalStatus, pendingChanges = {} }) => {
+const PdfViewer: React.FC<PdfViewerProps> = ({ base64Data, approvalStatus, pendingChanges = {}, userRole }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const renderTaskRef = useRef<any>(null); // Track active render task to handle cancellations
@@ -554,8 +555,8 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ base64Data, approvalStatus, pendi
   return (
     <div className="flex flex-col h-full bg-slate-900 relative group overflow-hidden">
       
-      {/* --- SYNC CHANGES PANEL (Draggable) --- */}
-      {Object.keys(pendingChanges).length > 0 && (
+      {/* --- SYNC CHANGES PANEL (Draggable) - Solo visible para ADMIN --- */}
+      {userRole === 'ADMIN' && Object.keys(pendingChanges).length > 0 && (
          <div 
             className="absolute z-40 w-64 bg-white/95 backdrop-blur shadow-2xl rounded-xl border border-slate-200 overflow-hidden flex flex-col max-h-[60%] animate-slide-up"
             style={{ 
@@ -614,17 +615,18 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ base64Data, approvalStatus, pendi
          </div>
       )}
 
-      {/* --- TOOLBAR --- */}
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-30 flex items-center gap-2 bg-white/90 backdrop-blur rounded-full px-2 py-1.5 shadow-xl border border-white/20 transition-all">
-          <button 
-             onClick={() => setIsEditMode(!isEditMode)}
-             className={`flex items-center px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${isEditMode ? 'bg-brand-600 text-white' : 'hover:bg-slate-100 text-slate-700'}`}
-          >
-             <PenTool className="w-3.5 h-3.5 mr-1.5" />
-             {isEditMode ? 'Editando' : 'Editar PDF'}
-          </button>
-          
-          {isEditMode && (
+      {/* --- TOOLBAR - Solo visible para ADMIN --- */}
+      {userRole === 'ADMIN' && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-30 flex items-center gap-2 bg-white/90 backdrop-blur rounded-full px-2 py-1.5 shadow-xl border border-white/20 transition-all">
+            <button 
+               onClick={() => setIsEditMode(!isEditMode)}
+               className={`flex items-center px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${isEditMode ? 'bg-brand-600 text-white' : 'hover:bg-slate-100 text-slate-700'}`}
+            >
+               <PenTool className="w-3.5 h-3.5 mr-1.5" />
+               {isEditMode ? 'Editando' : 'Editar PDF'}
+            </button>
+            
+            {isEditMode && (
             <>
                <div className="w-px h-4 bg-slate-300 mx-1"></div>
                
@@ -664,7 +666,8 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ base64Data, approvalStatus, pendi
                </button>
             </>
           )}
-      </div>
+        </div>
+      )}
 
       {/* --- VIEWER AREA --- */}
       <div 
