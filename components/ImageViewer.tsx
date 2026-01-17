@@ -92,6 +92,35 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ images }) => {
     setLoading(false);
   };
 
+  useEffect(() => {
+    const checkImageLoaded = () => {
+      if (imageRef.current && imageRef.current.complete && imageRef.current.naturalWidth > 0) {
+        setImageDimensions({ 
+          width: imageRef.current.naturalWidth, 
+          height: imageRef.current.naturalHeight 
+        });
+        setLoading(false);
+        return true;
+      }
+      return false;
+    };
+
+    const timer = setTimeout(() => {
+      checkImageLoaded();
+    }, 50);
+
+    const fallbackTimer = setTimeout(() => {
+      if (loading) {
+        checkImageLoaded();
+      }
+    }, 500);
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(fallbackTimer);
+    };
+  }, [currentIndex, currentImage, loading]);
+
   const changePage = (offset: number) => {
     setCurrentIndex(prev => Math.min(Math.max(0, prev + offset), pageCount - 1));
     setLoading(true);
