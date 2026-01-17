@@ -4,6 +4,7 @@ import Dashboard from './components/Dashboard';
 import RuleConfigurator from './components/RuleConfigurator';
 import InsuranceAuditor from './components/InsuranceAuditor';
 import PdfViewer from './components/PdfViewer';
+import ImageViewer from './components/ImageViewer';
 import ProviderSelector, { ProviderOption } from './components/ProviderSelector';
 import LoginPage from './components/LoginPage';
 import SubscriptionPlans from './components/SubscriptionPlans';
@@ -1418,13 +1419,19 @@ const App: React.FC = () => {
                         userRole={user?.rol}
                     />
                     ) : (
-                    <div className="w-full h-full overflow-auto flex items-center justify-center p-8 bg-slate-900/50">
+                    pendingFiles.length > 0 ? (
+                      <ImageViewer 
+                        images={pendingFiles.filter(f => f.mimeType.startsWith('image/'))}
+                      />
+                    ) : (
+                      <div className="w-full h-full overflow-auto flex items-center justify-center p-8 bg-slate-900/50">
                         <img 
                             src={`data:${filePreview.type};base64,${filePreview.data}`} 
                             className="max-w-full max-h-full object-contain shadow-2xl"
                             alt="Medical Report"
                         />
-                    </div>
+                      </div>
+                    )
                     )
                 ) : (
                     <div className="text-slate-500 flex flex-col items-center">
