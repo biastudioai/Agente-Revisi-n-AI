@@ -1,0 +1,163 @@
+# Prompt de Auditoría de Seguridad - Aplicación React + Node.js + PostgreSQL + Prisma en Replit
+
+## Contexto
+Necesito realizar una auditoría de seguridad completa de mi aplicación web antes de lanzarla a producción. La aplicación tiene:
+- **Frontend**: React
+- **Backend**: Node.js/Express
+- **Base de datos**: PostgreSQL con Prisma ORM
+- **Entorno**: Replit
+
+## Instrucciones de Revisión
+
+Por favor, realiza una auditoría exhaustiva de seguridad evaluando los siguientes aspectos:
+
+### 1. GESTIÓN DE VARIABLES DE ENTORNO Y SECRETOS
+- [ ] Verificar que `DATABASE_URL` y otras credenciales NO estén hardcodeadas en el código
+- [ ] Confirmar que todas las claves sensibles estén en Replit Secrets (no en `.env` visible)
+- [ ] Revisar que el archivo `.env` esté en `.gitignore`
+- [ ] Validar que no haya API keys, tokens o contraseñas expuestas en el código fuente
+- [ ] Verificar que `JWT_SECRET` o `SESSION_SECRET` sean suficientemente fuertes (>32 caracteres aleatorios)
+
+### 2. AUTENTICACIÓN Y AUTORIZACIÓN
+- [ ] Revisar implementación de autenticación (JWT, sessions, OAuth)
+- [ ] Verificar que las contraseñas se almacenen con hashing seguro (bcrypt, argon2)
+- [ ] Validar que existan verificaciones de autorización en TODAS las rutas protegidas
+- [ ] Confirmar que los tokens tengan expiración apropiada
+- [ ] Revisar manejo de refresh tokens si aplica
+- [ ] Verificar protección contra ataques de fuerza bruta (rate limiting)
+
+### 3. SEGURIDAD DE PRISMA Y BASE DE DATOS
+- [ ] Revisar que NO se use `prisma.$queryRaw` con datos de usuario sin sanitizar
+- [ ] Validar que se use `prisma.$queryRawUnsafe` SOLO cuando sea absolutamente necesario
+- [ ] Confirmar que todos los inputs de usuario pasen por validación antes de queries
+- [ ] Verificar que no haya inyección SQL en queries personalizadas
+- [ ] Revisar permisos del usuario de base de datos (principio de mínimo privilegio)
+- [ ] Confirmar que migraciones de Prisma estén sincronizadas con el schema
+
+### 4. VALIDACIÓN Y SANITIZACIÓN DE INPUTS
+- [ ] Verificar validación de datos en el backend (NO solo frontend)
+- [ ] Revisar uso de librerías como Zod, Joi o class-validator
+- [ ] Validar que se saniticen inputs para prevenir XSS
+- [ ] Confirmar validación de tipos de archivo en uploads
+- [ ] Verificar límites de tamaño en requests (body-parser/express.json limits)
+- [ ] Revisar validación de parámetros de URL y query strings
+
+### 5. PROTECCIÓN CONTRA ATAQUES COMUNES
+**CORS:**
+- [ ] Verificar configuración de CORS (no usar `origin: '*'` en producción)
+- [ ] Confirmar que solo dominios autorizados puedan hacer requests
+
+**CSRF:**
+- [ ] Implementar tokens CSRF para formularios críticos
+- [ ] Verificar SameSite cookies configuration
+
+**XSS:**
+- [ ] Revisar que React esté actualizado (protección automática)
+- [ ] Confirmar que NO se use `dangerouslySetInnerHTML` sin sanitizar
+- [ ] Validar sanitización de HTML si se permite contenido rico
+
+**Clickjacking:**
+- [ ] Verificar headers `X-Frame-Options` o CSP `frame-ancestors`
+
+**Rate Limiting:**
+- [ ] Implementar rate limiting en endpoints críticos (login, registro, API)
+- [ ] Usar librerías como `express-rate-limit`
+
+### 6. HEADERS DE SEGURIDAD HTTP
+Verificar implementación de estos headers (usar `helmet.js`):
+- [ ] `Strict-Transport-Security` (HSTS)
+- [ ] `X-Content-Type-Options: nosniff`
+- [ ] `X-Frame-Options: DENY` o `SAMEORIGIN`
+- [ ] `Content-Security-Policy` (CSP)
+- [ ] `X-XSS-Protection: 1; mode=block`
+- [ ] `Referrer-Policy`
+- [ ] `Permissions-Policy`
+
+### 7. GESTIÓN DE SESIONES Y COOKIES
+- [ ] Verificar que cookies tengan flags `httpOnly`, `secure`, `sameSite`
+- [ ] Confirmar tiempo de expiración apropiado de sesiones
+- [ ] Revisar destrucción correcta de sesiones en logout
+- [ ] Validar regeneración de ID de sesión después de login
+
+### 8. MANEJO DE ERRORES Y LOGGING
+- [ ] Confirmar que mensajes de error NO expongan información sensible
+- [ ] Verificar que stack traces NO se envíen al frontend en producción
+- [ ] Revisar que se logueen eventos de seguridad (intentos de login fallidos, etc.)
+- [ ] Validar que logs NO contengan información sensible (contraseñas, tokens)
+- [ ] Implementar manejo global de errores en Express
+
+### 9. DEPENDENCIAS Y PAQUETES
+- [ ] Ejecutar `npm audit` y resolver vulnerabilidades críticas/altas
+- [ ] Verificar que paquetes estén actualizados (especialmente de seguridad)
+- [ ] Revisar que no haya paquetes no utilizados
+- [ ] Validar integridad de paquetes importantes
+
+### 10. CONFIGURACIÓN ESPECÍFICA DE REPLIT
+- [ ] Verificar que los Secrets de Replit contengan todas las variables críticas
+- [ ] Confirmar que `.replit` no exponga información sensible
+- [ ] Revisar configuración de dominios y redirects
+- [ ] Validar que el puerto de escucha sea el correcto para Replit
+- [ ] Verificar que el archivo `.gitignore` incluya archivos sensibles
+
+### 11. CONTROL DE ACCESO A ARCHIVOS
+- [ ] Verificar que archivos de configuración no sean accesibles públicamente
+- [ ] Confirmar permisos correctos en uploads de archivos
+- [ ] Validar que no haya directory listing habilitado
+- [ ] Revisar que archivos sensibles (.env, logs, backups) estén protegidos
+
+### 12. HTTPS Y COMUNICACIÓN SEGURA
+- [ ] Confirmar que la aplicación fuerce HTTPS en producción
+- [ ] Verificar certificados SSL/TLS válidos
+- [ ] Revisar que comunicaciones con APIs externas usen HTTPS
+- [ ] Validar configuración de proxy reverso si aplica
+
+### 13. PROTECCIÓN DE DATOS SENSIBLES
+- [ ] Verificar encriptación de datos sensibles en reposo
+- [ ] Confirmar que no se registren datos personales innecesariamente
+- [ ] Revisar cumplimiento con GDPR/CCPA si aplica
+- [ ] Validar políticas de retención de datos
+
+### 14. CONFIGURACIÓN DE PRODUCCIÓN
+- [ ] Verificar que `NODE_ENV=production` esté configurado
+- [ ] Confirmar que modo de desarrollo de React esté deshabilitado
+- [ ] Revisar optimizaciones de build (minificación, tree-shaking)
+- [ ] Validar que source maps NO estén expuestos en producción
+- [ ] Verificar que logs de debug estén deshabilitados
+
+## Formato de Respuesta Esperado
+
+Para cada sección, proporciona:
+1. **Estado actual**: ✅ Seguro / ⚠️ Necesita atención / ❌ Crítico
+2. **Hallazgos específicos**: Ubicación exacta de problemas (archivo:línea)
+3. **Nivel de riesgo**: Crítico / Alto / Medio / Bajo
+4. **Recomendaciones**: Código específico o pasos para remediar
+5. **Prioridad**: Inmediata / Alta / Media / Baja
+
+## Ejemplo de Análisis
+
+```
+### 2. AUTENTICACIÓN Y AUTORIZACIÓN
+Estado: ⚠️ Necesita atención
+
+Hallazgos:
+1. [ALTO] `src/routes/auth.js:45` - Contraseñas hasheadas con solo 8 rounds de bcrypt
+   Recomendación: Aumentar a 12+ rounds
+   
+2. [CRÍTICO] `src/routes/users.js:23` - Endpoint sin verificación de autorización
+   Recomendación: Agregar middleware de autenticación
+```
+
+## Archivos Críticos a Revisar
+
+Por favor, presta especial atención a:
+- `src/routes/**/*.js` - Todas las rutas de la API
+- `src/middleware/**/*.js` - Middlewares de autenticación/autorización
+- `prisma/schema.prisma` - Esquema de base de datos
+- `src/config/**/*.js` - Archivos de configuración
+- `.env.example` - Plantilla de variables de entorno
+- `package.json` - Dependencias
+- Cualquier archivo que maneje autenticación, pagos, o datos sensibles
+
+## Objetivo Final
+
+Proporcionar un informe completo que identifique TODAS las vulnerabilidades de seguridad y proporcione un plan de acción priorizado para asegurar la aplicación antes del lanzamiento a producción.
