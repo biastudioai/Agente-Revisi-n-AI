@@ -218,7 +218,102 @@ const App: React.FC = () => {
     }
   }, []);
 
+  // Function to clear all sensitive data from memory
+  const clearAllSensitiveData = () => {
+    setReport(null);
+    setFilePreview(null);
+    setBlobUrl(null);
+    setSavedReports([]);
+    setCurrentFormId(null);
+    setUsage(null);
+    setSubscription(null);
+    setPendingFile(null);
+    setDetectedProvider(undefined);
+    setRuleVersionInfo(null);
+    setCurrentRuleVersionId(null);
+    setStatus('idle');
+    setError(null);
+    setPendingChanges({});
+    setIsHistoryViewOpen(false);
+    setIsBillingDashboardOpen(false);
+    setIsAuditorManagerOpen(false);
+    setIsSubscriptionModalOpen(false);
+    setIsRulesModalOpen(false);
+    setIsInsuranceAuditorOpen(false);
+  };
+
+  // Session sync key for cross-tab communication
+  const SESSION_SYNC_KEY = 'veryka_session_sync';
+
+  // Notify other tabs about session change (login/logout)
+  const notifySessionChange = (userId: string | null) => {
+    try {
+      const syncData = {
+        userId,
+        timestamp: Date.now(),
+        tabId: Math.random().toString(36).substring(7)
+      };
+      localStorage.setItem(SESSION_SYNC_KEY, JSON.stringify(syncData));
+    } catch (e) {
+      // localStorage may be unavailable in private mode or when quota is exceeded
+      console.warn('Could not notify other tabs about session change:', e);
+    }
+  };
+
+  // Listen for session changes from other tabs
+  useEffect(() => {
+    const handleStorageChange = async (event: StorageEvent) => {
+      if (event.key !== SESSION_SYNC_KEY) return;
+      
+      try {
+        const syncData = event.newValue ? JSON.parse(event.newValue) : null;
+        
+        // If another tab logged out or changed user
+        if (!syncData || syncData.userId !== user?.id) {
+          // Clear all sensitive data immediately
+          clearAllSensitiveData();
+          
+          // Validate current session with server
+          try {
+            const response = await fetch('/api/auth/validate', {
+              credentials: 'include',
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              if (data.valid && data.user) {
+                // Different user is now logged in
+                if (user?.id && data.user.id !== user.id) {
+                  // Force page reload to ensure clean state
+                  window.location.reload();
+                } else {
+                  setUser(data.user);
+                  setBlockedMessage(null);
+                }
+              } else {
+                setUser(null);
+              }
+            } else {
+              setUser(null);
+            }
+          } catch (e) {
+            console.error('Error validating session after tab sync:', e);
+            setUser(null);
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing session sync data:', e);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [user]);
+
   const handleLogout = async () => {
+    // Clear all sensitive data immediately
+    clearAllSensitiveData();
+    
     try {
       await fetch('/api/auth/logout', {
         method: 'POST',
@@ -227,6 +322,10 @@ const App: React.FC = () => {
     } catch (e) {
       console.error('Error logging out:', e);
     }
+    
+    // Notify other tabs about logout
+    notifySessionChange(null);
+    
     setUser(null);
   };
 
@@ -266,22 +365,35 @@ const App: React.FC = () => {
     }
   }, [user]);
 
-  // Periodic session validation for auditors (check every 30 seconds)
+  // Periodic session validation for ALL users (check every 30 seconds)
+  // This ensures that if user changes in another tab, this tab will detect it
   useEffect(() => {
-    if (!user || user.rol !== 'AUDITOR') return;
+    if (!user) return;
 
-    const validateAuditorSession = async () => {
+    const validateSession = async () => {
       try {
         const response = await fetch('/api/auth/validate', {
           credentials: 'include',
         });
-        if (response.status === 403) {
+        
+        if (response.ok) {
+          const data = await response.json();
+          // Check if the current session belongs to a different user
+          if (data.valid && data.user && data.user.id !== user.id) {
+            // User changed! Clear all data and reload
+            clearAllSensitiveData();
+            window.location.reload();
+            return;
+          }
+        } else if (response.status === 403) {
           const data = await response.json();
           if (data.code) {
             setBlockedMessage(data.error);
+            clearAllSensitiveData();
             setUser(null);
           }
         } else if (response.status === 401) {
+          clearAllSensitiveData();
           setUser(null);
         }
       } catch (e) {
@@ -289,7 +401,7 @@ const App: React.FC = () => {
       }
     };
 
-    const interval = setInterval(validateAuditorSession, 30000);
+    const interval = setInterval(validateSession, 30000);
     return () => clearInterval(interval);
   }, [user]);
 
@@ -1047,7 +1159,12 @@ const App: React.FC = () => {
 
   // Show login page if not authenticated
   if (!user) {
-    return <LoginPage onLoginSuccess={(u) => { setUser(u); setBlockedMessage(null); }} blockedMessage={blockedMessage} />;
+    return <LoginPage onLoginSuccess={(u) => { 
+      setUser(u); 
+      setBlockedMessage(null);
+      // Notify other tabs about the new login
+      notifySessionChange(u.id);
+    }} blockedMessage={blockedMessage} />;
   }
 
   // Show subscription selection for BROKER users without active subscription
