@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/auth';
 import formsRoutes from './routes/forms';
@@ -21,9 +23,72 @@ import { PlanType } from './generated/prisma';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const isProduction = process.env.NODE_ENV === 'production';
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://js.stripe.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "blob:", "https:"],
+      connectSrc: ["'self'", "https://api.stripe.com", "https://*.replit.dev", "https://*.repl.co"],
+      frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: isProduction ? [] : null,
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+}));
+
+const getAllowedOrigins = (): Set<string> => {
+  const origins = new Set<string>();
+  if (process.env.FRONTEND_URL) {
+    try {
+      const url = new URL(process.env.FRONTEND_URL);
+      origins.add(url.origin);
+    } catch {}
+  }
+  if (process.env.REPLIT_DOMAINS) {
+    const domains = process.env.REPLIT_DOMAINS.split(',');
+    domains.forEach(domain => {
+      const trimmed = domain.trim();
+      if (trimmed) {
+        origins.add(`https://${trimmed}`);
+      }
+    });
+  }
+  if (process.env.REPLIT_DEV_DOMAIN) {
+    origins.add(`https://${process.env.REPLIT_DEV_DOMAIN.trim()}`);
+  }
+  if (!isProduction) {
+    origins.add('http://localhost:5000');
+    origins.add('http://localhost:3000');
+  }
+  return origins.size > 0 ? origins : new Set(['http://localhost:5000']);
+};
+
+const isOriginAllowed = (origin: string | undefined): boolean => {
+  if (!origin) return true;
+  const allowedOrigins = getAllowedOrigins();
+  try {
+    const requestOrigin = new URL(origin).origin;
+    return allowedOrigins.has(requestOrigin);
+  } catch {
+    return false;
+  }
+};
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5000',
+  origin: (origin, callback) => {
+    if (isOriginAllowed(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  },
   credentials: true,
 }));
 
@@ -137,9 +202,30 @@ app.post(
   }
 );
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cookieParser());
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: 'Demasiados intentos. Por favor espera 15 minutos.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.path === '/validate' || req.path === '/me',
+});
+
+const strictAuthLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: { error: 'Demasiados intentos de recuperación. Por favor espera 1 hora.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/password-reset', strictAuthLimiter);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/forms', formsRoutes);

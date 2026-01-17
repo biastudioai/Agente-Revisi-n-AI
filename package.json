@@ -30,8 +30,10 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "express-async-handler": "^1.2.0",
+    "express-rate-limit": "^8.2.1",
     "google-auth-library": "^10.5.0",
     "googleapis": "^170.0.0",
+    "helmet": "^8.1.0",
     "lucide-react": "^0.554.0",
     "nodemailer": "^7.0.12",
     "pdf-lib": "1.17.1",
@@ -42,7 +44,8 @@
     "react-dom": "^19.2.0",
     "stripe-replit-sync": "^1.0.0",
     "ts-node": "^10.9.2",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@types/node": "^22.19.3",

@@ -1,5 +1,6 @@
 import { Router, Response } from 'express';
 import asyncHandler from 'express-async-handler';
+import { z } from 'zod';
 import { 
   registerUser, 
   loginUser, 
@@ -13,21 +14,34 @@ import { authMiddleware, AuthenticatedRequest } from '../middlewares/auth';
 import { createAuditLog, getClientIP } from '../middlewares/audit';
 import { sendPasswordResetEmail } from '../services/emailService';
 import prisma from '../config/database';
+import { 
+  registerSchema, 
+  loginSchema, 
+  passwordResetRequestSchema, 
+  passwordResetConfirmSchema 
+} from '../schemas/auth';
 
 const router = Router();
+const isProduction = process.env.NODE_ENV === 'production';
+
+const getCookieOptions = (expiresAt: Date) => ({
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? 'strict' as const : 'lax' as const,
+  expires: expiresAt,
+  path: '/',
+});
 
 router.post('/register', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-  const { email, password, nombre, rol } = req.body;
-
-  if (!email || !password || !nombre) {
-    res.status(400).json({ error: 'Email, password, and nombre are required' });
+  const parseResult = registerSchema.safeParse(req.body);
+  
+  if (!parseResult.success) {
+    const firstError = parseResult.error.errors[0];
+    res.status(400).json({ error: firstError.message });
     return;
   }
 
-  if (password.length < 8) {
-    res.status(400).json({ error: 'Password must be at least 8 characters' });
-    return;
-  }
+  const { email, password, nombre, rol } = parseResult.data;
 
   try {
     const result = await registerUser({ email, password, nombre, rol });
@@ -40,12 +54,7 @@ router.post('/register', asyncHandler(async (req: AuthenticatedRequest, res: Res
       ipAddress: getClientIP(req),
     });
 
-    res.cookie('session_token', result.sessionToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      expires: result.expiresAt,
-    });
+    res.cookie('session_token', result.sessionToken, getCookieOptions(result.expiresAt));
 
     res.status(201).json({
       message: 'User registered successfully',
@@ -61,12 +70,15 @@ router.post('/register', asyncHandler(async (req: AuthenticatedRequest, res: Res
 }));
 
 router.post('/login', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    res.status(400).json({ error: 'Email and password are required' });
+  const parseResult = loginSchema.safeParse(req.body);
+  
+  if (!parseResult.success) {
+    const firstError = parseResult.error.errors[0];
+    res.status(400).json({ error: firstError.message });
     return;
   }
+
+  const { email, password } = parseResult.data;
 
   try {
     const ipAddress = getClientIP(req);
@@ -83,12 +95,7 @@ router.post('/login', asyncHandler(async (req: AuthenticatedRequest, res: Respon
       metadata: { singleSessionEnforced: true } as any,
     });
 
-    res.cookie('session_token', result.sessionToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      expires: result.expiresAt,
-    });
+    res.cookie('session_token', result.sessionToken, getCookieOptions(result.expiresAt));
 
     res.json({
       message: 'Login successful',
@@ -96,12 +103,7 @@ router.post('/login', asyncHandler(async (req: AuthenticatedRequest, res: Respon
     });
   } catch (error) {
     if (error instanceof NoSubscriptionError) {
-      res.cookie('session_token', error.sessionToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        expires: error.expiresAt,
-      });
+      res.cookie('session_token', error.sessionToken, getCookieOptions(error.expiresAt));
       
       res.status(403).json({ 
         error: error.message,
@@ -143,13 +145,15 @@ router.post('/logout', authMiddleware, asyncHandler(async (req: AuthenticatedReq
 }));
 
 router.post('/password-reset/request', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-  const { email } = req.body;
-
-  if (!email) {
-    res.status(400).json({ error: 'Email is required' });
+  const parseResult = passwordResetRequestSchema.safeParse(req.body);
+  
+  if (!parseResult.success) {
+    const firstError = parseResult.error.errors[0];
+    res.status(400).json({ error: firstError.message });
     return;
   }
 
+  const { email } = parseResult.data;
   const resetToken = await requestPasswordReset(email);
 
   let emailSent = false;
@@ -187,18 +191,15 @@ router.post('/password-reset/request', asyncHandler(async (req: AuthenticatedReq
 }));
 
 router.post('/password-reset/confirm', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-  const { token, newPassword } = req.body;
-
-  if (!token || !newPassword) {
-    res.status(400).json({ error: 'Token and new password are required' });
+  const parseResult = passwordResetConfirmSchema.safeParse(req.body);
+  
+  if (!parseResult.success) {
+    const firstError = parseResult.error.errors[0];
+    res.status(400).json({ error: firstError.message });
     return;
   }
 
-  if (newPassword.length < 8) {
-    res.status(400).json({ error: 'Password must be at least 8 characters' });
-    return;
-  }
-
+  const { token, newPassword } = parseResult.data;
   const success = await resetPassword(token, newPassword);
 
   if (!success) {
