@@ -9,10 +9,17 @@ import { getPlanConfig } from '../config/plans';
 
 const router = Router();
 
+interface FileUploadData {
+  base64: string;
+  mimeType: string;
+  name?: string;
+}
+
 interface CreateFormRequest {
   insuranceCompany: string;
   formData: any;
-  fileBase64?: string;
+  files?: FileUploadData[]; // Array de archivos para subir
+  fileBase64?: string; // Mantener compatibilidad con versión anterior
   fileMimeType?: string;
   formId?: string; // Si se proporciona, actualiza un formulario existente
   ruleVersionId?: string; // ID de la versión de reglas usada para procesar
@@ -47,7 +54,7 @@ router.post(
   '/',
   requireAuth,
   expressAsyncHandler(async (req: Request, res: Response) => {
-    const { insuranceCompany, formData, fileBase64, fileMimeType, formId, ruleVersionId, originalScore } = req.body as CreateFormRequest;
+    const { insuranceCompany, formData, files, fileBase64, fileMimeType, formId, ruleVersionId, originalScore } = req.body as CreateFormRequest;
     const userId = (req as any).user?.id;
 
     if (!userId) {
@@ -100,15 +107,24 @@ router.post(
 
     try {
       const privateDir = getPrivateObjectDir();
-      let newPdfUrl: string | null = null;
-      let newFilePath: string | null = null;
       let isNewReport = false;
+      
+      // Normalizar archivos: soportar tanto el nuevo formato (files[]) como el legacy (fileBase64/fileMimeType)
+      let filesToUpload: FileUploadData[] = [];
+      if (files && files.length > 0) {
+        filesToUpload = files;
+      } else if (fileBase64 && fileMimeType) {
+        // Compatibilidad con versión anterior
+        filesToUpload = [{ base64: fileBase64, mimeType: fileMimeType }];
+      }
 
-      // Subir archivo si se proporciona
-      if (fileBase64 && fileMimeType) {
+      // Subir todos los archivos al Object Storage
+      const uploadedFiles: { pdfUrl: string; fullPath: string }[] = [];
+      
+      for (const fileData of filesToUpload) {
         const objectId = randomUUID();
-        const extension = fileMimeType === 'application/pdf' ? '.pdf' : 
-                         fileMimeType.startsWith('image/') ? `.${fileMimeType.split('/')[1]}` : '';
+        const extension = fileData.mimeType === 'application/pdf' ? '.pdf' : 
+                         fileData.mimeType.startsWith('image/') ? `.${fileData.mimeType.split('/')[1]}` : '';
         const entityPath = `uploads/${objectId}${extension}`;
         const fullPath = `${privateDir}/${entityPath}`;
         
@@ -117,22 +133,43 @@ router.post(
           const bucket = objectStorageClient.bucket(bucketName);
           const file = bucket.file(objectName);
           
-          const binaryData = Buffer.from(fileBase64, 'base64');
+          const binaryData = Buffer.from(fileData.base64, 'base64');
           
           await file.save(binaryData, {
             metadata: {
-              contentType: fileMimeType,
+              contentType: fileData.mimeType,
             },
           });
           
-          newPdfUrl = `/objects/${entityPath}`;
-          newFilePath = fullPath;
-          console.log('File uploaded to Object Storage:', newPdfUrl);
+          const pdfUrl = `/objects/${entityPath}`;
+          uploadedFiles.push({ pdfUrl, fullPath });
+          console.log('File uploaded to Object Storage:', pdfUrl);
         } catch (uploadError) {
           console.error('Error uploading file:', uploadError);
-          res.status(500).json({ error: 'Error al subir el archivo' });
+          // Limpiar archivos ya subidos en caso de error
+          for (const uploaded of uploadedFiles) {
+            try {
+              const { bucketName, objectName } = parseObjectPath(uploaded.fullPath);
+              const bucket = objectStorageClient.bucket(bucketName);
+              const file = bucket.file(objectName);
+              await file.delete();
+            } catch (cleanupError) {
+              console.error('Error cleaning up file:', cleanupError);
+            }
+          }
+          res.status(500).json({ error: 'Error al subir los archivos' });
           return;
         }
+      }
+
+      // Obtener archivos antiguos ANTES de la transacción (para limpieza posterior)
+      let oldPdfUrls: string[] = [];
+      if (formId && uploadedFiles.length > 0) {
+        const existingPdfs = await prisma.formPdf.findMany({
+          where: { formId },
+          select: { pdfUrl: true },
+        });
+        oldPdfUrls = existingPdfs.map(p => p.pdfUrl);
       }
 
       let medicalForm;
@@ -182,21 +219,21 @@ router.post(
             isNewReport = true;
           }
 
-          // Si hay nuevo PDF, guardarlo
-          if (newPdfUrl) {
+          // Guardar todos los archivos subidos
+          if (uploadedFiles.length > 0) {
             if (formId) {
-              // Actualizar PDF existente
-              await tx.formPdf.upsert({
+              // Actualización: eliminar registros antiguos de la BD
+              await tx.formPdf.deleteMany({
                 where: { formId: form.id },
-                update: { pdfUrl: newPdfUrl },
-                create: { formId: form.id, pdfUrl: newPdfUrl },
               });
-            } else {
-              // Crear nuevo PDF para nuevo formulario
+            }
+            
+            // Crear registros para todos los archivos
+            for (const uploaded of uploadedFiles) {
               await tx.formPdf.create({
                 data: {
                   formId: form.id,
-                  pdfUrl: newPdfUrl,
+                  pdfUrl: uploaded.pdfUrl,
                 },
               });
             }
@@ -206,13 +243,14 @@ router.post(
         });
       } catch (dbError: any) {
         console.error('Error in database transaction:', dbError);
-        if (newFilePath) {
+        // Limpiar archivos huérfanos (los nuevos que se subieron)
+        for (const uploaded of uploadedFiles) {
           try {
-            const { bucketName, objectName } = parseObjectPath(newFilePath);
+            const { bucketName, objectName } = parseObjectPath(uploaded.fullPath);
             const bucket = objectStorageClient.bucket(bucketName);
             const file = bucket.file(objectName);
             await file.delete();
-            console.log('Cleaned up orphaned file after DB error:', newPdfUrl);
+            console.log('Cleaned up orphaned file after DB error:', uploaded.pdfUrl);
           } catch (cleanupError) {
             console.error('Error cleaning up orphaned file:', cleanupError);
           }
@@ -225,12 +263,36 @@ router.post(
         return;
       }
 
+      // DESPUÉS de transacción exitosa: limpiar archivos antiguos del Object Storage
+      if (oldPdfUrls.length > 0) {
+        for (const oldPdfUrl of oldPdfUrls) {
+          if (oldPdfUrl && oldPdfUrl.startsWith('/objects/')) {
+            try {
+              const entityPath = oldPdfUrl.slice('/objects/'.length);
+              const fullPath = `${privateDir}/${entityPath}`;
+              const { bucketName, objectName } = parseObjectPath(fullPath);
+              const bucket = objectStorageClient.bucket(bucketName);
+              const file = bucket.file(objectName);
+              const [exists] = await file.exists();
+              if (exists) {
+                await file.delete();
+                console.log('Deleted old file from Object Storage:', oldPdfUrl);
+              }
+            } catch (deleteError) {
+              console.error('Error deleting old file from Object Storage:', deleteError);
+            }
+          }
+        }
+      }
+
       res.status(201).json({
         success: true,
         formId: medicalForm.id,
-        pdfUrl: newPdfUrl,
+        pdfUrls: uploadedFiles.map(f => f.pdfUrl),
+        pdfUrl: uploadedFiles[0]?.pdfUrl || null, // Mantener compatibilidad
         isNew: isNewReport,
         message: 'Formulario guardado exitosamente',
+        filesCount: uploadedFiles.length,
       });
     } catch (error) {
       console.error('Error creating medical form:', error);
@@ -372,7 +434,9 @@ router.get(
           approvalScore: formData.score?.finalScore ?? 0,
           processedAt: form.createdAt,
           status: form.status,
-          pdfUrl: form.formPdfs?.[0]?.pdfUrl || null,
+          pdfUrl: form.formPdfs?.[0]?.pdfUrl || null, // Mantener compatibilidad
+          pdfUrls: form.formPdfs?.map((pdf: any) => pdf.pdfUrl) || [], // Todos los archivos
+          filesCount: form.formPdfs?.length || 0,
           userRole: userRole,
           ruleVersionId: form.ruleVersionId || null,
           originalScore: form.originalScore || null,

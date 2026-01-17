@@ -351,6 +351,8 @@ export interface SavedReport {
   extractedData: ExtractedData;  // Datos FINALES (con ediciones del usuario)
   score: ScoringResult;          // Score final
   flags: Flag[];                 // Flags finales
+  pdfUrl?: string | null;        // URL del primer archivo (compatibilidad)
+  pdfUrls?: string[];            // URLs de todos los archivos asociados
   ruleVersionId?: string;        // ID de versión de reglas usada
   originalScore?: number;        // Score original al momento del procesamiento
 }

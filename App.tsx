@@ -432,6 +432,7 @@ const App: React.FC = () => {
             score: form.formData?.score || { finalScore: 0, categoryScores: [] },
             flags: form.formData?.flags || [],
             pdfUrl: form.formPdfs?.[0]?.pdfUrl || null,
+            pdfUrls: form.formPdfs?.map((pdf: any) => pdf.pdfUrl) || [],
             ruleVersionId: form.ruleVersionId || undefined,
             originalScore: form.originalScore || undefined,
           }));
@@ -580,8 +581,8 @@ const App: React.FC = () => {
         console.error('Error capturing rule version:', e);
       }
       
-      const firstFile = pendingFiles[0];
-      const savedFormId = await autoSaveReport(data, { data: firstFile.base64, type: firstFile.mimeType }, capturedRuleVersionId);
+      const filesToSave = pendingFiles.map(f => ({ data: f.base64, type: f.mimeType, name: f.name }));
+      const savedFormId = await autoSaveReport(data, filesToSave, capturedRuleVersionId);
       if (savedFormId) {
         setCurrentFormId(savedFormId);
       }
@@ -827,7 +828,7 @@ const App: React.FC = () => {
   // Auto-guardar reporte (sin alertas, usado después de procesamiento)
   const autoSaveReport = async (
     reportData: AnalysisReport, 
-    file: {data: string, type: string} | null,
+    files: Array<{data: string, type: string, name?: string}> | null,
     ruleVersionIdOverride?: string  // Allow passing ruleVersionId directly to avoid stale state
   ): Promise<string | null> => {
     try {
@@ -842,8 +843,7 @@ const App: React.FC = () => {
       const requestBody: {
         insuranceCompany: string;
         formData: any;
-        fileBase64?: string;
-        fileMimeType?: string;
+        files?: Array<{base64: string, mimeType: string, name?: string}>;
         ruleVersionId?: string;
         originalScore?: number;
       } = {
@@ -851,9 +851,12 @@ const App: React.FC = () => {
         formData: formData,
       };
 
-      if (file) {
-        requestBody.fileBase64 = file.data;
-        requestBody.fileMimeType = file.type;
+      if (files && files.length > 0) {
+        requestBody.files = files.map(f => ({
+          base64: f.data,
+          mimeType: f.type,
+          name: f.name,
+        }));
       }
       
       // Include rule version tracking - use override if provided, otherwise use state

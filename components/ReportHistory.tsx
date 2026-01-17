@@ -9,6 +9,8 @@ interface Report {
   processedAt: string;
   status: string;
   pdfUrl: string | null;
+  pdfUrls: string[];
+  filesCount: number;
   userRole: string;
   creatorName: string | null;
   creatorEmail: string | null;
