@@ -50,6 +50,11 @@ Preferred communication style: Simple, everyday language.
   - Files are sent together in a single Gemini API call for consolidated extraction
   - Provider detection uses the first file in the sequence
   - Ideal for mobile users who take individual photos of each page of a medical report
+  - **Image Viewer**: When multiple images (JPG/PNG) are uploaded, the ImageViewer component provides:
+    - Page navigation between images (previous/next buttons with page indicator)
+    - Zoom controls (zoom in, zoom out, fit to screen)
+    - Auto-fit on initial load and window resize
+    - Consistent UI with PdfViewer controls
 - **Report History System**: Displays processed reports in a table format, allowing users to view their own reports and access detailed views with associated PDFs.
 - **File Storage System**: Integrates with Replit Object Storage for automatic upload and secure serving of PDFs and images, with transactional saving and cleanup.
 - **Stripe Subscription System**: Manages subscription plans with tiered benefits:
