@@ -22,7 +22,7 @@ export const CONFIG_GNP: AseguradoraConfig = {
     'paciente.fecha_nacimiento': { path: 'identificacion.fecha_nacimiento', opcional: true, parser: (v) => v ? new Date(v) : undefined },
     
     // PÓLIZA (3 campos)
-    'poliza.numero': { path: 'tramite.numero_poliza', parser: (v) => v?.trim() || '' },
+    'poliza.numero': { path: 'tramite.numero_poliza', parser: (v) => v?.trim().replace(/\s/g, '') || '' },
     'poliza.certificado': { path: 'tramite.numero_certificado', opcional: true, parser: (v) => v?.trim() || '' },
     'poliza.asegurado_titular': { path: 'tramite.es_titular', opcional: true, parser: (v) => Boolean(v) },
     
@@ -83,7 +83,7 @@ export const CONFIG_METLIFE: AseguradoraConfig = {
     'paciente.fecha_nacimiento': { path: 'identificacion.fecha_nacimiento', opcional: true, parser: (v) => v ? new Date(v) : undefined },
     
     // PÓLIZA (3 campos)
-    'poliza.numero': { path: 'tramite.numero_poliza', opcional: true, parser: (v) => v?.trim() || '' },
+    'poliza.numero': { path: 'tramite.numero_poliza', opcional: true, parser: (v) => v?.trim().replace(/\s/g, '') || '' },
     'poliza.certificado': { path: 'tramite.numero_certificado', opcional: true, parser: (v) => v?.trim() || '' },
     'poliza.asegurado_titular': { path: 'tramite.es_titular', opcional: true, parser: (v) => Boolean(v) },
     
@@ -155,7 +155,7 @@ export const CONFIG_NYLIFE: AseguradoraConfig = {
     'paciente.tipo_evento_raw': { path: 'identificacion.tipo_evento', opcional: true, parser: (v) => Array.isArray(v) ? v : [v] },
     
     // PÓLIZA
-    'poliza.numero': { path: 'tramite.numero_poliza', opcional: true, parser: (v) => v?.trim() || '' },
+    'poliza.numero': { path: 'tramite.numero_poliza', opcional: true, parser: (v) => v?.trim().replace(/\s/g, '') || '' },
     'poliza.certificado': { path: 'tramite.numero_certificado', opcional: true, parser: (v) => v?.trim() || '' },
     
     // MÉDICO TRATANTE - Con campos específicos de NY Life
