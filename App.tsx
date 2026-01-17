@@ -1867,7 +1867,7 @@ const App: React.FC = () => {
         
         <div className="w-full max-w-xl animate-fade-in delay-100 relative z-10">
           <FileUpload 
-            onFilesSelected={handleFilesSelected} 
+            onFilesConfirmed={handleFilesSelected} 
             isProcessing={false}
             savedReports={savedReports}
             onLoadReport={(id) => {
