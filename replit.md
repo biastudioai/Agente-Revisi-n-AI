@@ -43,6 +43,13 @@ Preferred communication style: Simple, everyday language.
 - **Multi-Provider Field Mapping**: Facilitates rule application across different insurers despite varying field paths using `fieldMappings` and dynamic autocomplete.
 - **Normalization Layer**: Maps disparate provider-specific fields to a `StandardizedMedicalReport` schema for data consistency.
 - **Provider Detection**: Automatically identifies insurance providers from PDF content using keyword matching, with manual selection as a fallback.
+- **Multi-File Upload Support**: Users can upload up to 5 files (images or PDFs) that are processed together as a single document. Features include:
+  - Drag-and-drop or click to select multiple files
+  - Visual preview of all selected files with thumbnails
+  - Individual file removal before processing
+  - Files are sent together in a single Gemini API call for consolidated extraction
+  - Provider detection uses the first file in the sequence
+  - Ideal for mobile users who take individual photos of each page of a medical report
 - **Report History System**: Displays processed reports in a table format, allowing users to view their own reports and access detailed views with associated PDFs.
 - **File Storage System**: Integrates with Replit Object Storage for automatic upload and secure serving of PDFs and images, with transactional saving and cleanup.
 - **Stripe Subscription System**: Manages subscription plans with tiered benefits:
