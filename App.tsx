@@ -291,9 +291,13 @@ const App: React.FC = () => {
                   setBlockedMessage(null);
                 }
               } else {
+                // Session was invalidated (logout or replaced)
+                setBlockedMessage('Tu sesión fue cerrada porque iniciaste sesión desde otro dispositivo.');
                 setUser(null);
               }
             } else {
+              // Session was invalidated
+              setBlockedMessage('Tu sesión fue cerrada porque iniciaste sesión desde otro dispositivo.');
               setUser(null);
             }
           } catch (e) {
@@ -365,8 +369,8 @@ const App: React.FC = () => {
     }
   }, [user]);
 
-  // Periodic session validation for ALL users (check every 30 seconds)
-  // This ensures that if user changes in another tab, this tab will detect it
+  // Periodic session validation for ALL users (check every 15 seconds for single-session enforcement)
+  // This ensures that if user logs in on another device, this session is invalidated
   useEffect(() => {
     if (!user) return;
 
@@ -393,6 +397,9 @@ const App: React.FC = () => {
             setUser(null);
           }
         } else if (response.status === 401) {
+          // Session invalidated - this happens when user logged in from another device
+          // Show specific message about session being replaced
+          setBlockedMessage('Tu sesión fue cerrada porque iniciaste sesión desde otro dispositivo. Por seguridad, solo se permite una sesión activa a la vez.');
           clearAllSensitiveData();
           setUser(null);
         }
@@ -401,7 +408,8 @@ const App: React.FC = () => {
       }
     };
 
-    const interval = setInterval(validateSession, 30000);
+    // Check every 15 seconds for faster detection of session replacement
+    const interval = setInterval(validateSession, 15000);
     return () => clearInterval(interval);
   }, [user]);
 

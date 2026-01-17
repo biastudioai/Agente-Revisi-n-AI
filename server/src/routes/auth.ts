@@ -69,14 +69,18 @@ router.post('/login', asyncHandler(async (req: AuthenticatedRequest, res: Respon
   }
 
   try {
-    const result = await loginUser({ email, password });
+    const ipAddress = getClientIP(req);
+    const userAgent = req.headers['user-agent'] || undefined;
+    
+    const result = await loginUser({ email, password, ipAddress, userAgent });
 
     await createAuditLog({
       userId: result.user.id,
       action: 'LOGIN',
       entityId: result.user.id,
       entityType: 'User',
-      ipAddress: getClientIP(req),
+      ipAddress,
+      metadata: { singleSessionEnforced: true } as any,
     });
 
     res.cookie('session_token', result.sessionToken, {

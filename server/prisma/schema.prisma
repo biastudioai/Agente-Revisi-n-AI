@@ -102,11 +102,14 @@ model Session {
   userId       String   @map("user_id")
   sessionToken String   @unique @map("session_token")
   expiresAt    DateTime @map("expires_at")
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
   createdAt    DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([sessionToken])
+  @@index([userId])
   @@map("sessions")
 }
 

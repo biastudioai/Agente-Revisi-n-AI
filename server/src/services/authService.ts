@@ -16,6 +16,8 @@ export interface RegisterData {
 export interface LoginData {
   email: string;
   password: string;
+  ipAddress?: string;
+  userAgent?: string;
 }
 
 export interface AuthResult {
@@ -151,15 +153,23 @@ export async function loginUser(data: LoginData): Promise<AuthResult> {
     });
 
     if (!subscription) {
+      // Delete all previous sessions and create new one atomically
       const sessionToken = generateSessionToken();
       const expiresAt = getSessionExpiry(7);
 
-      await prisma.session.create({
-        data: {
-          userId: user.id,
-          sessionToken,
-          expiresAt,
-        },
+      await prisma.$transaction(async (tx) => {
+        await tx.session.deleteMany({
+          where: { userId: user.id },
+        });
+        await tx.session.create({
+          data: {
+            userId: user.id,
+            sessionToken,
+            expiresAt,
+            ipAddress: data.ipAddress,
+            userAgent: data.userAgent,
+          },
+        });
       });
 
       throw new NoSubscriptionError(
@@ -175,15 +185,28 @@ export async function loginUser(data: LoginData): Promise<AuthResult> {
     }
   }
 
+  // SINGLE SESSION ENFORCEMENT: Delete all previous sessions and create new one in a transaction
+  // This ensures atomic operation - only one active session per user at any time
+  // Even under concurrent login attempts, only one session will survive
   const sessionToken = generateSessionToken();
   const expiresAt = getSessionExpiry(7);
 
-  await prisma.session.create({
-    data: {
-      userId: user.id,
-      sessionToken,
-      expiresAt,
-    },
+  await prisma.$transaction(async (tx) => {
+    // Delete all existing sessions for this user
+    await tx.session.deleteMany({
+      where: { userId: user.id },
+    });
+    
+    // Create the new session
+    await tx.session.create({
+      data: {
+        userId: user.id,
+        sessionToken,
+        expiresAt,
+        ipAddress: data.ipAddress,
+        userAgent: data.userAgent,
+      },
+    });
   });
 
   return {
