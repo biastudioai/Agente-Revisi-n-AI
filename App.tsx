@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import FileUpload from './components/FileUpload';
+import FileUpload, { FileData } from './components/FileUpload';
 import Dashboard from './components/Dashboard';
 import RuleConfigurator from './components/RuleConfigurator';
 import InsuranceAuditor from './components/InsuranceAuditor';
@@ -8,7 +8,7 @@ import ProviderSelector, { ProviderOption } from './components/ProviderSelector'
 import LoginPage from './components/LoginPage';
 import SubscriptionPlans from './components/SubscriptionPlans';
 import ReportHistory from './components/ReportHistory';
-import { analyzeReportImage, reEvaluateReport } from './services/geminiService';
+import { analyzeReportImage, analyzeReportImages, reEvaluateReport, FileInput } from './services/geminiService';
 import { getReglasParaAseguradora } from './services/scoring-engine';
 import { updateRuleInDatabase, createRuleInDatabase, deleteRuleInDatabase, clearRulesCache } from './services/database-rules-loader';
 import { AnalysisReport, AnalysisStatus, ExtractedData, ScoringRule, SavedReport } from './types';
@@ -89,7 +89,7 @@ const App: React.FC = () => {
   const [selectedProvider, setSelectedProvider] = useState<ProviderOption>('UNKNOWN');
   const [detectedProvider, setDetectedProvider] = useState<DetectedProvider | undefined>();
   const [detectionConfidence, setDetectionConfidence] = useState<'high' | 'medium' | 'low'>('low');
-  const [pendingFile, setPendingFile] = useState<{data: string, type: string} | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<FileData[]>([]);
   const [isDetecting, setIsDetecting] = useState(false);
   
   // State for dynamic analyzing messages
@@ -227,7 +227,7 @@ const App: React.FC = () => {
     setCurrentFormId(null);
     setUsage(null);
     setSubscription(null);
-    setPendingFile(null);
+    setPendingFiles([]);
     setDetectedProvider(undefined);
     setRuleVersionInfo(null);
     setCurrentRuleVersionId(null);
@@ -472,23 +472,29 @@ const App: React.FC = () => {
     }
   }, [filePreview]);
 
-  const handleFileSelected = async (base64Data: string, mimeType: string) => {
+  const handleFilesSelected = async (files: FileData[]) => {
     setError(null);
     setPendingChanges({});
     setLeftPanelView('visual');
     
-    // Store the file for later processing
-    setPendingFile({ data: base64Data, type: mimeType });
-    setFilePreview({ data: base64Data, type: mimeType });
+    if (files.length === 0) {
+      setPendingFiles([]);
+      setFilePreview(null);
+      setStatus('idle');
+      return;
+    }
     
-    // Reset provider selection for new file
+    setPendingFiles(files);
+    
+    const firstFile = files[0];
+    setFilePreview({ data: firstFile.base64, type: firstFile.mimeType });
+    
     setSelectedProvider('UNKNOWN');
     
-    // Try to detect provider automatically for PDFs
-    if (mimeType === 'application/pdf') {
+    if (firstFile.mimeType === 'application/pdf') {
       setIsDetecting(true);
       try {
-        const detection = await detectProviderFromPdf(base64Data);
+        const detection = await detectProviderFromPdf(firstFile.base64);
         setDetectedProvider(detection.provider);
         setDetectionConfidence(detection.confidence);
         if (detection.provider !== 'UNKNOWN') {
@@ -501,7 +507,6 @@ const App: React.FC = () => {
       }
       setIsDetecting(false);
     } else {
-      // For images, require manual selection
       setDetectedProvider('UNKNOWN');
       setDetectionConfidence('low');
       setSelectedProvider('UNKNOWN');
@@ -511,7 +516,7 @@ const App: React.FC = () => {
   };
 
   const handleStartAnalysis = async () => {
-    if (!pendingFile || selectedProvider === 'UNKNOWN') return;
+    if (pendingFiles.length === 0 || selectedProvider === 'UNKNOWN') return;
     
     if (isLoadingRules) {
       setError("Cargando reglas de validación, espera un momento...");
@@ -524,14 +529,12 @@ const App: React.FC = () => {
       return;
     }
 
-    // Verificar suscripción activa
     if (!usage?.hasActiveSubscription) {
       setError("Necesitas una suscripción activa para procesar informes. Haz clic en tu perfil para ver los planes disponibles.");
       setStatus('error');
       return;
     }
 
-    // Verificar límite de uso (ahora permite extras con cobro)
     if (usage && usage.remaining <= 0) {
       const extraPrice = usage.extraReportPriceMxn;
       const confirmExtra = window.confirm(
@@ -549,11 +552,15 @@ const App: React.FC = () => {
     setCurrentFormId(null);
     
     try {
-      const data = await analyzeReportImage(pendingFile.data, pendingFile.type, selectedProvider, rules);
+      const fileInputs: FileInput[] = pendingFiles.map(f => ({
+        base64Data: f.base64,
+        mimeType: f.mimeType
+      }));
+      
+      const data = await analyzeReportImages(fileInputs, selectedProvider, rules);
       setReport(data);
       setStatus('complete');
       
-      // Capture and set current rule version
       let capturedRuleVersionId: string | undefined;
       try {
         const currentVersion = await getCurrentRulesVersion();
@@ -572,8 +579,8 @@ const App: React.FC = () => {
         console.error('Error capturing rule version:', e);
       }
       
-      // Auto-guardar automáticamente después de procesar - pass version directly
-      const savedFormId = await autoSaveReport(data, pendingFile, capturedRuleVersionId);
+      const firstFile = pendingFiles[0];
+      const savedFormId = await autoSaveReport(data, { data: firstFile.base64, type: firstFile.mimeType }, capturedRuleVersionId);
       if (savedFormId) {
         setCurrentFormId(savedFormId);
       }
@@ -1860,7 +1867,7 @@ const App: React.FC = () => {
         
         <div className="w-full max-w-xl animate-fade-in delay-100 relative z-10">
           <FileUpload 
-            onFileSelected={handleFileSelected} 
+            onFilesSelected={handleFilesSelected} 
             isProcessing={false}
             savedReports={savedReports}
             onLoadReport={(id) => {

@@ -6,15 +6,29 @@ import { getProviderGeminiSchema, buildProviderSystemPrompt, ProviderType } from
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 const MODEL_NAME = "gemini-2.5-flash";
 
+export interface FileInput {
+  base64Data: string;
+  mimeType: string;
+}
+
 export const analyzeReportImage = async (
     base64Data: string, 
     mimeType: string,
     provider: ProviderType,
     rules: ScoringRule[]
 ): Promise<AnalysisReport> => {
+  return analyzeReportImages([{ base64Data, mimeType }], provider, rules);
+};
+
+export const analyzeReportImages = async (
+    files: FileInput[],
+    provider: ProviderType,
+    rules: ScoringRule[]
+): Promise<AnalysisReport> => {
   try {
     console.log("Starting analysis with model:", MODEL_NAME);
     console.log("Selected provider:", provider);
+    console.log("Number of files to analyze:", files.length);
     
     const responseSchema = getProviderGeminiSchema(provider);
     if (!responseSchema) {
@@ -24,20 +38,29 @@ export const analyzeReportImage = async (
     const systemPrompt = buildProviderSystemPrompt(provider);
     console.log("Schema built for provider:", provider, "sending request to Gemini...");
 
+    const imageParts = files.map((file, index) => ({
+      inlineData: {
+        mimeType: file.mimeType,
+        data: file.base64Data
+      }
+    }));
+
+    const contextMessage = files.length > 1 
+      ? `Extrae toda la información del documento de ${files.length} páginas/imágenes siguiendo el esquema JSON. Este es un documento de ${provider}. Las imágenes están en orden de página (1, 2, 3, etc.). Analiza todas las páginas como un solo documento continuo. Valida el código CIE-10 contra el diagnóstico.`
+      : `Extrae toda la información del documento siguiendo el esquema JSON. Este es un documento de ${provider}. Valida el código CIE-10 contra el diagnóstico.`;
+
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: {
-        parts: [
-          { text: systemPrompt },
-          {
-            inlineData: {
-              mimeType: mimeType,
-              data: base64Data
-            }
-          },
-          { text: `Extrae toda la información del documento siguiendo el esquema JSON. Este es un documento de ${provider}. Valida el código CIE-10 contra el diagnóstico.` }
-        ]
-      },
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: systemPrompt },
+            ...imageParts,
+            { text: contextMessage }
+          ]
+        }
+      ],
       config: {
         temperature: 0.1,
         responseMimeType: "application/json",
@@ -53,7 +76,6 @@ export const analyzeReportImage = async (
     const jsonData = JSON.parse(text);
     console.log("📦 JSON COMPLETO DE GEMINI:", jsonData);
     
-    // Post-procesamiento para MetLife: validar tipo_atencion con tipo_atencion_audit
     if (provider === 'METLIFE' && jsonData.extracted?.medico_tratante?.tipo_atencion_audit) {
       const audit = jsonData.extracted.medico_tratante.tipo_atencion_audit;
       const correctedTipoAtencion: string[] = [];
@@ -64,7 +86,6 @@ export const analyzeReportImage = async (
       if (audit.equipo_quirurgico_marcado === true) correctedTipoAtencion.push("Equipo quirúrgico");
       if (audit.segunda_valoracion_marcado === true) correctedTipoAtencion.push("Segunda valoración");
       
-      // Comparar con lo que Gemini puso en tipo_atencion
       const originalTipoAtencion = jsonData.extracted.medico_tratante.tipo_atencion || [];
       if (JSON.stringify(originalTipoAtencion.sort()) !== JSON.stringify(correctedTipoAtencion.sort())) {
         console.log("⚠️ CORRECCIÓN tipo_atencion:");
@@ -74,7 +95,6 @@ export const analyzeReportImage = async (
       }
     }
     
-    // Post-procesamiento para MetLife: validar tipo_padecimiento con tipo_padecimiento_audit
     if (provider === 'METLIFE' && jsonData.extracted?.padecimiento_actual?.tipo_padecimiento_audit) {
       const audit = jsonData.extracted.padecimiento_actual.tipo_padecimiento_audit;
       const correctedTipoPadecimiento: string[] = [];
@@ -84,7 +104,6 @@ export const analyzeReportImage = async (
       if (audit.agudo_marcado === true) correctedTipoPadecimiento.push("Agudo");
       if (audit.cronico_marcado === true) correctedTipoPadecimiento.push("Crónico");
       
-      // Comparar con lo que Gemini puso en tipo_padecimiento
       const originalTipoPadecimiento = jsonData.extracted.padecimiento_actual.tipo_padecimiento || [];
       if (JSON.stringify(originalTipoPadecimiento.sort()) !== JSON.stringify(correctedTipoPadecimiento.sort())) {
         console.log("⚠️ CORRECCIÓN tipo_padecimiento:");
