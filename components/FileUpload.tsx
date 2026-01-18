@@ -18,6 +18,14 @@ interface FileUploadProps {
 }
 
 const MAX_FILES = 5;
+const MAX_FILE_SIZE_MB = 8; // 8MB max por archivo
+const MAX_TOTAL_SIZE_MB = 25; // 25MB total máximo
+
+const formatFileSize = (bytes: number): string => {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+};
 
 const getFileExtension = (mimeType: string): string => {
   switch (mimeType) {
@@ -71,6 +79,26 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFilesConfirmed, isProcessing,
     const invalidFiles = files.filter(f => !validTypes.includes(f.type));
     if (invalidFiles.length > 0) {
       setError(`Formato no soportado: ${invalidFiles.map(f => f.name).join(', ')}. Usa JPG, PNG o PDF.`);
+      return;
+    }
+
+    // Validar tamaño individual de cada archivo
+    const maxSizeBytes = MAX_FILE_SIZE_MB * 1024 * 1024;
+    const oversizedFiles = files.filter(f => f.size > maxSizeBytes);
+    if (oversizedFiles.length > 0) {
+      const fileDetails = oversizedFiles.map(f => `${f.name} (${formatFileSize(f.size)})`).join(', ');
+      setError(`Los siguientes archivos son muy pesados (máximo ${MAX_FILE_SIZE_MB}MB por archivo): ${fileDetails}. Por favor, reduce el tamaño o usa archivos más ligeros.`);
+      return;
+    }
+
+    // Validar tamaño total (incluyendo archivos ya seleccionados)
+    const existingTotalSize = selectedFiles.reduce((acc, f) => acc + (f.base64.length * 0.75), 0); // Aproximar tamaño desde base64
+    const newFilesSize = files.reduce((acc, f) => acc + f.size, 0);
+    const totalSize = existingTotalSize + newFilesSize;
+    const maxTotalBytes = MAX_TOTAL_SIZE_MB * 1024 * 1024;
+    
+    if (totalSize > maxTotalBytes) {
+      setError(`El tamaño total de los archivos (${formatFileSize(totalSize)}) excede el límite de ${MAX_TOTAL_SIZE_MB}MB. Por favor, reduce el tamaño o elimina algunos archivos.`);
       return;
     }
 

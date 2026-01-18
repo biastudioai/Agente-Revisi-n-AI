@@ -877,7 +877,11 @@ const App: React.FC = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        // Manejar error de archivo muy grande (413 Payload Too Large)
+        if (response.status === 413) {
+          throw new Error('Los archivos son demasiado grandes para procesar. Por favor, reduce el tamaño de los archivos (máximo 25MB en total) o usa archivos más ligeros.');
+        }
+        const errorData = await response.json().catch(() => ({ error: 'Error al guardar' }));
         throw new Error(errorData.error || 'Error al guardar');
       }
 
@@ -959,7 +963,11 @@ const App: React.FC = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        // Manejar error de archivo muy grande (413 Payload Too Large)
+        if (response.status === 413) {
+          throw new Error('Los datos son demasiado grandes para procesar. Por favor, intenta con menos información.');
+        }
+        const errorData = await response.json().catch(() => ({ error: 'Error al guardar' }));
         throw new Error(errorData.error || 'Error al guardar');
       }
 
