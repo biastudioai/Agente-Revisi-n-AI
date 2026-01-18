@@ -1435,13 +1435,9 @@ const App: React.FC = () => {
                         images={pendingFiles.filter(f => f.mimeType.startsWith('image/'))}
                       />
                     ) : (
-                      <div className="w-full h-full overflow-auto flex items-center justify-center p-8 bg-slate-900/50">
-                        <img 
-                            src={`data:${filePreview.type};base64,${filePreview.data}`} 
-                            className="max-w-full max-h-full object-contain shadow-2xl"
-                            alt="Medical Report"
-                        />
-                      </div>
+                      <ImageViewer 
+                        images={[{ base64: filePreview.data, mimeType: filePreview.type, name: 'Documento del historial' }]}
+                      />
                     )
                     )
                 ) : (
