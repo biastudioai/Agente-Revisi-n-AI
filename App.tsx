@@ -91,6 +91,7 @@ const App: React.FC = () => {
   const [detectedProvider, setDetectedProvider] = useState<DetectedProvider | undefined>();
   const [detectionConfidence, setDetectionConfidence] = useState<'high' | 'medium' | 'low'>('low');
   const [pendingFiles, setPendingFiles] = useState<FileData[]>([]);
+  const [historyImages, setHistoryImages] = useState<FileData[]>([]); // Images loaded from history
   const [isDetecting, setIsDetecting] = useState(false);
   
   // State for dynamic analyzing messages
@@ -229,6 +230,7 @@ const App: React.FC = () => {
     setUsage(null);
     setSubscription(null);
     setPendingFiles([]);
+    setHistoryImages([]); // Clear history images for privacy
     setDetectedProvider(undefined);
     setRuleVersionInfo(null);
     setCurrentRuleVersionId(null);
@@ -478,6 +480,7 @@ const App: React.FC = () => {
     setError(null);
     setPendingChanges({});
     setLeftPanelView('visual');
+    setHistoryImages([]); // Clear history images when uploading new files
     
     if (files.length === 0) {
       setPendingFiles([]);
@@ -1077,33 +1080,77 @@ const App: React.FC = () => {
       setCurrentFormId(form.id);
       setPendingChanges({});
       
-      // Load PDF before switching views
-      let pdfLoaded = false;
-      if (form.formPdfs?.[0]?.pdfUrl) {
+      // Load all files from history
+      let filesLoaded = false;
+      setHistoryImages([]); // Reset history images
+      
+      if (form.formPdfs && form.formPdfs.length > 0) {
         try {
-          const pdfResponse = await fetch(form.formPdfs[0].pdfUrl, {
+          // Check the type of the first file to determine if it's PDF or images
+          const firstResponse = await fetch(form.formPdfs[0].pdfUrl, {
             credentials: 'include',
           });
-          if (pdfResponse.ok) {
-            const blob = await pdfResponse.blob();
-            // Convert to base64 using Promise for better async handling
-            const base64 = await new Promise<string>((resolve) => {
-              const reader = new FileReader();
-              reader.onloadend = () => {
-                const result = (reader.result as string).split(',')[1];
-                resolve(result);
-              };
-              reader.readAsDataURL(blob);
-            });
-            setFilePreview({ data: base64, type: blob.type || 'application/pdf' });
-            pdfLoaded = true;
+          
+          if (firstResponse.ok) {
+            const firstBlob = await firstResponse.blob();
+            
+            if (firstBlob.type === 'application/pdf') {
+              // PDF: Just load the first one (pdf.js handles pages internally)
+              const base64 = await new Promise<string>((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  const result = (reader.result as string).split(',')[1];
+                  resolve(result);
+                };
+                reader.readAsDataURL(firstBlob);
+              });
+              setFilePreview({ data: base64, type: firstBlob.type || 'application/pdf' });
+              filesLoaded = true;
+            } else if (firstBlob.type.startsWith('image/')) {
+              // Images: Load all files from history
+              const loadedImages: FileData[] = [];
+              
+              for (let i = 0; i < form.formPdfs.length; i++) {
+                try {
+                  const imgResponse = i === 0 
+                    ? { ok: true, blob: async () => firstBlob } // Reuse first blob
+                    : await fetch(form.formPdfs[i].pdfUrl, { credentials: 'include' });
+                  
+                  if (imgResponse.ok) {
+                    const imgBlob = await imgResponse.blob();
+                    const imgBase64 = await new Promise<string>((resolve) => {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        const result = (reader.result as string).split(',')[1];
+                        resolve(result);
+                      };
+                      reader.readAsDataURL(imgBlob);
+                    });
+                    
+                    loadedImages.push({
+                      base64: imgBase64,
+                      mimeType: imgBlob.type,
+                      name: `Página ${i + 1}`,
+                    });
+                  }
+                } catch (imgError) {
+                  console.error(`Error loading image ${i}:`, imgError);
+                }
+              }
+              
+              if (loadedImages.length > 0) {
+                setHistoryImages(loadedImages);
+                setFilePreview({ data: loadedImages[0].base64, type: loadedImages[0].mimeType });
+                filesLoaded = true;
+              }
+            }
           }
         } catch (pdfError) {
-          console.error('Error loading PDF:', pdfError);
+          console.error('Error loading files:', pdfError);
         }
       }
       
-      if (!pdfLoaded) {
+      if (!filesLoaded) {
         setFilePreview(null);
       }
       
@@ -1433,6 +1480,10 @@ const App: React.FC = () => {
                     pendingFiles.length > 0 ? (
                       <ImageViewer 
                         images={pendingFiles.filter(f => f.mimeType.startsWith('image/'))}
+                      />
+                    ) : historyImages.length > 0 ? (
+                      <ImageViewer 
+                        images={historyImages}
                       />
                     ) : (
                       <ImageViewer 
