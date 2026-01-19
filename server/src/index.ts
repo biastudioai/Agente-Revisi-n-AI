@@ -12,6 +12,7 @@ import stripeRoutes from './routes/stripe';
 import billingRoutes from './routes/billing';
 import reportsRoutes from './routes/reports';
 import auditorsRoutes from './routes/auditors';
+import setupRoutes from './routes/setup';
 import prisma from './config/database';
 import { registerObjectStorageRoutes } from '../replit_integrations/object_storage';
 import { runMigrations } from 'stripe-replit-sync';
@@ -235,6 +236,7 @@ app.use('/api/stripe', stripeRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/auditors', auditorsRoutes);
+app.use('/api/setup', setupRoutes);
 
 registerObjectStorageRoutes(app);
 
