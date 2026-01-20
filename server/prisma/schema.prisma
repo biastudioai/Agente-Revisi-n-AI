@@ -250,17 +250,18 @@ model AseguradoraConfig {
 }
 
 model UsageRecord {
-  id               String    @id @default(uuid())
-  userId           String    @map("user_id")
-  periodYear       Int       @map("period_year")
-  periodMonth      Int       @map("period_month")
-  periodStart      DateTime? @map("period_start")
-  reportsUsed      Int       @default(0) @map("reports_used")
-  reportsLimit     Int       @default(20) @map("reports_limit")
-  extraReportsUsed Int       @default(0) @map("extra_reports_used")
-  extraChargesMxn  Int       @default(0) @map("extra_charges_mxn")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
+  id                String    @id @default(uuid())
+  userId            String    @map("user_id")
+  periodYear        Int       @map("period_year")
+  periodMonth       Int       @map("period_month")
+  periodStart       DateTime? @map("period_start")
+  reportsUsed       Int       @default(0) @map("reports_used")
+  reportsLimit      Int       @default(20) @map("reports_limit")
+  extraReportsUsed  Int       @default(0) @map("extra_reports_used")
+  extraChargesMxn   Int       @default(0) @map("extra_charges_mxn")
+  extraChargesBilled Boolean  @default(false) @map("extra_charges_billed")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

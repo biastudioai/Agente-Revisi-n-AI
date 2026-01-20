@@ -145,9 +145,32 @@ app.post(
         if (dbSub?.scheduledPlanType) {
           console.log(`Processing scheduled downgrade from ${dbSub.planType} to ${dbSub.scheduledPlanType} for user ${dbSub.userId}`);
           await subscriptionService.handleScheduledDowngrade(subscription.id);
+        } else if (dbSub && !dbSub.scheduledPlanType) {
+          // No scheduled downgrade, this is a real cancellation - charge any pending extras
+          console.log(`Processing final extras charge for cancelled subscription of user ${dbSub.userId}`);
+          const extrasResult = await subscriptionService.handleSubscriptionCancellationWithExtras(dbSub.userId);
+          if (extrasResult.extraReportsCount > 0) {
+            console.log(`Charged ${extrasResult.extraReportsCount} extra reports ($${extrasResult.extraChargesMxn} MXN) for user ${dbSub.userId}, invoice: ${extrasResult.invoiceId}`);
+          }
         }
         
         await subscriptionService.handleSubscriptionDeleted(subscription.id);
+      } else if (event.type === 'invoice.created') {
+        const invoice = event.data.object;
+        console.log(`Invoice created: ${invoice.id}, customer: ${invoice.customer}, subscription: ${invoice.subscription}`);
+        await subscriptionService.handleInvoiceCreated(
+          invoice.id,
+          invoice.customer as string,
+          invoice.subscription as string | null
+        );
+      } else if (event.type === 'invoice.payment_succeeded') {
+        const invoice = event.data.object;
+        console.log(`Invoice payment succeeded: ${invoice.id}, customer: ${invoice.customer}`);
+        await subscriptionService.handleInvoicePaymentSucceeded(
+          invoice.id,
+          invoice.customer as string,
+          invoice.subscription as string | null
+        );
       } else if (event.type === 'invoice.payment_failed') {
         console.log(`Invoice payment failed for customer: ${event.data.object.customer}`);
         await subscriptionService.handleInvoicePaymentFailed(event.data.object.customer);

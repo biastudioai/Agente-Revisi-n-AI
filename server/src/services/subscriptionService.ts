@@ -238,14 +238,14 @@ export class SubscriptionService {
           },
         },
         update: {
-          reportsGenerated: reportsUsedTransfer,
+          reportsUsed: reportsUsedTransfer,
           reportsLimit: newReportsLimit,
         },
         create: {
           userId: stripeCustomer.userId,
           periodYear: currentYear,
           periodMonth: currentMonth,
-          reportsGenerated: reportsUsedTransfer,
+          reportsUsed: reportsUsedTransfer,
           reportsLimit: newReportsLimit,
         },
       });
@@ -539,7 +539,7 @@ export class SubscriptionService {
         },
       });
 
-      const reportsUsed = currentUsage?.reportsGenerated || 0;
+      const reportsUsed = currentUsage?.reportsUsed || 0;
 
       // Cancel current subscription in Stripe immediately
       try {
@@ -768,20 +768,28 @@ export class SubscriptionService {
       // Deactivate excess auditors before applying the downgrade
       await this.deactivateExcessAuditors(subscription.userId, newPlanType);
 
+      // Create product and price first, then create subscription
+      const product = await stripe.products.create({
+        name: planConfig.name,
+        metadata: {
+          planType: newPlanType,
+        },
+      });
+
+      const price = await stripe.prices.create({
+        product: product.id,
+        unit_amount: planConfig.priceMonthlyMxn * 100,
+        currency: 'mxn',
+        recurring: {
+          interval: 'month',
+        },
+      });
+
       // Create the new subscription with the downgraded plan
       const newSubscription = await stripe.subscriptions.create({
         customer: stripeCustomer.stripeCustomerId,
         items: [{
-          price_data: {
-            currency: 'mxn',
-            product_data: {
-              name: planConfig.name,
-            },
-            unit_amount: planConfig.priceMonthlyMxn * 100,
-            recurring: {
-              interval: 'month',
-            },
-          },
+          price: price.id,
         }],
         metadata: {
           userId: subscription.userId,
@@ -876,6 +884,241 @@ export class SubscriptionService {
     }
 
     return { cancelled, errors };
+  }
+
+  async handleInvoiceCreated(invoiceId: string, customerId: string, subscriptionId: string | null): Promise<void> {
+    if (!subscriptionId) {
+      console.log(`Invoice ${invoiceId} is not associated with a subscription, skipping extra charges`);
+      return;
+    }
+
+    const stripe = await getUncachableStripeClient();
+    
+    const stripeCustomer = await prisma.stripeCustomer.findFirst({
+      where: { stripeCustomerId: customerId },
+    });
+
+    if (!stripeCustomer) {
+      console.log(`Customer ${customerId} not found in database for invoice ${invoiceId}`);
+      return;
+    }
+
+    const subscription = await prisma.subscription.findFirst({
+      where: {
+        stripeSubscriptionId: subscriptionId,
+      },
+    });
+
+    if (!subscription) {
+      console.log(`No subscription found with id ${subscriptionId}`);
+      return;
+    }
+
+    const invoice = await stripe.invoices.retrieve(invoiceId);
+    
+    if (invoice.billing_reason !== 'subscription_cycle') {
+      console.log(`Invoice ${invoiceId} billing_reason is ${invoice.billing_reason}, not subscription_cycle. Skipping extra charges.`);
+      return;
+    }
+
+    // Get the period that just ended from the Stripe subscription
+    const stripeSubscriptionResponse = await stripe.subscriptions.retrieve(subscriptionId);
+    const stripeSubscription = stripeSubscriptionResponse as any;
+    const currentPeriodStart = new Date(stripeSubscription.current_period_start * 1000);
+    
+    // Find unbilled usage records for CLOSED periods only (periodStart < currentPeriodStart)
+    // This ensures we don't bill the period that just started
+    const unbilledUsageRecords = await prisma.usageRecord.findMany({
+      where: {
+        userId: stripeCustomer.userId,
+        extraReportsUsed: { gt: 0 },
+        extraChargesBilled: false,
+        periodStart: {
+          lt: currentPeriodStart,
+        },
+      },
+      orderBy: [
+        { periodYear: 'asc' },
+        { periodMonth: 'asc' },
+      ],
+    });
+
+    if (unbilledUsageRecords.length === 0) {
+      console.log(`No unbilled extra reports to charge for user ${stripeCustomer.userId}`);
+      return;
+    }
+
+    // Calculate total extras from all unbilled periods
+    let totalExtraReportsCount = 0;
+    let totalExtraChargesMxn = 0;
+    const recordsToMark: string[] = [];
+    const periodDescriptions: string[] = [];
+
+    for (const record of unbilledUsageRecords) {
+      totalExtraReportsCount += record.extraReportsUsed;
+      totalExtraChargesMxn += record.extraChargesMxn;
+      recordsToMark.push(record.id);
+      periodDescriptions.push(`${record.periodMonth}/${record.periodYear}`);
+    }
+
+    if (totalExtraChargesMxn <= 0) {
+      console.log(`No extra charges amount to bill for user ${stripeCustomer.userId}`);
+      return;
+    }
+
+    // IDEMPOTENCY: Mark records as billed FIRST, before calling Stripe
+    // This prevents duplicate charges if webhook retries after Stripe call succeeds but before DB update
+    try {
+      await prisma.usageRecord.updateMany({
+        where: { id: { in: recordsToMark } },
+        data: { extraChargesBilled: true },
+      });
+    } catch (dbError: any) {
+      console.error(`Error marking usage records as billed: ${dbError.message}`);
+      return;
+    }
+
+    try {
+      // Add a single invoice item for all extra reports
+      await stripe.invoiceItems.create({
+        customer: customerId,
+        invoice: invoiceId,
+        amount: Math.round(totalExtraChargesMxn * 100),
+        currency: 'mxn',
+        description: `${totalExtraReportsCount} informe(s) extra(s) (periodos: ${periodDescriptions.join(', ')})`,
+      });
+
+      console.log(`Added ${totalExtraReportsCount} extra reports ($${totalExtraChargesMxn} MXN) to invoice ${invoiceId} for user ${stripeCustomer.userId} from periods: ${periodDescriptions.join(', ')}`);
+    } catch (error: any) {
+      // Check if this is a duplicate (invoice already finalized/paid) - this is OK
+      if (error.message?.includes('already finalized') || error.message?.includes('already paid')) {
+        console.log(`Invoice ${invoiceId} already processed, charges were marked but item not added (OK)`);
+        return;
+      }
+      
+      // If Stripe call failed for other reasons, revert the billed flag
+      console.error(`Error adding invoice item for extra reports: ${error.message}. Reverting billed flag.`);
+      await prisma.usageRecord.updateMany({
+        where: { id: { in: recordsToMark } },
+        data: { extraChargesBilled: false },
+      });
+    }
+  }
+
+  async handleInvoicePaymentSucceeded(invoiceId: string, customerId: string, subscriptionId: string | null): Promise<void> {
+    if (!subscriptionId) {
+      return;
+    }
+
+    const stripeCustomer = await prisma.stripeCustomer.findFirst({
+      where: { stripeCustomerId: customerId },
+    });
+
+    if (!stripeCustomer) {
+      return;
+    }
+
+    console.log(`Invoice ${invoiceId} payment succeeded for user ${stripeCustomer.userId}`);
+  }
+
+  async handleSubscriptionCancellationWithExtras(userId: string): Promise<{ 
+    success: boolean; 
+    extraChargesMxn: number; 
+    extraReportsCount: number;
+    invoiceId?: string;
+  }> {
+    const stripe = await getUncachableStripeClient();
+    
+    const stripeCustomer = await prisma.stripeCustomer.findUnique({
+      where: { userId },
+    });
+
+    if (!stripeCustomer) {
+      return { success: false, extraChargesMxn: 0, extraReportsCount: 0 };
+    }
+
+    // Find ALL unbilled usage records for this user with extra charges
+    const unbilledUsageRecords = await prisma.usageRecord.findMany({
+      where: {
+        userId,
+        extraReportsUsed: { gt: 0 },
+        extraChargesBilled: false,
+      },
+      orderBy: [
+        { periodYear: 'asc' },
+        { periodMonth: 'asc' },
+      ],
+    });
+
+    if (unbilledUsageRecords.length === 0) {
+      return { success: true, extraChargesMxn: 0, extraReportsCount: 0 };
+    }
+
+    // Calculate totals from all unbilled periods
+    let totalExtraReportsCount = 0;
+    let totalExtraChargesMxn = 0;
+    const recordsToMark: string[] = [];
+    const periodDescriptions: string[] = [];
+
+    for (const record of unbilledUsageRecords) {
+      totalExtraReportsCount += record.extraReportsUsed;
+      totalExtraChargesMxn += record.extraChargesMxn;
+      recordsToMark.push(record.id);
+      periodDescriptions.push(`${record.periodMonth}/${record.periodYear}`);
+    }
+
+    if (totalExtraChargesMxn <= 0) {
+      return { success: true, extraChargesMxn: 0, extraReportsCount: 0 };
+    }
+
+    // IDEMPOTENCY: Mark records as billed FIRST, before calling Stripe
+    try {
+      await prisma.usageRecord.updateMany({
+        where: { id: { in: recordsToMark } },
+        data: { extraChargesBilled: true },
+      });
+    } catch (dbError: any) {
+      console.error(`Error marking usage records as billed for cancellation: ${dbError.message}`);
+      return { success: false, extraChargesMxn: totalExtraChargesMxn, extraReportsCount: totalExtraReportsCount };
+    }
+
+    try {
+      await stripe.invoiceItems.create({
+        customer: stripeCustomer.stripeCustomerId,
+        amount: Math.round(totalExtraChargesMxn * 100),
+        currency: 'mxn',
+        description: `${totalExtraReportsCount} informe(s) extra(s) pendiente(s) - Cobro final por cancelación (periodos: ${periodDescriptions.join(', ')})`,
+      });
+
+      const invoice = await stripe.invoices.create({
+        customer: stripeCustomer.stripeCustomerId,
+        auto_advance: true,
+        collection_method: 'charge_automatically',
+        metadata: {
+          userId,
+          type: 'cancellation_extras',
+        },
+      });
+
+      await stripe.invoices.finalizeInvoice(invoice.id);
+
+      console.log(`Created final invoice ${invoice.id} for ${totalExtraReportsCount} extra reports ($${totalExtraChargesMxn} MXN) for user ${userId} from periods: ${periodDescriptions.join(', ')}`);
+
+      return { 
+        success: true, 
+        extraChargesMxn: totalExtraChargesMxn, 
+        extraReportsCount: totalExtraReportsCount,
+        invoiceId: invoice.id,
+      };
+    } catch (error: any) {
+      // If Stripe call failed, revert the billed flag
+      console.error(`Error creating final invoice for extras: ${error.message}. Reverting billed flag.`);
+      await prisma.usageRecord.updateMany({
+        where: { id: { in: recordsToMark } },
+        data: { extraChargesBilled: false },
+      });
+      return { success: false, extraChargesMxn: totalExtraChargesMxn, extraReportsCount: totalExtraReportsCount };
+    }
   }
 
   async syncStripeSubscriptions(): Promise<{ synced: number; errors: string[] }> {

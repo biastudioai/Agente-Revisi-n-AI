@@ -77,6 +77,16 @@ Preferred communication style: Simple, everyday language.
     - **Downgrades**: Scheduled for period end using `cancel_at_period_end`, applied when period ends
     - **Cancellations**: Uses `cancel_at_period_end`, users can continue until period ends, reactivation available before expiry
     - **Auditor Auto-deactivation**: When downgrade is applied, excess auditors are automatically deactivated (oldest retained)
+  - **Automatic Recurring Billing with Extra Reports**:
+    - Extra report charges are automatically added to the monthly subscription invoice
+    - When Stripe creates a renewal invoice (`invoice.created` webhook with `billing_reason: subscription_cycle`), the system:
+      1. Finds all unbilled UsageRecords from CLOSED periods (where periodStart < currentPeriodStart)
+      2. Aggregates extra report charges from all unbilled periods
+      3. Adds a single invoice item with the total extra charges
+      4. Marks records as billed to prevent duplicate charges
+    - **Idempotency**: Records are marked as billed BEFORE calling Stripe, with rollback on failure
+    - **Cancellation Billing**: When a subscription is cancelled and ends, any pending extra report charges are invoiced separately
+    - Database field: `extraChargesBilled` (Boolean) on UsageRecord tracks whether extras have been invoiced
   - **Subscription Access Control**:
     - BROKERs without active subscription cannot login or access the platform
     - AUDITORs whose BROKER has no active subscription cannot login
