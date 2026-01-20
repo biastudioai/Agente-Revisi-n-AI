@@ -1,0 +1,71 @@
+"Crea un componente de Sección de Precios (Pricing Table) moderno y profesional utilizando React y Tailwind CSS para una SaaS de Insurtech. El diseño debe ser limpio, con tipografía legible y alta jerarquía visual.
+
+Contexto del negocio: Ayudamos a agentes de seguros a pre-aprobar informes médicos para evitar rechazos de las aseguradoras.
+
+Requisitos de Diseño:
+
+3 Tarjetas responsivas:
+
+Plan 1 (Agente Independiente): Color acento Azul (#3B82F6).
+
+Plan 2 (Agente Senior - Destacado): Color acento Púrpura (#A855F7). Debe tener un badge que diga 'MÁS POPULAR' y ser ligeramente más grande que los demás.
+
+Plan 3 (Broker / Agencia): Color acento Naranja (#F59E0B).
+
+Jerarquía de Texto:
+
+El nombre del plan en la parte superior.
+
+El precio en grande, seguido de 'MXN/mes'.
+
+Justo debajo del precio, en letra pequeña y gris, indicar el costo por 'informe adicional' (ej: +$30 por informe extra).
+
+Lista de Beneficios: Usa iconos de 'Check' estilizados. Pon en negrita los números clave (ej: 25 informes, 3 usuarios).
+
+CTA (Botones): Botones grandes con bordes redondeados. El del plan destacado debe tener un efecto de sombra o gradiente para resaltar.
+
+Contenido de los Planes:
+
+Plan Agente Independiente ($499 MXN):
+
+Ideal para agentes que manejan su propia cartera.
+
+25 informes incluidos.
+
+1 Usuario Broker.
+
+Soporte por correo.
+
+Promo: 50 informes los primeros 3 meses.
+
+Plan Agente Senior ($999 MXN):
+
+Para agentes en crecimiento con equipo de soporte.
+
+55 informes incluidos.
+
+1 Usuario Broker + 3 Usuarios Auditores.
+
+Soporte Prioritario + Dashboard de Estadísticas.
+
+Promo: 110 informes los primeros 3 meses.
+
+Plan Broker / Agencia ($2,999 MXN):
+
+Para despachos y brokers con alto volumen.
+
+170 informes incluidos.
+
+1 Usuario Broker + 10 Usuarios Auditores.
+
+Soporte Personalizado + Capacitación inicial.
+
+Promo: 340 informes los primeros 3 meses.
+
+Estilo Visual Adicional:
+
+Usa tarjetas con fondo blanco, bordes suaves y una sombra sutil (shadow-lg).
+
+Asegúrate de que el diseño sea mobile-friendly (apilado en móvil, 3 columnas en desktop).
+
+Agrega un pequeño texto al final que diga: 'Todos los planes incluyen nuestra tecnología de pre-validación de diagnósticos'."
