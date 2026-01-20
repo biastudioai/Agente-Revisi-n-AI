@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Check, Loader2, Sparkles, Crown, Building2, AlertTriangle, RefreshCw, XCircle, ArrowUp, ArrowDown } from 'lucide-react';
+import { Check, Loader2, Sparkles, Crown, Building2, AlertTriangle, RefreshCw, XCircle, ArrowUp, ArrowDown, User, Users, Star } from 'lucide-react';
 
 interface Plan {
   planType: string;
@@ -41,6 +41,18 @@ const PLAN_ORDER: Record<string, number> = {
   'PLAN_1': 1,
   'PLAN_2': 2,
   'PLAN_3': 3,
+};
+
+const PLAN_DISPLAY_NAMES: Record<string, string> = {
+  'PLAN_1': 'Agente Independiente',
+  'PLAN_2': 'Agente Senior',
+  'PLAN_3': 'Broker / Agencia',
+};
+
+const PLAN_DESCRIPTIONS: Record<string, string> = {
+  'PLAN_1': 'Ideal para agentes que manejan su propia cartera',
+  'PLAN_2': 'Para agentes en crecimiento con equipo de soporte',
+  'PLAN_3': 'Para despachos y brokers con alto volumen',
 };
 
 const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, currentSubscription, onSubscriptionChange }) => {
@@ -215,26 +227,54 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, currentS
   const getPlanIcon = (planType: string) => {
     switch (planType) {
       case 'PLAN_1':
-        return <Sparkles className="w-6 h-6" />;
+        return <User className="w-6 h-6" />;
       case 'PLAN_2':
         return <Crown className="w-6 h-6" />;
       case 'PLAN_3':
         return <Building2 className="w-6 h-6" />;
       default:
-        return <Sparkles className="w-6 h-6" />;
+        return <User className="w-6 h-6" />;
     }
   };
 
   const getPlanColor = (planType: string) => {
     switch (planType) {
       case 'PLAN_1':
-        return 'from-blue-500 to-blue-600';
+        return {
+          gradient: 'from-blue-500 to-blue-600',
+          bg: 'bg-blue-500',
+          text: 'text-blue-600',
+          light: 'bg-blue-50',
+          border: 'border-blue-200',
+          check: 'text-blue-500',
+        };
       case 'PLAN_2':
-        return 'from-purple-500 to-purple-600';
+        return {
+          gradient: 'from-purple-500 to-purple-600',
+          bg: 'bg-purple-500',
+          text: 'text-purple-600',
+          light: 'bg-purple-50',
+          border: 'border-purple-200',
+          check: 'text-purple-500',
+        };
       case 'PLAN_3':
-        return 'from-amber-500 to-amber-600';
+        return {
+          gradient: 'from-amber-500 to-amber-600',
+          bg: 'bg-amber-500',
+          text: 'text-amber-600',
+          light: 'bg-amber-50',
+          border: 'border-amber-200',
+          check: 'text-amber-500',
+        };
       default:
-        return 'from-gray-500 to-gray-600';
+        return {
+          gradient: 'from-gray-500 to-gray-600',
+          bg: 'bg-gray-500',
+          text: 'text-gray-600',
+          light: 'bg-gray-50',
+          border: 'border-gray-200',
+          check: 'text-gray-500',
+        };
     }
   };
 
@@ -383,82 +423,97 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, currentS
         </div>
       )}
 
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-3 gap-6 items-stretch">
         {plans.map((plan) => {
           const isCurrentPlan = currentSubscription?.planType === plan.planType;
           const isScheduledPlan = currentSubscription?.scheduledPlanType === plan.planType;
-          const planColor = getPlanColor(plan.planType);
+          const colors = getPlanColor(plan.planType);
           const canUpgrade = currentSubscription && isUpgrade(currentSubscription.planType, plan.planType);
           const canDowngrade = currentSubscription && isDowngrade(currentSubscription.planType, plan.planType);
+          const isPopular = plan.planType === 'PLAN_2';
+          const displayName = PLAN_DISPLAY_NAMES[plan.planType] || plan.name;
+          const description = PLAN_DESCRIPTIONS[plan.planType] || '';
 
           return (
             <div
               key={plan.planType}
-              className={`relative rounded-xl border-2 overflow-hidden transition-all ${
+              className={`relative rounded-2xl bg-white overflow-hidden transition-all duration-300 flex flex-col ${
+                isPopular 
+                  ? 'shadow-2xl shadow-purple-200 border-2 border-purple-400 scale-[1.02] z-10' 
+                  : 'shadow-lg hover:shadow-xl border border-gray-200'
+              } ${
                 isCurrentPlan 
-                  ? 'border-green-500 shadow-lg' 
+                  ? 'ring-2 ring-green-500 ring-offset-2' 
                   : isScheduledPlan
-                  ? 'border-purple-500 shadow-lg'
-                  : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                  ? 'ring-2 ring-purple-500 ring-offset-2'
+                  : ''
               }`}
             >
+              {isPopular && !isCurrentPlan && (
+                <div className="absolute top-0 right-0 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl flex items-center gap-1">
+                  <Star className="w-3 h-3 fill-current" />
+                  MÁS POPULAR
+                </div>
+              )}
               {isCurrentPlan && (
-                <div className="absolute top-0 right-0 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
+                <div className="absolute top-0 right-0 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl">
                   ACTUAL
                 </div>
               )}
-              {isScheduledPlan && (
-                <div className="absolute top-0 right-0 bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
+              {isScheduledPlan && !isCurrentPlan && (
+                <div className="absolute top-0 right-0 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl">
                   PRÓXIMO
                 </div>
               )}
 
-              <div className={`bg-gradient-to-r ${planColor} text-white p-6`}>
-                <div className="flex items-center gap-3 mb-2">
-                  {getPlanIcon(plan.planType)}
-                  <h3 className="text-xl font-bold">{plan.name}</h3>
+              <div className={`bg-gradient-to-br ${colors.gradient} text-white p-6 ${isPopular ? 'py-8' : ''}`}>
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="p-2 bg-white/20 rounded-lg">
+                    {getPlanIcon(plan.planType)}
+                  </div>
+                  <h3 className={`font-bold ${isPopular ? 'text-2xl' : 'text-xl'}`}>{displayName}</h3>
                 </div>
+                <p className="text-white/80 text-sm mb-4 ml-12">{description}</p>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold">${plan.priceMonthlyMxn.toLocaleString()}</span>
-                  <span className="text-white/80">MXN/mes</span>
+                  <span className={`font-bold ${isPopular ? 'text-5xl' : 'text-4xl'}`}>${plan.priceMonthlyMxn.toLocaleString()}</span>
+                  <span className="text-white/80 text-lg">MXN/mes</span>
                 </div>
+                <p className="text-white/70 text-sm mt-2">+${plan.extraReportPriceMxn} por informe extra</p>
               </div>
 
-              <div className="p-6">
-                <ul className="space-y-3 mb-6">
-                  <li className="flex items-start gap-2">
-                    <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+              <div className="p-6 flex-1 flex flex-col">
+                <ul className="space-y-3 mb-6 flex-1">
+                  <li className="flex items-center gap-3">
+                    <div className={`w-5 h-5 rounded-full ${colors.light} flex items-center justify-center`}>
+                      <Check className={`w-3.5 h-3.5 ${colors.check}`} />
+                    </div>
                     <div>
-                      <span className="font-medium text-gray-800">{plan.reportsIncluded} informes</span>
-                      <span className="text-gray-500 text-sm"> incluidos/mes</span>
+                      <span className="font-semibold text-gray-800">{plan.reportsIncluded} informes</span>
+                      <span className="text-gray-500"> incluidos/mes</span>
                     </div>
                   </li>
                   {plan.benefits && plan.benefits.length > 0 ? (
                     plan.benefits.map((benefit, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <Check className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
-                        <span className="text-gray-700 text-sm">{benefit}</span>
+                      <li key={idx} className="flex items-center gap-3">
+                        <div className={`w-5 h-5 rounded-full ${colors.light} flex items-center justify-center`}>
+                          <Check className={`w-3.5 h-3.5 ${colors.check}`} />
+                        </div>
+                        <span className="text-gray-700">{benefit}</span>
                       </li>
                     ))
                   ) : null}
-                  <li className="flex items-start gap-2">
-                    <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                  
+                  <li className="flex items-center gap-3 bg-gradient-to-r from-green-50 to-emerald-50 -mx-2 px-3 py-2 rounded-lg border border-green-100">
+                    <Sparkles className="w-5 h-5 text-green-600 shrink-0" />
                     <div>
-                      <span className="font-medium text-gray-800">${plan.extraReportPriceMxn} MXN</span>
-                      <span className="text-gray-500 text-sm"> por informe extra</span>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-2 bg-green-50 -mx-2 px-2 py-1 rounded">
-                    <Sparkles className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-medium text-green-700">{plan.reportsIncludedPromotion} informes</span>
+                      <span className="font-semibold text-green-700">{plan.reportsIncludedPromotion} informes</span>
                       <span className="text-green-600 text-sm"> por 3 meses</span>
                     </div>
                   </li>
-                  <li className="flex items-start gap-2 bg-green-50 -mx-2 px-2 py-1 rounded">
-                    <Sparkles className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+                  <li className="flex items-center gap-3 bg-gradient-to-r from-green-50 to-emerald-50 -mx-2 px-3 py-2 rounded-lg border border-green-100">
+                    <Sparkles className="w-5 h-5 text-green-600 shrink-0" />
                     <div>
-                      <span className="font-medium text-green-700">${plan.extraReportPricePromotionMxn} MXN</span>
+                      <span className="font-semibold text-green-700">${plan.extraReportPricePromotionMxn} MXN</span>
                       <span className="text-green-600 text-sm"> por informe extra (promoción)</span>
                     </div>
                   </li>
@@ -468,32 +523,34 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, currentS
                   <button
                     onClick={() => handleSubscribe(plan.planType)}
                     disabled={actionLoading === plan.planType}
-                    className={`w-full py-3 rounded-lg font-medium transition-all bg-gradient-to-r ${planColor} text-white hover:opacity-90`}
+                    className={`w-full py-3.5 rounded-xl font-semibold transition-all bg-gradient-to-r ${colors.gradient} text-white hover:opacity-90 ${
+                      isPopular ? 'shadow-lg shadow-purple-200 hover:shadow-xl' : ''
+                    }`}
                   >
                     {actionLoading === plan.planType ? (
                       <Loader2 className="w-5 h-5 animate-spin mx-auto" />
                     ) : (
-                      'Suscribirse'
+                      'Comenzar ahora'
                     )}
                   </button>
                 ) : isCurrentPlan ? (
                   <button
                     disabled
-                    className="w-full py-3 rounded-lg font-medium bg-gray-100 text-gray-400 cursor-not-allowed"
+                    className="w-full py-3.5 rounded-xl font-semibold bg-gray-100 text-gray-500 cursor-not-allowed border-2 border-gray-200"
                   >
                     Plan actual
                   </button>
                 ) : isScheduledPlan ? (
                   <button
                     disabled
-                    className="w-full py-3 rounded-lg font-medium bg-purple-100 text-purple-600 cursor-not-allowed"
+                    className="w-full py-3.5 rounded-xl font-semibold bg-purple-100 text-purple-600 cursor-not-allowed border-2 border-purple-200"
                   >
                     Cambio programado
                   </button>
                 ) : hasPendingChange ? (
                   <button
                     disabled
-                    className="w-full py-3 rounded-lg font-medium bg-gray-100 text-gray-400 cursor-not-allowed text-sm"
+                    className="w-full py-3.5 rounded-xl font-semibold bg-gray-100 text-gray-400 cursor-not-allowed text-sm border-2 border-gray-200"
                   >
                     Cancela el cambio pendiente primero
                   </button>
@@ -501,10 +558,10 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, currentS
                   <button
                     onClick={() => handleChangePlan(plan.planType)}
                     disabled={actionLoading === plan.planType}
-                    className={`w-full py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
+                    className={`w-full py-3.5 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
                       canUpgrade 
-                        ? 'bg-green-600 text-white hover:bg-green-700' 
-                        : 'bg-amber-600 text-white hover:bg-amber-700'
+                        ? `bg-gradient-to-r ${colors.gradient} text-white hover:opacity-90 ${isPopular ? 'shadow-lg shadow-purple-200' : ''}`
+                        : 'bg-amber-100 text-amber-700 border-2 border-amber-200 hover:bg-amber-200'
                     }`}
                   >
                     {actionLoading === plan.planType ? (
@@ -526,6 +583,12 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onClose, currentS
             </div>
           );
         })}
+      </div>
+
+      <div className="mt-8 text-center">
+        <p className="text-gray-500 text-sm">
+          Todos los planes incluyen nuestra tecnología de pre-validación de diagnósticos
+        </p>
       </div>
 
       {onClose && (
