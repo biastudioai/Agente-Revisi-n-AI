@@ -8,6 +8,7 @@ export interface FileData {
   mimeType: string;
   name: string;
   preview?: string;
+  sizeBytes?: number;
 }
 
 interface FileUploadProps {
@@ -18,7 +19,8 @@ interface FileUploadProps {
 }
 
 const MAX_FILES = 5;
-const MAX_FILE_SIZE_MB = 8; // 8MB max por archivo
+const MAX_FILE_SIZE_SINGLE_MB = 25; // 25MB max si es un único archivo
+const MAX_FILE_SIZE_MULTIPLE_MB = 8; // 8MB max por archivo si hay múltiples
 const MAX_TOTAL_SIZE_MB = 25; // 25MB total máximo
 
 const formatFileSize = (bytes: number): string => {
@@ -49,11 +51,32 @@ const getFileIcon = (mimeType: string) => {
   return <ImageIcon className="w-4 h-4 text-blue-500" />;
 };
 
+const getOversizedFiles = (files: FileData[]): Set<number> => {
+  const oversizedIndexes = new Set<number>();
+  if (files.length === 0) return oversizedIndexes;
+  
+  const maxSizeBytes = files.length === 1 
+    ? MAX_FILE_SIZE_SINGLE_MB * 1024 * 1024 
+    : MAX_FILE_SIZE_MULTIPLE_MB * 1024 * 1024;
+  
+  files.forEach((file, index) => {
+    const fileSize = file.sizeBytes || file.base64.length * 0.75;
+    if (fileSize > maxSizeBytes) {
+      oversizedIndexes.add(index);
+    }
+  });
+  
+  return oversizedIndexes;
+};
+
 const FileUpload: React.FC<FileUploadProps> = ({ onFilesConfirmed, isProcessing, savedReports = [], onLoadReport }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<FileData[]>([]);
   const [isLoadingFiles, setIsLoadingFiles] = useState(false);
+  
+  const oversizedFileIndexes = getOversizedFiles(selectedFiles);
+  const hasOversizedFiles = oversizedFileIndexes.size > 0;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -82,17 +105,43 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFilesConfirmed, isProcessing,
       return;
     }
 
-    // Validar tamaño individual de cada archivo
-    const maxSizeBytes = MAX_FILE_SIZE_MB * 1024 * 1024;
-    const oversizedFiles = files.filter(f => f.size > maxSizeBytes);
-    if (oversizedFiles.length > 0) {
-      const fileDetails = oversizedFiles.map(f => `${f.name} (${formatFileSize(f.size)})`).join(', ');
-      setError(`Los siguientes archivos son muy pesados (máximo ${MAX_FILE_SIZE_MB}MB por archivo): ${fileDetails}. Por favor, reduce el tamaño o usa archivos más ligeros.`);
-      return;
+    // Validar tamaño individual según cantidad total de archivos
+    const maxSingleBytes = MAX_FILE_SIZE_SINGLE_MB * 1024 * 1024;
+    const maxMultipleBytes = MAX_FILE_SIZE_MULTIPLE_MB * 1024 * 1024;
+    
+    if (totalFiles === 1) {
+      // Un solo archivo: límite de 25MB
+      if (files[0].size > maxSingleBytes) {
+        setError(`El archivo "${files[0].name}" (${formatFileSize(files[0].size)}) excede el límite de ${MAX_FILE_SIZE_SINGLE_MB}MB.`);
+        return;
+      }
+    } else {
+      // Múltiples archivos: límite de 8MB por archivo
+      const oversizedNewFiles = files.filter(f => f.size > maxMultipleBytes);
+      const oversizedExistingFiles = selectedFiles.filter(f => {
+        const size = f.sizeBytes || f.base64.length * 0.75;
+        return size > maxMultipleBytes;
+      });
+      
+      if (oversizedNewFiles.length > 0 || oversizedExistingFiles.length > 0) {
+        const allOversized: string[] = [];
+        
+        oversizedExistingFiles.forEach(f => {
+          const size = f.sizeBytes || f.base64.length * 0.75;
+          allOversized.push(`${f.name} (${formatFileSize(size)}) - ya cargado`);
+        });
+        
+        oversizedNewFiles.forEach(f => {
+          allOversized.push(`${f.name} (${formatFileSize(f.size)})`);
+        });
+        
+        setError(`Con múltiples archivos, el límite es ${MAX_FILE_SIZE_MULTIPLE_MB}MB por archivo. Los siguientes exceden: ${allOversized.join(', ')}.`);
+        return;
+      }
     }
 
     // Validar tamaño total (incluyendo archivos ya seleccionados)
-    const existingTotalSize = selectedFiles.reduce((acc, f) => acc + (f.base64.length * 0.75), 0); // Aproximar tamaño desde base64
+    const existingTotalSize = selectedFiles.reduce((acc, f) => acc + (f.sizeBytes || f.base64.length * 0.75), 0);
     const newFilesSize = files.reduce((acc, f) => acc + f.size, 0);
     const totalSize = existingTotalSize + newFilesSize;
     const maxTotalBytes = MAX_TOTAL_SIZE_MB * 1024 * 1024;
@@ -116,7 +165,8 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFilesConfirmed, isProcessing,
                 base64: base64Data,
                 mimeType: file.type,
                 name: file.name,
-                preview: file.type.startsWith('image/') ? result : undefined
+                preview: file.type.startsWith('image/') ? result : undefined,
+                sizeBytes: file.size
               });
             };
             reader.onerror = () => reject(new Error(`Error al leer ${file.name}`));
@@ -188,48 +238,73 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFilesConfirmed, isProcessing,
               </div>
               
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {selectedFiles.map((file, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg group hover:bg-slate-100 transition-colors"
-                  >
-                    <span className="w-5 h-5 bg-slate-200 rounded text-xs font-medium flex items-center justify-center text-slate-600">
-                      {index + 1}
-                    </span>
-                    
-                    {getFileIcon(file.mimeType)}
-                    
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-slate-700 truncate" title={file.name}>
-                        {file.name}
-                      </p>
-                      <p className="text-[10px] text-slate-500 uppercase">
-                        {getFileExtension(file.mimeType)}
-                      </p>
-                    </div>
-                    
-                    <button
-                      onClick={() => removeFile(index)}
-                      className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
-                      title="Eliminar archivo"
+                {selectedFiles.map((file, index) => {
+                  const isOversized = oversizedFileIndexes.has(index);
+                  const fileSize = file.sizeBytes || file.base64.length * 0.75;
+                  return (
+                    <div
+                      key={index}
+                      className={`flex items-center gap-2 p-2 rounded-lg group transition-colors ${
+                        isOversized 
+                          ? 'bg-red-50 border-2 border-red-400' 
+                          : 'bg-slate-50 border border-slate-200 hover:bg-slate-100'
+                      }`}
                     >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
+                      <span className={`w-5 h-5 rounded text-xs font-medium flex items-center justify-center ${
+                        isOversized ? 'bg-red-200 text-red-700' : 'bg-slate-200 text-slate-600'
+                      }`}>
+                        {index + 1}
+                      </span>
+                      
+                      {isOversized ? <AlertCircle className="w-4 h-4 text-red-500" /> : getFileIcon(file.mimeType)}
+                      
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-xs font-medium truncate ${isOversized ? 'text-red-700' : 'text-slate-700'}`} title={file.name}>
+                          {file.name}
+                        </p>
+                        <p className={`text-[10px] ${isOversized ? 'text-red-500 font-medium' : 'text-slate-500'}`}>
+                          {formatFileSize(fileSize)}{isOversized ? ` - Excede ${selectedFiles.length === 1 ? MAX_FILE_SIZE_SINGLE_MB : MAX_FILE_SIZE_MULTIPLE_MB}MB` : ''}
+                        </p>
+                      </div>
+                      
+                      <button
+                        onClick={() => removeFile(index)}
+                        className={`w-6 h-6 flex items-center justify-center rounded transition-colors ${
+                          isOversized 
+                            ? 'text-red-500 hover:text-red-700 hover:bg-red-100' 
+                            : 'text-slate-400 hover:text-red-500 hover:bg-red-50'
+                        }`}
+                        title="Eliminar archivo"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="mt-4 pt-3 border-t border-slate-200">
+                {hasOversizedFiles && (
+                  <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-xs text-red-700 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      Elimina los archivos marcados (máximo {MAX_FILE_SIZE_MULTIPLE_MB}MB cada uno cuando hay múltiples)
+                    </p>
+                  </div>
+                )}
                 <button
                   onClick={handleConfirm}
-                  disabled={isProcessing || isLoadingFiles}
+                  disabled={isProcessing || isLoadingFiles || hasOversizedFiles}
                   className="w-full py-2.5 bg-veryka-cyan text-white rounded-veryka text-sm font-semibold hover:bg-accent-600 transition-colors shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Continuar
                   <ChevronRight className="w-4 h-4" />
                 </button>
                 <p className="text-[10px] text-slate-500 text-center mt-2">
-                  Procesar {selectedFiles.length} archivo{selectedFiles.length !== 1 ? 's' : ''}
+                  {hasOversizedFiles 
+                    ? 'Elimina los archivos que exceden el límite para continuar'
+                    : `Procesar ${selectedFiles.length} archivo${selectedFiles.length !== 1 ? 's' : ''}`
+                  }
                 </p>
               </div>
             </div>
