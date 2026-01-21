@@ -966,6 +966,30 @@ const REGLAS_METLIFE: RawScoringRule[] = [
     affectedFields: ['padecimiento_actual.tipo_padecimiento']
   },
   {
+    id: 'metlife_tipo_padecimiento_sin_origen',
+    name: 'Origen del padecimiento no seleccionado',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Debe marcar si el padecimiento es Congénito o Adquirido.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_metlife_sin_origen', field: 'padecimiento_actual.tipo_padecimiento', operator: 'ARRAY_CONTAINS_NONE', value: 'Congénito,Adquirido' }],
+    logicOperator: 'AND',
+    affectedFields: ['padecimiento_actual.tipo_padecimiento']
+  },
+  {
+    id: 'metlife_tipo_padecimiento_sin_curso',
+    name: 'Curso del padecimiento no seleccionado',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Debe marcar si el padecimiento es Agudo o Crónico.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_metlife_sin_curso', field: 'padecimiento_actual.tipo_padecimiento', operator: 'ARRAY_CONTAINS_NONE', value: 'Agudo,Crónico' }],
+    logicOperator: 'AND',
+    affectedFields: ['padecimiento_actual.tipo_padecimiento']
+  },
+  {
     id: 'metlife_tipo_padecimiento_origen_dual',
     name: 'Origen del padecimiento contradictorio',
     level: 'IMPORTANTE',
@@ -1037,12 +1061,15 @@ const REGLAS_METLIFE: RawScoringRule[] = [
     name: 'Detalle de tratamiento faltante',
     level: 'CRÍTICO',
     points: 20,
-    description: 'La descripción del tratamiento es obligatoria. Si es quirúrgico, incluya técnica y CPT.',
+    description: 'Si el paciente seguirá recibiendo tratamiento, la descripción del plan es obligatoria.',
     providerTarget: 'METLIFE',
     isCustom: false,
-    conditions: [{ id: 'cond_metlife_plan_trat', field: 'padecimiento_actual.plan_tratamiento', operator: 'IS_EMPTY' }],
+    conditions: [
+      { id: 'cond_metlife_seguira_trat', field: 'padecimiento_actual.seguira_tratamiento', operator: 'EQUALS', value: 'true' },
+      { id: 'cond_metlife_plan_trat', field: 'padecimiento_actual.plan_tratamiento', operator: 'IS_EMPTY' }
+    ],
     logicOperator: 'AND',
-    affectedFields: ['padecimiento_actual.plan_tratamiento', 'intervencion_qx.tecnica']
+    affectedFields: ['padecimiento_actual.seguira_tratamiento', 'padecimiento_actual.plan_tratamiento']
   },
   {
     id: 'metlife_detalle_equipo_insumos',

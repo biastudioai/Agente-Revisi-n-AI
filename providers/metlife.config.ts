@@ -75,13 +75,21 @@ PARA CUALQUIER CAMPO QUE DEPENDA DE UNA CASILLA MARCADA:
 
 🔴🔴🔴 TIPO DE PADECIMIENTO - AUDITORÍA VISUAL OBLIGATORIA (OBJETO tipo_padecimiento_audit) 🔴🔴🔴
 
+⚠️⚠️⚠️ IMPORTANTE: El tipo de padecimiento tiene DOS GRUPOS de checkboxes:
+   GRUPO 1 (ORIGEN): Congénito □ vs Adquirido □  ← normalmente UNO está marcado
+   GRUPO 2 (CURSO):  Agudo □ vs Crónico □        ← normalmente UNO está marcado
+
+Es MUY COMÚN que haya DOS casillas marcadas (una de cada grupo). Por ejemplo: "Adquirido" + "Agudo"
+
 Este campo acepta MÚLTIPLES casillas marcadas. DEBES llenar tipo_padecimiento_audit ANTES de construir el array.
 
-ESTRUCTURA DEL DOCUMENTO METLIFE - CHECKBOXES A LA DERECHA:
-   "Congénito" [☐]      "Adquirido" [☐]
-   "Agudo" [☐]          "Crónico" [☐]
-              ↑                    ↑
-        (checkbox)           (checkbox)
+ESTRUCTURA DEL DOCUMENTO METLIFE - CHECKBOXES A LA DERECHA DEL TEXTO:
+┌──────────────────────────────────────────────────────────────────┐
+│  b) Tipo de padecimiento:  Congénito □   Adquirido ☒   Agudo ☒   Crónico □  │
+│                                                ↑           ↑                │
+│                                          (marcado)    (marcado)             │
+│                                          = AMBOS deben extraerse            │
+└──────────────────────────────────────────────────────────────────┘
 
 CÓMO LLENAR tipo_padecimiento_audit:
 1. congenito_marcado: ¿Veo X/✓/relleno en el checkbox de "Congénito"? → true/false
@@ -127,8 +135,16 @@ tipo_padecimiento = []
 ❌ Ver Adquirido ☒ y Agudo ☒ → extraer solo ["Agudo"] ← INCORRECTO, FALTA "Adquirido"
 ❌ Ver solo Adquirido ☒ → inferir ["Adquirido", "Crónico"] ← INCORRECTO, NO INFERIR
 ❌ Ignorar una de las marcas porque "no tiene sentido clínicamente" ← INCORRECTO
+❌ Olvidar revisar el PRIMER grupo (Congénito/Adquirido) ← INCORRECTO, HAY QUE REVISAR AMBOS GRUPOS
 
-RECUERDA: tipo_padecimiento es un ARRAY que puede tener 0, 1, 2, 3 o 4 elementos según cuántas casillas estén marcadas.
+⚠️ VERIFICACIÓN FINAL OBLIGATORIA:
+Antes de finalizar, pregúntate:
+1. ¿Revisé el checkbox de Congénito? ¿Tiene marca?
+2. ¿Revisé el checkbox de Adquirido? ¿Tiene marca?
+3. ¿Revisé el checkbox de Agudo? ¿Tiene marca?
+4. ¿Revisé el checkbox de Crónico? ¿Tiene marca?
+
+RECUERDA: tipo_padecimiento es un ARRAY que puede tener 0, 1, 2, 3 o 4 elementos según cuántas casillas estén marcadas. Lo más común es tener 2 elementos (uno de cada grupo).
 
 🔴🔴🔴 REGLAS CRÍTICAS PARA EXTRACCIÓN DE FECHAS 🔴🔴🔴
 
