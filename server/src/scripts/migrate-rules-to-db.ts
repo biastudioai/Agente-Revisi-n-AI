@@ -617,6 +617,18 @@ const REGLAS_GNP: RawScoringRule[] = [
     affectedFields: ['padecimiento_actual.tipo_padecimiento']
   },
   {
+    id: 'gnp_sexo_vacio',
+    name: 'Sexo del paciente no seleccionado',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Debe marcarse al menos una opción: Femenino o Masculino.',
+    providerTarget: 'GNP',
+    isCustom: false,
+    conditions: [{ id: 'cond_gnp_sexo_vacio', field: 'identificacion.sexo', operator: 'ARRAY_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['identificacion.sexo']
+  },
+  {
     id: 'gnp_sexo_seleccion_unica',
     name: 'Solo puede seleccionar un sexo',
     level: 'CRÍTICO',
@@ -624,7 +636,7 @@ const REGLAS_GNP: RawScoringRule[] = [
     description: 'Solo puede seleccionar Femenino O Masculino, no ambos.',
     providerTarget: 'GNP',
     isCustom: false,
-    conditions: [],
+    conditions: [{ id: 'cond_gnp_sexo_unica', field: 'identificacion.sexo', operator: 'ARRAY_LENGTH_GREATER_THAN', value: 1 }],
     logicOperator: 'AND',
     affectedFields: ['identificacion.sexo']
   },
@@ -841,14 +853,14 @@ const REGLAS_METLIFE: RawScoringRule[] = [
     affectedFields: ['identificacion.nombres', 'identificacion.edad', 'identificacion.peso', 'identificacion.talla']
   },
   {
-    id: 'metlife_sexo_seleccion',
+    id: 'metlife_sexo_vacio',
     name: 'Sexo del paciente no seleccionado',
-    level: 'IMPORTANTE',
-    points: 15,
-    description: 'Debe marcarse exactamente una opción: Masculino, Femenino u Otro.',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Debe marcarse al menos una opción: Masculino, Femenino u Otro.',
     providerTarget: 'METLIFE',
     isCustom: false,
-    conditions: [{ id: 'cond_metlife_sexo', field: 'identificacion.sexo', operator: 'INVALID_SEX' }],
+    conditions: [{ id: 'cond_metlife_sexo_vacio', field: 'identificacion.sexo', operator: 'ARRAY_EMPTY' }],
     logicOperator: 'AND',
     affectedFields: ['identificacion.sexo']
   },
@@ -1373,6 +1385,44 @@ const REGLAS_METLIFE: RawScoringRule[] = [
     conditions: [{ id: 'cond_metlife_estancia_unica', field: 'hospital.tipo_estancia', operator: 'ARRAY_LENGTH_GREATER_THAN', value: 1 }],
     logicOperator: 'AND',
     affectedFields: ['hospital.tipo_estancia']
+  },
+  {
+    id: 'metlife_sexo_seleccion_unica',
+    name: 'Solo puede seleccionar un sexo',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Solo puede seleccionar Masculino, Femenino u Otro, no múltiples.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_metlife_sexo_unica', field: 'identificacion.sexo', operator: 'ARRAY_LENGTH_GREATER_THAN', value: 1 }],
+    logicOperator: 'AND',
+    affectedFields: ['identificacion.sexo']
+  },
+
+  // ========== VIII. REGLAS NYLIFE - SEXO ==========
+  {
+    id: 'nylife_sexo_vacio',
+    name: 'Sexo del paciente no seleccionado',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Debe marcarse al menos una opción: Femenino o Masculino.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_sexo_vacio', field: 'identificacion.sexo', operator: 'ARRAY_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['identificacion.sexo']
+  },
+  {
+    id: 'nylife_sexo_seleccion_unica',
+    name: 'Solo puede seleccionar un sexo',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Solo puede seleccionar Femenino O Masculino, no ambos.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_sexo_unica', field: 'identificacion.sexo', operator: 'ARRAY_LENGTH_GREATER_THAN', value: 1 }],
+    logicOperator: 'AND',
+    affectedFields: ['identificacion.sexo']
   }
 ];
 

@@ -482,7 +482,11 @@ METADATA (AUDITORÍA VISUAL DEL DOCUMENTO):
             type: Type.OBJECT,
             properties: {
               nombres: { type: Type.STRING, description: "Nombre completo del paciente" },
-              sexo: { type: Type.STRING, description: "Masculino, Femenino u Otro" },
+              sexo: { 
+                type: Type.ARRAY, 
+                items: { type: Type.STRING },
+                description: "Array con el sexo marcado: puede contener 'Masculino', 'Femenino' u 'Otro'. SOLO extrae lo que VES marcado visualmente (X, ✓, checkbox relleno). Si TODAS las casillas están vacías, devuelve array vacío []. NO INFERIR."
+              },
               edad: { type: Type.STRING, description: "Edad del paciente" },
               causa_atencion: { 
                 type: Type.ARRAY, 

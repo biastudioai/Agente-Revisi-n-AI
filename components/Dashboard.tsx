@@ -441,7 +441,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                 <div className="md:col-span-2">{renderInput("Nombre Completo Asegurado", formData.identificacion?.nombres, 'identificacion.nombres')}</div>
                                 {renderInput("Edad", formData.identificacion?.edad, 'identificacion.edad')}
                                 <div className="md:col-span-2">
-                                    {renderRadioGroup("Sexo", formData.identificacion?.sexo, 'identificacion.sexo', ['Masculino', 'Femenino', 'Otro'])}
+                                    {renderCheckboxGroup("Sexo", formData.identificacion?.sexo, 'identificacion.sexo', ['Masculino', 'Femenino', 'Otro'])}
                                 </div>
                                 <div className="md:col-span-2">
                                     {renderCheckboxGroup("Causa Atención", formData.identificacion?.causa_atencion, 'identificacion.causa_atencion', ['Accidente', 'Enfermedad', 'Embarazo', 'Segunda valoración'])}
