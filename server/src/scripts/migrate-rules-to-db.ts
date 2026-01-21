@@ -362,6 +362,18 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     conditions: [{ id: 'cond_firma_coincide', field: 'metadata.firma_coincide_con_tratante', operator: 'EQUALS', value: 'false' }],
     logicOperator: 'AND',
     affectedFields: ['firma.nombre_firma', 'medico_tratante.nombres']
+  },
+  {
+    id: 'gen_uniformidad_tinta',
+    name: 'Documento con múltiples tintas',
+    level: 'CRÍTICO',
+    points: 25,
+    description: 'El llenado debe ser con una sola tinta en todo el documento o mismo color de escritura.',
+    providerTarget: 'ALL',
+    isCustom: false,
+    conditions: [{ id: 'cond_uniformidad_tinta', field: 'metadata.uniformidad_tinta', operator: 'EQUALS', value: 'false' }],
+    logicOperator: 'AND',
+    affectedFields: ['metadata.uniformidad_tinta']
   }
 ];
 
@@ -739,47 +751,512 @@ const REGLAS_GNP: RawScoringRule[] = [
 ];
 
 const REGLAS_METLIFE: RawScoringRule[] = [
+  // ========== I. VALIDEZ DOCUMENTAL ==========
+  // GEN-001 (Tachaduras) ya existe como regla general gen_tachaduras_detectadas
+  // GEN-002 (Uniformidad tinta) ya existe como regla general gen_uniformidad_tinta
+  
   {
-    id: 'metlife_rfc',
-    name: 'RFC Médico Obligatorio',
+    id: 'metlife_vigencia_informe',
+    name: 'Informe médico con más de 6 meses de antigüedad',
     level: 'CRÍTICO',
-    points: 20,
-    description: 'MetLife requiere el RFC para validación de honorarios.',
+    points: 25,
+    description: 'La fecha de cabecera no debe ser mayor a 6 meses respecto a la fecha actual.',
     providerTarget: 'METLIFE',
     isCustom: false,
-    conditions: [{ id: 'cond_metlife_rfc_1', field: 'medico_tratante.rfc', operator: 'IS_EMPTY' }],
+    conditions: [{ id: 'cond_metlife_vigencia', field: 'firma.fecha', operator: 'DATE_OLDER_THAN_MONTHS', value: 6 }],
     logicOperator: 'AND',
-    affectedFields: ['medico_tratante.rfc']
+    affectedFields: ['firma.fecha']
   },
   {
-    id: 'metlife_secciones',
-    name: 'Secciones Incompletas',
-    level: 'MODERADO',
-    points: 10,
-    description: 'Faltan datos en secciones clave (Antecedentes o Padecimiento).',
+    id: 'metlife_campos_vacios',
+    name: 'Campos vacíos sin N/A',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'No se permiten campos vacíos. Si un dato no aplica, debe decir "N/A" o "No aplica".',
     providerTarget: 'METLIFE',
     isCustom: false,
     conditions: [
-      { id: 'cond_metlife_secciones_1', field: 'antecedentes.historia_clinica_breve', operator: 'IS_EMPTY' },
-      { id: 'cond_metlife_secciones_2', field: 'padecimiento_actual.descripcion', operator: 'IS_EMPTY' }
+      { id: 'cond_metlife_vacios_1', field: 'antecedentes.historia_clinica_breve', operator: 'IS_EMPTY' },
+      { id: 'cond_metlife_vacios_2', field: 'padecimiento_actual.descripcion', operator: 'IS_EMPTY' }
     ],
     logicOperator: 'OR',
     affectedFields: ['antecedentes.historia_clinica_breve', 'padecimiento_actual.descripcion']
   },
   {
-    id: 'metlife_codigo_cie',
-    name: 'Código CIE-10 Formato Inválido',
-    level: 'IMPORTANTE',
-    points: 12,
-    description: 'MetLife requiere código CIE-10 en formato válido (ej: A00.0).',
+    id: 'metlife_informe_individual',
+    name: 'Médico tratante no identificado',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Se requiere un informe independiente por cada médico tratante o interconsultante.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_metlife_medico', field: 'medico_tratante.nombres', operator: 'IS_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['medico_tratante.nombres']
+  },
+
+  // ========== II. IDENTIFICACIÓN Y ANTECEDENTES ==========
+  {
+    id: 'metlife_datos_identidad',
+    name: 'Datos de identidad del paciente incompletos',
+    level: 'CRÍTICO',
+    points: 25,
+    description: 'El lugar, fecha, nombre, edad, peso y talla del paciente son obligatorios.',
     providerTarget: 'METLIFE',
     isCustom: false,
     conditions: [
-      { id: 'cond_metlife_cie_1', field: 'diagnostico.codigo_cie', operator: 'IS_EMPTY' },
-      { id: 'cond_metlife_cie_2', field: 'diagnostico.codigo_cie', operator: 'REGEX', value: '^[A-Z]\\d{2}(\\.\\d{1,2})?$' }
+      { id: 'cond_metlife_nombre', field: 'identificacion.nombres', operator: 'IS_EMPTY' },
+      { id: 'cond_metlife_edad', field: 'identificacion.edad', operator: 'IS_EMPTY' },
+      { id: 'cond_metlife_peso', field: 'identificacion.peso', operator: 'IS_EMPTY' },
+      { id: 'cond_metlife_talla', field: 'identificacion.talla', operator: 'IS_EMPTY' }
     ],
     logicOperator: 'OR',
-    affectedFields: ['diagnostico.codigo_cie']
+    affectedFields: ['identificacion.nombres', 'identificacion.edad', 'identificacion.peso', 'identificacion.talla']
+  },
+  {
+    id: 'metlife_sexo_seleccion',
+    name: 'Sexo del paciente no seleccionado',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Debe marcarse exactamente una opción: Masculino, Femenino u Otro.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_metlife_sexo', field: 'identificacion.sexo', operator: 'INVALID_SEX' }],
+    logicOperator: 'AND',
+    affectedFields: ['identificacion.sexo']
+  },
+  {
+    id: 'metlife_causa_atencion',
+    name: 'Causa de atención no marcada',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Debe marcarse al menos una opción de causa (Accidente, Enfermedad, Embarazo, etc.).',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_metlife_causa', field: 'identificacion.causa_atencion', operator: 'IS_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['identificacion.causa_atencion']
+  },
+  {
+    id: 'metlife_fecha_primera_atencion',
+    name: 'Fecha de primera atención faltante',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'La fecha en que se atendió al paciente por primera vez es obligatoria (DD/MM/AAAA).',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_metlife_primera_atencion', field: 'identificacion.fecha_primera_atencion', operator: 'IS_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['identificacion.fecha_primera_atencion']
+  },
+  {
+    id: 'metlife_antecedentes_clinicos',
+    name: 'Antecedentes clínicos incompletos',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'La historia clínica, antecedentes patológicos y quirúrgicos son obligatorios (admite "Ninguno").',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_metlife_historia', field: 'antecedentes.historia_clinica_breve', operator: 'IS_EMPTY' },
+      { id: 'cond_metlife_patologicos', field: 'antecedentes.personales_patologicos', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'OR',
+    affectedFields: ['antecedentes.historia_clinica_breve', 'antecedentes.personales_patologicos']
+  },
+  {
+    id: 'metlife_datos_go_condicional',
+    name: 'Datos gineco-obstétricos incompletos',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Si el sexo es Femenino o la causa es Embarazo, los campos G, P, A, C deben ser numéricos.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_metlife_go_sexo', field: 'identificacion.sexo', operator: 'EQUALS', value: 'Femenino' },
+      { id: 'cond_metlife_go_g', field: 'antecedentes.gineco_g', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['antecedentes.gineco_g', 'antecedentes.gineco_p', 'antecedentes.gineco_a', 'antecedentes.gineco_c']
+  },
+  {
+    id: 'metlife_datos_go_embarazo',
+    name: 'Datos gineco-obstétricos faltantes por embarazo',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Si la causa es Embarazo, los campos G, P, A, C deben estar completos.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_metlife_go_emb', field: 'identificacion.causa_atencion', operator: 'EQUALS', value: 'Embarazo' },
+      { id: 'cond_metlife_go_emb_g', field: 'antecedentes.gineco_g', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['antecedentes.gineco_g', 'antecedentes.gineco_p', 'antecedentes.gineco_a', 'antecedentes.gineco_c']
+  },
+
+  // ========== III. DIAGNÓSTICO Y MANEJO MÉDICO ==========
+  {
+    id: 'metlife_descripcion_padecimiento',
+    name: 'Descripción del padecimiento faltante',
+    level: 'CRÍTICO',
+    points: 25,
+    description: 'Los signos, síntomas y tiempo de evolución son obligatorios.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_metlife_desc_pad', field: 'padecimiento_actual.descripcion', operator: 'IS_EMPTY' },
+      { id: 'cond_metlife_tiempo_evol', field: 'padecimiento_actual.tiempo_evolucion', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'OR',
+    affectedFields: ['padecimiento_actual.descripcion', 'padecimiento_actual.tiempo_evolucion']
+  },
+  {
+    id: 'metlife_evolucion_estado',
+    name: 'Causa/etiología o estado actual faltante',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'La causa/etiología y el estado actual del paciente son obligatorios.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_metlife_etiologia', field: 'padecimiento_actual.causa_etiologia', operator: 'IS_EMPTY' },
+      { id: 'cond_metlife_estado', field: 'padecimiento_actual.estado_actual', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'OR',
+    affectedFields: ['padecimiento_actual.causa_etiologia', 'padecimiento_actual.estado_actual']
+  },
+  {
+    id: 'metlife_tipo_padecimiento',
+    name: 'Tipo de padecimiento no seleccionado',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Es obligatorio marcar al menos una opción: Congénito, Adquirido, Agudo o Crónico.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_metlife_tipo_pad', field: 'padecimiento_actual.tipo_padecimiento', operator: 'ARRAY_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['padecimiento_actual.tipo_padecimiento']
+  },
+  {
+    id: 'metlife_diagnostico_cie',
+    name: 'Diagnóstico o código CIE-10 faltante',
+    level: 'CRÍTICO',
+    points: 25,
+    description: 'El diagnóstico etiológico definitivo y su código CIE-10 son obligatorios.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_metlife_diag', field: 'diagnostico.diagnostico_definitivo', operator: 'IS_EMPTY' },
+      { id: 'cond_metlife_cie', field: 'diagnostico.codigo_cie', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'OR',
+    affectedFields: ['diagnostico.diagnostico_definitivo', 'diagnostico.codigo_cie']
+  },
+  {
+    id: 'metlife_evidencia_medica',
+    name: 'Resultados de exploración física faltantes',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Los resultados de exploración física y estudios practicados son obligatorios.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_metlife_exploracion', field: 'exploracion_fisica.resultados', operator: 'IS_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['exploracion_fisica.resultados']
+  },
+  {
+    id: 'metlife_cronologia_medica',
+    name: 'Fechas de cronología médica incompletas',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Las fechas de inicio de síntomas, diagnóstico e inicio de tratamiento son obligatorias.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_metlife_fecha_inicio', field: 'padecimiento_actual.fecha_inicio', operator: 'IS_EMPTY' },
+      { id: 'cond_metlife_fecha_diag', field: 'diagnostico.fecha_diagnostico', operator: 'IS_EMPTY' },
+      { id: 'cond_metlife_fecha_trat', field: 'diagnostico.fecha_inicio_tratamiento', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'OR',
+    affectedFields: ['padecimiento_actual.fecha_inicio', 'diagnostico.fecha_diagnostico', 'diagnostico.fecha_inicio_tratamiento']
+  },
+  {
+    id: 'metlife_detalle_tratamiento',
+    name: 'Detalle de tratamiento faltante',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'La descripción del tratamiento es obligatoria. Si es quirúrgico, incluya técnica y CPT.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_metlife_plan_trat', field: 'padecimiento_actual.plan_tratamiento', operator: 'IS_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['padecimiento_actual.plan_tratamiento', 'intervencion_qx.tecnica']
+  },
+  {
+    id: 'metlife_detalle_equipo_insumos',
+    name: 'Detalle de equipo/insumos faltante',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Si marcó "Sí" en equipo especial o insumos, es obligatorio llenar el cuadro de detalle.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_metlife_equipo_si', field: 'intervencion_qx.utilizo_equipo_especial', operator: 'EQUALS', value: 'true' },
+      { id: 'cond_metlife_equipo_detalle', field: 'intervencion_qx.detalle_equipo_especial', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['intervencion_qx.utilizo_equipo_especial', 'intervencion_qx.detalle_equipo_especial']
+  },
+  {
+    id: 'metlife_detalle_insumos',
+    name: 'Detalle de insumos faltante',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Si marcó "Sí" en insumos/materiales, es obligatorio llenar el detalle.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_metlife_insumos_si', field: 'intervencion_qx.utilizo_insumos', operator: 'EQUALS', value: 'true' },
+      { id: 'cond_metlife_insumos_detalle', field: 'intervencion_qx.detalle_insumos', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['intervencion_qx.utilizo_insumos', 'intervencion_qx.detalle_insumos']
+  },
+  {
+    id: 'metlife_fecha_alta',
+    name: 'Fecha probable de alta faltante',
+    level: 'MODERADO',
+    points: 10,
+    description: 'Si el tratamiento continuará, la fecha probable de alta es obligatoria (DD/MM/AAAA).',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_metlife_sigue_trat', field: 'padecimiento_actual.seguira_tratamiento', operator: 'EQUALS', value: 'true' },
+      { id: 'cond_metlife_fecha_alta', field: 'padecimiento_actual.fecha_probable_alta', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['padecimiento_actual.seguira_tratamiento', 'padecimiento_actual.fecha_probable_alta']
+  },
+
+  // ========== IV. HOSPITALIZACIÓN Y EQUIPO ==========
+  {
+    id: 'metlife_datos_estancia',
+    name: 'Datos de hospitalización incompletos',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Si hay hospital, debe marcar el Tipo de ingreso y llenar las fechas de ingreso y egreso.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_metlife_hosp_nombre', field: 'hospital.nombre_hospital', operator: 'NOT_EMPTY' },
+      { id: 'cond_metlife_hosp_tipo', field: 'hospital.tipo_estancia', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['hospital.nombre_hospital', 'hospital.tipo_estancia', 'hospital.fecha_ingreso', 'hospital.fecha_egreso']
+  },
+  {
+    id: 'metlife_fecha_intervencion',
+    name: 'Fecha de intervención quirúrgica faltante',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Si se realizó una cirugía, la fecha de intervención es obligatoria (DD/MM/AAAA).',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_metlife_cirugia', field: 'intervencion_qx.tecnica', operator: 'NOT_EMPTY' },
+      { id: 'cond_metlife_fecha_cirugia', field: 'hospital.fecha_intervencion', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['intervencion_qx.tecnica', 'hospital.fecha_intervencion']
+  },
+  {
+    id: 'metlife_observaciones',
+    name: 'Sección de observaciones vacía',
+    level: 'MODERADO',
+    points: 10,
+    description: 'La sección de observaciones y comentarios adicionales es obligatoria (admite "Ninguna").',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_metlife_obs', field: 'info_adicional.descripcion', operator: 'IS_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['info_adicional.descripcion']
+  },
+  {
+    id: 'metlife_equipo_quirurgico_anest',
+    name: 'Datos del anestesiólogo incompletos',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Si registra anestesiólogo, su RFC (13 caracteres), Cédula y Email son obligatorios.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_metlife_anest_nombre', field: 'equipo_quirurgico_metlife.anestesiologo.nombre', operator: 'NOT_EMPTY' },
+      { id: 'cond_metlife_anest_rfc', field: 'equipo_quirurgico_metlife.anestesiologo.rfc', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['equipo_quirurgico_metlife.anestesiologo.nombre', 'equipo_quirurgico_metlife.anestesiologo.rfc', 'equipo_quirurgico_metlife.anestesiologo.cedula_especialidad', 'equipo_quirurgico_metlife.anestesiologo.email']
+  },
+  {
+    id: 'metlife_equipo_quirurgico_ayudante',
+    name: 'Datos del primer ayudante incompletos',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Si registra primer ayudante, su RFC (13 caracteres), Cédula y Email son obligatorios.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_metlife_ayud_nombre', field: 'equipo_quirurgico_metlife.primer_ayudante.nombre', operator: 'NOT_EMPTY' },
+      { id: 'cond_metlife_ayud_rfc', field: 'equipo_quirurgico_metlife.primer_ayudante.rfc', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['equipo_quirurgico_metlife.primer_ayudante.nombre', 'equipo_quirurgico_metlife.primer_ayudante.rfc', 'equipo_quirurgico_metlife.primer_ayudante.cedula_especialidad', 'equipo_quirurgico_metlife.primer_ayudante.email']
+  },
+
+  // ========== V. DATOS DEL MÉDICO Y HONORARIOS ==========
+  {
+    id: 'metlife_info_fiscal',
+    name: 'Información fiscal del médico incompleta',
+    level: 'CRÍTICO',
+    points: 25,
+    description: 'Nombre, Cédula, RFC (13 caracteres), Teléfono y Email (formato válido) son obligatorios.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_metlife_med_nombre', field: 'medico_tratante.nombres', operator: 'IS_EMPTY' },
+      { id: 'cond_metlife_med_cedula', field: 'medico_tratante.cedula_profesional', operator: 'IS_EMPTY' },
+      { id: 'cond_metlife_med_rfc', field: 'medico_tratante.rfc', operator: 'IS_EMPTY' },
+      { id: 'cond_metlife_med_celular', field: 'medico_tratante.celular', operator: 'IS_EMPTY' },
+      { id: 'cond_metlife_med_email', field: 'medico_tratante.correo_electronico', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'OR',
+    affectedFields: ['medico_tratante.nombres', 'medico_tratante.cedula_profesional', 'medico_tratante.rfc', 'medico_tratante.celular', 'medico_tratante.correo_electronico']
+  },
+  {
+    id: 'metlife_rfc_formato',
+    name: 'Formato de RFC inválido',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'El RFC debe tener exactamente 13 caracteres alfanuméricos.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_metlife_rfc_no_vacio', field: 'medico_tratante.rfc', operator: 'NOT_EMPTY' },
+      { id: 'cond_metlife_rfc_formato', field: 'medico_tratante.rfc', operator: 'REGEX', value: '^[A-Z]{4}\\d{6}[A-Z0-9]{3}$' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['medico_tratante.rfc']
+  },
+  {
+    id: 'metlife_celular_formato',
+    name: 'Formato de celular inválido',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'El número celular debe tener exactamente 10 dígitos.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_metlife_cel_no_vacio', field: 'medico_tratante.celular', operator: 'NOT_EMPTY' },
+      { id: 'cond_metlife_cel_formato', field: 'medico_tratante.celular', operator: 'REGEX', value: '^\\d{10}$' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['medico_tratante.celular']
+  },
+  {
+    id: 'metlife_tipo_atencion',
+    name: 'Tipo de atención no seleccionado',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Debe marcar visualmente su rol (Médico Tratante, Cirujano, etc.) en las casillas.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_metlife_tipo_aten', field: 'medico_tratante.tipo_atencion', operator: 'ARRAY_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['medico_tratante.tipo_atencion']
+  },
+  {
+    id: 'metlife_convenio_tabulador',
+    name: 'Convenio y tabulador no seleccionados',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'La selección de "Sí" o "No" en Convenio y Aceptación de Tabuladores es obligatoria.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_metlife_convenio', field: 'medico_tratante.convenio_aseguradora', operator: 'IS_NULL' },
+      { id: 'cond_metlife_tabulador', field: 'medico_tratante.se_ajusta_tabulador', operator: 'IS_NULL' }
+    ],
+    logicOperator: 'OR',
+    affectedFields: ['medico_tratante.convenio_aseguradora', 'medico_tratante.se_ajusta_tabulador']
+  },
+  {
+    id: 'metlife_monto_honorarios',
+    name: 'Monto de honorarios faltante o inválido',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'El monto de honorarios según su rol debe ser numérico y mayor a 0.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_metlife_hon_cirug', field: 'medico_tratante.honorarios_cirujano', operator: 'IS_EMPTY' },
+      { id: 'cond_metlife_hon_anest', field: 'medico_tratante.honorarios_anestesiologo', operator: 'IS_EMPTY' },
+      { id: 'cond_metlife_hon_ayud', field: 'medico_tratante.honorarios_ayudante', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['medico_tratante.honorarios_cirujano', 'medico_tratante.honorarios_anestesiologo', 'medico_tratante.honorarios_ayudante']
+  },
+
+  // ========== VI. LÓGICA Y CIERRE ==========
+  {
+    id: 'metlife_secuencia_sintomas',
+    name: 'Secuencia de fechas incoherente',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'La fecha de inicio de síntomas debe ser anterior o igual al diagnóstico y tratamiento.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_metlife_sec_sint', field: 'padecimiento_actual.fecha_inicio', operator: 'DATE_AFTER', compareField: 'diagnostico.fecha_diagnostico' }],
+    logicOperator: 'AND',
+    affectedFields: ['padecimiento_actual.fecha_inicio', 'diagnostico.fecha_diagnostico', 'diagnostico.fecha_inicio_tratamiento']
+  },
+  {
+    id: 'metlife_periodo_hospitalario',
+    name: 'Período hospitalario incoherente',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'La fecha de ingreso debe ser anterior o igual a la de intervención y ésta al egreso.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_metlife_hosp_fechas', field: 'hospital.fecha_ingreso', operator: 'DATE_AFTER', compareField: 'hospital.fecha_egreso' }],
+    logicOperator: 'AND',
+    affectedFields: ['hospital.fecha_ingreso', 'hospital.fecha_intervencion', 'hospital.fecha_egreso']
+  },
+  {
+    id: 'metlife_consistencia_firma',
+    name: 'Fecha posterior a firma del documento',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Ninguna fecha del informe puede ser posterior a la fecha de firma del documento.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_metlife_firma_post', field: 'diagnostico.fecha_diagnostico', operator: 'DATE_AFTER', compareField: 'firma.fecha' }],
+    logicOperator: 'AND',
+    affectedFields: ['firma.fecha', 'diagnostico.fecha_diagnostico']
+  },
+  {
+    id: 'metlife_firma_nombre',
+    name: 'Firma o nombre del médico faltante',
+    level: 'CRÍTICO',
+    points: 25,
+    description: 'El informe debe incluir el nombre completo y la firma autógrafa del médico tratante.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_metlife_firma_nombre', field: 'firma.nombre_firma', operator: 'IS_EMPTY' },
+      { id: 'cond_metlife_firma_auto', field: 'firma.firma_autografa_detectada', operator: 'EQUALS', value: 'false' }
+    ],
+    logicOperator: 'OR',
+    affectedFields: ['firma.nombre_firma', 'firma.firma_autografa_detectada']
   }
 ];
 
