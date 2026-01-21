@@ -444,7 +444,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     {renderRadioGroup("Sexo", formData.identificacion?.sexo, 'identificacion.sexo', ['Masculino', 'Femenino', 'Otro'])}
                                 </div>
                                 <div className="md:col-span-2">
-                                    {renderRadioGroup("Causa Atención", formData.identificacion?.causa_atencion, 'identificacion.causa_atencion', ['Accidente', 'Enfermedad', 'Embarazo', 'Segunda valoración'])}
+                                    {renderCheckboxGroup("Causa Atención", formData.identificacion?.causa_atencion, 'identificacion.causa_atencion', ['Accidente', 'Enfermedad', 'Embarazo', 'Segunda valoración'])}
                                 </div>
                                 {renderInput("Peso", formData.identificacion?.peso, 'identificacion.peso', 'text', 'kg')}
                                 {renderInput("Talla", formData.identificacion?.talla, 'identificacion.talla', 'text', 'cm')}
@@ -969,7 +969,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="md:col-span-2">{renderInput("Nombre Hospital", formData.hospital?.nombre_hospital, 'hospital.nombre_hospital')}</div>
                                 <div className="md:col-span-2">
-                                    {renderRadioGroup("Tipo de Estancia", formData.hospital?.tipo_estancia, 'hospital.tipo_estancia', ['Urgencia', 'Ingreso hospitalario', 'Corta estancia ambulatoria'])}
+                                    {renderCheckboxGroup("Tipo de Estancia", formData.hospital?.tipo_estancia, 'hospital.tipo_estancia', ['Urgencia', 'Ingreso hospitalario', 'Corta estancia ambulatoria'])}
                                 </div>
                                 <DateInput label="Fecha Ingreso" value={formData.hospital?.fecha_ingreso} path="hospital.fecha_ingreso" isModified={!!modifiedFields['hospital.fecha_ingreso']} isHighlighted={highlightedField === 'hospital.fecha_ingreso'} onChange={handleInputChange} />
                                 <DateInput label="Fecha Intervención" value={formData.hospital?.fecha_intervencion} path="hospital.fecha_intervencion" isModified={!!modifiedFields['hospital.fecha_intervencion']} isHighlighted={highlightedField === 'hospital.fecha_intervencion'} onChange={handleInputChange} />

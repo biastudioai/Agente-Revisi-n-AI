@@ -485,8 +485,9 @@ METADATA (AUDITORÍA VISUAL DEL DOCUMENTO):
               sexo: { type: Type.STRING, description: "Masculino, Femenino u Otro" },
               edad: { type: Type.STRING, description: "Edad del paciente" },
               causa_atencion: { 
-                type: Type.STRING, 
-                description: "SOLO extrae 'Accidente', 'Enfermedad', 'Embarazo' o 'Segunda valoración' SI VES una marca visual clara (X, ✓, checkbox relleno) en la casilla correspondiente. Si TODAS las casillas están vacías, devuelve string vacío ''. NO INFERIR basándote en el diagnóstico o contexto clínico." 
+                type: Type.ARRAY, 
+                items: { type: Type.STRING },
+                description: "Array con la causa de atención marcada: puede contener 'Accidente', 'Enfermedad', 'Embarazo' o 'Segunda valoración'. SOLO extrae lo que VES marcado visualmente (X, ✓, checkbox relleno). Si TODAS las casillas están vacías, devuelve array vacío []. NO INFERIR basándote en el diagnóstico o contexto clínico." 
               },
               peso: { type: Type.STRING, description: "Peso del paciente en kg" },
               talla: { type: Type.STRING, description: "Talla/altura del paciente" },
@@ -596,7 +597,11 @@ METADATA (AUDITORÍA VISUAL DEL DOCUMENTO):
             type: Type.OBJECT,
             properties: {
               nombre_hospital: { type: Type.STRING, description: "Nombre del hospital" },
-              tipo_estancia: { type: Type.STRING, description: "Urgencia, Ingreso hospitalario o Corta estancia" },
+              tipo_estancia: { 
+                type: Type.ARRAY, 
+                items: { type: Type.STRING },
+                description: "Array con el tipo de estancia marcado: puede contener 'Urgencia', 'Ingreso hospitalario' o 'Corta estancia ambulatoria'. SOLO extrae lo que VES marcado visualmente (X, ✓, checkbox relleno). Si TODAS las casillas están vacías, devuelve array vacío []." 
+              },
               fecha_ingreso: { type: Type.STRING, description: "Fecha de ingreso DD/MM/AAAA" },
               fecha_intervencion: { type: Type.STRING, description: "Fecha de intervención DD/MM/AAAA" },
               fecha_egreso: { type: Type.STRING, description: "Fecha de egreso DD/MM/AAAA" }

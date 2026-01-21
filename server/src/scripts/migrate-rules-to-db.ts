@@ -857,10 +857,10 @@ const REGLAS_METLIFE: RawScoringRule[] = [
     name: 'Causa de atención no marcada',
     level: 'CRÍTICO',
     points: 20,
-    description: 'Debe marcarse al menos una opción de causa (Accidente, Enfermedad, Embarazo, etc.).',
+    description: 'Debe marcarse al menos una opción de causa (Accidente, Enfermedad, Embarazo o Segunda valoración).',
     providerTarget: 'METLIFE',
     isCustom: false,
-    conditions: [{ id: 'cond_metlife_causa', field: 'identificacion.causa_atencion', operator: 'IS_EMPTY' }],
+    conditions: [{ id: 'cond_metlife_causa', field: 'identificacion.causa_atencion', operator: 'ARRAY_EMPTY' }],
     logicOperator: 'AND',
     affectedFields: ['identificacion.causa_atencion']
   },
@@ -1128,7 +1128,7 @@ const REGLAS_METLIFE: RawScoringRule[] = [
     isCustom: false,
     conditions: [
       { id: 'cond_metlife_hosp_nombre', field: 'hospital.nombre_hospital', operator: 'NOT_EMPTY' },
-      { id: 'cond_metlife_hosp_tipo', field: 'hospital.tipo_estancia', operator: 'IS_EMPTY' }
+      { id: 'cond_metlife_hosp_tipo', field: 'hospital.tipo_estancia', operator: 'ARRAY_EMPTY' }
     ],
     logicOperator: 'AND',
     affectedFields: ['hospital.nombre_hospital', 'hospital.tipo_estancia', 'hospital.fecha_ingreso', 'hospital.fecha_egreso']
@@ -1347,6 +1347,32 @@ const REGLAS_METLIFE: RawScoringRule[] = [
     ],
     logicOperator: 'OR',
     affectedFields: ['firma.nombre_firma', 'firma.firma_autografa_detectada']
+  },
+
+  // ========== VII. REGLAS DE SELECCIÓN ÚNICA (CHECKBOXES) ==========
+  {
+    id: 'metlife_causa_atencion_seleccion_unica',
+    name: 'Solo puede seleccionar una causa de atención',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Solo puede seleccionar una opción: Accidente, Enfermedad, Embarazo o Segunda valoración, no múltiples.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_metlife_causa_unica', field: 'identificacion.causa_atencion', operator: 'ARRAY_LENGTH_GREATER_THAN', value: 1 }],
+    logicOperator: 'AND',
+    affectedFields: ['identificacion.causa_atencion']
+  },
+  {
+    id: 'metlife_tipo_estancia_seleccion_unica',
+    name: 'Solo puede seleccionar un tipo de estancia',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Solo puede seleccionar una opción: Urgencia, Ingreso hospitalario o Corta estancia ambulatoria, no múltiples.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_metlife_estancia_unica', field: 'hospital.tipo_estancia', operator: 'ARRAY_LENGTH_GREATER_THAN', value: 1 }],
+    logicOperator: 'AND',
+    affectedFields: ['hospital.tipo_estancia']
   }
 ];
 
