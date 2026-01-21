@@ -1303,7 +1303,7 @@ async function migrateRulesToDatabase() {
           providerTarget: rule.providerTarget,
           category: rule.category,
           isCustom: rule.isCustom || false,
-          conditions: rule.conditions && rule.conditions.length > 0 ? rule.conditions : null,
+          conditions: rule.conditions && rule.conditions.length > 0 ? JSON.parse(JSON.stringify(rule.conditions)) : undefined,
           logicOperator: rule.logicOperator || null,
           affectedFields: rule.affectedFields,
           hasValidator,
