@@ -73,18 +73,6 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     affectedFields: ['identificacion.nombres']
   },
   {
-    id: 'gen_paciente_sexo',
-    name: 'Sexo del paciente obligatorio',
-    level: 'CRÍTICO',
-    points: 20,
-    description: 'Debe seleccionarse un sexo válido (F o M).',
-    providerTarget: 'ALL',
-    isCustom: false,
-    conditions: [{ id: 'cond_paciente_sexo_1', field: 'identificacion.sexo', operator: 'INVALID_SEX' }],
-    logicOperator: 'AND',
-    affectedFields: ['identificacion.sexo']
-  },
-  {
     id: 'gen_paciente_edad_valida',
     name: 'Edad del paciente válida',
     level: 'CRÍTICO',
