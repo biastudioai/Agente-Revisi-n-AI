@@ -231,7 +231,7 @@ SECCIÓN TRÁMITE:
 - Si ninguna está marcada → dejar todos en false/null
 
 FICHA DE IDENTIFICACIÓN DEL ASEGURADO:
-- numero_poliza: Número de póliza del asegurado
+- numero_poliza: Número de póliza del asegurado: Si notas algún espacio en blanco o guiones, extrae el número completo sin espacios ni guiones. Ejemplo: Si el número de póliza es "123 456 789" o "123-456-789", extrae "123456789"
 - primer_apellido: Primer apellido del paciente
 - segundo_apellido: Segundo apellido del paciente  
 - nombres: Nombre(s) del paciente

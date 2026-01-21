@@ -1,0 +1,146 @@
+CONFIGURACIÓN MAESTRA DE REGLAS MÉDICAS METLIFE (33 REGLAS)
+I. VALIDEZ DOCUMENTAL
+REGLA: GEN-001 (Integridad del Documento)
+Lógica: Verificación de ausencia de tachaduras o corrector en el documento.
+Mensaje de error: "El documento no debe presentar tachaduras, corrector, enmendaduras o borraduras."
+Severidad: Crítico.
+REGLA: GEN-002 (Formato de Escritura)
+Lógica: Verificación de uso de una sola tinta.
+Mensaje de error: "El llenado debe ser con una sola tinta en todo el documento o mismo color de escritura."
+Severidad: Crítico.
+REGLA: GEN-003 (Vigencia del Informe)
+Lógica: fecha_actual - firma.fecha <= 6 meses.
+Mensaje de error: "La fecha de cabecera no debe ser mayor a 6 meses respecto a la fecha actual."
+Severidad: Crítico.
+REGLA: GEN-004 (Campos Obligatorios)
+Lógica: Ningún campo string en el objeto extracted debe estar vacío.
+Mensaje de error: "No se permiten campos vacíos. Si un dato no aplica, debe decir 'N/A' o 'No aplica'."
+Severidad: Crítico.
+REGLA: GEN-005 (Informe Individual)
+Lógica: El campo medico_tratante.nombres debe estar presente y ser consistente.
+Mensaje de error: "Se requiere un informe independiente por cada médico tratante o interconsultante."
+Severidad: Crítico.
+
+II. IDENTIFICACIÓN Y ANTECEDENTES
+REGLA: PAC-001 (Datos de Identidad)
+Lógica: identificacion.nombres, edad, peso y talla deben ser > 0.
+Mensaje de error: "El lugar, fecha, nombre, edad, peso y talla del paciente son obligatorios."
+Severidad: Crítico.
+REGLA: PAC-002 (Selección de Sexo)
+Lógica: identificacion.sexo debe ser "Masculino", "Femenino" u "Otro".
+Mensaje de error: "Debe marcarse exactamente una opción: Masculino, Femenino u Otro."
+Severidad: Importante.
+REGLA: PAC-003 (Causa de Atención)
+Lógica: identificacion.causa_atencion no debe ser string vacío.
+Mensaje de error: "Debe marcarse al menos una opción de causa (Accidente, Enfermedad, Embarazo, etc.)."
+Severidad: Crítico.
+REGLA: PAC-004 (Fecha Primera Atención)
+Lógica: identificacion.fecha_primera_atencion debe ser una fecha válida.
+Mensaje de error: "La fecha en que se atendió al paciente por primera vez es obligatoria (DD/MM/AAAA)."
+Severidad: Crítico.
+REGLA: PAC-005 (Antecedentes Clínicos)
+Lógica: antecedentes.historia_clinica_breve y personales_patologicos deben tener texto.
+Mensaje de error: "La historia clínica, antecedentes patológicos y quirúrgicos son obligatorios (admite 'Ninguno')."
+Severidad: Importante.
+REGLA: PAC-006 (Datos G-O Condicional)
+Lógica: Si sexo == "Femenino" o causa == "Embarazo", validar que gineco_g/p/a/c tengan valores numéricos.
+Mensaje de error: "Si el sexo es Femenino o la causa es Embarazo, los campos G, P, A, C deben ser numéricos."
+Severidad: Importante.
+
+III. DIAGNÓSTICO Y MANEJO MÉDICO
+REGLA: DIAG-001 (Descripción Padecimiento)
+Lógica: padecimiento_actual.descripcion y tiempo_evolucion obligatorios.
+Mensaje de error: "Los signos, síntomas y tiempo de evolución son obligatorios."
+Severidad: Crítico.
+REGLA: DIAG-002 (Evolución y Estado)
+Lógica: padecimiento_actual.causa_etiologia y estado_actual obligatorios.
+Mensaje de error: "La causa/etiología y el estado actual del paciente son obligatorios."
+Severidad: Importante.
+REGLA: DIAG-003 (Tipo de Padecimiento)
+Lógica: padecimiento_actual.tipo_atencion (array) debe contener al menos un elemento.
+Mensaje de error: "Es obligatorio marcar al menos una opción: Congénito, Adquirido, Agudo o Crónico."
+Severidad: Crítico.
+REGLA: DIAG-004 (Diagnóstico y CIE)
+Lógica: diagnostico.diagnostico_definitivo y diagnostico.codigo_cie obligatorios.
+Mensaje de error: "El diagnóstico etiológico definitivo y su código CIE-10 son obligatorios."
+Severidad: Crítico.
+REGLA: DIAG-005 (Evidencia Médica)
+Lógica: exploracion_fisica.resultados obligatorio.
+Mensaje de error: "Los resultados de exploración física y estudios practicados son obligatorios."
+Severidad: Crítico.
+REGLA: DIAG-006 (Cronología Médica)
+Lógica: Validar existencia de fechas de inicio, diagnóstico y tratamiento.
+Mensaje de error: "Las fechas de inicio de síntomas, diagnóstico e inicio de tratamiento son obligatorias."
+Severidad: Crítico.
+REGLA: DIAG-007 (Detalle de Tratamiento)
+Lógica: padecimiento_actual.plan_tratamiento y técnica quirúrgica (si aplica) obligatorios.
+Mensaje de error: "La descripción del tratamiento es obligatoria. Si es quirúrgico, incluya técnica y CPT."
+Severidad: Crítico.
+REGLA: DIAG-008 (Detalle de Insumos/Equipo)
+Lógica: Si utilizo_equipo_especial o utilizo_insumos es true, validar cuadro de detalle.
+Mensaje de error: "Si marcó 'Sí' en equipo especial o insumos, es obligatorio llenar el cuadro de detalle."
+Severidad: Importante.
+REGLA: DIAG-009 (Fecha de Alta)
+Lógica: Si seguira_tratamiento == true, fecha_probable_alta obligatoria.
+Mensaje de error: "Si el tratamiento continuará, la fecha probable de alta es obligatoria (DD/MM/AAAA)."
+Severidad: Moderado.
+
+IV. HOSPITALIZACIÓN Y EQUIPO
+REGLA: HOSP-001 (Datos de Estancia)
+Lógica: Si nombre_hospital no está vacío, validar tipo_estancia, fecha_ingreso y egreso.
+Mensaje de error: "Si hay hospital, debe marcar el Tipo de ingreso y llenar las fechas de ingreso y egreso."
+Severidad: Crítico.
+REGLA: HOSP-002 (Fecha de Intervención)
+Lógica: Si se detectó cirugía en Sección 3 o 7, hospital.fecha_intervencion obligatoria.
+Mensaje de error: "Si se realizó una cirugía, la fecha de intervención es obligatoria (DD/MM/AAAA)."
+Severidad: Crítico.
+REGLA: HOSP-003 (Observaciones)
+Lógica: info_adicional.descripcion debe tener contenido.
+Mensaje de error: "La sección de observaciones y comentarios adicionales es obligatoria (admite 'Ninguna')."
+Severidad: Moderado.
+REGLA: EQP-001 (Equipo Quirúrgico)
+Lógica: Si hay ayudantes, validar rfc (13 caracteres), cedula y email.
+Mensaje de error: "Si registra ayudantes o anestesiólogo, su RFC, Cédula y Email son obligatorios."
+Severidad: Importante.
+
+V. DATOS DEL MÉDICO Y HONORARIOS
+REGLA: DOC-001 (Información Fiscal)
+Lógica: Validar rfc (13 carac.), cedula, celular (10 dgt) y email (RegEx).
+Mensaje de error: "Nombre, Cédula, RFC (13 carac.), Teléfono y Email (formato válido) son obligatorios."
+Severidad: Crítico.
+REGLA: DOC-002 (Tipo de Atención)
+Lógica: medico_tratante.tipo_atencion (array) debe contener al menos un elemento marcado.
+Mensaje de error: "Debe marcar visualmente su rol (Médico Tratante, Cirujano, etc.) en las casillas."
+Severidad: Crítico.
+REGLA: DOC-003 (Convenio y Tabulador)
+Lógica: convenio_aseguradora y se_ajusta_tabulador deben estar seleccionados.
+Mensaje de error: "La selección de 'Sí' o 'No' en Convenio y Aceptación de Tabuladores es obligatoria."
+Severidad: Importante.
+REGLA: DOC-004 (Monto de Honorarios)
+Lógica: El campo numérico de honorarios del rol seleccionado debe ser > 0.
+Mensaje de error: "El monto de honorarios según su rol debe ser numérico y mayor a 0."
+Severidad: Importante.
+
+VI. LÓGICA Y CIERRE
+REGLA: LOG-001 (Secuencia de Síntomas)
+Lógica: fecha_inicio <= fecha_diagnostico <= fecha_inicio_tratamiento.
+Mensaje de error: "La fecha de inicio de síntomas debe ser anterior o igual al diagnóstico y tratamiento."
+Severidad: Crítico.
+REGLA: LOG-002 (Periodo Hospitalario)
+Lógica: fecha_ingreso <= fecha_intervencion <= fecha_egreso.
+Mensaje de error: "La fecha de ingreso debe ser anterior o igual a la de intervención y ésta al egreso."
+Severidad: Crítico.
+REGLA: LOG-003 (Consistencia de Firma)
+Lógica: Todas las fechas extraídas en el JSON deben ser <= firma.fecha.
+Mensaje de error: "Ninguna fecha del informe puede ser posterior a la fecha de firma del documento."
+Severidad: Crítico.
+REGLA: END-001 (Firma y Nombre)
+Lógica: firma.nombre_firma no vacío y firma_autografa_detectada == true.
+Mensaje de error: "El informe debe incluir el nombre completo y la firma autógrafa del médico tratante."
+Severidad: Crítico.
+REGLA: END-002 (Textos Legales)
+Lógica: Verificación de integridad en la sección 8 (sin tachaduras ni notas).
+Mensaje de error: "Los párrafos de Declaración y Aviso de Privacidad deben estar íntegros y sin tachaduras."
+Severidad: Crítico.
+
+Nota para la configuración en Replit: Utiliza los campos _marcado del objeto audit en el esquema para alimentar las validaciones de los arrays de tipo_atencion y tipo_padecimiento.
