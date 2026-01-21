@@ -260,8 +260,80 @@ export function validateCondition(
       return !validSexValues.includes(String(fieldValue).toLowerCase().trim());
     }
     
+    case 'ARRAY_EMPTY': {
+      // Verifica si un array está vacío
+      if (!Array.isArray(fieldValue)) return true; // Si no es array, se considera vacío
+      return fieldValue.length === 0;
+    }
+    
+    case 'ARRAY_NOT_EMPTY': {
+      // Verifica si un array NO está vacío
+      if (!Array.isArray(fieldValue)) return false;
+      return fieldValue.length > 0;
+    }
+    
+    case 'ARRAY_LENGTH_EQUALS': {
+      // Verifica si un array tiene exactamente N elementos
+      if (!Array.isArray(fieldValue)) return false;
+      return fieldValue.length === Number(cond.value);
+    }
+    
+    case 'ARRAY_LENGTH_GREATER_THAN': {
+      // Verifica si un array tiene más de N elementos
+      if (!Array.isArray(fieldValue)) return false;
+      return fieldValue.length > Number(cond.value);
+    }
+    
+    case 'ARRAY_LENGTH_LESS_THAN': {
+      // Verifica si un array tiene menos de N elementos
+      if (!Array.isArray(fieldValue)) return false;
+      return fieldValue.length < Number(cond.value);
+    }
+    
+    case 'IS_NULL': {
+      // Verifica si un valor es null o undefined
+      return fieldValue === null || fieldValue === undefined;
+    }
+    
+    case 'IS_NOT_NULL': {
+      // Verifica si un valor NO es null ni undefined
+      return fieldValue !== null && fieldValue !== undefined;
+    }
+    
+    case 'IS_BOOLEAN_TRUE': {
+      // Verifica si un valor booleano es true
+      return fieldValue === true;
+    }
+    
+    case 'IS_BOOLEAN_FALSE': {
+      // Verifica si un valor booleano es false
+      return fieldValue === false;
+    }
+    
+    case 'DATE_OLDER_THAN_MONTHS': {
+      // Verifica si una fecha es mayor a N meses de antigüedad
+      // IMPORTANTE: Solo aplica si la fecha existe
+      if (isEmpty(fieldValue)) return false; // Si no hay fecha, no aplica esta regla
+      const date = parseDate(String(fieldValue));
+      if (!date) return false; // Fecha inválida, no aplica
+      const monthsAgo = new Date();
+      monthsAgo.setMonth(monthsAgo.getMonth() - Number(cond.value));
+      return date < monthsAgo;
+    }
+    
+    case 'DATE_NEWER_THAN_MONTHS': {
+      // Verifica si una fecha es menor a N meses de antigüedad
+      if (isEmpty(fieldValue)) return false;
+      const date = parseDate(String(fieldValue));
+      if (!date) return false;
+      const monthsAgo = new Date();
+      monthsAgo.setMonth(monthsAgo.getMonth() - Number(cond.value));
+      return date >= monthsAgo;
+    }
+    
     default:
-      return true;
+      console.warn(`Operador no implementado: ${cond.operator}`);
+      return false; // Operador no implementado no debe disparar regla
   }
 }
 
