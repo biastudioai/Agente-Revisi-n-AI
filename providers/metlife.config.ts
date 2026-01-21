@@ -412,6 +412,11 @@ SECCIÓN 7 - FIRMA:
 - lugar: Lugar de la firma
 - fecha: Fecha de la firma
 - nombre_firma: Nombre completo y firma del médico tratante
+
+METADATA (AUDITORÍA VISUAL DEL DOCUMENTO):
+- tachaduras_detectadas: ¿Hay tachaduras, corrector, enmendaduras o borraduras visibles en el documento? (true/false)
+- uniformidad_tinta: ¿Todo el documento fue llenado con una sola tinta/mismo color de escritura? true = uniforme, false = múltiples tintas/colores detectados
+- firma_coincide_con_tratante: ¿El nombre en la firma coincide con el médico tratante declarado en el formulario? (true/false)
 `,
 
   requiredFields: [
@@ -618,6 +623,25 @@ SECCIÓN 7 - FIRMA:
                   email: { type: Type.STRING },
                   especialidad: { type: Type.STRING, description: "Tipo de participación/especialidad" }
                 }
+              }
+            }
+          },
+
+          metadata: {
+            type: Type.OBJECT,
+            description: "Información de auditoría visual del documento",
+            properties: {
+              tachaduras_detectadas: { 
+                type: Type.BOOLEAN, 
+                description: "¿Se detectaron tachaduras, corrector, enmendaduras o borraduras en el documento?" 
+              },
+              uniformidad_tinta: { 
+                type: Type.BOOLEAN, 
+                description: "¿Todo el documento fue llenado con una sola tinta/mismo color de escritura? true = uniforme, false = múltiples tintas detectadas" 
+              },
+              firma_coincide_con_tratante: {
+                type: Type.BOOLEAN,
+                description: "¿El nombre en la firma coincide con el médico tratante declarado?"
               }
             }
           },
