@@ -331,6 +331,52 @@ export function validateCondition(
       return date >= monthsAgo;
     }
     
+    case 'ARRAY_CONTAINS_ALL': {
+      // Verifica si un array contiene TODOS los valores especificados (separados por coma)
+      // Retorna true si el array contiene todos los valores
+      if (!Array.isArray(fieldValue) || !cond.value) return false;
+      const requiredValues = String(cond.value).split(',').map(v => v.trim().toLowerCase());
+      const arrayLower = fieldValue.map(v => String(v).toLowerCase().trim());
+      return requiredValues.every(req => arrayLower.includes(req));
+    }
+    
+    case 'ARRAY_CONTAINS_ANY': {
+      // Verifica si un array contiene AL MENOS UNO de los valores especificados (separados por coma)
+      if (!Array.isArray(fieldValue) || !cond.value) return false;
+      const searchValues = String(cond.value).split(',').map(v => v.trim().toLowerCase());
+      const arrayLower = fieldValue.map(v => String(v).toLowerCase().trim());
+      return searchValues.some(search => arrayLower.includes(search));
+    }
+    
+    case 'ARRAY_CONTAINS_NONE': {
+      // Verifica si un array NO contiene ninguno de los valores especificados
+      if (!Array.isArray(fieldValue) || !cond.value) return true;
+      const excludedValues = String(cond.value).split(',').map(v => v.trim().toLowerCase());
+      const arrayLower = fieldValue.map(v => String(v).toLowerCase().trim());
+      return !excludedValues.some(excl => arrayLower.includes(excl));
+    }
+    
+    case 'ARRAY_MUTUALLY_EXCLUSIVE': {
+      // Verifica si un array contiene AMBOS valores de un grupo mutuamente exclusivo
+      // Retorna true si contiene ambos (lo cual es un error)
+      // value debe ser formato: "valor1,valor2"
+      if (!Array.isArray(fieldValue) || !cond.value) return false;
+      const exclusiveValues = String(cond.value).split(',').map(v => v.trim().toLowerCase());
+      if (exclusiveValues.length !== 2) return false;
+      const arrayLower = fieldValue.map(v => String(v).toLowerCase().trim());
+      return arrayLower.includes(exclusiveValues[0]) && arrayLower.includes(exclusiveValues[1]);
+    }
+    
+    case 'ARRAY_REQUIRES_ONE_OF': {
+      // Verifica si un array tiene EXACTAMENTE UNO de los valores especificados
+      // Retorna true si no tiene ninguno o tiene más de uno (lo cual es un error)
+      if (!Array.isArray(fieldValue) || !cond.value) return true;
+      const requiredValues = String(cond.value).split(',').map(v => v.trim().toLowerCase());
+      const arrayLower = fieldValue.map(v => String(v).toLowerCase().trim());
+      const countMatches = requiredValues.filter(req => arrayLower.includes(req)).length;
+      return countMatches !== 1; // Error si no es exactamente 1
+    }
+    
     default:
       console.warn(`Operador no implementado: ${cond.operator}`);
       return false; // Operador no implementado no debe disparar regla

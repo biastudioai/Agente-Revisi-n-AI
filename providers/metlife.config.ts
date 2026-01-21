@@ -202,9 +202,24 @@ Para interpretar correctamente:
 
 INSTRUCCIONES DE EXTRACCIÓN PARA METLIFE (ALTA PRIORIDAD):
 
-CABECERA (Lugar y Fecha):
-- Extrae "Lugar" del campo de lugar SOLO si está escrito
-- Combina las casillas de Día, Mes y Año en formato "DD/MM/AAAA" para "fecha" SOLO si las casillas tienen valores
+🔴🔴🔴 CABECERA (Lugar y Fecha) - PÁGINA 1, ANTES DE DATOS DEL PACIENTE 🔴🔴🔴
+⚠️ UBICACIÓN: Esta sección está JUSTO ANTES de "1. Datos del paciente" en la parte superior de la página 1.
+⚠️ Busca el texto "Lugar y fecha:" seguido de espacios para escribir.
+
+ESTRUCTURA VISUAL:
+┌─────────────────────────────────────────────────────────────────────────┐
+│ Lugar y fecha: ________________  │  ___  │  ___  │  _____              │
+│                  (lugar)           (Día)   (Mes)   (Año)               │
+└─────────────────────────────────────────────────────────────────────────┘
+
+CAMPOS A EXTRAER EN firma.lugar Y firma.fecha:
+- firma.lugar: El texto escrito después de "Lugar y fecha:" (ej: "Cdad de México", "Guadalajara")
+- firma.fecha: Combina las casillas de Día, Mes y Año en formato "DD/MM/AAAA" (ej: "18/12/2025")
+  - Si las casillas están vacías → dejar firma.fecha vacío
+
+EJEMPLO:
+Si ves: "Lugar y fecha: Cdad de México  18 | 12 | 2025"
+Entonces: firma.lugar = "Cdad de México", firma.fecha = "18/12/2025"
 
 SECCIÓN 1 - DATOS DEL PACIENTE:
 - nombre_completo: Nombre completo del paciente

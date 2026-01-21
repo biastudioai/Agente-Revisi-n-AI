@@ -42,9 +42,21 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 25,
     description: 'El primer apellido del asegurado es obligatorio.',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP',
     isCustom: false,
     conditions: [{ id: 'cond_paciente_apellido_1', field: 'identificacion.primer_apellido', operator: 'IS_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['identificacion.primer_apellido']
+  },
+  {
+    id: 'nylife_paciente_apellido',
+    name: 'Apellido paterno del paciente obligatorio',
+    level: 'CRÍTICO',
+    points: 25,
+    description: 'El primer apellido del asegurado es obligatorio.',
+    providerTarget: 'NY_LIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_paciente_apellido', field: 'identificacion.primer_apellido', operator: 'IS_EMPTY' }],
     logicOperator: 'AND',
     affectedFields: ['identificacion.primer_apellido']
   },
@@ -201,9 +213,21 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'El primer apellido del médico tratante es obligatorio.',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP',
     isCustom: false,
     conditions: [{ id: 'cond_medico_apellido_1', field: 'medico_tratante.primer_apellido', operator: 'IS_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['medico_tratante.primer_apellido']
+  },
+  {
+    id: 'nylife_medico_apellido',
+    name: 'Apellido del médico obligatorio',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'El primer apellido del médico tratante es obligatorio.',
+    providerTarget: 'NY_LIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_medico_apellido', field: 'medico_tratante.primer_apellido', operator: 'IS_EMPTY' }],
     logicOperator: 'AND',
     affectedFields: ['medico_tratante.primer_apellido']
   },
@@ -760,10 +784,13 @@ const REGLAS_METLIFE: RawScoringRule[] = [
     name: 'Informe médico con más de 6 meses de antigüedad',
     level: 'CRÍTICO',
     points: 25,
-    description: 'La fecha de cabecera no debe ser mayor a 6 meses respecto a la fecha actual.',
+    description: 'La fecha de cabecera no debe ser mayor a 6 meses respecto a la fecha actual. Solo aplica si hay fecha de firma.',
     providerTarget: 'METLIFE',
     isCustom: false,
-    conditions: [{ id: 'cond_metlife_vigencia', field: 'firma.fecha', operator: 'DATE_OLDER_THAN_MONTHS', value: 6 }],
+    conditions: [
+      { id: 'cond_metlife_vigencia_existe', field: 'firma.fecha', operator: 'NOT_EMPTY' },
+      { id: 'cond_metlife_vigencia_antigua', field: 'firma.fecha', operator: 'DATE_OLDER_THAN_MONTHS', value: 6 }
+    ],
     logicOperator: 'AND',
     affectedFields: ['firma.fecha']
   },
@@ -927,14 +954,38 @@ const REGLAS_METLIFE: RawScoringRule[] = [
     affectedFields: ['padecimiento_actual.causa_etiologia', 'padecimiento_actual.estado_actual']
   },
   {
-    id: 'metlife_tipo_padecimiento',
+    id: 'metlife_tipo_padecimiento_vacio',
     name: 'Tipo de padecimiento no seleccionado',
     level: 'CRÍTICO',
     points: 20,
     description: 'Es obligatorio marcar al menos una opción: Congénito, Adquirido, Agudo o Crónico.',
     providerTarget: 'METLIFE',
     isCustom: false,
-    conditions: [{ id: 'cond_metlife_tipo_pad', field: 'padecimiento_actual.tipo_padecimiento', operator: 'ARRAY_EMPTY' }],
+    conditions: [{ id: 'cond_metlife_tipo_pad_vacio', field: 'padecimiento_actual.tipo_padecimiento', operator: 'ARRAY_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['padecimiento_actual.tipo_padecimiento']
+  },
+  {
+    id: 'metlife_tipo_padecimiento_origen_dual',
+    name: 'Origen del padecimiento contradictorio',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'No puede ser Congénito y Adquirido al mismo tiempo. Seleccione solo uno.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_metlife_origen_dual', field: 'padecimiento_actual.tipo_padecimiento', operator: 'ARRAY_MUTUALLY_EXCLUSIVE', value: 'Congénito,Adquirido' }],
+    logicOperator: 'AND',
+    affectedFields: ['padecimiento_actual.tipo_padecimiento']
+  },
+  {
+    id: 'metlife_tipo_padecimiento_curso_dual',
+    name: 'Curso del padecimiento contradictorio',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'No puede ser Agudo y Crónico al mismo tiempo. Seleccione solo uno.',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_metlife_curso_dual', field: 'padecimiento_actual.tipo_padecimiento', operator: 'ARRAY_MUTUALLY_EXCLUSIVE', value: 'Agudo,Crónico' }],
     logicOperator: 'AND',
     affectedFields: ['padecimiento_actual.tipo_padecimiento']
   },
@@ -1163,14 +1214,26 @@ const REGLAS_METLIFE: RawScoringRule[] = [
     affectedFields: ['medico_tratante.celular']
   },
   {
-    id: 'metlife_tipo_atencion',
+    id: 'metlife_tipo_atencion_vacio',
     name: 'Tipo de atención no seleccionado',
     level: 'CRÍTICO',
     points: 20,
     description: 'Debe marcar visualmente su rol (Médico Tratante, Cirujano, etc.) en las casillas.',
     providerTarget: 'METLIFE',
     isCustom: false,
-    conditions: [{ id: 'cond_metlife_tipo_aten', field: 'medico_tratante.tipo_atencion', operator: 'ARRAY_EMPTY' }],
+    conditions: [{ id: 'cond_metlife_tipo_aten_vacio', field: 'medico_tratante.tipo_atencion', operator: 'ARRAY_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['medico_tratante.tipo_atencion']
+  },
+  {
+    id: 'metlife_tipo_atencion_multiple',
+    name: 'Múltiples tipos de atención seleccionados',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Se recomienda seleccionar solo un tipo de atención (Médico Tratante, Cirujano, etc.).',
+    providerTarget: 'METLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_metlife_tipo_aten_multi', field: 'medico_tratante.tipo_atencion', operator: 'ARRAY_LENGTH_GREATER_THAN', value: 1 }],
     logicOperator: 'AND',
     affectedFields: ['medico_tratante.tipo_atencion']
   },
@@ -1183,10 +1246,10 @@ const REGLAS_METLIFE: RawScoringRule[] = [
     providerTarget: 'METLIFE',
     isCustom: false,
     conditions: [
-      { id: 'cond_metlife_convenio', field: 'medico_tratante.convenio_aseguradora', operator: 'IS_NULL' },
-      { id: 'cond_metlife_tabulador', field: 'medico_tratante.se_ajusta_tabulador', operator: 'IS_NULL' }
+      { id: 'cond_metlife_convenio_null', field: 'medico_tratante.convenio_aseguradora', operator: 'IS_NULL' },
+      { id: 'cond_metlife_tabulador_null', field: 'medico_tratante.se_ajusta_tabulador', operator: 'IS_NULL' }
     ],
-    logicOperator: 'OR',
+    logicOperator: 'AND',
     affectedFields: ['medico_tratante.convenio_aseguradora', 'medico_tratante.se_ajusta_tabulador']
   },
   {
