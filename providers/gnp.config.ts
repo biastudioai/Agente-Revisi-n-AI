@@ -109,6 +109,92 @@ Solo aplica estas reglas cuando NO hay recuadros/checkboxes visibles en el docum
    ☑ Accidente    ☐ Enfermedad    ☐ Embarazo
    → causa_atencion = "Accidente"
 
+🔴🔴🔴 CAUSA DE ATENCIÓN - AUDITORÍA VISUAL OBLIGATORIA (OBJETO causa_atencion_audit) 🔴🔴🔴
+
+⚠️⚠️⚠️ IMPORTANTE: Este campo tiene 3 opciones de checkbox:
+   Accidente □   Enfermedad □   Embarazo □
+
+DEBES llenar causa_atencion_audit ANTES de construir el array causa_atencion.
+
+CÓMO LLENAR causa_atencion_audit:
+1. accidente_marcado: ¿Veo X/✓/relleno/punto en el checkbox de "Accidente"? → true/false
+2. enfermedad_marcado: ¿Veo X/✓/relleno/punto en el checkbox de "Enfermedad"? → true/false
+3. embarazo_marcado: ¿Veo X/✓/relleno/punto en el checkbox de "Embarazo"? → true/false
+
+CÓMO CONSTRUIR causa_atencion A PARTIR DE causa_atencion_audit:
+- Si accidente_marcado = true → incluir "Accidente"
+- Si enfermedad_marcado = true → incluir "Enfermedad"
+- Si embarazo_marcado = true → incluir "Embarazo"
+- Si NINGUNO tiene marca → causa_atencion = []
+
+📋 EJEMPLO 1 - NINGUNA MARCADA:
+causa_atencion_audit = { accidente_marcado: false, enfermedad_marcado: false, embarazo_marcado: false }
+causa_atencion = []
+
+📋 EJEMPLO 2 - ACCIDENTE MARCADO:
+causa_atencion_audit = { accidente_marcado: true, enfermedad_marcado: false, embarazo_marcado: false }
+causa_atencion = ["Accidente"]
+
+🚫 ERRORES A EVITAR:
+❌ Ver casillas vacías → inferir ["Enfermedad"] porque el diagnóstico es una enfermedad ← INCORRECTO
+❌ Ver "diabetes" en texto → marcar enfermedad_marcado = true ← INCORRECTO
+
+🔴🔴🔴 SEXO DEL PACIENTE - AUDITORÍA VISUAL OBLIGATORIA (OBJETO sexo_audit) 🔴🔴🔴
+
+DEBES llenar sexo_audit ANTES de construir el array sexo.
+
+CÓMO LLENAR sexo_audit:
+1. masculino_marcado: ¿Veo X/✓/punto cerca de "M" o "Masculino"? → true/false
+2. femenino_marcado: ¿Veo X/✓/punto cerca de "F" o "Femenino"? → true/false
+
+CÓMO CONSTRUIR sexo A PARTIR DE sexo_audit:
+- Si masculino_marcado = true → sexo = ["M"]
+- Si femenino_marcado = true → sexo = ["F"]
+- Si NINGUNO tiene marca → sexo = []
+
+🔴🔴🔴 TIPO DE PADECIMIENTO - AUDITORÍA VISUAL OBLIGATORIA (OBJETO tipo_padecimiento_audit) 🔴🔴🔴
+
+⚠️⚠️⚠️ IMPORTANTE: El tipo de padecimiento tiene DOS GRUPOS de checkboxes:
+   GRUPO 1 (ORIGEN): Congénito □ vs Adquirido □
+   GRUPO 2 (CURSO):  Agudo □ vs Crónico □
+
+DEBES llenar tipo_padecimiento_audit ANTES de construir el array tipo_padecimiento.
+
+CÓMO LLENAR tipo_padecimiento_audit:
+1. congenito_marcado: ¿Veo X/✓/relleno en el checkbox de "Congénito"? → true/false
+2. adquirido_marcado: ¿Veo X/✓/relleno en el checkbox de "Adquirido"? → true/false
+3. agudo_marcado: ¿Veo X/✓/relleno en el checkbox de "Agudo"? → true/false
+4. cronico_marcado: ¿Veo X/✓/relleno en el checkbox de "Crónico"? → true/false
+
+CÓMO CONSTRUIR tipo_padecimiento A PARTIR DE tipo_padecimiento_audit:
+- Si congenito_marcado = true → incluir "Congénito"
+- Si adquirido_marcado = true → incluir "Adquirido"
+- Si agudo_marcado = true → incluir "Agudo"
+- Si cronico_marcado = true → incluir "Crónico"
+
+📋 EJEMPLO - DOS CASILLAS MARCADAS:
+tipo_padecimiento_audit = { congenito_marcado: false, adquirido_marcado: true, agudo_marcado: true, cronico_marcado: false }
+tipo_padecimiento = ["Adquirido", "Agudo"]
+
+📋 EJEMPLO - NINGUNA MARCADA:
+tipo_padecimiento_audit = { congenito_marcado: false, adquirido_marcado: false, agudo_marcado: false, cronico_marcado: false }
+tipo_padecimiento = []
+
+🔴🔴🔴 TIPO DE ESTANCIA - AUDITORÍA VISUAL OBLIGATORIA (OBJETO tipo_estancia_audit) 🔴🔴🔴
+
+DEBES llenar tipo_estancia_audit ANTES de construir el array tipo_estancia.
+
+CÓMO LLENAR tipo_estancia_audit:
+1. urgencia_marcado: ¿Veo X/✓/relleno en el checkbox de "Urgencia"? → true/false
+2. hospitalaria_marcado: ¿Veo X/✓/relleno en el checkbox de "Hospitalaria"? → true/false
+3. corta_estancia_marcado: ¿Veo X/✓/relleno en el checkbox de "Corta estancia / ambulatoria"? → true/false
+
+CÓMO CONSTRUIR tipo_estancia A PARTIR DE tipo_estancia_audit:
+- Si urgencia_marcado = true → incluir "Urgencia"
+- Si hospitalaria_marcado = true → incluir "Hospitalaria"
+- Si corta_estancia_marcado = true → incluir "Corta estancia / ambulatoria"
+- Si NINGUNO tiene marca → tipo_estancia = []
+
 🚫 TRÁMITE - Ejemplos de inferencias PROHIBIDAS:
 ❌ "Es cirugía" → tramite.programacion_cirugia = true
 ❌ "Menciona medicamentos" → tramite.programacion_medicamentos = true
@@ -399,15 +485,47 @@ Basándote en el diagnóstico definitivo, clasifica la severidad como:
               segundo_apellido: { type: Type.STRING },
               nombres: { type: Type.STRING },
               edad: { type: Type.STRING },
+              sexo_audit: {
+                type: Type.OBJECT,
+                description: "🔴 OBLIGATORIO: Antes de llenar sexo, DEBES verificar CADA opción individualmente.",
+                properties: {
+                  masculino_marcado: { 
+                    type: Type.BOOLEAN, 
+                    description: "¿Hay una marca visual (X/✓/punto) cerca de 'M' o 'Masculino'? true = SÍ veo marca, false = NO veo marca" 
+                  },
+                  femenino_marcado: { 
+                    type: Type.BOOLEAN, 
+                    description: "¿Hay una marca visual (X/✓/punto) cerca de 'F' o 'Femenino'? true = SÍ veo marca, false = NO veo marca" 
+                  }
+                }
+              },
               sexo: { 
                 type: Type.ARRAY, 
                 items: { type: Type.STRING },
-                description: "Array con el sexo marcado: ['F'] o ['M']. Extrae EXACTAMENTE la letra marcada, no escribas 'Femenino' o 'Masculino'. SOLO extrae lo que VES marcado visualmente (X, palomita, círculo, punto, tachado o cualquier marca al lado izquierdo de la opción). Si no hay ninguna marca clara visible, deja el array vacío []."
+                description: "Array construido a partir de sexo_audit: Si masculino_marcado=true → ['M']. Si femenino_marcado=true → ['F']. Si NINGUNO tiene marca → []"
+              },
+              causa_atencion_audit: {
+                type: Type.OBJECT,
+                description: "🔴 OBLIGATORIO: Antes de llenar causa_atencion, DEBES verificar CADA checkbox individualmente. NO inferir basándose en el diagnóstico.",
+                properties: {
+                  accidente_marcado: { 
+                    type: Type.BOOLEAN, 
+                    description: "¿El checkbox de 'Accidente' tiene una marca visual? true = SÍ veo marca, false = casilla vacía. NO inferir del texto." 
+                  },
+                  enfermedad_marcado: { 
+                    type: Type.BOOLEAN, 
+                    description: "🚨 CRÍTICO: ¿El checkbox de 'Enfermedad' tiene una marca visual? true = SÍ veo marca física, false = casilla vacía. NO marcar true solo porque el diagnóstico menciona una enfermedad." 
+                  },
+                  embarazo_marcado: { 
+                    type: Type.BOOLEAN, 
+                    description: "¿El checkbox de 'Embarazo' tiene una marca visual? true = SÍ veo marca, false = casilla vacía. NO inferir del texto." 
+                  }
+                }
               },
               causa_atencion: { 
                 type: Type.ARRAY, 
                 items: { type: Type.STRING },
-                description: "Array con la causa de atención marcada: puede contener 'Accidente', 'Enfermedad', 'Embarazo'. SOLO extrae lo que VES marcado visualmente."
+                description: "Array construido a partir de causa_atencion_audit: SOLO incluye valores donde _marcado=true. Si TODOS son false → []"
               }
             }
           },
@@ -439,10 +557,32 @@ Basándote en el diagnóstico definitivo, clasifica la severidad como:
             properties: {
               descripcion: { type: Type.STRING, description: "Descripción del padecimiento actual" },
               fecha_inicio: { type: Type.STRING, description: "Fecha de inicio del padecimiento" },
+              tipo_padecimiento_audit: {
+                type: Type.OBJECT,
+                description: "🔴 OBLIGATORIO: Antes de llenar tipo_padecimiento, DEBES verificar CADA checkbox individualmente.",
+                properties: {
+                  congenito_marcado: { 
+                    type: Type.BOOLEAN, 
+                    description: "¿El checkbox de 'Congénito' tiene una marca visual (X/✓/relleno)? true = SÍ veo marca, false = casilla vacía" 
+                  },
+                  adquirido_marcado: { 
+                    type: Type.BOOLEAN, 
+                    description: "¿El checkbox de 'Adquirido' tiene una marca visual (X/✓/relleno)? true = SÍ veo marca, false = casilla vacía" 
+                  },
+                  agudo_marcado: { 
+                    type: Type.BOOLEAN, 
+                    description: "¿El checkbox de 'Agudo' tiene una marca visual (X/✓/relleno)? true = SÍ veo marca, false = casilla vacía" 
+                  },
+                  cronico_marcado: { 
+                    type: Type.BOOLEAN, 
+                    description: "¿El checkbox de 'Crónico' tiene una marca visual (X/✓/relleno)? true = SÍ veo marca, false = casilla vacía" 
+                  }
+                }
+              },
               tipo_padecimiento: { 
                 type: Type.ARRAY,
                 items: { type: Type.STRING },
-                description: "Array de valores extraídos de casillas marcadas: puede contener ['Congénito', 'Adquirido', 'Agudo', 'Crónico']. SOLO extrae los valores que VES marcados visualmente. Si ninguna casilla está marcada, devuelve array vacío []."
+                description: "Array construido a partir de tipo_padecimiento_audit: SOLO incluye valores donde _marcado=true. Ejemplo: si adquirido_marcado=true y agudo_marcado=true → ['Adquirido', 'Agudo']"
               },
               tipo_padecimiento_congenito_adquirido: { type: Type.STRING, description: "Valor de la primera pareja de casillas: 'Congénito' o 'Adquirido'. SOLO extrae si VES una casilla marcada. Si ninguna está marcada, dejar vacío." },
               tipo_padecimiento_agudo_cronico: { type: Type.STRING, description: "Valor de la segunda pareja de casillas: 'Agudo' o 'Crónico'. SOLO extrae si VES una casilla marcada. Si ninguna está marcada, dejar vacío." }
@@ -519,10 +659,28 @@ Basándote en el diagnóstico definitivo, clasifica la severidad como:
               nombre_hospital: { type: Type.STRING, description: "Nombre del hospital o clínica" },
               ciudad: { type: Type.STRING, description: "Ciudad" },
               estado: { type: Type.STRING, description: "Estado" },
+              tipo_estancia_audit: {
+                type: Type.OBJECT,
+                description: "🔴 OBLIGATORIO: Antes de llenar tipo_estancia, DEBES verificar CADA checkbox individualmente.",
+                properties: {
+                  urgencia_marcado: { 
+                    type: Type.BOOLEAN, 
+                    description: "¿El checkbox de 'Urgencia' tiene una marca visual? true = SÍ veo marca, false = casilla vacía" 
+                  },
+                  hospitalaria_marcado: { 
+                    type: Type.BOOLEAN, 
+                    description: "¿El checkbox de 'Hospitalaria' tiene una marca visual? true = SÍ veo marca, false = casilla vacía" 
+                  },
+                  corta_estancia_marcado: { 
+                    type: Type.BOOLEAN, 
+                    description: "¿El checkbox de 'Corta estancia / ambulatoria' tiene una marca visual? true = SÍ veo marca, false = casilla vacía" 
+                  }
+                }
+              },
               tipo_estancia: { 
                 type: Type.ARRAY, 
                 items: { type: Type.STRING },
-                description: "Array con el tipo de estancia marcado: puede contener 'Urgencia', 'Hospitalaria', 'Corta estancia / ambulatoria'. SOLO extrae lo que VES marcado visualmente."
+                description: "Array construido a partir de tipo_estancia_audit: SOLO incluye valores donde _marcado=true. Si NINGUNO tiene marca → []"
               },
               fecha_ingreso: { type: Type.STRING, description: "Fecha de ingreso" }
             }
