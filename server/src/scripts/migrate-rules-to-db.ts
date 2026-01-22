@@ -102,7 +102,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'IMPORTANTE',
     points: 15,
     description: 'El código CIE-10 no corresponde al diagnóstico escrito.',
-    providerTarget: 'ALL',
+    providerTarget: 'METLIFE',
     isCustom: false,
     conditions: [{ id: 'cond_cie_incoherencia_1', field: 'diagnostico.cie_coherente_con_texto', operator: 'EQUALS', value: 'false' }],
     logicOperator: 'AND',
