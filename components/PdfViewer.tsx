@@ -58,6 +58,7 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ base64Data, approvalStatus, pendi
   
   // State to track if we are in "Auto Fit" mode or "Manual Zoom" mode
   const [isAutoZoomed, setIsAutoZoomed] = useState(true);
+  const isAutoZoomedRef = useRef(isAutoZoomed);
 
   // Editing State
   const [isEditMode, setIsEditMode] = useState(false);
@@ -107,6 +108,11 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ base64Data, approvalStatus, pendi
     loadPdf();
   }, [base64Data]);
 
+  // Keep ref in sync with state
+  useEffect(() => {
+    isAutoZoomedRef.current = isAutoZoomed;
+  }, [isAutoZoomed]);
+
   // Auto-fit function
   const fitToPage = async () => {
     if (!pdfDoc || !containerRef.current) return;
@@ -151,17 +157,20 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ base64Data, approvalStatus, pendi
     if (!containerRef.current || !pdfDoc) return;
 
     // 1. Initial Fit with Delay (Wait for Panel Slide Animation 500ms)
+    // Only run initial fit if auto-zoom is still enabled (use ref to get current value)
     const initialTimer = setTimeout(() => {
-        fitToPage();
+        if (isAutoZoomedRef.current) {
+            fitToPage();
+        }
     }, 600);
 
     // 2. Resize Observer for Window changes
-    // Only fit to page if the user hasn't manually zoomed (isAutoZoomed === true)
+    // Only fit to page if the user hasn't manually zoomed (use ref to get current value)
     let timeoutId: any;
     const observer = new ResizeObserver(() => {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
-        if (isAutoZoomed) {
+        if (isAutoZoomedRef.current) {
             fitToPage();
         }
       }, 400); 
@@ -174,7 +183,7 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ base64Data, approvalStatus, pendi
       clearTimeout(timeoutId);
       observer.disconnect();
     };
-  }, [pdfDoc, pageNum, isAutoZoomed]); // Re-bind observer if isAutoZoomed changes
+  }, [pdfDoc, pageNum]); // Use ref for isAutoZoomed to avoid re-triggering effect on zoom changes
 
   useEffect(() => {
     const renderPage = async () => {
@@ -253,16 +262,19 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ base64Data, approvalStatus, pendi
 
   // Zoom helpers
   const handleZoomIn = () => {
+      isAutoZoomedRef.current = false; // Sync ref immediately
       setIsAutoZoomed(false);
       setScale(s => Math.min(3.0, s + 0.1));
   };
 
   const handleZoomOut = () => {
+      isAutoZoomedRef.current = false; // Sync ref immediately
       setIsAutoZoomed(false);
       setScale(s => Math.max(0.1, s - 0.1));
   };
 
   const handleFitToPage = () => {
+      isAutoZoomedRef.current = true; // Sync ref immediately
       setIsAutoZoomed(true);
       fitToPage();
   };
