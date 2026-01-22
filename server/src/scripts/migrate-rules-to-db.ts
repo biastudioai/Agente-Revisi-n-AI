@@ -1424,12 +1424,14 @@ function getCategoryFromProvider(providerTarget: string): RuleCategory {
 
 async function migrateRulesToDatabase() {
   console.log('Starting rules migration to database...');
+  console.log('Mode: SAFE - Only adding new rules, preserving existing modifications\n');
 
-  const existingCount = await prisma.scoringRuleRecord.count();
-  if (existingCount > 0) {
-    console.log(`Found ${existingCount} existing rules. Clearing them first...`);
-    await prisma.scoringRuleRecord.deleteMany();
-  }
+  const existingRules = await prisma.scoringRuleRecord.findMany({
+    select: { ruleId: true }
+  });
+  const existingRuleIds = new Set(existingRules.map(r => r.ruleId));
+  
+  console.log(`Found ${existingRuleIds.size} existing rules in database.`);
 
   const allRules = [
     ...REGLAS_GENERALES.map(r => ({ ...r, category: RuleCategory.GENERAL })),
@@ -1437,12 +1439,20 @@ async function migrateRulesToDatabase() {
     ...REGLAS_METLIFE.map(r => ({ ...r, category: RuleCategory.METLIFE })),
   ];
 
-  console.log(`Migrating ${allRules.length} rules...`);
+  const newRules = allRules.filter(r => !existingRuleIds.has(r.id));
+  
+  if (newRules.length === 0) {
+    console.log('No new rules to add. All rules already exist in the database.');
+    console.log('Existing rules and their modifications have been preserved.');
+    return { success: 0, errors: 0, skipped: allRules.length };
+  }
+
+  console.log(`Adding ${newRules.length} new rules (skipping ${allRules.length - newRules.length} existing)...`);
 
   let successCount = 0;
   let errorCount = 0;
 
-  for (const rule of allRules) {
+  for (const rule of newRules) {
     try {
       const hasValidator = !!rule.validator;
       const validatorKey = hasValidator ? rule.id : null;
@@ -1464,28 +1474,30 @@ async function migrateRulesToDatabase() {
           validatorKey,
         }
       });
+      console.log(`  + Added: ${rule.name}`);
       successCount++;
     } catch (error: any) {
-      console.error(`Error migrating rule ${rule.id}:`, error.message);
+      console.error(`  ! Error adding rule ${rule.id}:`, error.message);
       errorCount++;
     }
   }
 
   console.log(`\nMigration complete!`);
-  console.log(`  - Successfully migrated: ${successCount} rules`);
+  console.log(`  - New rules added: ${successCount}`);
   console.log(`  - Errors: ${errorCount}`);
+  console.log(`  - Existing rules preserved: ${existingRuleIds.size}`);
 
   const counts = await prisma.scoringRuleRecord.groupBy({
     by: ['category'],
     _count: true,
   });
   
-  console.log('\nRules by category:');
+  console.log('\nTotal rules by category:');
   counts.forEach(c => {
     console.log(`  - ${c.category}: ${c._count}`);
   });
 
-  return { success: successCount, errors: errorCount };
+  return { success: successCount, errors: errorCount, skipped: allRules.length - newRules.length };
 }
 
 if (require.main === module) {

@@ -25,6 +25,7 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<ScoringRule | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleteConfirmRule, setDeleteConfirmRule] = useState<ScoringRule | null>(null);
 
   const getProviderTargets = (rule: ScoringRule): string[] => {
     return rule.providerTargets || (rule.providerTarget ? [rule.providerTarget] : ['ALL']);
@@ -75,13 +76,15 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
     onUpdateRules(updatedRules, updatedRule, 'update');
   };
 
-  const handleDeleteRule = (ruleId: string) => {
-    const rule = rules.find(r => r.id === ruleId);
-    if (!rule) return;
-    if (confirm('¿Estás seguro de eliminar esta regla?')) {
-      const updatedRules = rules.filter(r => r.id !== ruleId);
-      onUpdateRules(updatedRules, rule, 'delete');
-    }
+  const handleDeleteRule = (rule: ScoringRule) => {
+    setDeleteConfirmRule(rule);
+  };
+
+  const confirmDeleteRule = () => {
+    if (!deleteConfirmRule) return;
+    const updatedRules = rules.filter(r => r.id !== deleteConfirmRule.id);
+    onUpdateRules(updatedRules, deleteConfirmRule, 'delete');
+    setDeleteConfirmRule(null);
   };
 
   const handleSaveRule = (newRule: ScoringRule) => {
@@ -325,15 +328,13 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
                           >
                             <Pencil className="w-4 h-4" />
                           </button>
-                          {rule.isCustom && (
-                            <button
-                              onClick={() => handleDeleteRule(rule.id)}
-                              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              title="Eliminar regla"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
+                          <button
+                            onClick={() => handleDeleteRule(rule)}
+                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Eliminar regla"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                        </div>
                   </div>
                ))}
@@ -365,6 +366,55 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
         onSave={handleSaveRule}
         currentReport={currentReport}
       />
+    )}
+
+    {deleteConfirmRule && (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-fade-in">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200">
+          <div className="p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-3 bg-red-100 rounded-full">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">Eliminar Regla</h3>
+                <p className="text-sm text-slate-500">Esta acción no se puede deshacer</p>
+              </div>
+            </div>
+            
+            <div className="bg-slate-50 rounded-lg p-4 mb-6 border border-slate-200">
+              <p className="font-medium text-slate-700 mb-1">{deleteConfirmRule.name}</p>
+              <p className="text-sm text-slate-500">{deleteConfirmRule.description}</p>
+              <div className="flex items-center gap-2 mt-3">
+                <span className={`px-2 py-0.5 text-xs font-bold rounded ${getLevelColor(deleteConfirmRule.level)}`}>
+                  {deleteConfirmRule.level}
+                </span>
+                <span className="text-xs text-slate-400">•</span>
+                <span className="text-xs text-slate-500">{deleteConfirmRule.points} puntos</span>
+              </div>
+            </div>
+
+            <p className="text-sm text-slate-600 mb-6">
+              ¿Estás seguro de que deseas eliminar esta regla? Los informes existentes que usaron esta regla no se verán afectados, pero la regla ya no estará disponible para nuevas evaluaciones.
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setDeleteConfirmRule(null)}
+                className="px-5 py-2.5 text-slate-600 hover:text-slate-800 hover:bg-slate-100 font-medium rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDeleteRule}
+                className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg shadow-lg shadow-red-500/20 transition-all active:scale-95"
+              >
+                Eliminar Regla
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     )}
     </>
   );
