@@ -544,7 +544,7 @@ SECCIÓN 7 - FIRMA:
 
 METADATA (AUDITORÍA VISUAL DEL DOCUMENTO):
 - tachaduras_detectadas: ¿Hay tachaduras, corrector, enmendaduras o borraduras visibles en el documento? (true/false)
-- uniformidad_tinta: ¿Todo el documento fue llenado con una sola tinta/mismo color de escritura? true = uniforme, false = múltiples tintas/colores detectados
+- uniformidad_tinta: ¿Todo el documento fue llenado con una sola tinta/mismo color de escritura en los espacios que llena el médico? true = uniforme, false = múltiples tintas/colores detectados en los espacios llenados, NO en el formulario como tal, únicamente en los espacios que el médico llenó y que estás extrayendo.
 - firma_coincide_con_tratante: ¿El nombre en la firma coincide con el médico tratante declarado en el formulario? (true/false)
 `,
 
