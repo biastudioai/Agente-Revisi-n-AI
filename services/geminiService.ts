@@ -1,10 +1,16 @@
-import { GoogleGenAI } from "@google/genai";
+import { VertexAI } from "@google-cloud/vertexai";
 import { AnalysisReport, ExtractedData, ScoringRule } from "../types";
 import { calculateScore, reEvaluateScore } from "./scoring-engine";
 import { getProviderGeminiSchema, buildProviderSystemPrompt, ProviderType } from "../providers";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const PROJECT_ID = process.env.GOOGLE_PROJECT_ID || "";
+const LOCATION = process.env.GOOGLE_LOCATION || "us-central1";
 const MODEL_NAME = "gemini-2.5-flash";
+
+const vertexAI = new VertexAI({ project: PROJECT_ID, location: LOCATION });
+const generativeModel = vertexAI.getGenerativeModel({
+  model: MODEL_NAME,
+});
 
 export interface FileInput {
   base64Data: string;
@@ -26,7 +32,8 @@ export const analyzeReportImages = async (
     rules: ScoringRule[]
 ): Promise<AnalysisReport> => {
   try {
-    console.log("Starting analysis with model:", MODEL_NAME);
+    console.log("Starting analysis with Vertex AI model:", MODEL_NAME);
+    console.log("Project:", PROJECT_ID, "Location:", LOCATION);
     console.log("Selected provider:", provider);
     console.log("Number of files to analyze:", files.length);
     
@@ -36,9 +43,9 @@ export const analyzeReportImages = async (
     }
     
     const systemPrompt = buildProviderSystemPrompt(provider);
-    console.log("Schema built for provider:", provider, "sending request to Gemini...");
+    console.log("Schema built for provider:", provider, "sending request to Vertex AI...");
 
-    const imageParts = files.map((file, index) => ({
+    const imageParts = files.map((file) => ({
       inlineData: {
         mimeType: file.mimeType,
         data: file.base64Data
@@ -49,11 +56,10 @@ export const analyzeReportImages = async (
       ? `Extrae toda la información del documento de ${files.length} páginas/imágenes siguiendo el esquema JSON. Este es un documento de ${provider}. Las imágenes están en orden de página (1, 2, 3, etc.). Analiza todas las páginas como un solo documento continuo. Valida el código CIE-10 contra el diagnóstico.`
       : `Extrae toda la información del documento siguiendo el esquema JSON. Este es un documento de ${provider}. Valida el código CIE-10 contra el diagnóstico.`;
 
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
+    const request = {
       contents: [
         {
-          role: "user",
+          role: "user" as const,
           parts: [
             { text: systemPrompt },
             ...imageParts,
@@ -61,15 +67,18 @@ export const analyzeReportImages = async (
           ]
         }
       ],
-      config: {
+      generationConfig: {
         temperature: 0.1,
         responseMimeType: "application/json",
         responseSchema: responseSchema
       }
-    });
+    };
 
-    console.log("Response received from Gemini");
-    const text = response.text;
+    const response = await generativeModel.generateContent(request);
+    const result = response.response;
+
+    console.log("Response received from Vertex AI");
+    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) throw new Error("Empty response from AI");
     
     console.log("Parsing JSON response...");
@@ -113,7 +122,6 @@ export const analyzeReportImages = async (
       }
     }
     
-    // POST-PROCESAMIENTO: causa_atencion_audit (MetLife)
     if (provider === 'METLIFE' && jsonData.extracted?.identificacion?.causa_atencion_audit) {
       const audit = jsonData.extracted.identificacion.causa_atencion_audit;
       const correctedCausaAtencion: string[] = [];
@@ -132,7 +140,6 @@ export const analyzeReportImages = async (
       }
     }
     
-    // POST-PROCESAMIENTO: sexo_audit (MetLife)
     if (provider === 'METLIFE' && jsonData.extracted?.identificacion?.sexo_audit) {
       const audit = jsonData.extracted.identificacion.sexo_audit;
       const correctedSexo: string[] = [];
@@ -150,7 +157,6 @@ export const analyzeReportImages = async (
       }
     }
     
-    // POST-PROCESAMIENTO: tipo_estancia_audit (MetLife)
     if (provider === 'METLIFE' && jsonData.extracted?.hospital?.tipo_estancia_audit) {
       const audit = jsonData.extracted.hospital.tipo_estancia_audit;
       const correctedTipoEstancia: string[] = [];
@@ -168,7 +174,6 @@ export const analyzeReportImages = async (
       }
     }
     
-    // POST-PROCESAMIENTO: causa_atencion_audit (GNP)
     if (provider === 'GNP' && jsonData.extracted?.identificacion?.causa_atencion_audit) {
       const audit = jsonData.extracted.identificacion.causa_atencion_audit;
       const correctedCausaAtencion: string[] = [];
@@ -186,7 +191,6 @@ export const analyzeReportImages = async (
       }
     }
     
-    // POST-PROCESAMIENTO: sexo_audit (GNP)
     if (provider === 'GNP' && jsonData.extracted?.identificacion?.sexo_audit) {
       const audit = jsonData.extracted.identificacion.sexo_audit;
       const correctedSexo: string[] = [];
@@ -203,7 +207,6 @@ export const analyzeReportImages = async (
       }
     }
     
-    // POST-PROCESAMIENTO: tipo_padecimiento_audit (GNP)
     if (provider === 'GNP' && jsonData.extracted?.padecimiento_actual?.tipo_padecimiento_audit) {
       const audit = jsonData.extracted.padecimiento_actual.tipo_padecimiento_audit;
       const correctedTipoPadecimiento: string[] = [];
@@ -222,7 +225,6 @@ export const analyzeReportImages = async (
       }
     }
     
-    // POST-PROCESAMIENTO: tipo_estancia_audit (GNP)
     if (provider === 'GNP' && jsonData.extracted?.hospital?.tipo_estancia_audit) {
       const audit = jsonData.extracted.hospital.tipo_estancia_audit;
       const correctedTipoEstancia: string[] = [];
