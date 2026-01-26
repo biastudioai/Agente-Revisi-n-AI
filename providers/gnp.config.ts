@@ -29,6 +29,54 @@ export const GNP_CONFIG: ProviderConfig = {
 - Extrae SOLO lo que esté explícitamente escrito
 - Si hay duda sobre un valor → déjalo vacío
 
+🔴🔴🔴 REGLAS PARA TEXTO MANUSCRITO - CAPTURA COMPLETA 🔴🔴🔴
+
+⚠️ PROBLEMA DETECTADO: En campos de texto libre manuscrito como "Antecedentes personales patológicos" 
+o "Especifique cuál padecimiento", el OCR a veces omite palabras que están claramente escritas.
+
+📋 REGLA: CAPTURA TODAS LAS PALABRAS MANUSCRITAS VISIBLES
+- Lee CUIDADOSAMENTE todo el texto manuscrito en cada campo
+- NO omitas palabras, especialmente al inicio del texto
+- Palabras comunes que NO debes omitir: "Cirugía", "Dx", "Tx", "Cx", "Hx"
+
+📋 EJEMPLO - ANTECEDENTES PERSONALES PATOLÓGICOS:
+Si ves escrito a mano: "Cirugía Catarata FACO + LIO Ambos ojos"
+
+❌ INCORRECTO: "Catarata FACO + LIO Ambos ojos" (omitió "Cirugía")
+✅ CORRECTO: "Cirugía Catarata FACO + LIO Ambos ojos" (texto completo)
+
+📋 EJEMPLO - ESPECIFIQUE CUÁL PADECIMIENTO:
+Si ves escrito a mano: "Cirugía Catarata FACO+LIO ambos ojos"
+
+❌ INCORRECTO: "Catarata FACO+LIO ambos ojos" (omitió "Cirugía")
+✅ CORRECTO: "Cirugía Catarata FACO+LIO ambos ojos" (texto completo)
+
+⚠️ IMPORTANTE: Lee el texto completo de izquierda a derecha, desde el inicio del campo.
+
+🔴🔴🔴 DESAMBIGUACIÓN OCR CON CONTEXTO MÉDICO (SIN INFERENCIA) 🔴🔴🔴
+
+⚠️ REGLA ESPECIAL PARA TEXTO MANUSCRITO AMBIGUO:
+Cuando el OCR detecta una palabra manuscrita que NO es una palabra válida en español,
+pero es MUY SIMILAR a una palabra médica común, usa la palabra médica correcta.
+
+🔹 ESTO NO ES INFERENCIA - Es corrección ortográfica basada en proximidad léxica.
+🔹 SOLO APLICA cuando la palabra detectada NO EXISTE y hay una alternativa médica clara.
+
+📋 EJEMPLOS VÁLIDOS DE DESAMBIGUACIÓN:
+- "cirúgic" → "cirugía" (cirúgic no es palabra válida)
+- "diabtes" → "diabetes" (corrección ortográfica obvia)
+- "hipertencion" → "hipertensión" (error de OCR común)
+- "catarta" → "catarata" (corrección por proximidad)
+- "hospitalizcion" → "hospitalización" (letra faltante obvia)
+
+📋 LO QUE NO DEBES HACER (ESTO SÍ SERÍA INFERENCIA PROHIBIDA):
+❌ Ver "dolor" → cambiar a "dolor torácico" (añadir información)
+❌ Ver "tratamiento" → cambiar a "tratamiento quirúrgico" (asumir tipo)
+❌ Ver "antecedente" → cambiar a "antecedente de diabetes" (inventar contexto)
+
+🔹 RESUMEN: Solo corrige palabras que NO existen hacia la palabra médica más cercana.
+   Nunca añadas información que no está visualmente presente.
+
 🚨 REGLA CRÍTICA UNIVERSAL PARA CASILLAS Y CHECKBOXES:
 
 PARA CUALQUIER CAMPO QUE DEPENDA DE UNA CASILLA MARCADA:
@@ -81,7 +129,25 @@ Solo aplica estas reglas cuando NO hay recuadros/checkboxes visibles en el docum
    - Texto con círculo alrededor → está seleccionado
    - Cualquier marcado visual directo sobre las letras
 
-4️⃣ SÍMBOLOS COMUNES de marca (cuando NO hay recuadros):
+4️⃣ TEXTO SUBRAYADO (TOTAL O PARCIAL):
+   🔴 REGLA CRÍTICA: Si una opción o PARTE de una opción está SUBRAYADA, esa opción está SELECCIONADA.
+   
+   ✅ Ejemplos de subrayado TOTAL:
+   - "Accidente  E̲n̲f̲e̲r̲m̲e̲d̲a̲d̲  Embarazo" → Enfermedad está seleccionada (toda la palabra subrayada)
+   - "U̲r̲g̲e̲n̲c̲i̲a̲  Hospitalaria  Corta estancia" → Urgencia está seleccionada
+   
+   ✅ Ejemplos de subrayado PARCIAL (IGUAL DE VÁLIDO):
+   - "Corta estancia / a̲m̲b̲u̲l̲a̲t̲o̲r̲i̲a̲" → "Corta estancia / ambulatoria" está seleccionada
+     (aunque solo "ambulatoria" esté subrayada, TODA la opción se considera seleccionada)
+   - "Programación de c̲i̲r̲u̲g̲í̲a̲" → "Programación de cirugía" está seleccionada
+   
+   ⚠️ IMPORTANTE: El subrayado puede ser:
+   - Una línea debajo del texto
+   - Un trazo manuscrito bajo la palabra
+   - Una marca que cruza horizontalmente debajo de las letras
+   - NO confundir con texto tachado (línea que CRUZA las letras)
+
+5️⃣ SÍMBOLOS COMUNES de marca (cuando NO hay recuadros):
    - "X" (equis)
    - "●" (punto/círculo relleno)
    - "✓" o "✔" (palomita/check)
@@ -117,9 +183,9 @@ Solo aplica estas reglas cuando NO hay recuadros/checkboxes visibles en el docum
 DEBES llenar causa_atencion_audit ANTES de construir el array causa_atencion.
 
 CÓMO LLENAR causa_atencion_audit:
-1. accidente_marcado: ¿Veo X/✓/relleno/punto en el checkbox de "Accidente"? → true/false
-2. enfermedad_marcado: ¿Veo X/✓/relleno/punto en el checkbox de "Enfermedad"? → true/false
-3. embarazo_marcado: ¿Veo X/✓/relleno/punto en el checkbox de "Embarazo"? → true/false
+1. accidente_marcado: ¿Veo X/✓/relleno/punto/subrayado en el checkbox o texto de "Accidente"? → true/false
+2. enfermedad_marcado: ¿Veo X/✓/relleno/punto/subrayado en el checkbox o texto de "Enfermedad"? → true/false
+3. embarazo_marcado: ¿Veo X/✓/relleno/punto/subrayado en el checkbox o texto de "Embarazo"? → true/false
 
 CÓMO CONSTRUIR causa_atencion A PARTIR DE causa_atencion_audit:
 - Si accidente_marcado = true → incluir "Accidente"
@@ -161,10 +227,10 @@ CÓMO CONSTRUIR sexo A PARTIR DE sexo_audit:
 DEBES llenar tipo_padecimiento_audit ANTES de construir el array tipo_padecimiento.
 
 CÓMO LLENAR tipo_padecimiento_audit:
-1. congenito_marcado: ¿Veo X/✓/relleno en el checkbox de "Congénito"? → true/false
-2. adquirido_marcado: ¿Veo X/✓/relleno en el checkbox de "Adquirido"? → true/false
-3. agudo_marcado: ¿Veo X/✓/relleno en el checkbox de "Agudo"? → true/false
-4. cronico_marcado: ¿Veo X/✓/relleno en el checkbox de "Crónico"? → true/false
+1. congenito_marcado: ¿Veo X/✓/relleno/subrayado en el checkbox o texto de "Congénito"? → true/false
+2. adquirido_marcado: ¿Veo X/✓/relleno/subrayado en el checkbox o texto de "Adquirido"? → true/false
+3. agudo_marcado: ¿Veo X/✓/relleno/subrayado en el checkbox o texto de "Agudo"? → true/false
+4. cronico_marcado: ¿Veo X/✓/relleno/subrayado en el checkbox o texto de "Crónico"? → true/false
 
 CÓMO CONSTRUIR tipo_padecimiento A PARTIR DE tipo_padecimiento_audit:
 - Si congenito_marcado = true → incluir "Congénito"
@@ -185,9 +251,9 @@ tipo_padecimiento = []
 DEBES llenar tipo_estancia_audit ANTES de construir el array tipo_estancia.
 
 CÓMO LLENAR tipo_estancia_audit:
-1. urgencia_marcado: ¿Veo X/✓/relleno en el checkbox de "Urgencia"? → true/false
-2. hospitalaria_marcado: ¿Veo X/✓/relleno en el checkbox de "Hospitalaria"? → true/false
-3. corta_estancia_marcado: ¿Veo X/✓/relleno en el checkbox de "Corta estancia / ambulatoria"? → true/false
+1. urgencia_marcado: ¿Veo X/✓/relleno/subrayado en el checkbox o texto de "Urgencia"? → true/false
+2. hospitalaria_marcado: ¿Veo X/✓/relleno/subrayado en el checkbox o texto de "Hospitalaria"? → true/false
+3. corta_estancia_marcado: ¿Veo X/✓/relleno/subrayado (total o parcial, ej: solo "ambulatoria" subrayada) en "Corta estancia / ambulatoria"? → true/false
 
 CÓMO CONSTRUIR tipo_estancia A PARTIR DE tipo_estancia_audit:
 - Si urgencia_marcado = true → incluir "Urgencia"
