@@ -70,7 +70,7 @@ export const analyzeReportImages = async (
       generationConfig: {
         temperature: 0.1,
         responseMimeType: "application/json",
-        responseSchema: responseSchema
+        responseSchema: responseSchema as any
       }
     };
 

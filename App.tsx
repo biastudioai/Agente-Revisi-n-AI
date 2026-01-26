@@ -9,7 +9,7 @@ import ProviderSelector, { ProviderOption } from './components/ProviderSelector'
 import LoginPage from './components/LoginPage';
 import SubscriptionPlans from './components/SubscriptionPlans';
 import ReportHistory from './components/ReportHistory';
-import { analyzeReportImage, analyzeReportImages, reEvaluateReport, FileInput } from './services/geminiService';
+import { analyzeReportImage, analyzeReportImages, reEvaluateReport, FileInput } from './services/analyzeApi';
 import { getReglasParaAseguradora } from './services/scoring-engine';
 import { updateRuleInDatabase, createRuleInDatabase, deleteRuleInDatabase, clearRulesCache } from './services/database-rules-loader';
 import { AnalysisReport, AnalysisStatus, ExtractedData, ScoringRule, SavedReport } from './types';
