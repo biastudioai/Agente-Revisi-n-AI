@@ -89,22 +89,51 @@ PARA CUALQUIER CAMPO QUE DEPENDA DE UNA CASILLA MARCADA:
 
 📋 JERARQUÍA DE DETECCIÓN - ORDEN DE PRIORIDAD:
 
-🔲 PRIORIDAD 1 - CHECKBOXES/RECUADROS VISIBLES:
+🔴🔴🔴 PRIORIDAD 0 - TEXTO SUBRAYADO (APLICA SIEMPRE - MÁXIMA PRIORIDAD) 🔴🔴🔴
 
-Si el documento muestra CLARAMENTE recuadros (☐, ☑, □, ■, [ ], [X]) junto a las opciones:
-- Identifica cuál checkbox tiene marca visual dentro
+⚠️ REGLA CRÍTICA: El SUBRAYADO tiene la MÁXIMA PRIORIDAD, incluso si hay checkboxes vacíos junto a las opciones.
+
+📋 Si una opción (o parte de ella) tiene una LÍNEA DEBAJO del texto = ESTÁ SELECCIONADA.
+   Esto aplica AUNQUE el checkbox al lado esté vacío.
+
+✅ EJEMPLOS ESPECÍFICOS DEL FORMULARIO GNP:
+
+📌 CAUSA DE ATENCIÓN con subrayado:
+   "Accidente   E̲n̲f̲e̲r̲m̲e̲d̲a̲d̲   Embarazo" (Enfermedad tiene línea debajo)
+   → enfermedad_marcado = TRUE, causa_atencion = ["Enfermedad"]
+   
+   ⚠️ IMPORTANTE: Si ves "Enfermedad" con una línea horizontal debajo, ESTÁ SELECCIONADA,
+   aunque el checkbox □ a su izquierda esté vacío.
+
+📌 TIPO DE ESTANCIA con subrayado parcial:
+   "Urgencia   Hospitalaria   Corta estancia / a̲m̲b̲u̲l̲a̲t̲o̲r̲i̲a̲" (solo "ambulatoria" subrayada)
+   → corta_estancia_marcado = TRUE, tipo_estancia = ["Corta estancia / ambulatoria"]
+   
+   ⚠️ IMPORTANTE: Si cualquier PARTE de una opción está subrayada, TODA la opción está seleccionada.
+
+📋 CÓMO IDENTIFICAR SUBRAYADO EN EL DOCUMENTO:
+- Una línea horizontal DEBAJO del texto (no cruzando las letras)
+- Puede ser trazo manuscrito o línea impresa
+- Puede cubrir toda la palabra o solo parte de ella
+- NO confundir con texto tachado (línea que CRUZA las letras)
+
+🔲 PRIORIDAD 1 - CHECKBOXES/RECUADROS CON MARCA INTERNA:
+
+Si el documento muestra recuadros (☐, ☑, □, ■, [ ], [X]) CON MARCA VISIBLE DENTRO:
+- Identifica cuál checkbox tiene marca visual dentro (X, ✓, relleno)
 - La opción marcada es la que está MÁS CERCA del checkbox marcado
-- Este método es el MÁS CONFIABLE cuando los recuadros son visibles
 
-✅ Ejemplos con recuadros visibles:
+✅ Ejemplos con recuadros marcados:
    - "☑ Masculino    ☐ Femenino" → Masculino está seleccionado
    - "[X] Accidente  [ ] Enfermedad  [ ] Embarazo" → Accidente está seleccionado
    - "□ Congénito    ■ Adquirido" → Adquirido está seleccionado (■ relleno)
    - "[ ] Reembolso  [X] Programación de cirugía" → Programación de cirugía
 
-📍 PRIORIDAD 2 - REGLAS VISUALES ALTERNATIVAS (SIN RECUADROS):
+⚠️ NOTA: Si todos los checkboxes están VACÍOS pero hay texto SUBRAYADO, usa la regla de PRIORIDAD 0.
 
-Solo aplica estas reglas cuando NO hay recuadros/checkboxes visibles en el documento (formulario sin imprimir o sin cuadros claros):
+📍 PRIORIDAD 2 - REGLAS VISUALES ALTERNATIVAS:
+
+Estas reglas aplican cuando NO hay checkboxes marcados NI texto subrayado:
 
 1️⃣ MARCA A LA IZQUIERDA de la opción:
    ✅ Ejemplos válidos:
@@ -129,25 +158,7 @@ Solo aplica estas reglas cuando NO hay recuadros/checkboxes visibles en el docum
    - Texto con círculo alrededor → está seleccionado
    - Cualquier marcado visual directo sobre las letras
 
-4️⃣ TEXTO SUBRAYADO (TOTAL O PARCIAL):
-   🔴 REGLA CRÍTICA: Si una opción o PARTE de una opción está SUBRAYADA, esa opción está SELECCIONADA.
-   
-   ✅ Ejemplos de subrayado TOTAL:
-   - "Accidente  E̲n̲f̲e̲r̲m̲e̲d̲a̲d̲  Embarazo" → Enfermedad está seleccionada (toda la palabra subrayada)
-   - "U̲r̲g̲e̲n̲c̲i̲a̲  Hospitalaria  Corta estancia" → Urgencia está seleccionada
-   
-   ✅ Ejemplos de subrayado PARCIAL (IGUAL DE VÁLIDO):
-   - "Corta estancia / a̲m̲b̲u̲l̲a̲t̲o̲r̲i̲a̲" → "Corta estancia / ambulatoria" está seleccionada
-     (aunque solo "ambulatoria" esté subrayada, TODA la opción se considera seleccionada)
-   - "Programación de c̲i̲r̲u̲g̲í̲a̲" → "Programación de cirugía" está seleccionada
-   
-   ⚠️ IMPORTANTE: El subrayado puede ser:
-   - Una línea debajo del texto
-   - Un trazo manuscrito bajo la palabra
-   - Una marca que cruza horizontalmente debajo de las letras
-   - NO confundir con texto tachado (línea que CRUZA las letras)
-
-5️⃣ SÍMBOLOS COMUNES de marca (cuando NO hay recuadros):
+4️⃣ SÍMBOLOS COMUNES de marca (cuando NO hay recuadros):
    - "X" (equis)
    - "●" (punto/círculo relleno)
    - "✓" o "✔" (palomita/check)
@@ -183,9 +194,12 @@ Solo aplica estas reglas cuando NO hay recuadros/checkboxes visibles en el docum
 DEBES llenar causa_atencion_audit ANTES de construir el array causa_atencion.
 
 CÓMO LLENAR causa_atencion_audit:
-1. accidente_marcado: ¿Veo X/✓/relleno/punto/subrayado en el checkbox o texto de "Accidente"? → true/false
-2. enfermedad_marcado: ¿Veo X/✓/relleno/punto/subrayado en el checkbox o texto de "Enfermedad"? → true/false
-3. embarazo_marcado: ¿Veo X/✓/relleno/punto/subrayado en el checkbox o texto de "Embarazo"? → true/false
+1. accidente_marcado: ¿Hay marca en checkbox O texto "Accidente" SUBRAYADO? → true/false
+2. enfermedad_marcado: ¿Hay marca en checkbox O texto "Enfermedad" SUBRAYADO? → true/false
+3. embarazo_marcado: ¿Hay marca en checkbox O texto "Embarazo" SUBRAYADO? → true/false
+
+⚠️ REGLA CRÍTICA: Si el texto está SUBRAYADO (línea horizontal debajo), marca TRUE aunque el checkbox esté vacío.
+   Ejemplo: Si ves "Enfermedad" con una línea debajo → enfermedad_marcado = TRUE
 
 CÓMO CONSTRUIR causa_atencion A PARTIR DE causa_atencion_audit:
 - Si accidente_marcado = true → incluir "Accidente"
@@ -251,9 +265,14 @@ tipo_padecimiento = []
 DEBES llenar tipo_estancia_audit ANTES de construir el array tipo_estancia.
 
 CÓMO LLENAR tipo_estancia_audit:
-1. urgencia_marcado: ¿Veo X/✓/relleno/subrayado en el checkbox o texto de "Urgencia"? → true/false
-2. hospitalaria_marcado: ¿Veo X/✓/relleno/subrayado en el checkbox o texto de "Hospitalaria"? → true/false
-3. corta_estancia_marcado: ¿Veo X/✓/relleno/subrayado (total o parcial, ej: solo "ambulatoria" subrayada) en "Corta estancia / ambulatoria"? → true/false
+1. urgencia_marcado: ¿Hay marca en checkbox O texto "Urgencia" SUBRAYADO? → true/false
+2. hospitalaria_marcado: ¿Hay marca en checkbox O texto "Hospitalaria" SUBRAYADO? → true/false
+3. corta_estancia_marcado: ¿Hay marca en checkbox O cualquier parte de "Corta estancia / ambulatoria" SUBRAYADA? → true/false
+
+⚠️ REGLA CRÍTICA - SUBRAYADO PARCIAL:
+   - Si solo "ambulatoria" tiene línea debajo → corta_estancia_marcado = TRUE (toda la opción seleccionada)
+   - El subrayado de CUALQUIER parte de la opción selecciona TODA la opción
+   - Esto aplica aunque el checkbox □ esté vacío
 
 CÓMO CONSTRUIR tipo_estancia A PARTIR DE tipo_estancia_audit:
 - Si urgencia_marcado = true → incluir "Urgencia"
@@ -572,19 +591,19 @@ Basándote en el diagnóstico definitivo, clasifica la severidad como:
               },
               causa_atencion_audit: {
                 type: Type.OBJECT,
-                description: "🔴 OBLIGATORIO: Antes de llenar causa_atencion, DEBES verificar CADA checkbox individualmente. NO inferir basándose en el diagnóstico.",
+                description: "🔴 OBLIGATORIO: Verificar si hay marca en checkbox O si el texto está SUBRAYADO. El subrayado tiene MÁXIMA PRIORIDAD.",
                 properties: {
                   accidente_marcado: { 
                     type: Type.BOOLEAN, 
-                    description: "¿El checkbox de 'Accidente' tiene una marca visual? true = SÍ veo marca, false = casilla vacía. NO inferir del texto." 
+                    description: "¿Hay marca en checkbox O texto 'Accidente' SUBRAYADO (línea debajo)? true = SÍ. NO inferir del diagnóstico." 
                   },
                   enfermedad_marcado: { 
                     type: Type.BOOLEAN, 
-                    description: "🚨 CRÍTICO: ¿El checkbox de 'Enfermedad' tiene una marca visual? true = SÍ veo marca física, false = casilla vacía. NO marcar true solo porque el diagnóstico menciona una enfermedad." 
+                    description: "🚨 CRÍTICO: ¿Hay marca en checkbox O texto 'Enfermedad' SUBRAYADO (línea horizontal debajo)? true = SÍ. Si ves línea debajo de 'Enfermedad' → TRUE aunque checkbox esté vacío." 
                   },
                   embarazo_marcado: { 
                     type: Type.BOOLEAN, 
-                    description: "¿El checkbox de 'Embarazo' tiene una marca visual? true = SÍ veo marca, false = casilla vacía. NO inferir del texto." 
+                    description: "¿Hay marca en checkbox O texto 'Embarazo' SUBRAYADO (línea debajo)? true = SÍ. NO inferir del diagnóstico." 
                   }
                 }
               },
@@ -727,19 +746,19 @@ Basándote en el diagnóstico definitivo, clasifica la severidad como:
               estado: { type: Type.STRING, description: "Estado" },
               tipo_estancia_audit: {
                 type: Type.OBJECT,
-                description: "🔴 OBLIGATORIO: Antes de llenar tipo_estancia, DEBES verificar CADA checkbox individualmente.",
+                description: "🔴 OBLIGATORIO: Verificar si hay marca en checkbox O si el texto (o parte de él) está SUBRAYADO. El subrayado tiene MÁXIMA PRIORIDAD.",
                 properties: {
                   urgencia_marcado: { 
                     type: Type.BOOLEAN, 
-                    description: "¿El checkbox de 'Urgencia' tiene una marca visual? true = SÍ veo marca, false = casilla vacía" 
+                    description: "¿Hay marca en checkbox O texto 'Urgencia' SUBRAYADO? true = SÍ" 
                   },
                   hospitalaria_marcado: { 
                     type: Type.BOOLEAN, 
-                    description: "¿El checkbox de 'Hospitalaria' tiene una marca visual? true = SÍ veo marca, false = casilla vacía" 
+                    description: "¿Hay marca en checkbox O texto 'Hospitalaria' SUBRAYADO? true = SÍ" 
                   },
                   corta_estancia_marcado: { 
                     type: Type.BOOLEAN, 
-                    description: "¿El checkbox de 'Corta estancia / ambulatoria' tiene una marca visual? true = SÍ veo marca, false = casilla vacía" 
+                    description: "🚨 CRÍTICO: ¿Hay marca en checkbox O CUALQUIER PARTE de 'Corta estancia / ambulatoria' SUBRAYADA? Si solo 'ambulatoria' tiene línea debajo → TRUE. Subrayado parcial = opción completa seleccionada." 
                   }
                 }
               },
