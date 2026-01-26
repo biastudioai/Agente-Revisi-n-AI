@@ -1,4 +1,8 @@
 import { VertexAI, GenerativeModel } from "@google-cloud/vertexai";
+import { GoogleAuth } from "google-auth-library";
+import * as fs from "fs";
+import * as path from "path";
+import * as os from "os";
 import { AnalysisReport, ExtractedData, ScoringRule } from "../types";
 import { calculateScore, reEvaluateScore } from "./scoring-engine";
 import { getProviderGeminiSchema, buildProviderSystemPrompt, ProviderType } from "../providers";
@@ -6,6 +10,24 @@ import { getProviderGeminiSchema, buildProviderSystemPrompt, ProviderType } from
 const PROJECT_ID = process.env.GOOGLE_PROJECT_ID;
 const LOCATION = process.env.GOOGLE_LOCATION || "us-central1";
 const MODEL_NAME = "gemini-2.5-flash";
+
+let credentialsFilePath: string | null = null;
+
+function setupCredentials(): void {
+  const credentialsEnv = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  
+  if (!credentialsEnv) {
+    throw new Error("GOOGLE_APPLICATION_CREDENTIALS no está configurado.");
+  }
+  
+  if (credentialsEnv.startsWith('{')) {
+    const tempDir = os.tmpdir();
+    credentialsFilePath = path.join(tempDir, 'gcp-credentials.json');
+    fs.writeFileSync(credentialsFilePath, credentialsEnv, 'utf8');
+    process.env.GOOGLE_APPLICATION_CREDENTIALS = credentialsFilePath;
+    console.log("Credenciales de GCP escritas a archivo temporal");
+  }
+}
 
 function validateConfig(): void {
   if (!PROJECT_ID) {
@@ -15,12 +37,28 @@ function validateConfig(): void {
 
 let vertexAI: VertexAI | null = null;
 let generativeModel: GenerativeModel | null = null;
+let credentialsSetup = false;
 
 function getGenerativeModel(): GenerativeModel {
   validateConfig();
   
+  if (!credentialsSetup) {
+    setupCredentials();
+    credentialsSetup = true;
+  }
+  
   if (!vertexAI) {
-    vertexAI = new VertexAI({ project: PROJECT_ID!, location: LOCATION });
+    const auth = new GoogleAuth({
+      scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+    });
+    
+    vertexAI = new VertexAI({ 
+      project: PROJECT_ID!, 
+      location: LOCATION,
+      googleAuthOptions: {
+        scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+      }
+    });
   }
   
   if (!generativeModel) {
