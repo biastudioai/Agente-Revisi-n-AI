@@ -1,16 +1,36 @@
-import { VertexAI } from "@google-cloud/vertexai";
+import { VertexAI, GenerativeModel } from "@google-cloud/vertexai";
 import { AnalysisReport, ExtractedData, ScoringRule } from "../types";
 import { calculateScore, reEvaluateScore } from "./scoring-engine";
 import { getProviderGeminiSchema, buildProviderSystemPrompt, ProviderType } from "../providers";
 
-const PROJECT_ID = process.env.GOOGLE_PROJECT_ID || "";
+const PROJECT_ID = process.env.GOOGLE_PROJECT_ID;
 const LOCATION = process.env.GOOGLE_LOCATION || "us-central1";
 const MODEL_NAME = "gemini-2.5-flash";
 
-const vertexAI = new VertexAI({ project: PROJECT_ID, location: LOCATION });
-const generativeModel = vertexAI.getGenerativeModel({
-  model: MODEL_NAME,
-});
+function validateConfig(): void {
+  if (!PROJECT_ID) {
+    throw new Error("GOOGLE_PROJECT_ID no está configurado. Por favor configura esta variable de entorno con el ID de tu proyecto de Google Cloud.");
+  }
+}
+
+let vertexAI: VertexAI | null = null;
+let generativeModel: GenerativeModel | null = null;
+
+function getGenerativeModel(): GenerativeModel {
+  validateConfig();
+  
+  if (!vertexAI) {
+    vertexAI = new VertexAI({ project: PROJECT_ID!, location: LOCATION });
+  }
+  
+  if (!generativeModel) {
+    generativeModel = vertexAI.getGenerativeModel({
+      model: MODEL_NAME,
+    });
+  }
+  
+  return generativeModel;
+}
 
 export interface FileInput {
   base64Data: string;
@@ -74,7 +94,8 @@ export const analyzeReportImages = async (
       }
     };
 
-    const response = await generativeModel.generateContent(request);
+    const model = getGenerativeModel();
+    const response = await model.generateContent(request);
     const result = response.response;
 
     console.log("Response received from Vertex AI");

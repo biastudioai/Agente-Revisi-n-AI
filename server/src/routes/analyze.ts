@@ -19,6 +19,37 @@ interface ReEvaluateRequest {
   rules: ScoringRule[];
 }
 
+const VALID_PROVIDERS = ['GNP', 'METLIFE', 'NYLIFE', 'UNKNOWN'];
+
+function validateFiles(files: any[]): string | null {
+  if (!Array.isArray(files)) {
+    return 'El campo files debe ser un array';
+  }
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    if (!file.base64Data || typeof file.base64Data !== 'string') {
+      return `El archivo ${i + 1} no tiene base64Data válido`;
+    }
+    if (!file.mimeType || typeof file.mimeType !== 'string') {
+      return `El archivo ${i + 1} no tiene mimeType válido`;
+    }
+  }
+  return null;
+}
+
+function validateRules(rules: any[]): string | null {
+  if (!Array.isArray(rules)) {
+    return 'El campo rules debe ser un array';
+  }
+  for (let i = 0; i < rules.length; i++) {
+    const rule = rules[i];
+    if (!rule.id || !rule.name) {
+      return `La regla ${i + 1} no tiene id o name válidos`;
+    }
+  }
+  return null;
+}
+
 router.post(
   '/images',
   requireAuth,
@@ -30,13 +61,30 @@ router.post(
       return;
     }
 
+    const filesError = validateFiles(files);
+    if (filesError) {
+      res.status(400).json({ error: filesError });
+      return;
+    }
+
     if (!provider) {
       res.status(400).json({ error: 'No se proporcionó el proveedor' });
       return;
     }
 
+    if (!VALID_PROVIDERS.includes(provider)) {
+      res.status(400).json({ error: `Proveedor no válido: ${provider}. Válidos: ${VALID_PROVIDERS.join(', ')}` });
+      return;
+    }
+
     if (!rules || rules.length === 0) {
       res.status(400).json({ error: 'No se proporcionaron reglas de validación' });
+      return;
+    }
+
+    const rulesError = validateRules(rules);
+    if (rulesError) {
+      res.status(400).json({ error: rulesError });
       return;
     }
 
@@ -46,6 +94,15 @@ router.post(
       res.json(result);
     } catch (error: any) {
       console.error('Error analyzing images:', error);
+      
+      if (error.message?.includes('GOOGLE_PROJECT_ID')) {
+        res.status(503).json({ 
+          error: 'El servicio de análisis no está configurado correctamente',
+          details: 'Contacta al administrador para configurar las credenciales de Vertex AI'
+        });
+        return;
+      }
+      
       res.status(500).json({ 
         error: 'Error al analizar las imágenes',
         details: error?.message || 'Error desconocido'
