@@ -234,17 +234,9 @@ CÓMO LLENAR tipo_estancia_audit:
 3. Si hay marca en checkbox O texto subrayado → true
 4. Si NO hay marca NI subrayado → false
 
-⚠️ REGLA ESPECIAL PARA "Corta estancia / ambulatoria":
-   Esta opción tiene TEXTO COMPUESTO. El subrayado puede estar en UNA SOLA PARTE:
-   
-   📋 EJEMPLOS DE SUBRAYADO PARCIAL (todos = TRUE):
-   - Solo "ambulatoria" subrayada → corta_estancia_marcado = TRUE
-   - Solo "/ambulatoria" subrayada → corta_estancia_marcado = TRUE  
-   - Solo "Corta estancia" subrayada → corta_estancia_marcado = TRUE
-   - Toda la frase subrayada → corta_estancia_marcado = TRUE
-   
-   🔍 EN LA IMAGEN: Busca una línea horizontal debajo de la palabra "ambulatoria"
-      Si la ves → corta_estancia_marcado = TRUE
+⚠️ REGLA DE SUBRAYADO PARCIAL:
+   - Si solo "ambulatoria" tiene línea debajo → corta_estancia_marcado = TRUE (toda la opción seleccionada)
+   - El subrayado de CUALQUIER parte de la opción = opción seleccionada
 
 CÓMO CONSTRUIR tipo_estancia A PARTIR DE tipo_estancia_audit:
 - Si urgencia_marcado = true → incluir "Urgencia"
@@ -730,7 +722,7 @@ Basándote en el diagnóstico definitivo, clasifica la severidad como:
                   },
                   corta_estancia_marcado: { 
                     type: Type.BOOLEAN, 
-                    description: "🚨 CASO ESPECIAL - SUBRAYADO PARCIAL: ¿Hay marca en checkbox? Si checkbox vacío, busca subrayado en CUALQUIER parte: si 'ambulatoria' tiene línea debajo → TRUE. Si 'Corta estancia' tiene línea debajo → TRUE. Si '/ambulatoria' tiene línea → TRUE. Subrayado parcial = opción completa seleccionada." 
+                    description: "¿Hay marca en checkbox? Si checkbox vacío: ¿CUALQUIER parte de 'Corta estancia / ambulatoria' tiene línea debajo (subrayado)? Si solo 'ambulatoria' está subrayada → TRUE (toda la opción seleccionada)." 
                   }
                 }
               },
