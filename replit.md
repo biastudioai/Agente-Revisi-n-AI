@@ -30,7 +30,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Core Features
 - **Multi-Provider Support**: A "Provider Registry Pattern" enables easy integration of new insurance providers through configuration files, including provider-specific extraction instructions and Gemini schemas.
-- **AI Integration**: Leverages Google Vertex AI (`gemini-2.5-flash`) for document analysis via the `@google-cloud/vertexai` SDK, allowing VPC perimeter restrictions for enhanced security. The analysis runs server-side only, with the frontend calling the `/api/analyze` endpoint. Requires `GOOGLE_PROJECT_ID` and `GOOGLE_APPLICATION_CREDENTIALS` environment variables. Configured for consistent extractions and structured JSON output based on dynamic provider schemas.
+- **AI Integration**: Leverages Google Vertex AI (`gemini-2.0-flash-001`) for document analysis via the `@google-cloud/vertexai` SDK, allowing VPC perimeter restrictions for enhanced security. The analysis runs server-side only, with the frontend calling the `/api/analyze` endpoint. Requires `GOOGLE_PROJECT_ID` and `GOOGLE_APPLICATION_CREDENTIALS` environment variables. Configured for consistent extractions and structured JSON output based on dynamic provider schemas.
 - **Scoring Engine**: A rule-based validation system with configurable rules categorized by severity. Each severity level has a defined point range:
   - CRÍTICO: 16-20 points (default: 18) - Ensures critical violations always result in rejection
   - IMPORTANTE: 8-12 points (default: 10)
