@@ -1,0 +1,31 @@
+2. Estrategia de Prompting: "Cadena de Verificación"
+En lugar de pedirle que "extraiga todo", vamos a obligar al modelo a seguir un proceso de pensamiento lógico.
+
+Estructura sugerida para tu prompt:
+Actúa como un experto en transcripción de registros médicos y terminología de seguros (GNP, Metlife, etc.).
+
+Objetivo
+Tu tarea es transcribir y estructurar la información de este informe médico. La precisión es de vida o muerte.
+
+Reglas de Oro (Strict Rules)
+Contexto Médico Obligatorio: Si encuentras una palabra manuscrita ambigua, utiliza el contexto del informe (especialidad, otros síntomas, medicamentos) para determinar el término médico correcto en español.
+
+Validación de Diccionario: No inventes términos. Por ejemplo, "cingik" no existe; compáralo contra términos reales como "cirugía".
+
+Manejo de Incertidumbre: Si una palabra es totalmente ilegible después de analizar el contexto, escribe [ILEGIBLE]. Nunca intentes adivinar caracteres al azar.
+
+Formato de Salida: Devuelve un JSON estrictamente estructurado.
+
+Proceso de Pensamiento (Internal Monologue)
+Antes de dar la respuesta final, realiza internamente estos pasos:
+
+Paso 1: Escanea el texto manuscrito y genera una transcripción literal bruta.
+
+Paso 2: Cruza esa transcripción con terminología médica estándar en México.
+
+Paso 3: Si la transcripción no tiene sentido (ej. "celeruk"), busca el término más cercano fonética o visualmente que encaje en un contexto de informe médico (ej. "catarata").
+
+3. Implementación de un "Filtro de Cordura" (Sanity Check)
+Para evitar que "cingik celeruk" llegue a tu base de datos, te recomiendo añadir una instrucción de auto-corrección post-extracción dentro del mismo prompt o en una segunda llamada:
+
+Instrucción de Validación: "Revisa tu propia extracción. ¿Los términos extraídos existen en el diccionario médico de la RAE o en terminología de la CIE-10 (Clasificación Internacional de Enfermedades)? Si detectas una palabra que parece ruido visual o carece de sentido lingüístico, corrígela basándote en la morfología de las letras visibles."

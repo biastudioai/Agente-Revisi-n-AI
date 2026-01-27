@@ -8,8 +8,8 @@ import { calculateScore, reEvaluateScore } from "./scoring-engine";
 import { getProviderGeminiSchema, buildProviderSystemPrompt, ProviderType } from "../providers";
 
 const PROJECT_ID = process.env.GOOGLE_PROJECT_ID;
-const LOCATION = process.env.GOOGLE_LOCATION || "global";
-const MODEL_NAME = "gemini-3-flash-preview";
+const LOCATION = process.env.GOOGLE_LOCATION || "us-central1";
+const MODEL_NAME = "gemini-2.5-pro";
 
 let credentialsFilePath: string | null = null;
 
@@ -126,7 +126,7 @@ export const analyzeReportImages = async (
         }
       ],
       generationConfig: {
-        temperature: 0.1,
+        temperature: 0.0,
         responseMimeType: "application/json",
         responseSchema: responseSchema as any
       }

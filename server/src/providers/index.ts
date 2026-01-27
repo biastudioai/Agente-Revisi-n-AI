@@ -155,6 +155,54 @@ PROVEEDOR DETECTADO: ${config.displayName.toUpperCase()}
 INSTRUCCIONES DE EXTRACCIÓN:
 ${config.extractionInstructions}
 
+PROTOCOLO DE TRANSCRIPCIÓN MANUSCRITA (OBLIGATORIO):
+La precisión en la transcripción de texto manuscrito es crítica para la evaluación médica. Sigue este protocolo estrictamente:
+
+1. ANÁLISIS CONTEXTUAL PREVIO:
+   Antes de transcribir cualquier palabra manuscrita ambigua, identifica:
+   - La especialidad médica del documento (oftalmología, cardiología, etc.)
+   - Los diagnósticos mencionados en otras partes del documento
+   - Los medicamentos o procedimientos relacionados
+   - La sección del formulario donde aparece el texto (antecedentes, diagnóstico, tratamiento)
+   
+   Usa este contexto para interpretar correctamente palabras difíciles de leer.
+
+2. VALIDACIÓN TERMINOLÓGICA ESTRICTA:
+   - Los términos médicos extraídos DEBEN existir en terminología médica estándar mexicana o en la CIE-10.
+   - Si transcribes algo como "celeruk" o "cingik", DETENTE. Estos no son términos médicos válidos.
+   - Compara visualmente las letras manuscritas contra términos reales que encajen en el contexto.
+   - Ejemplo: En un documento de oftalmología, "celeruk" probablemente es "catarata" y "cingik" es "cirugía".
+
+3. PROCESO DE VERIFICACIÓN EN 3 PASOS:
+   Paso 1 - TRANSCRIPCIÓN LITERAL: Lee el texto manuscrito e identifica cada carácter visible, aunque no formen palabras coherentes inicialmente.
+   
+   Paso 2 - CORRELACIÓN CONTEXTUAL: Pregúntate: "¿Este término tiene sentido en el contexto de este informe médico?" Si la respuesta es no, continúa al paso 3.
+   
+   Paso 3 - CORRECCIÓN FONÉTICA/VISUAL: Busca el término médico real más cercano que:
+      a) Tenga una estructura visual similar (letras parecidas)
+      b) Sea fonéticamente cercano
+      c) Encaje lógicamente en el contexto del documento
+      
+   Ejemplo de aplicación:
+   - Texto manuscrito difícil: "Cx ctrt FACO + LIO"
+   - Paso 1: Identificas abreviaturas médicas
+   - Paso 2: En contexto oftalmológico, tiene sentido
+   - Paso 3: Transcripción correcta: "Cirugía catarata FACO + LIO"
+
+4. MANEJO DE TEXTO ILEGIBLE:
+   - Si después de aplicar los 3 pasos anteriores una palabra sigue siendo incomprensible, márcala como [ILEGIBLE].
+   - NUNCA inventes palabras ni combines caracteres aleatorios.
+   - Es preferible marcar [ILEGIBLE] que introducir términos incorrectos en el sistema.
+
+5. AUTOCORRECCIÓN FINAL (FILTRO DE VALIDACIÓN):
+   Antes de generar tu respuesta final, revisa cada término extraído:
+   - ¿Existe este término en español médico?
+   - ¿Tiene sentido en el contexto del informe?
+   - ¿Los nombres de medicamentos corresponden a fármacos reales?
+   - ¿Las abreviaturas médicas son estándar en México?
+   
+   Si detectas ruido visual o palabras sin sentido lingüístico, corrígelas basándote en la morfología de las letras visibles y el contexto clínico.
+
 REGLAS DE VALIDACIÓN IA:
 - CIE-10: Verifica si el código extraído coincide semánticamente con el texto del diagnóstico. Si no coincide, pon 'cie_coherente_con_texto' en false y explica por qué.
 - Fechas: Siempre en formato "DD/MM/AAAA".
