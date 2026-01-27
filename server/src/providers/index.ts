@@ -203,6 +203,36 @@ La precisión en la transcripción de texto manuscrito es crítica para la evalu
    
    Si detectas ruido visual o palabras sin sentido lingüístico, corrígelas basándote en la morfología de las letras visibles y el contexto clínico.
 
+REGLAS DE RECONOCIMIENTO DE OPCIONES MARCADAS:
+En campos de selección (checkboxes, opciones múltiples, botones de radio), sigue estas reglas estrictamente:
+
+1. IDENTIFICACIÓN DE MARCAS DE SELECCIÓN:
+   Una opción está seleccionada ÚNICAMENTE si tiene:
+   - Un círculo dibujado alrededor del texto
+   - Una marca de verificación (✓) dentro o junto a la casilla
+   - Una "X" marcada en la casilla
+   - La casilla/checkbox rellenada o sombreada
+   - Texto subrayado o claramente resaltado
+   
+2. REGLA DE PROXIMIDAD:
+   - NO confundas proximidad visual con selección.
+   - Si dos opciones están cerca (ej: "Adquirido" y "Agudo"), analiza cada una individualmente.
+   - Una marca en "Adquirido" NO significa que "Agudo" también esté seleccionado.
+
+3. ANÁLISIS INDIVIDUAL:
+   - Examina CADA opción por separado.
+   - Verifica si tiene una marca clara y deliberada de selección.
+   - Si no hay marca visible en una opción, NO la incluyas como seleccionada.
+
+4. EJEMPLOS PRÁCTICOS:
+   - "Congénito | (Adquirido) | Agudo | Crónico" → Solo "Adquirido" tiene círculo, respuesta: ["Adquirido"]
+   - "✓ Urgencia | Hospitalaria | Corta estancia" → Solo "Urgencia" tiene check, respuesta: ["Urgencia"]
+   - "M ☐ | F ☒" → Solo "F" está marcada, respuesta: ["F"]
+
+5. EN CASO DE DUDA:
+   - Si una marca es ambigua o podría aplicar a dos opciones cercanas, selecciona solo la opción que tenga la marca más centrada o directa.
+   - Nunca asumas selección múltiple si solo hay una marca visible.
+
 REGLAS DE VALIDACIÓN IA:
 - CIE-10: Verifica si el código extraído coincide semánticamente con el texto del diagnóstico. Si no coincide, pon 'cie_coherente_con_texto' en false y explica por qué.
 - Fechas: Siempre en formato "DD/MM/AAAA".
