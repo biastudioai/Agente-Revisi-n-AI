@@ -8,8 +8,8 @@ import { calculateScore, reEvaluateScore } from "./scoring-engine";
 import { getProviderGeminiSchema, buildProviderSystemPrompt, ProviderType } from "../providers";
 
 const PROJECT_ID = process.env.GOOGLE_PROJECT_ID;
-const LOCATION = process.env.GOOGLE_LOCATION || "us-central1";
-const MODEL_NAME = "gemini-2.0-flash-001";
+const LOCATION = process.env.GOOGLE_LOCATION || "global";
+const MODEL_NAME = "gemini-3-flash-preview";
 
 let credentialsFilePath: string | null = null;
 
@@ -111,8 +111,8 @@ export const analyzeReportImages = async (
     }));
 
     const contextMessage = files.length > 1 
-      ? `Extrae toda la información del documento de ${files.length} páginas/imágenes siguiendo el esquema JSON. Este es un documento de ${provider}. Las imágenes están en orden de página (1, 2, 3, etc.). Analiza todas las páginas como un solo documento continuo. Valida el código CIE-10 contra el diagnóstico.`
-      : `Extrae toda la información del documento siguiendo el esquema JSON. Este es un documento de ${provider}. Valida el código CIE-10 contra el diagnóstico.`;
+      ? `Extrae toda la información del documento de ${files.length} páginas/imágenes siguiendo el esquema JSON. Este es un documento de ${provider}. Las imágenes están en orden de página (1, 2, 3, etc.). Analiza todas las páginas como un solo documento continuo.`
+      : `Extrae toda la información del documento siguiendo el esquema JSON. Este es un documento de ${provider}.`;
 
     const request = {
       contents: [
