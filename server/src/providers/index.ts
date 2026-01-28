@@ -4,6 +4,113 @@ import { METLIFE_CONFIG } from "./metlife.config";
 import { GNP_CONFIG } from "./gnp.config";
 import { NYLIFE_CONFIG } from "./nylife.config";
 
+const GENERAL_INTELLIGENCE_LAYER = `
+═══════════════════════════════════════════════════════════════════════════════
+🧠 CAPA DE INTELIGENCIA GENERAL - APLICA A TODOS LOS DOCUMENTOS
+═══════════════════════════════════════════════════════════════════════════════
+
+📋 CADENA DE VERIFICACIÓN (CoV) - PROCESO OBLIGATORIO PARA CAMPOS CRÍTICOS
+
+Para los siguientes campos, debes realizar un proceso de pensamiento en 3 pasos:
+- Nombres (paciente, médico): nombres, primer_apellido, segundo_apellido
+- Diagnósticos: diagnostico_definitivo
+- Códigos: codigo_cie  
+- Medicamentos: tratamiento.descripcion
+
+🔹 PASO 1 - CAPTURA VISUAL (extraccion_literal):
+   Transcribe EXACTAMENTE los caracteres detectados, aunque no tengan sentido.
+   Ejemplo: "Amoxisilina" o "Hipertencion" (con errores de ortografía)
+
+🔹 PASO 2 - VALIDACIÓN SEMÁNTICA:
+   a) MEDICAMENTOS: Compara contra Vademécum mexicano
+      - "Amoxisilina" → "Amoxicilina" (corrección ortográfica)
+      - "Metformna" → "Metformina"
+      
+   b) DIAGNÓSTICOS MÉDICOS: Compara contra CIE-10
+      - "hipertencion arterial" → "Hipertensión arterial"
+      - "diabetez mellitus" → "Diabetes mellitus"
+      
+   c) NOMBRES/APELLIDOS: Valida contra onomástica mexicana
+      - "Gonzalez" → "González" (acentos)
+      - "Peña" mantener como está (nombre común mexicano)
+      - Apellidos extranjeros (franceses, alemanes): mantener grafía original si es legible
+      
+🔹 PASO 3 - FILTRO DE RUIDO (Gibberish):
+   Si después del análisis contextual el texto NO tiene sentido fonético NI médico:
+   - Marcar valor_final como "[ILEGIBLE]"
+   - Ejemplos de gibberish: "x12$", "fkajsl", "///---"
+   - NUNCA inventes palabras ni combines caracteres aleatorios
+
+═══════════════════════════════════════════════════════════════════════════════
+🎯 JERARQUÍA DE MÉTODOS DE SELECCIÓN (ORDEN DE PRIORIDAD)
+═══════════════════════════════════════════════════════════════════════════════
+
+🥇 PRIORIDAD MÁXIMA - CÍRCULO ENVOLVENTE:
+   Si una opción de texto está RODEADA por un círculo manual dibujado alrededor,
+   ESA opción es la seleccionada, ANULANDO cualquier otra marca (X, ✓) en recuadros.
+   El círculo tiene JERARQUÍA MÁXIMA.
+   
+   Ejemplo visual: Si ves "⭕ Enfermedad ⭕" o texto claramente encerrado en círculo,
+   esa es la opción seleccionada aunque haya una X en otra casilla.
+
+🥈 PRIORIDAD 2 - TEXTO SUBRAYADO:
+   Una línea horizontal DEBAJO del texto (no cruzando las letras) cuenta como selección.
+   
+   ⚠️ REGLA DE UNIDAD INDIVISIBLE:
+   En opciones compuestas (ej: "Corta estancia / ambulatoria"):
+   - Si SOLO "ambulatoria" está subrayada → TODA la opción se considera seleccionada
+   - El subrayado de CUALQUIER parte = opción completa seleccionada
+   
+   📋 CÓMO IDENTIFICAR SUBRAYADO:
+   - Línea horizontal debajo del texto (puede ser manuscrita o impresa)
+   - NO confundir con texto tachado (línea que CRUZA las letras = anulación)
+
+🥉 PRIORIDAD 3 - CHECKBOXES CON MARCA INTERNA:
+   Identificar recuadros (☐, ☑, □, ■, [ ], [X]) con marca visual dentro.
+   La opción marcada es la que está más cerca del checkbox marcado.
+
+═══════════════════════════════════════════════════════════════════════════════
+🚫 REGLA DE EXCLUSIVIDAD GEOGRÁFICA - NO TRASLADAR INFORMACIÓN
+═══════════════════════════════════════════════════════════════════════════════
+
+⚠️ REGLA CRÍTICA: Cada dato debe extraerse SOLO de su coordenada geográfica original.
+
+NO traslades información entre secciones del documento:
+- Si el recuadro de "Presión Arterial" en Signos Vitales está VACÍO,
+  el campo signos_vitales.presion_arterial debe ser null,
+  AUNQUE el dato aparezca escrito en el párrafo de "Exploración Física".
+
+📋 EJEMPLOS:
+❌ INCORRECTO: Ver "PA 120/80" en exploración física → llenar signos_vitales.presion_arterial
+✅ CORRECTO: signos_vitales.presion_arterial = null (campo vacío en su ubicación)
+
+Cada campo del JSON corresponde a una UBICACIÓN ESPECÍFICA en el formulario.
+Respeta la geografía del documento.
+
+═══════════════════════════════════════════════════════════════════════════════
+📊 ESTRUCTURA DE AUDITORÍA (_audit) PARA CAMPOS CRÍTICOS
+═══════════════════════════════════════════════════════════════════════════════
+
+Para campos con validación semántica, el JSON debe incluir un objeto _audit hermano:
+
+{
+  "campo_nombre": "Valor final corregido",
+  "campo_nombre_audit": {
+    "extraccion_literal": "Lo que vi originalmente (con errores)",
+    "correccion_realizada": true,
+    "metodo_deteccion": "texto_manuscrito",
+    "confianza": "alta"
+  }
+}
+
+📋 VALORES PERMITIDOS:
+- metodo_deteccion: "anclaje_izquierda", "circulo_envolvente", "subrayado", "texto_manuscrito", "checkbox"
+- confianza: "alta", "media", "baja"
+- correccion_realizada: true (si hubo cambios), false (extracción literal = valor final)
+
+═══════════════════════════════════════════════════════════════════════════════
+`;
+
 export const PROVIDER_REGISTRY: ProviderRegistry = {
   METLIFE: METLIFE_CONFIG,
   GNP: GNP_CONFIG,
@@ -151,6 +258,8 @@ OBJETIVO:
 Eres un auditor médico especializado en el mercado mexicano. Tu función es extraer datos de informes médicos y devolver un JSON estrictamente válido.
 
 PROVEEDOR DETECTADO: ${config.displayName.toUpperCase()}
+
+${GENERAL_INTELLIGENCE_LAYER}
 
 INSTRUCCIONES DE EXTRACCIÓN:
 ${config.extractionInstructions}

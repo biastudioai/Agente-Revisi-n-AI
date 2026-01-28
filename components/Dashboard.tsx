@@ -189,21 +189,25 @@ const Dashboard: React.FC<DashboardProps> = ({
   const renderInput = (label: string, value: any, path: string, type: string = 'text', suffix?: string) => {
     const isModified = modifiedFields[path] !== undefined;
     const isHighlighted = highlightedField === path;
+    const isIlegible = typeof value === 'string' && value.includes('[ILEGIBLE]');
+    const baseInputClass = "w-full rounded-lg text-sm px-3 py-2 border border-slate-200 bg-slate-50 focus:bg-white focus:border-brand-500 outline-none";
+    const ilegibleClass = isIlegible ? "ilegible-field font-bold text-red-600 bg-red-50 border-red-200" : "";
 
     return (
       <div id={`field-${path}`} className={`mb-4 transition-all duration-300 ${isHighlighted ? `p-3 ${theme.light} ring-2 ring-yellow-400 rounded-lg shadow-md` : ''}`}>
         <div className="flex justify-between items-center mb-1">
            <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 flex items-center">
-              {label} {value && <BadgeCheck className="w-3 h-3 ml-1 text-emerald-500" />}
+              {label} {value && !isIlegible && <BadgeCheck className="w-3 h-3 ml-1 text-emerald-500" />}
+              {isIlegible && <span className="ml-1 text-[9px] font-bold text-red-600 bg-red-100 px-1.5 py-0.5 rounded">REQUIERE REVISIÓN</span>}
            </label>
            {isModified && <span className="text-[9px] font-bold text-accent-700 bg-accent-100 px-1.5 py-0.5 rounded">Modificado</span>}
         </div>
         <div className="relative">
           {type === 'textarea' ? 
-            <textarea value={value || ''} onChange={(e) => handleInputChange(path, e.target.value)} rows={2} className="w-full rounded-lg text-sm px-3 py-2 border border-slate-200 bg-slate-50 focus:bg-white focus:border-brand-500 outline-none" /> : 
+            <textarea value={value || ''} onChange={(e) => handleInputChange(path, e.target.value)} rows={2} className={`${baseInputClass} ${ilegibleClass}`} /> : 
             type === 'checkbox' ?
             <input type="checkbox" checked={value || false} onChange={(e) => handleInputChange(path, e.target.checked)} className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500" /> :
-            <input type={type} value={value || ''} onChange={(e) => handleInputChange(path, e.target.value)} placeholder="No detectado" className="w-full rounded-lg text-sm px-3 py-2 border border-slate-200 bg-slate-50 focus:bg-white focus:border-brand-500 outline-none" />
+            <input type={type} value={value || ''} onChange={(e) => handleInputChange(path, e.target.value)} placeholder="No detectado" className={`${baseInputClass} ${ilegibleClass}`} />
           }
           {suffix && <span className="absolute right-3 top-2 text-gray-400 text-xs">{suffix}</span>}
         </div>

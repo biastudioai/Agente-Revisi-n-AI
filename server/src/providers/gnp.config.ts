@@ -311,16 +311,21 @@ Para interpretar correctamente:
 
 INSTRUCCIONES DE EXTRACCIÓN PARA GNP:
 
+🔴🔴🔴 REGLA ESPECÍFICA GNP - ANCLAJE A LA IZQUIERDA 🔴🔴🔴
+En los formatos GNP, el espacio para marcar (recuadro o línea) se encuentra a la IZQUIERDA de la opción de texto.
+Por lo tanto, una marca detectada (X, ✓, punto) selecciona la opción que está a su DERECHA.
+
 SECCIÓN TRÁMITE:
 - Identifica cuáles opciones están marcadas VISIBLEMENTE: Reembolso, Programación de cirugía, Programación de medicamentos, Programación de servicios, Indemnización, Reporte hospitalario
 - Pueden estar marcadas múltiples opciones
 - Si ninguna está marcada → dejar todos en false/null
+- ⚠️ OBLIGATORIO: Llenar tramite_audit con el registro de qué checkboxes fueron detectados y el método usado (anclaje_izquierda, circulo_envolvente, subrayado, checkbox)
 
 FICHA DE IDENTIFICACIÓN DEL ASEGURADO:
 - numero_poliza: Número de póliza del asegurado: Si notas algún espacio en blanco o guiones, extrae el número completo sin espacios ni guiones. Ejemplo: Si el número de póliza es "123 456 789" o "123-456-789", extrae "123456789"
-- primer_apellido: Primer apellido del paciente
-- segundo_apellido: Segundo apellido del paciente  
-- nombres: Nombre(s) del paciente
+- primer_apellido: Primer apellido del paciente (aplicar Cadena de Verificación - validar onomástica mexicana, llenar primer_apellido_audit)
+- segundo_apellido: Segundo apellido del paciente (aplicar CoV, llenar segundo_apellido_audit)
+- nombres: Nombre(s) del paciente (aplicar CoV, llenar nombres_audit)
 - sexo: Extrae EXACTAMENTE la letra que veas marcada: "F" o "M" (NO escribas "Femenino" o "Masculino", solo la letra)
 - edad: Edad del paciente
 - causa_atencion: Accidente, Enfermedad o Embarazo (cuál está marcada)
@@ -336,7 +341,8 @@ PADECIMIENTO ACTUAL:
 - fecha_inicio: Fecha de inicio del padecimiento (formato dd/mm/aa)
 
 DIAGNÓSTICO:
-- diagnostico_definitivo: Diagnóstico(s) definitivo(s)
+- diagnostico_definitivo: Diagnóstico(s) definitivo(s) (aplicar Cadena de Verificación - validar contra CIE-10, llenar diagnostico_definitivo_audit)
+- codigo_cie: Código CIE-10 extraído o inferido (llenar codigo_cie_audit con método de detección)
 - fecha_diagnostico: Fecha de diagnóstico (formato dd/mm/aa)
 - tipo_padecimiento: Congénito, Adquirido, Agudo o Crónico (cuál está marcada)
 - relacionado_con_otro: ¿Se ha relacionado con algún otro padecimiento? (Sí/No)
@@ -362,7 +368,7 @@ COMPLICACIONES:
 - fecha_inicio: Fecha de inicio de complicaciones
 
 TRATAMIENTO:
-- descripcion: Detallar tratamientos, procedimientos y técnica quirúrgica con fechas. Medicamentos con posología completa.
+- descripcion: Detallar tratamientos, procedimientos y técnica quirúrgica con fechas. Medicamentos con posología completa. (aplicar Cadena de Verificación - validar medicamentos contra Vademécum mexicano, llenar descripcion_audit)
 - fecha_inicio: Fecha de inicio del tratamiento
 
 INTERVENCIÓN QUIRÚRGICA:
@@ -380,7 +386,7 @@ DATOS DE HOSPITAL O CLÍNICA:
 - fecha_ingreso: Fecha de ingreso (dd/mm/aa)
 
 DATOS DEL MÉDICO TRATANTE:
-- primer_apellido, segundo_apellido, nombres: Nombre completo del médico
+- primer_apellido, segundo_apellido, nombres: Nombre completo del médico (aplicar CoV - validar onomástica mexicana, llenar nombres_audit)
 - especialidad: Especialidad médica
 - cedula_profesional: Cédula profesional
 - cedula_especialidad: Cédula de especialidad
@@ -445,6 +451,20 @@ Basándote en el diagnóstico definitivo, clasifica la severidad como:
 - "leve": Condiciones menores, tratamiento ambulatorio simple
 - "moderado": Requiere seguimiento médico, posible hospitalización corta
 - "grave": Condiciones serias, hospitalización prolongada, cirugía mayor, riesgo vital
+
+🧠 METADATOS DE INTELIGENCIA ARTIFICIAL (metadata_ia) - OBLIGATORIO:
+Al finalizar la extracción, llena el objeto metadata_ia con las siguientes observaciones globales:
+
+1. analisis_discrepancias: Reportar si algún dato aparece en una sección pero su campo oficial está vacío.
+   Ejemplo: "Presión arterial 120/80 mencionada en exploración física pero campo de signos vitales vacío"
+
+2. alertas_legibilidad: Listar TODOS los campos marcados como [ILEGIBLE] para revisión humana.
+   Formato: "identificacion.segundo_apellido, tratamiento.descripcion (parcial)"
+
+3. ajustes_contextuales: Resumen de TODAS las correcciones realizadas durante la Cadena de Verificación.
+   Formato: "Amoxisilina→Amoxicilina (Vademécum), Gonzalez→González (onomástica), diabetez→diabetes (CIE-10)"
+
+4. campos_con_baja_confianza: Listar campos donde la confianza fue 'baja' y podrían necesitar revisión.
 `,
 
   requiredFields: [
@@ -478,12 +498,77 @@ Basándote en el diagnóstico definitivo, clasifica la severidad como:
             }
           },
 
+          tramite_audit: {
+            type: Type.OBJECT,
+            description: "🔴 AUDITORÍA DE TRÁMITE: Registro de qué checkboxes fueron detectados visualmente.",
+            properties: {
+              reembolso_marcado: { 
+                type: Type.BOOLEAN, 
+                description: "¿El checkbox de 'Reembolso' tiene una marca visual? true = SÍ veo marca, false = casilla vacía" 
+              },
+              programacion_cirugia_marcado: { 
+                type: Type.BOOLEAN, 
+                description: "¿El checkbox de 'Programación de cirugía' tiene una marca visual? true = SÍ veo marca, false = casilla vacía" 
+              },
+              programacion_medicamentos_marcado: { 
+                type: Type.BOOLEAN, 
+                description: "¿El checkbox de 'Programación de medicamentos' tiene una marca visual? true = SÍ veo marca, false = casilla vacía" 
+              },
+              programacion_servicios_marcado: { 
+                type: Type.BOOLEAN, 
+                description: "¿El checkbox de 'Programación de servicios' tiene una marca visual? true = SÍ veo marca, false = casilla vacía" 
+              },
+              indemnizacion_marcado: { 
+                type: Type.BOOLEAN, 
+                description: "¿El checkbox de 'Indemnización' tiene una marca visual? true = SÍ veo marca, false = casilla vacía" 
+              },
+              reporte_hospitalario_marcado: { 
+                type: Type.BOOLEAN, 
+                description: "¿El checkbox de 'Reporte hospitalario' tiene una marca visual? true = SÍ veo marca, false = casilla vacía" 
+              },
+              metodo_deteccion: {
+                type: Type.STRING,
+                description: "Método usado para detectar las marcas: 'anclaje_izquierda', 'circulo_envolvente', 'subrayado', 'checkbox'"
+              }
+            }
+          },
+
           identificacion: {
             type: Type.OBJECT,
             properties: {
-              primer_apellido: { type: Type.STRING },
-              segundo_apellido: { type: Type.STRING },
-              nombres: { type: Type.STRING },
+              primer_apellido: { type: Type.STRING, description: "Primer apellido del paciente (valor corregido según onomástica mexicana)" },
+              primer_apellido_audit: {
+                type: Type.OBJECT,
+                description: "Auditoría del primer apellido del paciente",
+                properties: {
+                  extraccion_literal: { type: Type.STRING, description: "Texto exacto como se leyó del documento (con posibles errores)" },
+                  correccion_realizada: { type: Type.BOOLEAN, description: "true si se corrigió ortografía/acentos, false si se dejó igual" },
+                  metodo_deteccion: { type: Type.STRING, description: "Método: 'texto_manuscrito', 'texto_impreso'" },
+                  confianza: { type: Type.STRING, description: "Nivel de confianza: 'alta', 'media', 'baja'" }
+                }
+              },
+              segundo_apellido: { type: Type.STRING, description: "Segundo apellido del paciente (valor corregido según onomástica mexicana)" },
+              segundo_apellido_audit: {
+                type: Type.OBJECT,
+                description: "Auditoría del segundo apellido del paciente",
+                properties: {
+                  extraccion_literal: { type: Type.STRING, description: "Texto exacto como se leyó del documento" },
+                  correccion_realizada: { type: Type.BOOLEAN, description: "true si se corrigió, false si se dejó igual" },
+                  metodo_deteccion: { type: Type.STRING, description: "Método: 'texto_manuscrito', 'texto_impreso'" },
+                  confianza: { type: Type.STRING, description: "Nivel de confianza: 'alta', 'media', 'baja'" }
+                }
+              },
+              nombres: { type: Type.STRING, description: "Nombre(s) del paciente (valor corregido según onomástica mexicana)" },
+              nombres_audit: {
+                type: Type.OBJECT,
+                description: "Auditoría del nombre del paciente",
+                properties: {
+                  extraccion_literal: { type: Type.STRING, description: "Texto exacto como se leyó del documento" },
+                  correccion_realizada: { type: Type.BOOLEAN, description: "true si se corrigió, false si se dejó igual" },
+                  metodo_deteccion: { type: Type.STRING, description: "Método: 'texto_manuscrito', 'texto_impreso'" },
+                  confianza: { type: Type.STRING, description: "Nivel de confianza: 'alta', 'media', 'baja'" }
+                }
+              },
               edad: { type: Type.STRING },
               sexo_audit: {
                 type: Type.OBJECT,
@@ -592,12 +677,33 @@ Basándote en el diagnóstico definitivo, clasifica la severidad como:
           diagnostico: {
             type: Type.OBJECT,
             properties: {
-              diagnostico_definitivo: { type: Type.STRING, description: "Diagnóstico(s) definitivo(s)" },
+              diagnostico_definitivo: { type: Type.STRING, description: "Diagnóstico(s) definitivo(s) - valor corregido según CIE-10" },
+              diagnostico_definitivo_audit: {
+                type: Type.OBJECT,
+                description: "Auditoría del diagnóstico definitivo - validación contra CIE-10",
+                properties: {
+                  extraccion_literal: { type: Type.STRING, description: "Texto exacto del diagnóstico como se leyó (con posibles errores ortográficos)" },
+                  correccion_realizada: { type: Type.BOOLEAN, description: "true si se corrigió terminología médica, false si se dejó igual" },
+                  metodo_deteccion: { type: Type.STRING, description: "Método: 'texto_manuscrito', 'texto_impreso'" },
+                  confianza: { type: Type.STRING, description: "Nivel de confianza: 'alta', 'media', 'baja'" }
+                }
+              },
+              codigo_cie: { type: Type.STRING, description: "Código CIE-10 extraído o inferido del diagnóstico" },
+              codigo_cie_audit: {
+                type: Type.OBJECT,
+                description: "Auditoría del código CIE-10",
+                properties: {
+                  extraccion_literal: { type: Type.STRING, description: "Código exacto como se leyó del documento" },
+                  correccion_realizada: { type: Type.BOOLEAN, description: "true si se corrigió el código, false si se dejó igual" },
+                  metodo_deteccion: { type: Type.STRING, description: "Método: 'texto_manuscrito', 'texto_impreso', 'inferido_de_diagnostico'" },
+                  confianza: { type: Type.STRING, description: "Nivel de confianza: 'alta', 'media', 'baja'" }
+                }
+              },
               fecha_diagnostico: { type: Type.STRING, description: "Fecha de diagnóstico" },
               relacionado_con_otro: { type: Type.BOOLEAN, description: "¿Se ha relacionado con otro padecimiento?" },
               especifique_cual: { type: Type.STRING, description: "Especificar cuál padecimiento relacionado" },
-              cie_coherente_con_texto: { type: Type.BOOLEAN },
-              explicacion_incoherencia_cie: { type: Type.STRING }
+              cie_coherente_con_texto: { type: Type.BOOLEAN, description: "¿El código CIE-10 coincide semánticamente con el diagnóstico?" },
+              explicacion_incoherencia_cie: { type: Type.STRING, description: "Si cie_coherente_con_texto=false, explicar la discrepancia" }
             }
           },
 
@@ -632,7 +738,18 @@ Basándote en el diagnóstico definitivo, clasifica la severidad como:
           tratamiento: {
             type: Type.OBJECT,
             properties: {
-              descripcion: { type: Type.STRING, description: "Descripción del tratamiento con fechas y posología" },
+              descripcion: { type: Type.STRING, description: "Descripción del tratamiento con fechas y posología - medicamentos corregidos según Vademécum" },
+              descripcion_audit: {
+                type: Type.OBJECT,
+                description: "Auditoría del tratamiento - validación de medicamentos contra Vademécum mexicano",
+                properties: {
+                  extraccion_literal: { type: Type.STRING, description: "Texto exacto del tratamiento como se leyó (con posibles errores en nombres de medicamentos)" },
+                  correccion_realizada: { type: Type.BOOLEAN, description: "true si se corrigieron nombres de medicamentos, false si se dejó igual" },
+                  medicamentos_corregidos: { type: Type.STRING, description: "Lista de correcciones: 'Amoxisilina→Amoxicilina, Metformna→Metformina'" },
+                  metodo_deteccion: { type: Type.STRING, description: "Método: 'texto_manuscrito', 'texto_impreso'" },
+                  confianza: { type: Type.STRING, description: "Nivel de confianza: 'alta', 'media', 'baja'" }
+                }
+              },
               fecha_inicio: { type: Type.STRING, description: "Fecha de inicio del tratamiento" }
             }
           },
@@ -689,9 +806,19 @@ Basándote en el diagnóstico definitivo, clasifica la severidad como:
           medico_tratante: {
             type: Type.OBJECT,
             properties: {
-              primer_apellido: { type: Type.STRING },
-              segundo_apellido: { type: Type.STRING },
-              nombres: { type: Type.STRING },
+              primer_apellido: { type: Type.STRING, description: "Primer apellido del médico (valor corregido según onomástica mexicana)" },
+              segundo_apellido: { type: Type.STRING, description: "Segundo apellido del médico (valor corregido según onomástica mexicana)" },
+              nombres: { type: Type.STRING, description: "Nombre(s) del médico (valor corregido según onomástica mexicana)" },
+              nombres_audit: {
+                type: Type.OBJECT,
+                description: "Auditoría del nombre del médico tratante",
+                properties: {
+                  extraccion_literal: { type: Type.STRING, description: "Texto exacto del nombre como se leyó del documento" },
+                  correccion_realizada: { type: Type.BOOLEAN, description: "true si se corrigió ortografía/acentos, false si se dejó igual" },
+                  metodo_deteccion: { type: Type.STRING, description: "Método: 'texto_manuscrito', 'texto_impreso'" },
+                  confianza: { type: Type.STRING, description: "Nivel de confianza: 'alta', 'media', 'baja'" }
+                }
+              },
               especialidad: { type: Type.STRING },
               cedula_profesional: { type: Type.STRING },
               cedula_especialidad: { type: Type.STRING },
@@ -752,6 +879,29 @@ Basándote en el diagnóstico definitivo, clasifica la severidad como:
               tachaduras_detectadas: { type: Type.BOOLEAN, description: "¿Se detectaron tachaduras, enmendaduras o correcciones visibles en el documento? Analiza visualmente el documento buscando: líneas tachadas, texto sobrepuesto, corrector líquido, borrones, o cualquier intento de modificar el texto original." },
               firma_coincide_con_tratante: { type: Type.BOOLEAN, description: "¿El nombre en la firma coincide con el médico tratante declarado? Compara el nombre escrito/impreso en la firma con el médico tratante registrado en el formulario." },
               diagnostico_severidad: { type: Type.STRING, description: "Evalúa la severidad del diagnóstico: 'leve', 'moderado' o 'grave'. Basado en el diagnóstico definitivo y la descripción clínica." }
+            }
+          },
+
+          metadata_ia: {
+            type: Type.OBJECT,
+            description: "🧠 METADATOS DE INTELIGENCIA ARTIFICIAL - Observaciones globales del procesamiento OCR",
+            properties: {
+              analisis_discrepancias: { 
+                type: Type.STRING, 
+                description: "Reportar si un dato (ej: Presión Arterial) aparece en la nota médica/exploración física pero su campo oficial en Signos Vitales está vacío. Mencionar cualquier inconsistencia entre secciones del documento." 
+              },
+              alertas_legibilidad: { 
+                type: Type.STRING, 
+                description: "Listar todos los campos que fueron marcados como [ILEGIBLE] para revisión humana. Formato: 'campo1, campo2, campo3'" 
+              },
+              ajustes_contextuales: { 
+                type: Type.STRING, 
+                description: "Resumen de correcciones ortográficas o médicas realizadas. Ejemplo: 'Amoxisilina→Amoxicilina (Vademécum), Gonzalez→González (onomástica), Hipertencion→Hipertensión (CIE-10)'" 
+              },
+              campos_con_baja_confianza: {
+                type: Type.STRING,
+                description: "Listar campos donde la confianza de extracción fue 'baja' y podrían requerir revisión manual."
+              }
             }
           }
         },
