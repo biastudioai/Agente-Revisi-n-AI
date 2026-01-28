@@ -1,0 +1,89 @@
+🚀 Guía de Implementación: Extracción OCR de Alta Precisión (Gemini 2.5 Flash)
+Para: Agente de Replit Objetivo: Transcripción médica con trazabilidad total y lógica específica de seguros.
+
+1. Capa de Inteligencia General (Core Reasoning)
+Estas reglas aplican para CUALQUIER documento procesado por el sistema.
+
+A. Cadena de Verificación (CoV) y Control de Gibberish
+La IA debe realizar un proceso de pensamiento en tres pasos para cada campo de texto:
+
+Captura Visual: Transcribir exactamente los caracteres detectados (aunque no tengan sentido).
+
+Validación de Contexto (México):
+
+Médico: Comparar contra CIE-10 y Vademecum (ej: "hipertencion" → "hipertensión").
+
+Nombres/Entidades: Validar contra onomástica mexicana y nombres de hospitales conocidos. Si el nombre parece extranjero (ej: francés), mantener la grafía original si es clara.
+
+Filtro de Ruido: Si el texto es incoherente tras el análisis (ej: "x12$"), marcar como [ILEGIBLE].
+
+B. Objeto de Auditoría Universal (Estructura JSON)
+Para cada campo extraído (ej: nombre_paciente), el JSON debe incluir un campo hermano de auditoría (nombre_paciente_audit).
+
+Estructura requerida por campo:
+
+valor_final: El dato limpio, corregido y listo para la base de datos.
+
+_audit:
+
+extraccion_literal: Lo que la IA vio originalmente (con errores o ruidos).
+
+correccion_realizada: Boolean (true/false).
+
+metodo_deteccion: (anclaje_izquierda, circulo, subrayado, texto_manuscrito).
+
+confianza: (alta, media, baja).
+
+2. Capa de Reglas Específicas: GNP SEGUROS
+Estas reglas son EXCLUSIVAS para los formatos de GNP Seguros.
+
+A. Lógica de Selección (Checkboxes)
+Anclaje a la Izquierda: En los formatos GNP, el espacio para marcar (recuadro o línea) se encuentra a la IZQUIERDA de la opción de texto. Por lo tanto, una marca detectada selecciona la opción de su DERECHA.
+
+Prioridad del Círculo: Si una opción de texto está rodeada por un círculo manual, esa opción es la seleccionada, anulando cualquier marca (X, ✓) que haya en los cuadros adyacentes. El círculo tiene jerarquía máxima.
+
+B. Lógica de Subrayado
+Detección de Proximidad Inferior: Una línea debajo de una palabra cuenta como selección.
+
+Unidad Indivisible: En opciones compuestas (ej: "Corta estancia / ambulatoria"), subrayar solo "ambulatoria" selecciona la opción completa.
+
+3. Instrucciones de Programación para el Agente de Replit
+Dile al Agente de Replit lo siguiente para que configure el sistema correctamente:
+
+Modificación del Prompt del Sistema:
+
+"Actúa como un experto en OCR médico. Para cada campo, llena el valor_final basándote en la corrección semántica y el objeto _audit con la extraccion_literal encontrada. Si es GNP, aplica la regla de 'Marca a la izquierda selecciona opción a la derecha'."
+
+Regla de Exclusividad de Datos (Vital):
+
+"No traslades información entre secciones. Si el recuadro de 'Presión Arterial' está vacío, el campo signos_vitales.presion_arterial debe ser null, incluso si el dato aparece escrito en el párrafo de 'Exploración Física'. Mantén cada dato en su coordenada geográfica original."
+
+Implementación del Objeto de Comentarios (metadata_ia): Añadir al final del JSON:
+
+JSON
+"metadata_ia": {
+  "analisis_discrepancias": "Menciona aquí si un dato falta en su recuadro pero aparece en notas médicas.",
+  "alertas_legibilidad": "Lista campos marcados como [ILEGIBLE] para revisión humana.",
+  "ajustes_contextuales": "Notas sobre correcciones de nombres o medicamentos realizadas."
+}
+4. Ejemplo de Salida Esperada (JSON Auditado)
+Si el médico escribe "Amoxisilina" en un formulario de GNP y tacha con una X el cuadro a la izquierda de "Accidente":
+
+JSON
+{
+  "medicamento": "Amoxicilina",
+  "medicamento_audit": {
+    "extraccion_literal": "Amoxisilina",
+    "correccion_realizada": true,
+    "metodo_deteccion": "texto_manuscrito"
+  },
+  "causa_atencion": "Accidente",
+  "causa_atencion_audit": {
+    "extraccion_literal": "X",
+    "correccion_realizada": false,
+    "metodo_deteccion": "anclaje_izquierda"
+  },
+  "metadata_ia": {
+    "ajustes_contextuales": "Se corrigió ortografía de Amoxicilina basándose en Vademecum médico."
+  }
+}

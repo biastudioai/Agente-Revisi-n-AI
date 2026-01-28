@@ -1,0 +1,59 @@
+📝 Especificación Técnica: Extracción OCR Médica de Alta Precisión
+Instrucción para el Agente de Replit: Implementa las siguientes reglas de lógica, procesamiento y estructura de datos en el sistema de extracción basado en Gemini 2.5 Flash.
+
+1. Capa de Inteligencia General (Cadena de Verificación)
+Aplica a todos los campos de texto libre.
+
+Protocolo de Procesamiento:
+
+Paso 1 (Captura): Realizar una transcripción literal de los caracteres detectados (aunque contengan errores).
+
+Paso 2 (Validación Semántica): - Nombres: Corregir ortografía basada en onomástica mexicana (ej. "Gonzalez" -> "González") pero respetar grafías si parecen apellidos extranjeros (ej. franceses) y son legibles.
+
+Médico: Cruzar diagnósticos con CIE-10 y medicamentos con Vademécum (ej. "Hipertencion" -> "Hipertensión", "Amoxisilina" -> "Amoxicilina").
+
+Paso 3 (Filtro de Ruido): Si el texto tras el análisis no tiene sentido fonético ni médico (gibberish), marcar como [ILEGIBLE].
+
+2. Capa de Reglas Específicas: GNP SEGUROS
+Activar estas reglas cuando el documento sea identificado como GNP.
+
+Lógica de Selección de Checkboxes:
+
+Anclaje a la Izquierda: En GNP, el recuadro o espacio para marcar está a la IZQUIERDA de la opción. Una marca (X, ✓, mancha) selecciona la palabra situada a su DERECHA.
+
+Jerarquía Máxima (Círculo): Si una palabra está rodeada por un círculo manual, esa es la opción seleccionada, invalidando cualquier otra marca en cuadros adyacentes.
+
+Lógica de Subrayado: Una línea debajo de una palabra (horizontal, diagonal o parcial) cuenta como selección. En opciones compuestas (ej. "Corta estancia / ambulatoria"), subrayar cualquier parte selecciona la opción completa.
+
+3. Estructura del JSON y Objetos de Auditoría
+Cada campo extraído debe seguir este esquema de "Trazabilidad Total".
+
+Esquema por campo (Ejemplo: diagnostico):
+
+valor_final: (String) El dato limpio y corregido.
+
+_audit: (Objeto)
+
+extraccion_literal: (String) Lo que la IA vio originalmente antes de corregir.
+
+correccion_realizada: (Boolean) true si hubo cambios entre lo literal y lo final.
+
+metodo_deteccion: (Enum) ["anclaje_izquierda", "circulo_envolvente", "subrayado", "texto_manuscrito"].
+
+confianza: (Enum) ["alta", "media", "baja"].
+
+4. Objeto de Metadatos Globales (metadata_ia)
+Añadir al final de cada JSON para observaciones de alto nivel.
+
+JSON
+"metadata_ia": {
+  "analisis_discrepancias": "Texto: Reportar si un dato (ej. PA) aparece en la nota médica pero su campo oficial está vacío.",
+  "alertas_legibilidad": "Texto: Listar campos marcados como [ILEGIBLE].",
+  "ajustes_contextuales": "Texto: Resumen de correcciones ortográficas o médicas realizadas."
+}
+5. Instrucciones Críticas de Programación
+Regla de Exclusividad Geográfica: No traslades información. Si el recuadro de un signo vital está vacío en el papel, el JSON debe devolver null, aunque la información aparezca en la descripción de la exploración física.
+
+Formato de Salida: Solo devolver JSON válido. No incluir explicaciones fuera del objeto.
+
+Manejo de Ilegibilidad: Si un campo es totalmente ilegible, valor_final será null y _audit.extraccion_literal será "[ILEGIBLE]".
