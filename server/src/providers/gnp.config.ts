@@ -500,7 +500,7 @@ Al finalizar la extracción, llena el objeto metadata_ia con las siguientes obse
 
           tramite_audit: {
             type: Type.OBJECT,
-            description: "🔴 AUDITORÍA DE TRÁMITE: Registro de qué checkboxes fueron detectados visualmente.",
+            description: "AUDITORIA DE TRAMITE: Registro de que checkboxes fueron detectados visualmente.",
             properties: {
               reembolso_marcado: { 
                 type: Type.BOOLEAN, 
@@ -572,7 +572,7 @@ Al finalizar la extracción, llena el objeto metadata_ia con las siguientes obse
               edad: { type: Type.STRING },
               sexo_audit: {
                 type: Type.OBJECT,
-                description: "🔴 OBLIGATORIO: Antes de llenar sexo, DEBES verificar CADA opción individualmente.",
+                description: "OBLIGATORIO: Antes de llenar sexo, DEBES verificar CADA opcion individualmente.",
                 properties: {
                   masculino_marcado: { 
                     type: Type.BOOLEAN, 
@@ -591,7 +591,7 @@ Al finalizar la extracción, llena el objeto metadata_ia con las siguientes obse
               },
               causa_atencion_audit: {
                 type: Type.OBJECT,
-                description: "🔴 OBLIGATORIO: Antes de llenar causa_atencion, DEBES verificar CADA checkbox individualmente. NO inferir basándose en el diagnóstico.",
+                description: "OBLIGATORIO: Antes de llenar causa_atencion, DEBES verificar CADA checkbox individualmente. NO inferir basandose en el diagnostico.",
                 properties: {
                   accidente_marcado: { 
                     type: Type.BOOLEAN, 
@@ -599,7 +599,7 @@ Al finalizar la extracción, llena el objeto metadata_ia con las siguientes obse
                   },
                   enfermedad_marcado: { 
                     type: Type.BOOLEAN, 
-                    description: "🚨 CRÍTICO: ¿El checkbox de 'Enfermedad' tiene una marca visual? true = SÍ veo marca física, false = casilla vacía. NO marcar true solo porque el diagnóstico menciona una enfermedad." 
+                    description: "CRITICO: El checkbox de Enfermedad tiene una marca visual? true = SI veo marca fisica, false = casilla vacia. NO marcar true solo porque el diagnostico menciona una enfermedad." 
                   },
                   embarazo_marcado: { 
                     type: Type.BOOLEAN, 
@@ -644,7 +644,7 @@ Al finalizar la extracción, llena el objeto metadata_ia con las siguientes obse
               fecha_inicio: { type: Type.STRING, description: "Fecha de inicio del padecimiento" },
               tipo_padecimiento_audit: {
                 type: Type.OBJECT,
-                description: "🔴 OBLIGATORIO: Antes de llenar tipo_padecimiento, DEBES verificar CADA checkbox individualmente.",
+                description: "OBLIGATORIO: Antes de llenar tipo_padecimiento, DEBES verificar CADA checkbox individualmente.",
                 properties: {
                   congenito_marcado: { 
                     type: Type.BOOLEAN, 
@@ -778,7 +778,7 @@ Al finalizar la extracción, llena el objeto metadata_ia con las siguientes obse
               estado: { type: Type.STRING, description: "Estado" },
               tipo_estancia_audit: {
                 type: Type.OBJECT,
-                description: "🔴 OBLIGATORIO: Antes de llenar tipo_estancia, DEBES verificar CADA checkbox individualmente.",
+                description: "OBLIGATORIO: Antes de llenar tipo_estancia, DEBES verificar CADA checkbox individualmente.",
                 properties: {
                   urgencia_marcado: { 
                     type: Type.BOOLEAN, 
@@ -884,7 +884,7 @@ Al finalizar la extracción, llena el objeto metadata_ia con las siguientes obse
 
           metadata_ia: {
             type: Type.OBJECT,
-            description: "🧠 METADATOS DE INTELIGENCIA ARTIFICIAL - Observaciones globales del procesamiento OCR",
+            description: "METADATOS DE INTELIGENCIA ARTIFICIAL - Observaciones globales del procesamiento OCR",
             properties: {
               analisis_discrepancias: { 
                 type: Type.STRING, 
