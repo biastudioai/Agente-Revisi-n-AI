@@ -90,17 +90,24 @@ export const analyzeReportImages = async (
     rules: ScoringRule[]
 ): Promise<AnalysisReport> => {
   try {
+    const startTime = Date.now();
+    console.log("═══════════════════════════════════════════════════════════════");
+    console.log("⏱️  INICIO PROCESAMIENTO DE INFORME");
+    console.log("═══════════════════════════════════════════════════════════════");
     console.log("Starting analysis with Vertex AI model:", MODEL_NAME);
     console.log("Project:", PROJECT_ID, "Location:", LOCATION);
     console.log("Selected provider:", provider);
     console.log("Number of files to analyze:", files.length);
     
+    const schemaStartTime = Date.now();
     const responseSchema = getProviderGeminiSchema(provider);
     if (!responseSchema) {
       throw new Error(`No schema available for provider: ${provider}`);
     }
     
     const systemPrompt = buildProviderSystemPrompt(provider);
+    const schemaTime = Date.now() - schemaStartTime;
+    console.log(`⏱️  Schema y prompt construidos en: ${schemaTime}ms`);
     console.log("Schema built for provider:", provider, "sending request to Vertex AI...");
 
     const imageParts = files.map((file) => ({
@@ -133,15 +140,22 @@ export const analyzeReportImages = async (
     };
 
     const model = getGenerativeModel();
+    const geminiStartTime = Date.now();
+    console.log("⏱️  Enviando solicitud a Gemini...");
     const response = await model.generateContent(request);
     const result = response.response;
+    const geminiTime = Date.now() - geminiStartTime;
+    console.log(`⏱️  Respuesta de Gemini recibida en: ${geminiTime}ms (${(geminiTime/1000).toFixed(2)}s)`);
 
     console.log("Response received from Vertex AI");
     const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) throw new Error("Empty response from AI");
     
+    const parseStartTime = Date.now();
     console.log("Parsing JSON response...");
     const jsonData = JSON.parse(text);
+    const parseTime = Date.now() - parseStartTime;
+    console.log(`⏱️  JSON parseado en: ${parseTime}ms`);
     console.log("📦 JSON COMPLETO DE GEMINI:", jsonData);
     
     if (provider === 'METLIFE' && jsonData.extracted?.medico_tratante?.tipo_atencion_audit) {
@@ -304,7 +318,24 @@ export const analyzeReportImages = async (
     const extractedData: ExtractedData = { ...jsonData.extracted, provider };
     console.log("Provider:", extractedData.provider);
 
+    const scoringStartTime = Date.now();
     const scoringResult = calculateScore(extractedData, undefined, rules);
+    const scoringTime = Date.now() - scoringStartTime;
+    console.log(`⏱️  Cálculo de puntuación en: ${scoringTime}ms`);
+
+    const totalTime = Date.now() - startTime;
+    console.log("═══════════════════════════════════════════════════════════════");
+    console.log(`✅ PROCESAMIENTO COMPLETADO`);
+    console.log(`⏱️  TIEMPO TOTAL: ${totalTime}ms (${(totalTime/1000).toFixed(2)}s)`);
+    console.log("───────────────────────────────────────────────────────────────");
+    console.log(`   📊 Desglose de tiempos:`);
+    console.log(`      - Gemini API: ${geminiTime}ms (${((geminiTime/totalTime)*100).toFixed(1)}%)`);
+    console.log(`      - Parsing JSON: ${parseTime}ms`);
+    console.log(`      - Scoring: ${scoringTime}ms`);
+    console.log(`   📄 Archivos procesados: ${files.length}`);
+    console.log(`   🏢 Proveedor: ${provider}`);
+    console.log(`   📈 Score final: ${scoringResult.finalScore}/100`);
+    console.log("═══════════════════════════════════════════════════════════════");
 
     return {
       extracted: extractedData,
@@ -314,6 +345,10 @@ export const analyzeReportImages = async (
     };
 
   } catch (error: any) {
+    const errorTime = Date.now() - startTime;
+    console.error("═══════════════════════════════════════════════════════════════");
+    console.error(`❌ ERROR EN PROCESAMIENTO (después de ${errorTime}ms)`);
+    console.error("═══════════════════════════════════════════════════════════════");
     console.error("Error analyzing report:", error);
     console.error("Error details:", error?.message || error);
     if (error?.response) {
