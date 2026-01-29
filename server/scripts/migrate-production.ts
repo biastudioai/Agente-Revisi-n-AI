@@ -28,18 +28,32 @@ async function buildProductionDatabaseUrl(): Promise<string> {
   return `postgresql://${user}:${encodeURIComponent(password)}@${host}:5432/${database}?${sslParams.toString()}`;
 }
 
-function createProductionPool(databaseUrl: string): Pool {
+function createProductionPool(): Pool {
+  const host = process.env.DB_PROD_HOST;
+  const user = process.env.DB_PROD_USER;
+  const password = process.env.DB_PROD_PASSWORD;
+  const database = process.env.DB_PROD_NAME;
+
+  if (!host || !user || !password || !database) {
+    throw new Error('Production database credentials missing. Required: DB_PROD_HOST, DB_PROD_USER, DB_PROD_PASSWORD, DB_PROD_NAME');
+  }
+
   const serverCa = fs.readFileSync(path.join(CERTS_DIR, 'server-ca.pem')).toString();
   const clientCert = fs.readFileSync(path.join(CERTS_DIR, 'client-cert.pem')).toString();
   const clientKey = fs.readFileSync(path.join(CERTS_DIR, 'client-key.pem')).toString();
 
   return new Pool({
-    connectionString: databaseUrl,
+    host,
+    port: 5432,
+    user,
+    password,
+    database,
     ssl: {
       rejectUnauthorized: true,
       ca: serverCa,
       cert: clientCert,
       key: clientKey,
+      servername: host,
     },
     max: 5,
     idleTimeoutMillis: 30000,
@@ -182,7 +196,12 @@ async function createAdminUser(prodPrisma: PrismaClient): Promise<void> {
   console.log('Creating admin user proyectos@biastudio.ai...');
 
   const email = 'proyectos@biastudio.ai';
-  const password = 'password123';
+  const password = process.env.PROD_ADMIN_PASSWORD;
+
+  if (!password) {
+    throw new Error('PROD_ADMIN_PASSWORD environment variable is required for creating admin user');
+  }
+
   const passwordHash = await bcrypt.hash(password, 10);
 
   await prodPrisma.user.upsert({
@@ -222,7 +241,7 @@ async function main(): Promise<void> {
 
   await runPrismaMigrations(prodDatabaseUrl);
 
-  const prodPool = createProductionPool(prodDatabaseUrl);
+  const prodPool = createProductionPool();
   const prodAdapter = new PrismaPg(prodPool);
   const prodPrisma = new PrismaClient({ adapter: prodAdapter });
 
