@@ -19,13 +19,30 @@ function createPool(): Pool {
 
     console.log('Production mode - Connecting to:', host);
 
-    // Try to load SSL certificates if available, otherwise use basic SSL
-    const certsDir = path.join(process.cwd(), 'certs');
+    // Try multiple possible certificate locations
+    const possibleCertDirs = [
+      path.join(process.cwd(), 'certs'),
+      path.join(__dirname, '..', '..', '..', 'certs'),
+      path.join(__dirname, '..', '..', 'certs'),
+      '/home/runner/workspace/certs',
+      '/app/certs',
+    ];
+
+    let certsDir = '';
+    for (const dir of possibleCertDirs) {
+      const testPath = path.join(dir, 'server-ca.pem');
+      console.log('Checking for certs at:', dir, '- exists:', fs.existsSync(testPath));
+      if (fs.existsSync(testPath)) {
+        certsDir = dir;
+        break;
+      }
+    }
+
     const serverCaPath = path.join(certsDir, 'server-ca.pem');
     const clientCertPath = path.join(certsDir, 'client-cert.pem');
     const clientKeyPath = path.join(certsDir, 'client-key.pem');
 
-    const hasCerts = fs.existsSync(serverCaPath) && fs.existsSync(clientCertPath) && fs.existsSync(clientKeyPath);
+    const hasCerts = certsDir && fs.existsSync(serverCaPath) && fs.existsSync(clientCertPath) && fs.existsSync(clientKeyPath);
     
     if (hasCerts) {
       console.log('Using SSL with client certificates');
