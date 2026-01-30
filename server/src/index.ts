@@ -4,6 +4,11 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import authRoutes from './routes/auth';
 import formsRoutes from './routes/forms';
 import rulesRoutes from './routes/rules';
@@ -24,8 +29,8 @@ import { discountCodeService } from './services/discountCodeService';
 import { PlanType } from './generated/prisma';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
 const isProduction = process.env.NODE_ENV === 'production';
+const PORT = isProduction ? (process.env.PORT || 5000) : 3001;
 
 app.use(helmet({
   contentSecurityPolicy: {
@@ -268,6 +273,18 @@ registerObjectStorageRoutes(app);
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+if (isProduction) {
+  const distPath = path.join(__dirname, '..', '..', '..', 'dist');
+  app.use(express.static(distPath));
+  
+  app.get('*', (req: Request, res: Response, next: NextFunction) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/objects')) {
+      return next();
+    }
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
 
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error('Error:', err);
