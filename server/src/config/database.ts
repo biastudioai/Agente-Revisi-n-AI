@@ -17,12 +17,15 @@ function createPool(): Pool {
       throw new Error('Production database credentials missing. Required: DB_PROD_HOST, DB_PROD_USER, DB_PROD_PASSWORD, DB_PROD_NAME');
     }
 
-    const certsDir = path.join(__dirname, '..', '..', '..', 'certs');
+    const certsDir = path.join(process.cwd(), 'certs');
     const serverCaPath = path.join(certsDir, 'server-ca.pem');
     const clientCertPath = path.join(certsDir, 'client-cert.pem');
     const clientKeyPath = path.join(certsDir, 'client-key.pem');
 
+    console.log('Production mode - Looking for certs at:', certsDir);
+    
     if (!fs.existsSync(serverCaPath) || !fs.existsSync(clientCertPath) || !fs.existsSync(clientKeyPath)) {
+      console.error('Certs directory contents:', fs.existsSync(certsDir) ? fs.readdirSync(certsDir) : 'Directory not found');
       throw new Error('SSL certificates missing in certs/ directory. Required: server-ca.pem, client-cert.pem, client-key.pem');
     }
 
