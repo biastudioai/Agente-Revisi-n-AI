@@ -40,7 +40,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "blob:", "https:"],
-      connectSrc: ["'self'", "https://api.stripe.com", "https://*.replit.dev", "https://*.repl.co"],
+      connectSrc: ["'self'", "blob:", "https://api.stripe.com", "https://*.replit.dev", "https://*.repl.co", "https://*.replit.app"],
       frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
       objectSrc: ["'none'"],
       workerSrc: ["'self'", "blob:", "https://cdnjs.cloudflare.com"],
