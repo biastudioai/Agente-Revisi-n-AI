@@ -278,7 +278,7 @@ if (isProduction) {
   const distPath = path.join(__dirname, '..', '..', 'dist');
   app.use(express.static(distPath));
   
-  app.get('*', (req: Request, res: Response, next: NextFunction) => {
+  app.use((req: Request, res: Response, next: NextFunction) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/objects')) {
       return next();
     }
