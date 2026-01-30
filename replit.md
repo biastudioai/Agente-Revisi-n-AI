@@ -128,3 +128,13 @@ Preferred communication style: Simple, everyday language.
 - **nodemailer**: For SMTP email sending (Titan Email).
 - **Replit Object Storage**: For file storage.
 - **Stripe**: For subscription and payment processing.
+
+### Production Database (Google Cloud SQL)
+- **Provider**: Google Cloud SQL PostgreSQL
+- **Connection**: Uses SSL client certificates for secure connections
+- **Configuration**:
+  - Development: Uses Replit's built-in PostgreSQL via `DATABASE_URL`
+  - Production: Uses Google Cloud SQL with `DB_PROD_HOST`, `DB_PROD_USER`, `DB_PROD_PASSWORD`, `DB_PROD_NAME` secrets
+  - SSL certificates stored in `certs/` directory (server-ca.pem, client-cert.pem, client-key.pem)
+- **Migration Script**: `npm run migrate:production` (in server directory) pushes schema and migrates rules to production
+- **Admin User**: proyectos@biastudio.ai (password in `PROD_ADMIN_PASSWORD` secret)
