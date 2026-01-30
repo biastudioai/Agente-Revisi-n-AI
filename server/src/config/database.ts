@@ -36,11 +36,10 @@ function createPool(): Pool {
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,
       ssl: {
-        rejectUnauthorized: true,
+        rejectUnauthorized: false,
         ca: fs.readFileSync(serverCaPath).toString(),
         cert: fs.readFileSync(clientCertPath).toString(),
         key: fs.readFileSync(clientKeyPath).toString(),
-        servername: host,
       },
     });
   }

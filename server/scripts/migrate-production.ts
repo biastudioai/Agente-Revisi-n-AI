@@ -49,11 +49,10 @@ function createProductionPool(): Pool {
     password,
     database,
     ssl: {
-      rejectUnauthorized: true,
+      rejectUnauthorized: false,
       ca: serverCa,
       cert: clientCert,
       key: clientKey,
-      servername: host,
     },
     max: 5,
     idleTimeoutMillis: 30000,
