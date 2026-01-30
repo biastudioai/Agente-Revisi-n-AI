@@ -423,13 +423,25 @@ export function validateCondition(
       // Valida que elementos de un array tengan cierto campo
       // field = path al array (ej: otros_medicos)
       // value = nombre del campo que debe existir (ej: especialidad)
+      // compareField = campo trigger opcional (ej: nombres) - solo valida si este campo tiene valor
       // Retorna TRUE si hay elementos sin el campo (dispara la regla como fallo)
       if (!Array.isArray(fieldValue) || fieldValue.length === 0) return false; // Sin array o vacío, no aplica
       if (!cond.value) return false;
       const requiredField = String(cond.value);
+      const triggerField = cond.compareField; // Campo que debe existir para activar la validación
       
       return fieldValue.some(item => {
-        if (typeof item !== 'object' || item === null) return true;
+        if (typeof item !== 'object' || item === null) return false;
+        
+        // Si hay un campo trigger, solo validar si ese campo tiene valor
+        if (triggerField) {
+          const triggerVal = item[triggerField];
+          const hasTrigger = triggerVal !== null && triggerVal !== undefined && 
+            (typeof triggerVal !== 'string' || triggerVal.trim() !== '');
+          if (!hasTrigger) return false; // No tiene el campo trigger, no aplica validación
+        }
+        
+        // Validar que tenga el campo requerido
         const val = item[requiredField];
         return val === null || val === undefined || (typeof val === 'string' && val.trim() === '');
       });

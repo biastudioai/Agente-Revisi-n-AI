@@ -417,7 +417,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     providerTarget: 'ALL',
     isCustom: false,
     conditions: [
-      { id: 'cond_otros_medicos_especialidad', field: 'otros_medicos', operator: 'ARRAY_ITEMS_MISSING_FIELD', value: 'especialidad' }
+      { id: 'cond_otros_medicos_especialidad', field: 'otros_medicos', operator: 'ARRAY_ITEMS_MISSING_FIELD', value: 'especialidad', compareField: 'nombres' }
     ],
     logicOperator: 'AND',
     affectedFields: ['otros_medicos.especialidad', 'otros_medicos.nombres']
@@ -431,7 +431,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     providerTarget: 'ALL',
     isCustom: false,
     conditions: [
-      { id: 'cond_otros_medicos_cedula', field: 'otros_medicos', operator: 'ARRAY_ITEMS_MISSING_FIELD', value: 'cedula_profesional' }
+      { id: 'cond_otros_medicos_cedula', field: 'otros_medicos', operator: 'ARRAY_ITEMS_MISSING_FIELD', value: 'cedula_profesional', compareField: 'nombres' }
     ],
     logicOperator: 'AND',
     affectedFields: ['otros_medicos.cedula_profesional', 'otros_medicos.nombres']
@@ -882,7 +882,7 @@ const REGLAS_GNP: RawScoringRule[] = [
     providerTarget: 'GNP',
     isCustom: false,
     conditions: [
-      { id: 'cond_gnp_otros_medicos_cedula_esp', field: 'otros_medicos', operator: 'ARRAY_ITEMS_MISSING_FIELD', value: 'cedula_especialidad' }
+      { id: 'cond_gnp_otros_medicos_cedula_esp', field: 'otros_medicos', operator: 'ARRAY_ITEMS_MISSING_FIELD', value: 'cedula_especialidad', compareField: 'nombres' }
     ],
     logicOperator: 'AND',
     affectedFields: ['otros_medicos.cedula_especialidad', 'otros_medicos.nombres']
