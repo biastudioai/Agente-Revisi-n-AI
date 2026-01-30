@@ -69,7 +69,12 @@ externalPort = 4200
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
-run = ["node", "--import", "tsx", "server/src/index.ts"]
+run = ["npx", "tsx", "server/src/index.ts"]
 
 [objectStorage]
 defaultBucketID = "replit-objstore-9a1e0065-e089-453a-9dbe-ce77a4c3231c"
+
+[userenv]
+
+[userenv.production]
+NODE_ENV = "production"
