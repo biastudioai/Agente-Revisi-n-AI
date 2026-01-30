@@ -1,0 +1,13 @@
+Necesito agregar reglas específicas para GNP, son las siguientes:
+
+1-  En primero, necesito poner como una regla crítica que haya por lo menos algún dato de contacto del médico tratante. En este caso, tiene que ser crítico que por lo menos esté el teléfono del consultorio, el celular o el correo electrónico. Si no hay ninguno en estos campos, poner como regla crítica que falta agregarse.
+
+2- Si el trámite es reembolso, programación de cirugía o reporte hospitalario tiene que tener la información del hospital sí o sí. Todo lo que venga en la sección de hospital, que vendría siendo el nombre del hospital o al menos también la ciudad, estado, tipo de estancia, fecha de ingreso y demás. O sea, lo que tenga que llevar esa sección, si es que en el tipo de trámite están estas opciones que te mencioné. Esto ponlo como moderado. 
+
+3- Al menos el apellido paterno del médico tratante tiene que coincidir con la persona que está firmando. Entonces, en la sección de datos del médico tratante, el apellido, el primer apellido tiene que coincidir con el apellido, el primer apellido también que viene con nombre y firma del médico tratante en la sección de firma. Esto, tal vez lo podrías poner con que coincidiera el apellido, ya que aquí no, o sea, en la parte de nombre y firma no está dividido en diferentes partes. Entonces, a lo mejor tú dime si es mejor ponerlo con que sea el tema de que coincida algún apellido para asegurarnos de que haya menos probabilidad de error. ¿O qué recomiendas? esto sería crítico o importante.... si hubiera forma de asegurarnos que el primer apellido coincida.. lo dejaría como crítico... ya que el mismo médico tratante es el que tiene que firmar y tiene que haber una coincidencia. 
+
+4- También el llenado de la especialidad tiene que ser crítico para asegurarnos que el médico sí tenga la información. Esto debe de aplicar tanto para el médico tratante como para la sección también de otros médicos, ya fuera el médico 1, médico 2 o médico 3. Todos tienen que tener escrita la especialidad. 
+
+5- También se tiene que poner como regla crítica que ya fuera el médico tratante, cualquiera de los otros médicos, poner su cédula profesional.Esto siempre y cuando coincida con que tenga llenado el nombre del médico, ya que eso nos aseguraría que si está haciendo referencia a que hubo un médico y que por ende debería de tener la cédula profesional.
+
+6- Y como regla discreta, también tanto el médico tratante como los médicos, otros médicos, que podría ser el médico 1, médico 2, médico 3, o en pocas palabras, los participantes o cualquier médico, si tiene el campo del nombre escrito , si tiene escrito el nombre, tiene que tener también la cédula de especialidad. Ese tendría un valor discreto.
