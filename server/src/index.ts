@@ -276,7 +276,9 @@ app.get('/api/health', (_req: Request, res: Response) => {
 
 if (isProduction) {
   const distPath = path.join(__dirname, '..', '..', 'dist');
+  const attachedAssetsPath = path.join(__dirname, '..', '..', 'attached_assets');
   app.use(express.static(distPath));
+  app.use('/attached_assets', express.static(attachedAssetsPath));
   
   app.use((req: Request, res: Response, next: NextFunction) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/objects')) {
