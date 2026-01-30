@@ -377,6 +377,85 @@ export function validateCondition(
       return countMatches !== 1; // Error si no es exactamente 1
     }
     
+    case 'NAMES_MATCH': {
+      // Compara dos campos de texto para ver si comparten nombre Y apellido
+      // field = campo con el nombre completo (ej: firma.nombre_firma)
+      // compareField = campo con nombre del médico (ej: medico_tratante.nombres)
+      // additionalFields = campos con apellidos (ej: ['medico_tratante.primer_apellido', 'medico_tratante.segundo_apellido'])
+      // Retorna TRUE si NO coinciden (dispara la regla como fallo)
+      const nombreFirma = String(fieldValue || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const nombreMedico = cond.compareField ? String(getNestedField(data, cond.compareField) || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '';
+      
+      const extractWords = (text: string) => text.split(/[\s,.-]+/).filter(w => w.length >= 2);
+      const palabrasFirma = extractWords(nombreFirma);
+      const palabrasNombre = extractWords(nombreMedico);
+      
+      let palabrasApellidos: string[] = [];
+      if (cond.additionalFields) {
+        for (const field of cond.additionalFields) {
+          const val = String(getNestedField(data, field) || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          palabrasApellidos.push(...extractWords(val));
+        }
+      }
+      
+      if (palabrasFirma.length === 0) return false; // Sin firma, no aplica
+      if (palabrasNombre.length === 0 && palabrasApellidos.length === 0) return false; // Sin nombre/apellido, no aplica
+      
+      const matchPalabra = (p1: string, p2: string) => {
+        if (p1.length < 3 || p2.length < 3) return p1 === p2;
+        return p1 === p2 || (p1.length >= 4 && p2.includes(p1)) || (p2.length >= 4 && p1.includes(p2));
+      };
+      
+      const tieneCoincidenciaNombre = palabrasNombre.length === 0 || 
+        palabrasNombre.some(pn => palabrasFirma.some(pf => matchPalabra(pn, pf)));
+      const tieneCoincidenciaApellido = palabrasApellidos.length === 0 ||
+        palabrasApellidos.some(pa => palabrasFirma.some(pf => matchPalabra(pa, pf)));
+      
+      // Si hay nombre Y apellido, ambos deben coincidir
+      if (palabrasNombre.length > 0 && palabrasApellidos.length > 0) {
+        return !(tieneCoincidenciaNombre && tieneCoincidenciaApellido);
+      }
+      // Si solo hay uno, ese debe coincidir
+      return !(tieneCoincidenciaNombre || tieneCoincidenciaApellido);
+    }
+    
+    case 'ARRAY_ITEMS_MISSING_FIELD': {
+      // Valida que elementos de un array tengan cierto campo
+      // field = path al array (ej: otros_medicos)
+      // value = nombre del campo que debe existir (ej: especialidad)
+      // Retorna TRUE si hay elementos sin el campo (dispara la regla como fallo)
+      if (!Array.isArray(fieldValue) || fieldValue.length === 0) return false; // Sin array o vacío, no aplica
+      if (!cond.value) return false;
+      const requiredField = String(cond.value);
+      
+      return fieldValue.some(item => {
+        if (typeof item !== 'object' || item === null) return true;
+        const val = item[requiredField];
+        return val === null || val === undefined || (typeof val === 'string' && val.trim() === '');
+      });
+    }
+    
+    case 'CONDITIONAL_REQUIRED': {
+      // Si campo A tiene valor específico, entonces campo B debe tener valor
+      // field = campo condicional (ej: tramite.reembolso)
+      // value = valor que activa la condición (ej: "true")
+      // compareField = campo que debe tener valor (ej: hospital.nombre)
+      // Retorna TRUE si la condición se activa pero el campo requerido está vacío
+      const conditionValue = String(cond.value || 'true').toLowerCase();
+      const fieldStr = String(fieldValue || '').toLowerCase();
+      
+      // Verificar si el campo cumple la condición
+      const conditionMet = fieldStr === conditionValue || 
+        (conditionValue === 'true' && (fieldValue === true || fieldStr === 'true')) ||
+        (conditionValue === 'false' && (fieldValue === false || fieldStr === 'false'));
+      
+      if (!conditionMet) return false; // Condición no cumplida, no aplica
+      
+      // Verificar si el campo requerido está vacío
+      const requiredValue = cond.compareField ? getNestedField(data, cond.compareField) : undefined;
+      return isEmpty(requiredValue);
+    }
+    
     default:
       console.warn(`Operador no implementado: ${cond.operator}`);
       return false; // Operador no implementado no debe disparar regla
@@ -649,7 +728,10 @@ export const OPERATOR_LABELS: Record<RuleOperator, string> = {
   'CONTAINS': 'Contiene texto',
   'NOT_CONTAINS': 'No contiene texto',
   'LENGTH_LESS_THAN': 'Longitud menor que',
-  'LENGTH_GREATER_THAN': 'Longitud mayor que'
+  'LENGTH_GREATER_THAN': 'Longitud mayor que',
+  'NAMES_MATCH': 'Nombre y apellido no coinciden',
+  'ARRAY_ITEMS_MISSING_FIELD': 'Elementos del array sin campo requerido',
+  'CONDITIONAL_REQUIRED': 'Campo requerido cuando condición se cumple'
 };
 
 export const OPERATOR_GROUPS: { name: string; operators: RuleOperator[] }[] = [
@@ -676,17 +758,21 @@ export const OPERATOR_GROUPS: { name: string; operators: RuleOperator[] }[] = [
   {
     name: 'Lógica Múltiple',
     operators: ['MUTUALLY_EXCLUSIVE', 'ONE_OF_REQUIRED', 'ALL_REQUIRED']
+  },
+  {
+    name: 'Validadores Médicos',
+    operators: ['NAMES_MATCH', 'ARRAY_ITEMS_MISSING_FIELD', 'CONDITIONAL_REQUIRED']
   }
 ];
 
 export function operatorNeedsValue(op: RuleOperator): boolean {
-  return ['EQUALS', 'NOT_EQUALS', 'GREATER_THAN', 'LESS_THAN', 'GREATER_THAN_OR_EQUAL', 'LESS_THAN_OR_EQUAL', 'REGEX', 'CONTAINS', 'NOT_CONTAINS', 'LENGTH_LESS_THAN', 'LENGTH_GREATER_THAN'].includes(op);
+  return ['EQUALS', 'NOT_EQUALS', 'GREATER_THAN', 'LESS_THAN', 'GREATER_THAN_OR_EQUAL', 'LESS_THAN_OR_EQUAL', 'REGEX', 'CONTAINS', 'NOT_CONTAINS', 'LENGTH_LESS_THAN', 'LENGTH_GREATER_THAN', 'ARRAY_ITEMS_MISSING_FIELD', 'CONDITIONAL_REQUIRED'].includes(op);
 }
 
 export function operatorNeedsCompareField(op: RuleOperator): boolean {
-  return ['REQUIRES', 'IF_THEN', 'DATE_BEFORE', 'DATE_AFTER', 'MUTUALLY_EXCLUSIVE'].includes(op);
+  return ['REQUIRES', 'IF_THEN', 'DATE_BEFORE', 'DATE_AFTER', 'MUTUALLY_EXCLUSIVE', 'NAMES_MATCH', 'CONDITIONAL_REQUIRED'].includes(op);
 }
 
 export function operatorNeedsAdditionalFields(op: RuleOperator): boolean {
-  return ['ONE_OF_REQUIRED', 'ALL_REQUIRED'].includes(op);
+  return ['ONE_OF_REQUIRED', 'ALL_REQUIRED', 'NAMES_MATCH'].includes(op);
 }

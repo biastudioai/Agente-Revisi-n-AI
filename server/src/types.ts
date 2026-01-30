@@ -264,7 +264,11 @@ export type RuleOperator =
   | 'CONTAINS'           // String contiene un substring
   | 'NOT_CONTAINS'       // String NO contiene un substring
   | 'LENGTH_LESS_THAN'   // Longitud del string menor que
-  | 'LENGTH_GREATER_THAN'; // Longitud del string mayor que
+  | 'LENGTH_GREATER_THAN' // Longitud del string mayor que
+  // Grupo 7: Validadores Especiales Médicos (3)
+  | 'NAMES_MATCH'        // Compara nombre+apellido entre dos campos (ej: firma vs médico)
+  | 'ARRAY_ITEMS_MISSING_FIELD' // Valida que elementos de un array tengan cierto campo
+  | 'CONDITIONAL_REQUIRED'; // Si campo A tiene valor X, entonces campo B debe tener valor
 
 export type LogicOperator = 'AND' | 'OR';
 
