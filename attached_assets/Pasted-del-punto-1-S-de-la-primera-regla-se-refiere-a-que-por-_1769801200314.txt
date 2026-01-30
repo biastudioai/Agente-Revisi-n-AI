@@ -1,0 +1,34 @@
+del punto 1:
+
+Sí, de la primera regla se refiere a que, por lo menos, tiene que haber uno de esos tres campos: ya fuera el teléfono de consultorio, teléfono celular o correo. A lo mejor ahí se puede sustituir la regla existente del teléfono del médico faltante por esta regla. Creo que me parece más coherente para que tenga sentido y, si dejarla como crítica general.
+
+De la regla 3 de que el médico tratante coincida con el médico que firma ahí, solo mi duda es si va a funcionar. Ya que el nombre del médico tratante en la sección de "Médico" aparece separado por:
+
+apellido paterno
+apellido materno
+nombre
+y en la parte de la firma aparece todo unificado. Entonces, habría que ver si hay coincidencia con alguno, insisto. Lo ideal sería que fuera exacto, pero no sé si se pudiera acomodar para que fuera de forma correcta. Esto es, que al momento de hacer la regla o la coincidencia tenga que ser primero el nombre, después el apellido paterno y con eso
+De la regla 4, que no existe de la especialidad obligatoria, esa sí habría que agregarla, en nivel crítico... ya que el médico tiene que especificar porque está capacitado para hacer el informe mediante la descripción de su especialidad.
+
+De la regla 5 de Cédula Profesional obligatoria, esto sí tiene que ver con una regla tanto de formato como la que se menciona. Si hay un hombre, por ende hay un médico, que sí intervino, tendría que existir la Cédula Profesional.
+
+Y de la regla 6 también se tiene que poner como una regla, pero a nivel discreto. Que si el campo está vacío, aparezca la anotación.
+
+del punto 2:
+
+De este punto estoy de acuerdo en las generales. Solo insisto en que, en la regla número 3, tendríamos que ver la forma en que coincidan los apellidos o nombres (aunque sea sin importar el orden), pero que sí tengan que coincidir las palabras.
+
+En uno, por ejemplo, no se puede poner como "Daniel García" y luego que abajo aparezca como "Daniel Gracián". Desde ahí estamos sabiendo entonces que hay un problema con la extracción o con lo que escribió el médico y, por ende, habría que cambiarlo. Si fuera un nombre totalmente diferente, pues ahí sí sería también inválido y esto sería una regla crítica.
+
+De la regla 2 de información del hospital para ciertos trámites y regla 6 de salud de especialidad, eso entonces deja lo específico para GNP.
+
+Punto 3
+de este punto, solo asegúrate de que no vayas a cambiar mucho las otras reglas o que siga teniendo la coherencia en todas las reglas. No vayas a querer cambiar, a lo mejor, nombres y que después ya no cuadren las reglas porque se cambió en el JSON esta información.
+
+Entonces, cuando mencionas que cambiarías entre aseguradas los campos específicos donde se captura la información, ¿a qué te estás refiriendo exactamente? También, por ejemplo, los tipos de trámite disponible. Eso pueden ser parecidos, pero no dejan de ser específicos de cada aseguradora
+
+punto 4
+
+basado en todo lo que te he dicho, ¿sigue siendo tu misma recomendación
+
+Dime si tienes más preguntas o necesitas más contexto para asegurarnos de que estamos buscando el mismo resultado.
