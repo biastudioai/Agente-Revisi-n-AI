@@ -17,18 +17,38 @@ function createPool(): Pool {
       throw new Error('Production database credentials missing. Required: DB_PROD_HOST, DB_PROD_USER, DB_PROD_PASSWORD, DB_PROD_NAME');
     }
 
+    console.log('Production mode - Connecting to:', host);
+
+    // Try to load SSL certificates if available, otherwise use basic SSL
     const certsDir = path.join(process.cwd(), 'certs');
     const serverCaPath = path.join(certsDir, 'server-ca.pem');
     const clientCertPath = path.join(certsDir, 'client-cert.pem');
     const clientKeyPath = path.join(certsDir, 'client-key.pem');
 
-    console.log('Production mode - Looking for certs at:', certsDir);
+    const hasCerts = fs.existsSync(serverCaPath) && fs.existsSync(clientCertPath) && fs.existsSync(clientKeyPath);
     
-    if (!fs.existsSync(serverCaPath) || !fs.existsSync(clientCertPath) || !fs.existsSync(clientKeyPath)) {
-      console.error('Certs directory contents:', fs.existsSync(certsDir) ? fs.readdirSync(certsDir) : 'Directory not found');
-      throw new Error('SSL certificates missing in certs/ directory. Required: server-ca.pem, client-cert.pem, client-key.pem');
+    if (hasCerts) {
+      console.log('Using SSL with client certificates');
+      return new Pool({
+        host,
+        port: 5432,
+        user,
+        password,
+        database,
+        max: 20,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 10000,
+        ssl: {
+          rejectUnauthorized: false,
+          ca: fs.readFileSync(serverCaPath).toString(),
+          cert: fs.readFileSync(clientCertPath).toString(),
+          key: fs.readFileSync(clientKeyPath).toString(),
+        },
+      });
     }
 
+    // Fallback: use basic SSL without client certificates
+    console.log('Using basic SSL (no client certificates found)');
     return new Pool({
       host,
       port: 5432,
@@ -40,9 +60,6 @@ function createPool(): Pool {
       connectionTimeoutMillis: 10000,
       ssl: {
         rejectUnauthorized: false,
-        ca: fs.readFileSync(serverCaPath).toString(),
-        cert: fs.readFileSync(clientCertPath).toString(),
-        key: fs.readFileSync(clientKeyPath).toString(),
       },
     });
   }
