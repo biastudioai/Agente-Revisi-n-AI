@@ -372,10 +372,11 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     description: 'El nombre o apellido del médico tratante no coincide con quien firma el documento. Verifique que el nombre y apellido aparezcan en ambas secciones.',
     providerTarget: 'ALL',
     isCustom: false,
-    conditions: [],
+    conditions: [
+      { id: 'cond_firma_nombres_match', field: 'firma.nombre_firma', operator: 'NAMES_MATCH', compareField: 'medico_tratante.nombres', additionalFields: ['medico_tratante.primer_apellido', 'medico_tratante.segundo_apellido'] }
+    ],
     logicOperator: 'AND',
-    affectedFields: ['firma.nombre_firma', 'medico_tratante.nombres', 'medico_tratante.primer_apellido'],
-    validator: { key: 'gen_medico_firma_coincide_validator' }
+    affectedFields: ['firma.nombre_firma', 'medico_tratante.nombres', 'medico_tratante.primer_apellido', 'medico_tratante.segundo_apellido']
   },
   {
     id: 'gen_medico_especialidad_obligatoria',
@@ -415,10 +416,11 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     description: 'Si se registra un médico participante, debe especificarse su especialidad.',
     providerTarget: 'ALL',
     isCustom: false,
-    conditions: [],
+    conditions: [
+      { id: 'cond_otros_medicos_especialidad', field: 'otros_medicos', operator: 'ARRAY_ITEMS_MISSING_FIELD', value: 'especialidad' }
+    ],
     logicOperator: 'AND',
-    affectedFields: ['otros_medicos.especialidad', 'otros_medicos.nombres'],
-    validator: { key: 'gen_otros_medicos_especialidad_validator' }
+    affectedFields: ['otros_medicos.especialidad', 'otros_medicos.nombres']
   },
   {
     id: 'gen_otros_medicos_cedula',
@@ -428,10 +430,11 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     description: 'Si se registra un médico participante, debe proporcionar su cédula profesional.',
     providerTarget: 'ALL',
     isCustom: false,
-    conditions: [],
+    conditions: [
+      { id: 'cond_otros_medicos_cedula', field: 'otros_medicos', operator: 'ARRAY_ITEMS_MISSING_FIELD', value: 'cedula_profesional' }
+    ],
     logicOperator: 'AND',
-    affectedFields: ['otros_medicos.cedula_profesional', 'otros_medicos.nombres'],
-    validator: { key: 'gen_otros_medicos_cedula_validator' }
+    affectedFields: ['otros_medicos.cedula_profesional', 'otros_medicos.nombres']
   },
   {
     id: 'gen_uniformidad_tinta',
@@ -838,10 +841,22 @@ const REGLAS_GNP: RawScoringRule[] = [
     description: 'Para trámites de reembolso, programación de cirugía o reporte hospitalario es obligatorio incluir la información del hospital (nombre, ciudad, tipo de estancia, fecha de ingreso).',
     providerTarget: 'GNP',
     isCustom: false,
-    conditions: [],
-    logicOperator: 'AND',
-    affectedFields: ['hospital.nombre_hospital', 'hospital.ciudad', 'hospital.tipo_estancia', 'hospital.fecha_ingreso', 'tramite.reembolso', 'tramite.programacion_cirugia', 'tramite.reporte_hospitalario'],
-    validator: { key: 'gnp_hospital_tramite_validator' }
+    conditions: [
+      { id: 'cond_reembolso_hospital_nombre', field: 'tramite.reembolso', operator: 'CONDITIONAL_REQUIRED', value: 'true', compareField: 'hospital.nombre' },
+      { id: 'cond_reembolso_hospital_ciudad', field: 'tramite.reembolso', operator: 'CONDITIONAL_REQUIRED', value: 'true', compareField: 'hospital.ciudad' },
+      { id: 'cond_reembolso_hospital_tipo', field: 'tramite.reembolso', operator: 'CONDITIONAL_REQUIRED', value: 'true', compareField: 'hospital.tipo_estancia' },
+      { id: 'cond_reembolso_hospital_fecha', field: 'tramite.reembolso', operator: 'CONDITIONAL_REQUIRED', value: 'true', compareField: 'hospital.fecha_ingreso' },
+      { id: 'cond_cirugia_hospital_nombre', field: 'tramite.programacion_cirugia', operator: 'CONDITIONAL_REQUIRED', value: 'true', compareField: 'hospital.nombre' },
+      { id: 'cond_cirugia_hospital_ciudad', field: 'tramite.programacion_cirugia', operator: 'CONDITIONAL_REQUIRED', value: 'true', compareField: 'hospital.ciudad' },
+      { id: 'cond_cirugia_hospital_tipo', field: 'tramite.programacion_cirugia', operator: 'CONDITIONAL_REQUIRED', value: 'true', compareField: 'hospital.tipo_estancia' },
+      { id: 'cond_cirugia_hospital_fecha', field: 'tramite.programacion_cirugia', operator: 'CONDITIONAL_REQUIRED', value: 'true', compareField: 'hospital.fecha_ingreso' },
+      { id: 'cond_hospitalario_hospital_nombre', field: 'tramite.reporte_hospitalario', operator: 'CONDITIONAL_REQUIRED', value: 'true', compareField: 'hospital.nombre' },
+      { id: 'cond_hospitalario_hospital_ciudad', field: 'tramite.reporte_hospitalario', operator: 'CONDITIONAL_REQUIRED', value: 'true', compareField: 'hospital.ciudad' },
+      { id: 'cond_hospitalario_hospital_tipo', field: 'tramite.reporte_hospitalario', operator: 'CONDITIONAL_REQUIRED', value: 'true', compareField: 'hospital.tipo_estancia' },
+      { id: 'cond_hospitalario_hospital_fecha', field: 'tramite.reporte_hospitalario', operator: 'CONDITIONAL_REQUIRED', value: 'true', compareField: 'hospital.fecha_ingreso' }
+    ],
+    logicOperator: 'OR',
+    affectedFields: ['hospital.nombre', 'hospital.ciudad', 'hospital.tipo_estancia', 'hospital.fecha_ingreso', 'tramite.reembolso', 'tramite.programacion_cirugia', 'tramite.reporte_hospitalario']
   },
   {
     id: 'gnp_medico_cedula_especialidad',
@@ -866,10 +881,11 @@ const REGLAS_GNP: RawScoringRule[] = [
     description: 'Se recomienda incluir la cédula de especialidad de los médicos participantes si tienen nombre registrado.',
     providerTarget: 'GNP',
     isCustom: false,
-    conditions: [],
+    conditions: [
+      { id: 'cond_gnp_otros_medicos_cedula_esp', field: 'otros_medicos', operator: 'ARRAY_ITEMS_MISSING_FIELD', value: 'cedula_especialidad' }
+    ],
     logicOperator: 'AND',
-    affectedFields: ['otros_medicos.cedula_especialidad', 'otros_medicos.nombres'],
-    validator: { key: 'gnp_otros_medicos_cedula_especialidad_validator' }
+    affectedFields: ['otros_medicos.cedula_especialidad', 'otros_medicos.nombres']
   }
 ];
 
