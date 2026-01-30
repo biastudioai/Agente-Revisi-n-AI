@@ -19,7 +19,7 @@ import reportsRoutes from './routes/reports';
 import auditorsRoutes from './routes/auditors';
 import setupRoutes from './routes/setup';
 import analyzeRoutes from './routes/analyze';
-import prisma from './config/database';
+import { initializeDatabase, getPrisma, closeDatabaseConnection } from './config/database';
 import { registerObjectStorageRoutes } from '../replit_integrations/object_storage';
 import { runMigrations } from 'stripe-replit-sync';
 import { getStripeSync, getUncachableStripeClient } from './services/stripeClient';
@@ -343,8 +343,7 @@ async function initStripe() {
 
 async function startServer() {
   try {
-    await prisma.$connect();
-    console.log('Database connected successfully');
+    await initializeDatabase();
 
     await initStripe();
 
@@ -358,12 +357,12 @@ async function startServer() {
 }
 
 process.on('SIGINT', async () => {
-  await prisma.$disconnect();
+  await closeDatabaseConnection();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
-  await prisma.$disconnect();
+  await closeDatabaseConnection();
   process.exit(0);
 });
 
