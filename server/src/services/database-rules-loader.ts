@@ -25,7 +25,151 @@ interface ApiResponse {
   error?: string;
 }
 
+function normalizeString(str: string | undefined | null): string {
+  if (!str) return '';
+  return str.toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, '')
+    .trim();
+}
+
+function extractWords(str: string | undefined | null): string[] {
+  const normalized = normalizeString(str);
+  return normalized.split(/\s+/).filter(w => w.length > 0);
+}
+
+function wordsMatch(words1: string[], words2: string[]): boolean {
+  if (words1.length === 0 || words2.length === 0) return false;
+  let matchCount = 0;
+  for (const word of words1) {
+    if (words2.some(w2 => w2 === word || w2.includes(word) || word.includes(w2))) {
+      matchCount++;
+    }
+  }
+  return matchCount >= 2;
+}
+
 const VALIDATORS_REGISTRY: Record<string, (data: any) => boolean> = {
+  'gen_medico_firma_coincide_validator': (data) => {
+    const nombreFirma = data.firma?.nombre_firma;
+    const nombreMedico = data.medico_tratante?.nombres;
+    const apellidoPaterno = data.medico_tratante?.primer_apellido;
+    const apellidoMaterno = data.medico_tratante?.segundo_apellido;
+    
+    if (!nombreFirma) return false;
+    if (!nombreMedico && !apellidoPaterno) return false;
+    
+    const palabrasFirma = extractWords(nombreFirma).filter(p => p.length >= 2);
+    const palabrasNombre = extractWords(nombreMedico).filter(p => p.length >= 2);
+    const palabrasApellidoP = extractWords(apellidoPaterno).filter(p => p.length >= 2);
+    const palabrasApellidoM = extractWords(apellidoMaterno).filter(p => p.length >= 2);
+    const todasPalabrasApellidos = [...palabrasApellidoP, ...palabrasApellidoM];
+    
+    if (palabrasFirma.length === 0) return false;
+    if (palabrasNombre.length === 0 && todasPalabrasApellidos.length === 0) return false;
+    
+    const matchPalabra = (p1: string, p2: string) => {
+      if (p1.length < 3 || p2.length < 3) return p1 === p2;
+      return p1 === p2 || (p1.length >= 4 && p2.includes(p1)) || (p2.length >= 4 && p1.includes(p2));
+    };
+    
+    let nombreMatchIndex = -1;
+    let apellidoMatchIndex = -1;
+    
+    for (let i = 0; i < palabrasFirma.length; i++) {
+      const pf = palabrasFirma[i];
+      if (nombreMatchIndex === -1 && palabrasNombre.some(pn => matchPalabra(pn, pf))) {
+        nombreMatchIndex = i;
+      }
+      if (apellidoMatchIndex === -1 && todasPalabrasApellidos.some(pa => matchPalabra(pa, pf))) {
+        apellidoMatchIndex = i;
+      }
+    }
+    
+    const tieneCoincidenciaNombre = palabrasNombre.length === 0 || nombreMatchIndex !== -1;
+    const tieneCoincidenciaApellido = todasPalabrasApellidos.length === 0 || apellidoMatchIndex !== -1;
+    
+    if (palabrasNombre.length > 0 && todasPalabrasApellidos.length > 0) {
+      const coincidenciaDistinta = nombreMatchIndex !== -1 && apellidoMatchIndex !== -1 && 
+        (nombreMatchIndex !== apellidoMatchIndex || palabrasFirma.length === 1);
+      return !coincidenciaDistinta;
+    }
+    
+    return !(tieneCoincidenciaNombre || tieneCoincidenciaApellido);
+  },
+  
+  'gen_otros_medicos_especialidad_validator': (data) => {
+    const otrosMedicos = data.otros_medicos;
+    if (!otrosMedicos || !Array.isArray(otrosMedicos)) return false;
+    
+    for (const medico of otrosMedicos) {
+      const nombre = medico?.nombres || medico?.nombre;
+      const especialidad = medico?.especialidad;
+      if (nombre && nombre.trim().length > 0 && (!especialidad || especialidad.trim().length === 0)) {
+        return true;
+      }
+    }
+    return false;
+  },
+  
+  'gen_otros_medicos_cedula_validator': (data) => {
+    const otrosMedicos = data.otros_medicos;
+    if (!otrosMedicos || !Array.isArray(otrosMedicos)) return false;
+    
+    for (const medico of otrosMedicos) {
+      const nombre = medico?.nombres || medico?.nombre;
+      const cedula = medico?.cedula_profesional;
+      if (nombre && nombre.trim().length > 0 && (!cedula || cedula.trim().length === 0)) {
+        return true;
+      }
+    }
+    return false;
+  },
+  
+  'gnp_hospital_tramite_validator': (data) => {
+    const tramite = data.tramite;
+    if (!tramite) return false;
+    
+    const requiereHospital = tramite.reembolso === true || 
+                             tramite.reembolso === 'true' ||
+                             tramite.programacion_cirugia === true ||
+                             tramite.programacion_cirugia === 'true' ||
+                             tramite.reporte_hospitalario === true ||
+                             tramite.reporte_hospitalario === 'true';
+    
+    if (!requiereHospital) return false;
+    
+    const hospital = data.hospital;
+    if (!hospital) return true;
+    
+    const nombreHospital = hospital.nombre_hospital || hospital.nombre;
+    const ciudad = hospital.ciudad;
+    const tipoEstancia = hospital.tipo_estancia;
+    const fechaIngreso = hospital.fecha_ingreso;
+    
+    if (!nombreHospital || (typeof nombreHospital === 'string' && nombreHospital.trim().length === 0)) return true;
+    if (!ciudad || (typeof ciudad === 'string' && ciudad.trim().length === 0)) return true;
+    if (!tipoEstancia || (Array.isArray(tipoEstancia) ? tipoEstancia.length === 0 : (typeof tipoEstancia === 'string' && tipoEstancia.trim().length === 0))) return true;
+    if (!fechaIngreso || (typeof fechaIngreso === 'string' && fechaIngreso.trim().length === 0)) return true;
+    
+    return false;
+  },
+  
+  'gnp_otros_medicos_cedula_especialidad_validator': (data) => {
+    const otrosMedicos = data.otros_medicos;
+    if (!otrosMedicos || !Array.isArray(otrosMedicos)) return false;
+    
+    for (const medico of otrosMedicos) {
+      const nombre = medico?.nombres || medico?.nombre;
+      const cedulaEsp = medico?.cedula_especialidad;
+      if (nombre && nombre.trim().length > 0 && (!cedulaEsp || cedulaEsp.trim().length === 0)) {
+        return true;
+      }
+    }
+    return false;
+  },
+  
   'gnp_origen_mutuamente_excluyente': (data) => {
     const tipoPad = data.padecimiento_actual?.tipo_padecimiento;
     if (!tipoPad || !Array.isArray(tipoPad)) return false;

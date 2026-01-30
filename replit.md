@@ -39,7 +39,11 @@ Preferred communication style: Simple, everyday language.
   Points are automatically adjusted when changing severity levels, and the system validates ranges on both frontend and backend.
 - **Editable Rules System**: A UI allows dynamic creation and modification of validation rules, supporting 28 operators, AND/OR logic, and real-time previews. Rules can apply to single or multiple providers via dynamic field mapping. Rules are stored in PostgreSQL.
 - **Rule Versioning System**: Automatic versioning tracks rule changes over time. Each form stores the rule version used during processing, enabling detection of rule drift. When rules change after a form was processed, users see an indicator and can either keep the original evaluation or recalculate with current rules. Database tables: `RuleVersion` (snapshots), `RuleChangeLog` (audit trail).
-- **GNP Audit Rules**: Includes a comprehensive set of ~63 rules for GNP insurance, covering universal aspects, GNP-specific requirements, visual document tampering detection, signature verification, and diagnosis severity classification.
+- **Audit Rules System**: Includes a comprehensive set of ~108 active rules for medical reports, covering:
+  - **Reglas Generales** (~31): Aplicables a todas las aseguradoras - validación de paciente, diagnóstico, fechas, signos vitales, médico tratante, firma, contacto del médico (teléfono/celular/correo), especialidad obligatoria, cédula profesional obligatoria
+  - **Reglas GNP** (32): Específicas de GNP - trámites, póliza, antecedentes, hospital (obligatorio para reembolso/cirugía/reporte hospitalario con validación de nombre, ciudad, tipo estancia, fecha ingreso), cédula de especialidad (recomendada nivel discreto)
+  - **Reglas MetLife** (45): Específicas de MetLife - campos obligatorios, vigencia de informe, datos gineco-obstétricos, intervenciones quirúrgicas
+  - **Validadores Inteligentes**: Lógica personalizada para comparación nombre/firma (requiere coincidencia de nombre Y apellido sin importar orden), validación de otros médicos participantes, y requisitos condicionales de hospital según tipo de trámite
 - **Multi-Provider Field Mapping**: Facilitates rule application across different insurers despite varying field paths using `fieldMappings` and dynamic autocomplete.
 - **Normalization Layer**: Maps disparate provider-specific fields to a `StandardizedMedicalReport` schema for data consistency.
 - **Provider Detection**: Automatically identifies insurance providers from PDF content using keyword matching, with manual selection as a fallback.

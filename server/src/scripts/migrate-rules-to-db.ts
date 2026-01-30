@@ -232,19 +232,20 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     affectedFields: ['medico_tratante.nombres']
   },
   {
-    id: 'gen_medico_telefono',
-    name: 'Teléfono del médico faltante',
+    id: 'gen_medico_contacto',
+    name: 'Dato de contacto del médico faltante',
     level: 'CRÍTICO',
     points: 15,
-    description: 'Debe proporcionar al menos un teléfono de contacto del médico.',
+    description: 'Debe proporcionar al menos un dato de contacto del médico: teléfono de consultorio, celular o correo electrónico.',
     providerTarget: 'ALL',
     isCustom: false,
     conditions: [
       { id: 'cond_tel_consultorio', field: 'medico_tratante.telefono_consultorio', operator: 'IS_EMPTY' },
-      { id: 'cond_tel_celular', field: 'medico_tratante.celular', operator: 'IS_EMPTY' }
+      { id: 'cond_tel_celular', field: 'medico_tratante.celular', operator: 'IS_EMPTY' },
+      { id: 'cond_correo', field: 'medico_tratante.correo_electronico', operator: 'IS_EMPTY' }
     ],
     logicOperator: 'AND',
-    affectedFields: ['medico_tratante.telefono_consultorio', 'medico_tratante.celular']
+    affectedFields: ['medico_tratante.telefono_consultorio', 'medico_tratante.celular', 'medico_tratante.correo_electronico']
   },
   {
     id: 'gen_medico_email_formato',
@@ -365,15 +366,72 @@ const REGLAS_GENERALES: RawScoringRule[] = [
   },
   {
     id: 'gen_medico_firma_coincide',
-    name: 'Médico firmante no coincide',
+    name: 'Médico firmante no coincide con médico tratante',
     level: 'IMPORTANTE',
     points: 15,
-    description: 'El médico que firma el documento no coincide con el tratante declarado.',
+    description: 'El nombre o apellido del médico tratante no coincide con quien firma el documento. Verifique que el nombre y apellido aparezcan en ambas secciones.',
     providerTarget: 'ALL',
     isCustom: false,
-    conditions: [{ id: 'cond_firma_coincide', field: 'metadata.firma_coincide_con_tratante', operator: 'EQUALS', value: 'false' }],
+    conditions: [],
     logicOperator: 'AND',
-    affectedFields: ['firma.nombre_firma', 'medico_tratante.nombres']
+    affectedFields: ['firma.nombre_firma', 'medico_tratante.nombres', 'medico_tratante.primer_apellido'],
+    validator: { key: 'gen_medico_firma_coincide_validator' }
+  },
+  {
+    id: 'gen_medico_especialidad_obligatoria',
+    name: 'Especialidad del médico tratante obligatoria',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'El médico tratante debe especificar su especialidad para validar que está capacitado para realizar el informe.',
+    providerTarget: 'ALL',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_medico_nombre_existe', field: 'medico_tratante.nombres', operator: 'NOT_EMPTY' },
+      { id: 'cond_especialidad_vacia', field: 'medico_tratante.especialidad', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['medico_tratante.especialidad', 'medico_tratante.nombres']
+  },
+  {
+    id: 'gen_medico_cedula_obligatoria',
+    name: 'Cédula profesional del médico tratante obligatoria',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Si hay un médico tratante identificado, debe proporcionar su cédula profesional.',
+    providerTarget: 'ALL',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_medico_nombre_existe_2', field: 'medico_tratante.nombres', operator: 'NOT_EMPTY' },
+      { id: 'cond_cedula_vacia', field: 'medico_tratante.cedula_profesional', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['medico_tratante.cedula_profesional', 'medico_tratante.nombres']
+  },
+  {
+    id: 'gen_otros_medicos_especialidad',
+    name: 'Especialidad de otros médicos obligatoria',
+    level: 'CRÍTICO',
+    points: 15,
+    description: 'Si se registra un médico participante, debe especificarse su especialidad.',
+    providerTarget: 'ALL',
+    isCustom: false,
+    conditions: [],
+    logicOperator: 'AND',
+    affectedFields: ['otros_medicos.especialidad', 'otros_medicos.nombres'],
+    validator: { key: 'gen_otros_medicos_especialidad_validator' }
+  },
+  {
+    id: 'gen_otros_medicos_cedula',
+    name: 'Cédula profesional de otros médicos obligatoria',
+    level: 'CRÍTICO',
+    points: 15,
+    description: 'Si se registra un médico participante, debe proporcionar su cédula profesional.',
+    providerTarget: 'ALL',
+    isCustom: false,
+    conditions: [],
+    logicOperator: 'AND',
+    affectedFields: ['otros_medicos.cedula_profesional', 'otros_medicos.nombres'],
+    validator: { key: 'gen_otros_medicos_cedula_validator' }
   },
   {
     id: 'gen_uniformidad_tinta',
@@ -771,6 +829,47 @@ const REGLAS_GNP: RawScoringRule[] = [
     ],
     logicOperator: 'AND',
     affectedFields: ['hospital.fecha_ingreso', 'hospital.tipo_estancia']
+  },
+  {
+    id: 'gnp_hospital_tramite_reembolso',
+    name: 'Información de hospital obligatoria para trámites específicos',
+    level: 'MODERADO',
+    points: 10,
+    description: 'Para trámites de reembolso, programación de cirugía o reporte hospitalario es obligatorio incluir la información del hospital (nombre, ciudad, tipo de estancia, fecha de ingreso).',
+    providerTarget: 'GNP',
+    isCustom: false,
+    conditions: [],
+    logicOperator: 'AND',
+    affectedFields: ['hospital.nombre_hospital', 'hospital.ciudad', 'hospital.tipo_estancia', 'hospital.fecha_ingreso', 'tramite.reembolso', 'tramite.programacion_cirugia', 'tramite.reporte_hospitalario'],
+    validator: { key: 'gnp_hospital_tramite_validator' }
+  },
+  {
+    id: 'gnp_medico_cedula_especialidad',
+    name: 'Cédula de especialidad del médico recomendada',
+    level: 'DISCRETO',
+    points: 3,
+    description: 'Se recomienda incluir la cédula de especialidad del médico tratante si tiene nombre registrado.',
+    providerTarget: 'GNP',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_gnp_medico_nombre_existe', field: 'medico_tratante.nombres', operator: 'NOT_EMPTY' },
+      { id: 'cond_gnp_cedula_esp_vacia', field: 'medico_tratante.cedula_especialidad', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['medico_tratante.cedula_especialidad', 'medico_tratante.nombres']
+  },
+  {
+    id: 'gnp_otros_medicos_cedula_especialidad',
+    name: 'Cédula de especialidad de otros médicos recomendada',
+    level: 'DISCRETO',
+    points: 3,
+    description: 'Se recomienda incluir la cédula de especialidad de los médicos participantes si tienen nombre registrado.',
+    providerTarget: 'GNP',
+    isCustom: false,
+    conditions: [],
+    logicOperator: 'AND',
+    affectedFields: ['otros_medicos.cedula_especialidad', 'otros_medicos.nombres'],
+    validator: { key: 'gnp_otros_medicos_cedula_especialidad_validator' }
   }
 ];
 
