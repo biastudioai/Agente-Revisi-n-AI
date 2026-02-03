@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, TrendingUp, TrendingDown, Users, FileText, DollarSign, CreditCard, Calendar, Crown, Loader2, Tag, Plus, Copy, Check, ToggleLeft, ToggleRight } from 'lucide-react';
+import { X, TrendingUp, TrendingDown, Users, FileText, DollarSign, CreditCard, Calendar, Crown, Loader2, Tag, Plus, Copy, Check, ToggleLeft, ToggleRight, History } from 'lucide-react';
 
 interface MonthlyRevenue {
   month: number;
@@ -8,6 +8,7 @@ interface MonthlyRevenue {
   extraReportsRevenueMxn: number;
   totalRevenueMxn: number;
   subscriptionsCount: number;
+  actualRevenueMxn: number;
 }
 
 interface SubscriptionStats {
@@ -16,9 +17,11 @@ interface SubscriptionStats {
     planType: string;
     planName: string;
     count: number;
-    monthlyRevenueMxn: number;
+    expectedMonthlyRevenueMxn: number;
+    actualMonthlyRevenueMxn: number;
   }[];
-  totalMonthlyRecurringMxn: number;
+  totalExpectedRecurringMxn: number;
+  totalActualRecurringMxn: number;
 }
 
 interface SubscriberInfo {
@@ -33,6 +36,17 @@ interface SubscriberInfo {
   createdAt: string;
   reportsUsedThisMonth: number;
   extraReportsThisMonth: number;
+  discountCode: string | null;
+  discountCodeUsedAt: string | null;
+  discountCodeIsActive: boolean;
+}
+
+interface DiscountCodeHistoryItem {
+  code: string;
+  usedAt: string;
+  amountDiscounted: number | null;
+  discountType: string;
+  discountValue: number;
 }
 
 interface Summary {
@@ -43,6 +57,7 @@ interface Summary {
   totalReportsProcessed: number;
   extraReportsTotal: number;
   comparisonToPreviousMonth: number;
+  actualRevenueMxn: number;
 }
 
 interface DiscountCode {
@@ -113,6 +128,11 @@ const AdminBillingDashboard: React.FC<AdminBillingDashboardProps> = ({ isOpen, o
   const [createError, setCreateError] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [togglingCode, setTogglingCode] = useState<string | null>(null);
+  
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [discountHistory, setDiscountHistory] = useState<DiscountCodeHistoryItem[]>([]);
+  const [selectedUserForHistory, setSelectedUserForHistory] = useState<{ id: string; nombre: string } | null>(null);
   
   const [newCode, setNewCode] = useState({
     code: '',
@@ -236,9 +256,28 @@ const AdminBillingDashboard: React.FC<AdminBillingDashboardProps> = ({ isOpen, o
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
+  const loadDiscountHistory = async (userId: string, userName: string) => {
+    setSelectedUserForHistory({ id: userId, nombre: userName });
+    setShowHistoryModal(true);
+    setHistoryLoading(true);
+    
+    try {
+      const res = await fetch(`/api/billing/users/${userId}/discount-history`, { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setDiscountHistory(data.history || []);
+      }
+    } catch (e) {
+      console.error('Error loading discount history:', e);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
   if (!isOpen) return null;
 
-  const maxRevenue = Math.max(...revenue.map(r => r.totalRevenueMxn), 1);
+  const maxRevenue = Math.max(...revenue.map(r => Math.max(r.totalRevenueMxn, r.actualRevenueMxn)), 1);
+  const currentMonthActualRevenue = revenue.length > 0 ? revenue[revenue.length - 1].actualRevenueMxn : 0;
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -286,7 +325,12 @@ const AdminBillingDashboard: React.FC<AdminBillingDashboardProps> = ({ isOpen, o
                       <DollarSign className="w-5 h-5 text-green-600" />
                       <span className="text-sm text-green-700 font-medium">Ingresos del Mes</span>
                     </div>
-                    <p className="text-2xl font-bold text-green-800">{formatCurrency(summary.totalRevenueMxn)}</p>
+                    <p className="text-2xl font-bold text-green-800">{formatCurrency(currentMonthActualRevenue)}</p>
+                    {currentMonthActualRevenue !== summary.totalRevenueMxn && (
+                      <p className="text-xs text-green-600 mt-1">
+                        Esperado: {formatCurrency(summary.totalRevenueMxn)}
+                      </p>
+                    )}
                     <div className="flex items-center gap-1 mt-1">
                       {summary.comparisonToPreviousMonth >= 0 ? (
                         <TrendingUp className="w-4 h-4 text-green-600" />
@@ -342,30 +386,28 @@ const AdminBillingDashboard: React.FC<AdminBillingDashboardProps> = ({ isOpen, o
                         </span>
                         <div className="flex-1 h-8 bg-slate-100 rounded-lg overflow-hidden flex">
                           <div
-                            className="h-full bg-veryka-cyan transition-all duration-500"
-                            style={{ width: `${(r.subscriptionRevenueMxn / maxRevenue) * 100}%` }}
-                            title={`Suscripciones: ${formatCurrency(r.subscriptionRevenueMxn)}`}
-                          />
-                          <div
-                            className="h-full bg-purple-400 transition-all duration-500"
-                            style={{ width: `${(r.extraReportsRevenueMxn / maxRevenue) * 100}%` }}
-                            title={`Extras: ${formatCurrency(r.extraReportsRevenueMxn)}`}
+                            className="h-full bg-green-500 transition-all duration-500"
+                            style={{ width: `${(r.actualRevenueMxn / maxRevenue) * 100}%` }}
+                            title={`Ingreso Real: ${formatCurrency(r.actualRevenueMxn)}`}
                           />
                         </div>
-                        <span className="w-24 text-right text-sm font-semibold text-slate-700">
-                          {formatCurrency(r.totalRevenueMxn)}
-                        </span>
+                        <div className="w-32 text-right">
+                          <span className="text-sm font-semibold text-green-700">
+                            {formatCurrency(r.actualRevenueMxn)}
+                          </span>
+                          {r.actualRevenueMxn !== r.totalRevenueMxn && (
+                            <p className="text-xs text-slate-400">
+                              Esp: {formatCurrency(r.totalRevenueMxn)}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
                   <div className="flex items-center gap-4 mt-4 text-xs">
                     <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 bg-veryka-cyan rounded" />
-                      <span className="text-slate-600">Suscripciones</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 bg-purple-400 rounded" />
-                      <span className="text-slate-600">Informes extra</span>
+                      <div className="w-3 h-3 bg-green-500 rounded" />
+                      <span className="text-slate-600">Ingreso Real (Stripe)</span>
                     </div>
                   </div>
                 </div>
@@ -386,14 +428,22 @@ const AdminBillingDashboard: React.FC<AdminBillingDashboardProps> = ({ isOpen, o
                           </div>
                           <div className="text-right">
                             <p className="text-lg font-bold text-slate-800">{plan.count}</p>
-                            <p className="text-xs text-slate-500">{formatCurrency(plan.monthlyRevenueMxn)}/mes</p>
+                            <p className="text-xs text-slate-500">{formatCurrency(plan.expectedMonthlyRevenueMxn)}/mes</p>
+                            {plan.actualMonthlyRevenueMxn > 0 && plan.actualMonthlyRevenueMxn !== plan.expectedMonthlyRevenueMxn && (
+                              <p className="text-xs text-green-600">(Real: {formatCurrency(plan.actualMonthlyRevenueMxn)})</p>
+                            )}
                           </div>
                         </div>
                       ))}
                       <div className="pt-4 border-t border-slate-200">
                         <div className="flex items-center justify-between">
                           <span className="font-medium text-slate-700">Total Recurrente</span>
-                          <span className="text-lg font-bold text-green-600">{formatCurrency(stats.totalMonthlyRecurringMxn)}/mes</span>
+                          <div className="text-right">
+                            <span className="text-lg font-bold text-green-600">{formatCurrency(stats.totalExpectedRecurringMxn)}/mes</span>
+                            {stats.totalActualRecurringMxn > 0 && stats.totalActualRecurringMxn !== stats.totalExpectedRecurringMxn && (
+                              <p className="text-xs text-green-600">(Real: {formatCurrency(stats.totalActualRecurringMxn)}/mes)</p>
+                            )}
+                          </div>
                         </div>
                         <p className="text-xs text-slate-500 mt-1">{stats.totalActive} suscripciones activas</p>
                       </div>
@@ -416,6 +466,7 @@ const AdminBillingDashboard: React.FC<AdminBillingDashboardProps> = ({ isOpen, o
                         <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Usuario</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Plan</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Estado</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Código</th>
                         <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Informes</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Próxima Factura</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Desde</th>
@@ -424,7 +475,7 @@ const AdminBillingDashboard: React.FC<AdminBillingDashboardProps> = ({ isOpen, o
                     <tbody className="divide-y divide-slate-100">
                       {subscribers.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                          <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
                             No hay suscriptores activos
                           </td>
                         </tr>
@@ -453,6 +504,40 @@ const AdminBillingDashboard: React.FC<AdminBillingDashboardProps> = ({ isOpen, o
                               }`}>
                                 {sub.status === 'ACTIVE' ? 'Activo' : sub.status}
                               </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              {sub.discountCode && sub.discountCodeIsActive ? (
+                                <div className="flex items-center gap-2">
+                                  <div>
+                                    <span className="font-mono text-xs font-bold text-orange-700 bg-orange-100 px-2 py-0.5 rounded">
+                                      {sub.discountCode}
+                                    </span>
+                                    {sub.discountCodeUsedAt && (
+                                      <p className="text-xs text-slate-400 mt-0.5">
+                                        {formatDate(sub.discountCodeUsedAt)}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <button
+                                    onClick={() => loadDiscountHistory(sub.id, sub.nombre || sub.email)}
+                                    className="p-1 hover:bg-slate-200 rounded transition-colors"
+                                    title="Ver historial de códigos"
+                                  >
+                                    <History className="w-4 h-4 text-slate-400" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-slate-400">-</span>
+                                  <button
+                                    onClick={() => loadDiscountHistory(sub.id, sub.nombre || sub.email)}
+                                    className="p-1 hover:bg-slate-200 rounded transition-colors"
+                                    title="Ver historial de códigos"
+                                  >
+                                    <History className="w-4 h-4 text-slate-400" />
+                                  </button>
+                                </div>
+                              )}
                             </td>
                             <td className="px-4 py-3 text-center">
                               <span className="font-medium text-slate-700">{sub.reportsUsedThisMonth}</span>
@@ -696,6 +781,73 @@ const AdminBillingDashboard: React.FC<AdminBillingDashboardProps> = ({ isOpen, o
           )}
         </div>
       </div>
+
+      {showHistoryModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-gradient-to-r from-orange-500 to-amber-500">
+              <div className="flex items-center gap-2">
+                <History className="w-5 h-5 text-white" />
+                <div>
+                  <h3 className="font-bold text-white">Historial de Códigos</h3>
+                  <p className="text-xs text-white/80">{selectedUserForHistory?.nombre}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowHistoryModal(false);
+                  setDiscountHistory([]);
+                  setSelectedUserForHistory(null);
+                }}
+                className="text-white/70 hover:text-white p-1 rounded transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-4 max-h-80 overflow-y-auto">
+              {historyLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+                  <span className="ml-2 text-slate-600">Cargando historial...</span>
+                </div>
+              ) : discountHistory.length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  <Tag className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                  <p>No ha utilizado códigos de descuento</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {discountHistory.map((item, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                      <div>
+                        <span className="font-mono font-bold text-orange-700 bg-orange-100 px-2 py-0.5 rounded">
+                          {item.code}
+                        </span>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Usado el {formatDate(item.usedAt)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-semibold text-green-600">
+                          {item.discountType === 'PERCENTAGE' 
+                            ? `-${item.discountValue}%` 
+                            : `-${formatCurrency(item.discountValue)}`}
+                        </span>
+                        {item.amountDiscounted && (
+                          <p className="text-xs text-slate-500">
+                            Ahorró: {formatCurrency(item.amountDiscounted)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -149,4 +149,15 @@ router.patch(
   })
 );
 
+router.get(
+  '/users/:userId/discount-history',
+  requireAuth,
+  requireAdmin,
+  expressAsyncHandler(async (req: Request, res: Response) => {
+    const { userId } = req.params;
+    const history = await billingService.getDiscountCodeHistory(userId);
+    res.json({ history });
+  })
+);
+
 export default router;
