@@ -96,6 +96,16 @@ Preferred communication style: Simple, everyday language.
     - AUDITORs whose BROKER has no active subscription cannot login
     - Sessions are automatically invalidated when subscription expires
     - Database fields: `cancelAtPeriodEnd`, `scheduledPlanType`, `scheduledChangeAt` track pending changes
+  - **Admin Billing Dashboard with Real Revenue Tracking**:
+    - Displays actual revenue from Stripe invoices (not just expected based on plans)
+    - Shows expected vs actual revenue comparison for transparency
+    - Historical revenue chart using real Stripe payment data (6-month history)
+    - Revenue breakdown by plan with expected (based on active subscriptions) and actual (from Stripe invoices)
+    - Subscriber table with discount code tracking (active code, usage date)
+    - Discount code history modal to view all codes used by a subscriber
+    - API endpoint: `/api/billing/users/:userId/discount-history` for user-specific discount history
+    - Uses Stripe auto-pagination to fetch all invoices without undercounting
+    - Methods: `getStripeInvoicesForMonth`, `getDiscountCodeHistory` in billingService
 - **Email Report Sending**: Sends audit reports via email with PDF attachments using Titan SMTP (smtp.titan.email:587). Emails are sent from "Agente AI <agente@veryka.ai>" with professional HTML formatting. Includes failover to smtpout.secureserver.net if primary server fails. Credentials stored in Email_User and Email_Pass secrets.
 - **Auditor Management System**: Brokers can manage their auditors through a dedicated UI accessible from the user profile menu. Features include:
   - Create, edit, and delete auditor accounts (with proper password hashing)
