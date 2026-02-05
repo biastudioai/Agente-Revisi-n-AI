@@ -90,7 +90,7 @@ router.post(
       return;
     }
 
-    const replitDomains = process.env.REPLIT_DEV_DOMAIN || process.env.REPLIT_DOMAINS || '';
+    const replitDomains = process.env.REPLIT_DOMAINS || process.env.REPLIT_DEV_DOMAIN || '';
     const primaryDomain = replitDomains.split(',')[0]?.trim();
     const baseUrl = primaryDomain ? `https://${primaryDomain}` : `${req.headers['x-forwarded-proto'] || req.protocol}://${req.get('host')}`;
 
@@ -126,7 +126,7 @@ router.post(
       return;
     }
 
-    const replitDomains = process.env.REPLIT_DEV_DOMAIN || process.env.REPLIT_DOMAINS || '';
+    const replitDomains = process.env.REPLIT_DOMAINS || process.env.REPLIT_DEV_DOMAIN || '';
     const primaryDomain = replitDomains.split(',')[0]?.trim();
     const baseUrl = primaryDomain ? `https://${primaryDomain}` : `${req.headers['x-forwarded-proto'] || req.protocol}://${req.get('host')}`;
 
@@ -225,7 +225,7 @@ router.post(
       return;
     }
 
-    const replitDomains = process.env.REPLIT_DEV_DOMAIN || process.env.REPLIT_DOMAINS || '';
+    const replitDomains = process.env.REPLIT_DOMAINS || process.env.REPLIT_DEV_DOMAIN || '';
     const primaryDomain = replitDomains.split(',')[0]?.trim();
     const baseUrl = primaryDomain ? `https://${primaryDomain}` : `${req.headers['x-forwarded-proto'] || req.protocol}://${req.get('host')}`;
 
