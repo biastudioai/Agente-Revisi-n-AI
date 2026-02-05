@@ -189,6 +189,39 @@ async function migrateRules(devPrisma: PrismaClient, prodPrisma: PrismaClient): 
     });
   }
   console.log('Aseguradora configs migrated successfully!');
+
+  const ruleChangeLogs = await devPrisma.ruleChangeLog.findMany();
+  console.log(`Found ${ruleChangeLogs.length} rule change logs to migrate`);
+
+  for (const log of ruleChangeLogs) {
+    await prodPrisma.ruleChangeLog.upsert({
+      where: { id: log.id },
+      update: {
+        ruleId: log.ruleId,
+        ruleName: log.ruleName,
+        changeType: log.changeType,
+        previousValue: log.previousValue,
+        newValue: log.newValue,
+        changedBy: log.changedBy,
+        changeReason: log.changeReason,
+        versionNumber: log.versionNumber,
+        createdAt: log.createdAt,
+      },
+      create: {
+        id: log.id,
+        ruleId: log.ruleId,
+        ruleName: log.ruleName,
+        changeType: log.changeType,
+        previousValue: log.previousValue,
+        newValue: log.newValue,
+        changedBy: log.changedBy,
+        changeReason: log.changeReason,
+        versionNumber: log.versionNumber,
+        createdAt: log.createdAt,
+      },
+    });
+  }
+  console.log('Rule change logs migrated successfully!');
 }
 
 async function createAdminUser(prodPrisma: PrismaClient): Promise<void> {
