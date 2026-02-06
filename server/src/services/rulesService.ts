@@ -10,7 +10,7 @@ export interface ScoringRuleInput {
   points: number;
   description: string;
   providerTarget: string;
-  category: 'GENERAL' | 'GNP' | 'METLIFE' | 'NYLIFE';
+  category: 'GENERAL' | 'GNP' | 'METLIFE' | 'NYLIFE' | 'AXA';
   isCustom?: boolean;
   conditions?: any[];
   logicOperator?: string;
@@ -27,7 +27,7 @@ export interface ScoringRuleOutput {
   points: number;
   description: string;
   providerTarget: string;
-  category: 'GENERAL' | 'GNP' | 'METLIFE' | 'NYLIFE';
+  category: 'GENERAL' | 'GNP' | 'METLIFE' | 'NYLIFE' | 'AXA';
   isCustom: boolean;
   isActive: boolean;
   conditions: any[] | null;

@@ -377,7 +377,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 INFORME <span className={theme.secondary}>{provider}</span>
             </h1>
             <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest">
-                {provider === 'METLIFE' ? 'Mapeo por Secciones 1-7' : provider === 'NYLIFE' ? 'Formato NY Life Monterrey' : 'Formato Estándar GNP'}
+                {provider === 'METLIFE' ? 'Mapeo por Secciones 1-7' : provider === 'NYLIFE' ? 'Formato NY Life Monterrey' : provider === 'AXA' ? 'Formato AXA Gastos Médicos' : 'Formato Estándar GNP'}
             </p>
          </div>
          <div className="flex items-center gap-2">
@@ -421,8 +421,8 @@ const Dashboard: React.FC<DashboardProps> = ({
                             if (tab.id === 'equipo_qx' && provider === 'NYLIFE') {
                                 return null; // Para NYLIFE el equipo qx está en la pestaña Médico
                             }
-                            if (tab.id === 'tratamiento' && provider !== 'NYLIFE') {
-                                return null; // La pestaña Tratamiento solo es para NYLIFE
+                            if (tab.id === 'tratamiento' && !['NYLIFE', 'AXA'].includes(provider)) {
+                                return null; // La pestaña Tratamiento solo es para NYLIFE y AXA
                             }
                             
                             const Icon = tab.icon;
@@ -525,6 +525,43 @@ const Dashboard: React.FC<DashboardProps> = ({
                                 </div>
                                 <div>
                                     {renderCheckboxGroup("Causa de Atención", formData.identificacion?.causa_atencion, 'identificacion.causa_atencion', ['Accidente', 'Enfermedad', 'Embarazo'])}
+                                </div>
+                            </div>
+                        )}
+
+                        {provider === 'AXA' && (
+                            <div className="space-y-6">
+                                <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
+                                    <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>LUGAR Y FECHA</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {renderInput("Lugar", (formData as any).lugar_fecha?.lugar, 'lugar_fecha.lugar')}
+                                        <DateInput label="Fecha" value={(formData as any).lugar_fecha?.fecha} path="lugar_fecha.fecha" isModified={!!modifiedFields['lugar_fecha.fecha']} isHighlighted={highlightedField === 'lugar_fecha.fecha'} onChange={handleInputChange} />
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    {renderInput("Apellido Paterno", (formData as any).identificacion?.apellido_paterno, 'identificacion.apellido_paterno')}
+                                    {renderInput("Apellido Materno", (formData as any).identificacion?.apellido_materno, 'identificacion.apellido_materno')}
+                                    {renderInput("Nombre(s)", (formData as any).identificacion?.nombres, 'identificacion.nombres')}
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {renderInput("Edad", (formData as any).identificacion?.edad, 'identificacion.edad')}
+                                    <DateInput label="Fecha de Nacimiento" value={(formData as any).identificacion?.fecha_nacimiento} path="identificacion.fecha_nacimiento" isModified={!!modifiedFields['identificacion.fecha_nacimiento']} isHighlighted={highlightedField === 'identificacion.fecha_nacimiento'} onChange={handleInputChange} />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        {renderCheckboxGroup("Sexo", (formData as any).identificacion?.sexo, 'identificacion.sexo', ['Masculino', 'Femenino'])}
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {renderInput("Talla", (formData as any).identificacion?.talla, 'identificacion.talla', 'text', 'cm')}
+                                        {renderInput("Peso", (formData as any).identificacion?.peso, 'identificacion.peso', 'text', 'kg')}
+                                        {renderInput("T.A.", (formData as any).identificacion?.tension_arterial, 'identificacion.tension_arterial')}
+                                    </div>
+                                </div>
+                                <div>
+                                    {renderCheckboxGroup("Motivo de Atención", (formData as any).motivo_atencion, 'motivo_atencion', ['Enfermedad', 'Accidente', 'Maternidad', 'Segunda opinión médica'])}
+                                </div>
+                                <div>
+                                    {renderCheckboxGroup("Tipo de Estancia", (formData as any).tipo_estancia, 'tipo_estancia', ['Urgencia', 'Hospitalización', 'Corta estancia/ambulatoria', 'Consultorio'])}
                                 </div>
                             </div>
                         )}
@@ -689,6 +726,64 @@ const Dashboard: React.FC<DashboardProps> = ({
                                             </label>
                                             <input type="text" value={(formData as any).antecedentes_no_patologicos?.otros || ''} onChange={(e) => handleInputChange('antecedentes_no_patologicos.otros', e.target.value)} placeholder="Detalle..." className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded" />
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {provider === 'AXA' && (
+                            <div className="space-y-4">
+                                <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
+                                    <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>ANTECEDENTES PATOLÓGICOS</h4>
+                                    <div className="space-y-2">
+                                        {['cardiacos', 'diabetes_mellitus', 'cancer', 'convulsivos', 'hipertensivos', 'vih_sida', 'hepaticos'].map((key) => (
+                                            <div key={key} className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
+                                                <label className="flex items-center gap-2 min-w-[140px]">
+                                                    <input type="checkbox" checked={(formData as any).antecedentes_patologicos?.[key] || false} onChange={(e) => handleInputChange(`antecedentes_patologicos.${key}`, e.target.checked)} className="w-4 h-4 rounded" />
+                                                    <span className="text-xs font-medium text-slate-700">{key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                                                </label>
+                                                <input type="text" value={(formData as any).antecedentes_patologicos?.[`${key}_fecha`] || ''} onChange={(e) => handleInputChange(`antecedentes_patologicos.${key}_fecha`, e.target.value)} placeholder="Fecha..." className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className={`p-4 bg-blue-50 rounded-xl border border-blue-200`}>
+                                    <h4 className="text-xs font-black mb-3 text-blue-600">ANTECEDENTES NO PATOLÓGICOS</h4>
+                                    <div className="space-y-2">
+                                        {[{key: 'fuma', label: 'Fuma'}, {key: 'alcohol', label: 'Alcohol'}, {key: 'drogas', label: 'Drogas'}].map(({key, label}) => (
+                                            <div key={key} className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
+                                                <label className="flex items-center gap-2 min-w-[140px]">
+                                                    <input type="checkbox" checked={(formData as any).antecedentes_no_patologicos?.[key] || false} onChange={(e) => handleInputChange(`antecedentes_no_patologicos.${key}`, e.target.checked)} className="w-4 h-4 rounded" />
+                                                    <span className="text-xs font-medium text-slate-700">{label}</span>
+                                                </label>
+                                                <input type="text" value={(formData as any).antecedentes_no_patologicos?.[`${key}_detalle`] || ''} onChange={(e) => handleInputChange(`antecedentes_no_patologicos.${key}_detalle`, e.target.value)} placeholder="Detalle..." className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="p-4 bg-pink-50 rounded-xl border border-pink-200">
+                                    <div className="text-[9px] font-black text-pink-500 uppercase tracking-widest mb-3">Gineco-Obstétricos</div>
+                                    <div className="grid grid-cols-4 gap-4 mb-3">
+                                        {renderInput("Gestación", (formData as any).antecedentes_gineco_obstetricos?.gestacion, 'antecedentes_gineco_obstetricos.gestacion')}
+                                        {renderInput("Partos", (formData as any).antecedentes_gineco_obstetricos?.partos, 'antecedentes_gineco_obstetricos.partos')}
+                                        {renderInput("Abortos", (formData as any).antecedentes_gineco_obstetricos?.abortos, 'antecedentes_gineco_obstetricos.abortos')}
+                                        {renderInput("Cesáreas", (formData as any).antecedentes_gineco_obstetricos?.cesareas, 'antecedentes_gineco_obstetricos.cesareas')}
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <DateInput label="Última Menstruación" value={(formData as any).antecedentes_gineco_obstetricos?.fecha_ultima_menstruacion} path="antecedentes_gineco_obstetricos.fecha_ultima_menstruacion" isModified={!!modifiedFields['antecedentes_gineco_obstetricos.fecha_ultima_menstruacion']} isHighlighted={highlightedField === 'antecedentes_gineco_obstetricos.fecha_ultima_menstruacion'} onChange={handleInputChange} />
+                                        {renderInput("Infertilidad", (formData as any).antecedentes_gineco_obstetricos?.tratamiento_infertilidad, 'antecedentes_gineco_obstetricos.tratamiento_infertilidad')}
+                                    </div>
+                                </div>
+                                <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-200">
+                                    <div className="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-3">Antecedentes Perinatales</div>
+                                    {renderInput("Descripción", (formData as any).antecedentes_perinatales?.descripcion, 'antecedentes_perinatales.descripcion', 'textarea')}
+                                    {renderInput("Tiempo Evolución", (formData as any).antecedentes_perinatales?.tiempo_evolucion, 'antecedentes_perinatales.tiempo_evolucion')}
+                                </div>
+                                <div className={`p-4 bg-amber-50 rounded-xl border border-amber-200`}>
+                                    <h4 className="text-xs font-black mb-3 text-amber-600">REFERIDO POR OTRO MÉDICO</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {renderCheckboxGroup("¿Referido?", (formData as any).referido_otro_medico?.referido, 'referido_otro_medico.referido', ['Sí', 'No'])}
+                                        {renderInput("¿Cuál?", (formData as any).referido_otro_medico?.cual, 'referido_otro_medico.cual')}
                                     </div>
                                 </div>
                             </div>
@@ -947,9 +1042,45 @@ const Dashboard: React.FC<DashboardProps> = ({
                                 {renderInput("Información Adicional", formData.info_adicional?.descripcion, 'info_adicional.descripcion', 'textarea')}
                             </div>
                         )}
+
+                        {provider === 'AXA' && (
+                            <div className="space-y-4">
+                                {renderInput("Padecimiento Actual", (formData as any).diagnostico?.padecimiento_actual, 'diagnostico.padecimiento_actual', 'textarea')}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <DateInput label="Fecha Padecimiento" value={(formData as any).diagnostico?.fecha_padecimiento} path="diagnostico.fecha_padecimiento" isModified={!!modifiedFields['diagnostico.fecha_padecimiento']} isHighlighted={highlightedField === 'diagnostico.fecha_padecimiento'} onChange={handleInputChange} />
+                                    <DateInput label="Fecha Diagnóstico" value={(formData as any).diagnostico?.fecha_diagnostico} path="diagnostico.fecha_diagnostico" isModified={!!modifiedFields['diagnostico.fecha_diagnostico']} isHighlighted={highlightedField === 'diagnostico.fecha_diagnostico'} onChange={handleInputChange} />
+                                </div>
+                                <div>
+                                    {renderCheckboxGroup("Tipo Padecimiento", (formData as any).diagnostico?.tipo_padecimiento, 'diagnostico.tipo_padecimiento', ['Congénito', 'Adquirido', 'Agudo', 'Crónico'])}
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {renderInput("Tiempo Evolución", (formData as any).diagnostico?.tiempo_evolucion, 'diagnostico.tiempo_evolucion')}
+                                    {renderInput("Causa / Etiología", (formData as any).diagnostico?.causa_etiologia, 'diagnostico.causa_etiologia')}
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {renderCheckboxGroup("Relación Otro Padecimiento", (formData as any).diagnostico?.relacion_otro_padecimiento, 'diagnostico.relacion_otro_padecimiento', ['Sí', 'No'])}
+                                    {renderInput("¿Cuál?", (formData as any).diagnostico?.relacion_cual, 'diagnostico.relacion_cual')}
+                                </div>
+                                <div>
+                                    {renderCheckboxGroup("Incapacidad", (formData as any).diagnostico?.incapacidad, 'diagnostico.incapacidad', ['Sí', 'No', 'Parcial', 'Total'])}
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {renderInput("Incapacidad Desde", (formData as any).diagnostico?.incapacidad_desde, 'diagnostico.incapacidad_desde')}
+                                    {renderInput("Incapacidad Hasta", (formData as any).diagnostico?.incapacidad_hasta, 'diagnostico.incapacidad_hasta')}
+                                </div>
+                                {renderInput("Diagnóstico", (formData as any).diagnostico?.diagnostico_texto, 'diagnostico.diagnostico_texto', 'textarea')}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {renderInput("Código ICD", (formData as any).diagnostico?.codigo_icd, 'diagnostico.codigo_icd')}
+                                    {renderCheckboxGroup("¿Es Cáncer?", (formData as any).diagnostico?.es_cancer, 'diagnostico.es_cancer', ['Sí', 'No'])}
+                                </div>
+                                {renderInput("Escala TNM", (formData as any).diagnostico?.escala_tnm, 'diagnostico.escala_tnm')}
+                                {renderInput("Exploración Física", (formData as any).diagnostico?.exploracion_fisica, 'diagnostico.exploracion_fisica', 'textarea')}
+                                {renderInput("Estudios de Laboratorio", (formData as any).diagnostico?.estudios_laboratorio, 'diagnostico.estudios_laboratorio', 'textarea')}
+                            </div>
+                        )}
                         </div>
 
-                        {/* SECCIÓN: TRATAMIENTO (solo NYLIFE) */}
+                        {/* SECCIÓN: TRATAMIENTO (NYLIFE y AXA) */}
                         {provider === 'NYLIFE' && (
                             <div id="section-tratamiento" className="scroll-mt-20">
                                 <div className="space-y-4">
@@ -963,6 +1094,116 @@ const Dashboard: React.FC<DashboardProps> = ({
                                             {renderInput("Detalle de Complicaciones", (formData as any).tratamiento_y_hospital?.complicaciones?.detalle, 'tratamiento_y_hospital.complicaciones.detalle', 'textarea')}
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {provider === 'AXA' && (
+                            <div id="section-tratamiento" className="scroll-mt-20">
+                                <div className="space-y-4">
+                                    {renderInput("Tratamiento Propuesto", (formData as any).tratamiento?.tratamiento_propuesto, 'tratamiento.tratamiento_propuesto', 'textarea')}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <DateInput label="Fecha Cirugía" value={(formData as any).tratamiento?.fecha_cirugia} path="tratamiento.fecha_cirugia" isModified={!!modifiedFields['tratamiento.fecha_cirugia']} isHighlighted={highlightedField === 'tratamiento.fecha_cirugia'} onChange={handleInputChange} />
+                                        <DateInput label="Fecha Hospitalización" value={(formData as any).tratamiento?.fecha_hospitalizacion} path="tratamiento.fecha_hospitalizacion" isModified={!!modifiedFields['tratamiento.fecha_hospitalizacion']} isHighlighted={highlightedField === 'tratamiento.fecha_hospitalizacion'} onChange={handleInputChange} />
+                                        <DateInput label="Fecha Alta" value={(formData as any).tratamiento?.fecha_alta} path="tratamiento.fecha_alta" isModified={!!modifiedFields['tratamiento.fecha_alta']} isHighlighted={highlightedField === 'tratamiento.fecha_alta'} onChange={handleInputChange} />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {renderInput("Días Atención", (formData as any).tratamiento?.dias_atencion, 'tratamiento.dias_atencion')}
+                                        {renderCheckboxGroup("Sitio Procedimiento", (formData as any).tratamiento?.sitio_procedimiento, 'tratamiento.sitio_procedimiento', ['Consultorio', 'Hospital', 'Gabinete', 'Otro'])}
+                                    </div>
+                                    {renderInput("Nombre Hospital", (formData as any).tratamiento?.nombre_hospital, 'tratamiento.nombre_hospital')}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {renderCheckboxGroup("Histopatológico", (formData as any).tratamiento?.histopatologico, 'tratamiento.histopatologico', ['Sí', 'No'])}
+                                        {renderInput("Resultado", (formData as any).tratamiento?.histopatologico_resultado, 'tratamiento.histopatologico_resultado')}
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {renderCheckboxGroup("Complicaciones", (formData as any).tratamiento?.complicaciones, 'tratamiento.complicaciones', ['Sí', 'No'])}
+                                        {renderInput("Descripción Complicaciones", (formData as any).tratamiento?.complicaciones_descripcion, 'tratamiento.complicaciones_descripcion', 'textarea')}
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {renderCheckboxGroup("Tratamiento Futuro", (formData as any).tratamiento?.tratamiento_futuro, 'tratamiento.tratamiento_futuro', ['Sí', 'No'])}
+                                        {renderInput("Descripción", (formData as any).tratamiento?.tratamiento_futuro_descripcion, 'tratamiento.tratamiento_futuro_descripcion', 'textarea')}
+                                    </div>
+                                    {renderInput("Otros Tratamientos", (formData as any).otros_tratamientos?.especificar_tratamiento, 'otros_tratamientos.especificar_tratamiento', 'textarea')}
+
+                                    <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
+                                        <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>TABLA DE MEDICAMENTOS</h4>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-xs border-collapse">
+                                                <thead>
+                                                    <tr className="bg-slate-100">
+                                                        <th className="p-2 text-left border border-slate-200 w-8">#</th>
+                                                        <th className="p-2 text-left border border-slate-200">Nombre / Presentación</th>
+                                                        <th className="p-2 text-left border border-slate-200 w-20">Cantidad</th>
+                                                        <th className="p-2 text-left border border-slate-200 w-24">Cada cuánto</th>
+                                                        <th className="p-2 text-left border border-slate-200 w-28">Durante cuánto</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {Array.from({ length: 10 }, (_, i) => {
+                                                        const med = ((formData as any).tabla_medicamentos || [])[i] || {};
+                                                        return (
+                                                            <tr key={i} className="hover:bg-slate-50">
+                                                                <td className="p-1 border border-slate-200 text-center text-slate-400">{i + 1}</td>
+                                                                <td className="p-1 border border-slate-200">
+                                                                    <input type="text" value={med.nombre_presentacion || ''} onChange={(e) => {
+                                                                        const meds = [...((formData as any).tabla_medicamentos || [])];
+                                                                        while (meds.length <= i) meds.push({});
+                                                                        meds[i] = { ...meds[i], nombre_presentacion: e.target.value };
+                                                                        handleInputChange('tabla_medicamentos', meds);
+                                                                    }} className="w-full px-1 py-0.5 text-xs border-0 bg-transparent focus:bg-white focus:ring-1 focus:ring-red-300 rounded" />
+                                                                </td>
+                                                                <td className="p-1 border border-slate-200">
+                                                                    <input type="text" value={med.cantidad || ''} onChange={(e) => {
+                                                                        const meds = [...((formData as any).tabla_medicamentos || [])];
+                                                                        while (meds.length <= i) meds.push({});
+                                                                        meds[i] = { ...meds[i], cantidad: e.target.value };
+                                                                        handleInputChange('tabla_medicamentos', meds);
+                                                                    }} className="w-full px-1 py-0.5 text-xs border-0 bg-transparent focus:bg-white focus:ring-1 focus:ring-red-300 rounded" />
+                                                                </td>
+                                                                <td className="p-1 border border-slate-200">
+                                                                    <input type="text" value={med.cada_cuanto || ''} onChange={(e) => {
+                                                                        const meds = [...((formData as any).tabla_medicamentos || [])];
+                                                                        while (meds.length <= i) meds.push({});
+                                                                        meds[i] = { ...meds[i], cada_cuanto: e.target.value };
+                                                                        handleInputChange('tabla_medicamentos', meds);
+                                                                    }} className="w-full px-1 py-0.5 text-xs border-0 bg-transparent focus:bg-white focus:ring-1 focus:ring-red-300 rounded" />
+                                                                </td>
+                                                                <td className="p-1 border border-slate-200">
+                                                                    <input type="text" value={med.durante_cuanto_tiempo || ''} onChange={(e) => {
+                                                                        const meds = [...((formData as any).tabla_medicamentos || [])];
+                                                                        while (meds.length <= i) meds.push({});
+                                                                        meds[i] = { ...meds[i], durante_cuanto_tiempo: e.target.value };
+                                                                        handleInputChange('tabla_medicamentos', meds);
+                                                                    }} className="w-full px-1 py-0.5 text-xs border-0 bg-transparent focus:bg-white focus:ring-1 focus:ring-red-300 rounded" />
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="p-4 bg-cyan-50 rounded-xl border border-cyan-200">
+                                            <div className="text-[9px] font-black text-cyan-600 uppercase tracking-widest mb-3">Rehabilitación Física</div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                {renderInput("Días", (formData as any).rehabilitacion_fisica?.dias, 'rehabilitacion_fisica.dias')}
+                                                {renderInput("No. Sesiones", (formData as any).rehabilitacion_fisica?.numero_sesiones, 'rehabilitacion_fisica.numero_sesiones')}
+                                            </div>
+                                        </div>
+                                        <div className="p-4 bg-violet-50 rounded-xl border border-violet-200">
+                                            <div className="text-[9px] font-black text-violet-600 uppercase tracking-widest mb-3">Enfermería</div>
+                                            {renderInput("Días Requeridos", (formData as any).enfermeria?.dias_requeridos, 'enfermeria.dias_requeridos')}
+                                            {renderCheckboxGroup("Turno", (formData as any).enfermeria?.turno, 'enfermeria.turno', ['Matutino', 'Vespertino', 'Nocturno', '24 horas'])}
+                                            {renderInput("Medicamentos", (formData as any).enfermeria?.nombre_medicamentos, 'enfermeria.nombre_medicamentos')}
+                                        </div>
+                                    </div>
+
+                                    {renderInput("Terapia Especial / Justificación", (formData as any).terapia_especial?.justificacion_terapia, 'terapia_especial.justificacion_terapia', 'textarea')}
+                                    {renderInput("Materiales de Cirugía", (formData as any).terapia_especial?.materiales_cirugia, 'terapia_especial.materiales_cirugia', 'textarea')}
+                                    {renderInput("Detalle de Evolución", (formData as any).terapia_especial?.detalle_evolucion, 'terapia_especial.detalle_evolucion', 'textarea')}
                                 </div>
                             </div>
                         )}
@@ -1029,7 +1270,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                         )}
                         </div>
 
-                        {/* SECCIÓN: OBSERVACIONES (solo METLIFE) */}
+                        {/* SECCIÓN: OBSERVACIONES (METLIFE y AXA) */}
                         {provider === 'METLIFE' && (
                             <div id="section-observaciones" className="scroll-mt-20">
                                 <div className="space-y-4">
@@ -1038,7 +1279,15 @@ const Dashboard: React.FC<DashboardProps> = ({
                             </div>
                         )}
 
-                        {/* SECCIÓN: EQUIPO QUIRÚRGICO / OTROS MÉDICOS (METLIFE y GNP, no NYLIFE) */}
+                        {provider === 'AXA' && (
+                            <div id="section-observaciones" className="scroll-mt-20">
+                                <div className="space-y-4">
+                                    {renderInput("Observaciones", (formData as any).observaciones?.observaciones, 'observaciones.observaciones', 'textarea')}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* SECCIÓN: EQUIPO QUIRÚRGICO / OTROS MÉDICOS (METLIFE, GNP y AXA, no NYLIFE) */}
                         {provider !== 'NYLIFE' && (
                             <div id="section-equipo_qx" className="scroll-mt-20">
                             {provider === 'METLIFE' && (
@@ -1086,6 +1335,33 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     );
                                 })}
                             </div>
+                            )}
+
+                            {provider === 'AXA' && (
+                                <div className="space-y-4">
+                                    <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
+                                        <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>ANESTESIÓLOGO</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {renderInput("Tipo Participación", (formData as any).anestesiologo?.tipo_participacion, 'anestesiologo.tipo_participacion')}
+                                            {renderInput("Nombre", (formData as any).anestesiologo?.nombre, 'anestesiologo.nombre')}
+                                            {renderInput("Especialidad", (formData as any).anestesiologo?.especialidad, 'anestesiologo.especialidad')}
+                                            {renderInput("Cédula Profesional", (formData as any).anestesiologo?.cedula_profesional, 'anestesiologo.cedula_profesional')}
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3">Ayudante 1</div>
+                                            {renderInput("Tipo", (formData as any).ayudantes?.ayudante_1_tipo, 'ayudantes.ayudante_1_tipo')}
+                                            {renderInput("Nombre", (formData as any).ayudantes?.ayudante_1_nombre, 'ayudantes.ayudante_1_nombre')}
+                                        </div>
+                                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3">Ayudante 2</div>
+                                            {renderInput("Tipo", (formData as any).ayudantes?.ayudante_2_tipo, 'ayudantes.ayudante_2_tipo')}
+                                            {renderInput("Nombre", (formData as any).ayudantes?.ayudante_2_nombre, 'ayudantes.ayudante_2_nombre')}
+                                        </div>
+                                    </div>
+                                    {renderInput("Otros Médicos", (formData as any).ayudantes?.otros_medicos, 'ayudantes.otros_medicos', 'textarea')}
+                                </div>
                             )}
                             </div>
                         )}
@@ -1282,6 +1558,27 @@ const Dashboard: React.FC<DashboardProps> = ({
                                 </div>
                             </div>
                         )}
+
+                        {provider === 'AXA' && (
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {renderInput("Tipo Participación", (formData as any).medico_principal?.tipo_participacion, 'medico_principal.tipo_participacion')}
+                                    {renderInput("Nombre Completo", (formData as any).medico_principal?.nombre, 'medico_principal.nombre')}
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {renderInput("Especialidad", (formData as any).medico_principal?.especialidad, 'medico_principal.especialidad')}
+                                    {renderInput("Cédula Profesional", (formData as any).medico_principal?.cedula_profesional, 'medico_principal.cedula_profesional')}
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {renderInput("Cédula Especialidad", (formData as any).medico_principal?.cedula_especialidad, 'medico_principal.cedula_especialidad')}
+                                    {renderInput("RFC", (formData as any).medico_principal?.rfc, 'medico_principal.rfc')}
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {renderInput("Domicilio", (formData as any).medico_principal?.domicilio, 'medico_principal.domicilio')}
+                                    {renderInput("Teléfono", (formData as any).medico_principal?.telefono, 'medico_principal.telefono')}
+                                </div>
+                            </div>
+                        )}
                         </div>
 
                         {/* SECCIÓN: FIRMA / VALIDACIÓN */}
@@ -1377,6 +1674,26 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     <h4 className="text-xs font-black mb-3 text-slate-600">OBSERVACIONES DEL INFORME</h4>
                                     {renderInput("Coherencia Clínica", (formData as any).metadata?.existe_coherencia_clinica, 'metadata.existe_coherencia_clinica')}
                                     {renderInput("Observaciones", (formData as any).metadata?.observaciones, 'metadata.observaciones', 'textarea')}
+                                </div>
+                            </div>
+                        )}
+
+                        {provider === 'AXA' && (
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {renderInput("Firma del Médico", (formData as any).firma?.firma_medico, 'firma.firma_medico')}
+                                    {renderInput("Lugar y Fecha Firma", (formData as any).firma?.lugar_fecha, 'firma.lugar_fecha')}
+                                </div>
+                                <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
+                                    <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>AUTORIZACIONES</h4>
+                                    <div className="space-y-3">
+                                        <label className="flex items-center gap-2">
+                                            <input type="checkbox" checked={(formData as any).datos_personales?.autorizacion_datos || false} onChange={(e) => handleInputChange('datos_personales.autorizacion_datos', e.target.checked)} className="w-4 h-4 rounded" />
+                                            <span className="text-xs font-medium text-slate-700">Autorización tratamiento datos personales</span>
+                                        </label>
+                                        {renderCheckboxGroup("Transferencia Datos", (formData as any).transferencia_datos?.autorizacion_transferencia, 'transferencia_datos.autorizacion_transferencia', ['Sí acepto', 'No acepto'])}
+                                        {renderCheckboxGroup("Programas/Servicios", (formData as any).transferencia_datos?.autorizacion_programas, 'transferencia_datos.autorizacion_programas', ['Sí acepto', 'No acepto'])}
+                                    </div>
                                 </div>
                             </div>
                         )}

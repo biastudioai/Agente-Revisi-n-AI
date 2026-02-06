@@ -2,7 +2,7 @@ import React from 'react';
 import { Building2, CheckCircle2, AlertCircle, HelpCircle } from 'lucide-react';
 import { PROVIDER_REGISTRY } from '../providers';
 
-export type ProviderOption = 'METLIFE' | 'GNP' | 'UNKNOWN';
+export type ProviderOption = 'METLIFE' | 'GNP' | 'NYLIFE' | 'AXA' | 'UNKNOWN';
 
 interface ProviderSelectorProps {
   selectedProvider: ProviderOption;
@@ -14,7 +14,9 @@ interface ProviderSelectorProps {
 
 const PROVIDER_COLORS: Record<string, string> = {
   METLIFE: 'bg-emerald-500',
-  GNP: 'bg-orange-500'
+  GNP: 'bg-orange-500',
+  NYLIFE: 'bg-teal-500',
+  AXA: 'bg-red-500'
 };
 
 const PROVIDERS = Object.entries(PROVIDER_REGISTRY).map(([id, config]) => ({

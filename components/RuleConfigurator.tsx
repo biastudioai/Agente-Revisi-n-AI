@@ -126,6 +126,8 @@ const RuleConfigurator: React.FC<RuleConfiguratorProps> = ({ isOpen, onClose, ru
         return <span key={target} className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-green-100 text-green-700 border border-green-200">METLIFE</span>;
       case 'NYLIFE':
         return <span key={target} className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">NY LIFE</span>;
+      case 'AXA':
+        return <span key={target} className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-red-100 text-red-700 border border-red-200">AXA</span>;
       default:
         return <span key={target} className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-100 text-slate-700 border border-slate-200">{target}</span>;
     }

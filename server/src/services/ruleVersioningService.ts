@@ -10,7 +10,7 @@ export interface ScoringRuleOutput {
   points: number;
   description: string;
   providerTarget: string;
-  category: 'GENERAL' | 'GNP' | 'METLIFE' | 'NYLIFE';
+  category: 'GENERAL' | 'GNP' | 'METLIFE' | 'NYLIFE' | 'AXA';
   isCustom: boolean;
   isActive: boolean;
   conditions: any[] | null;
@@ -30,8 +30,8 @@ function mapEnumToLevel(level: RuleLevel): 'CRÍTICO' | 'IMPORTANTE' | 'MODERADO
   return mapping[level];
 }
 
-function mapEnumToCategory(category: RuleCategory): 'GENERAL' | 'GNP' | 'METLIFE' | 'NYLIFE' {
-  return category as 'GENERAL' | 'GNP' | 'METLIFE' | 'NYLIFE';
+function mapEnumToCategory(category: RuleCategory): 'GENERAL' | 'GNP' | 'METLIFE' | 'NYLIFE' | 'AXA' {
+  return category as 'GENERAL' | 'GNP' | 'METLIFE' | 'NYLIFE' | 'AXA';
 }
 
 async function getAllActiveRulesInternal(): Promise<ScoringRuleOutput[]> {

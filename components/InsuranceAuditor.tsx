@@ -244,6 +244,7 @@ const InsuranceAuditor: React.FC<InsuranceAuditorProps> = ({ isOpen, onClose, on
       case 'GNP': return 'bg-orange-100 text-orange-700 border-orange-200';
       case 'METLIFE': return 'bg-green-100 text-green-700 border-green-200';
       case 'NYLIFE': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      case 'AXA': return 'bg-red-100 text-red-700 border-red-200';
       default: return 'bg-purple-100 text-purple-700 border-purple-200';
     }
   };
