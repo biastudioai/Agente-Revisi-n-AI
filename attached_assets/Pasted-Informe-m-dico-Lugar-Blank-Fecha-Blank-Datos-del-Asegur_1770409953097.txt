@@ -1,0 +1,179 @@
+Informe médico
+
+Lugar: Blank
+Fecha: Blank
+
+Datos del Asegurado afectado (paciente).
+
+Apellido paterno: Blank
+Apellido materno: Blank
+Nombre(s): Blank
+Edad: Blank
+Fecha de nacimiento:DD/MM/AAAA Blank  
+Sexo: Checkbox - Masculino ☐, Femenino ☐
+Talla: Blank
+Peso: Blank
+Tensión arterial:Blank
+
+Motivo de la atención médica
+
+Motivo de la atención médica: Checkbox - Enfermedad ☐, Accidente ☐,  Maternidad ☐,  Segunda opinión médica ☐
+
+Tipo de estancia
+
+Tipo de estancia: Checkbox - Urgencia ☐, Hospitalización ☐,  corta estancia/ambulatoria ☐,  consultorio ☐
+
+Antecedentes médicos
+
+Antecedentes patológicos (especificar fecha de inicio o
+tiempo con el padecimiento dd/mm/aaaa): Checkbox + Blank (Fecha) -  cardiacos ☐ Blank (Fecha), diabetes mellitus ☐ Blank (Fecha),  cáncer ☐ Blank (Fecha),  convulsivos ☐ Blank (Fecha),  hipertensivos ☐ Blank (Fecha), vih/sida ☐ Blank (Fecha), hepáticos ☐Blank (Fecha),  otros ☐ Blank
+
+Antecedentes no patológicos (especificar frecuencia, cantidad
+y desde cuándo): Checkbox + Blank - ¿Fuma? ☐ Blank, ¿consume bebidas alcohólicas? ☐ Blank,  ¿consume o ha consumido algún tipo de drogas? ☐ Blank,  otros ☐ Blank
+
+Antecedentes gineco-obstétricos:
+Gestación: Blank
+Partos: Blank
+Abortos: Blank
+Cesáreas: Blank
+Fecha de última menstruación: DD/MM/AAAA Blank
+Especificar si recibió tratamiento para infertilidad: Blank
+Tiempo de evolución: Blank
+
+Antecedentes perinatales (evolución, complicaciones, tratamientos): 
+Blank
+Tiempo de evolución: Blank
+
+
+
+Referido por otro medico o unidad: Checkbox -  si ☐, no ☐ 
+¿Cual?: Blank
+
+Diagnóstico(s)
+
+Padecimiento actual (principales signos, síntomas y detalles de evolución): Blank
+Fecha de padecimiento: DD/MM/AAAA Blank 
+Fecha de diagnóstico: DD/MM/AAAA Blank
+Tipo de padecimiento: Checkbox - Congénito ☐, Adquirido ☐, Agudo ☐, Crónico ☐
+Tiempo de evolución: Blank
+Causa o etiología del padecimiento (en caso de accidente, describa tiempo, modo y lugar donde ocurrió la lesión): Blank
+Tiene relación con otro padecimiento: Checkbox - Sí ☐, No☐
+¿Cuál?: Blank
+El padecimiento ocasionó incapacidad: Checkbox - Sí ☐, No ☐, Parcial ☐, Total ☐
+Desde: Blank
+Hasta: Blank
+Diagnóstico (indicando si es unilateral o bilateral, derecho o izquierdo): Blank
+Código ICD: Blank
+Es cáncer: Checkbox - Sí ☐, No ☐
+Escala TNM: Blank
+Señale los datos relevantes de exploración física:Blank
+Describe los estudios de laboratorio y/o gabinete que realizaron para confirmar el diagnóstico, con su interpretación: Blank
+
+Tratamiento
+
+Tratamiento propuesto (quirúrgico, no quirúrgico): Blank
+ Fecha de cirugía: DD/MM/AAAA Blank
+Fecha de hospitalización: DD/MM/AAAA Blank
+Fecha de alta:  DD/MM/AAAA Blank
+Días que se brindó atención médica: Blank
+Sitio en el cual se realizará el procedimiento: Checkbox-  Consultorio ☐, Hospital ☐, Gabinete ☐, Otro ☐,Blank
+Especifique: Blank
+En caso de haber seleccionado hospital indique el nombre del hospital: Blank
+Se realizó estudio histopatológico: Checkbox - Sí ☐, No ☐
+Describa el resultado del estudio histopatológico: Blank
+Se presentaron complicaciones: checkbox -  Sí ☐, No ☐
+Describa las complicaciones: Blank
+Continuará recibiendo tratamiento en el futuro: checkbox - Sí ☐, No ☐
+Describa el tratamiento: Blank
+
+Otros tratamientos y/o materiales, equipos y/o biológicos/monitoreos
+
+Especificar tratamiento (sesiones de quimioterapia, sesiones de rehabilitación física, número de sesiones, cantidad, cada cuánto y durante cuánto tiempo): Blank
+
+Programación de sesiones de quimioterapia o radioterapia (en caso de ser más de 10 medicamentos, favor de llenar otro formato)
+
+Tabla
+Encabezados: Nombre y presentación del medicamento (Ej: Paracetamol 100 mg), Cantidad (Ej: 1 tableta), Cada cuánto (Ej: Cada 24 hrs), Durante cuánto tiempo (Ej: Por un mes).
+
+Filas
+1: Blank
+2: Blank
+3: Blank
+4: Blank
+5: Blank
+6: Blank
+7: Blank
+8: Blank
+9: Blank
+10: Blank
+
+Programación de sesiones de rehabilitación física
+
+Días: Blank
+No. de sesiones: Blank
+
+Se requiere servicio de enfermería
+
+Días requeridos: Blank + Checkbox - Matutino ☐, Vespertino ☐, Nocturno ☐, 24 horas ☐
+Nombre de medicamentos: Blank
+En caso de terapia inmunológica, biológica, etc., justifique el tratamiento: Blank
+Lista de materiales que utilizó o se utilizarán en cirugía y/o equipo especial (monitoreo, Da Vinci u otros): Blank
+Tipo de terapia: Blank
+Cédula de especialidad: Blank
+Detalle de evolución: Blank
+
+Observaciones
+
+Si tiene alguna observación adicional, favor de agregarla aquí: Blank
+
+Datos del médico
+
+Médico o especialista
+Tipo de participación: Blank
+Nombre: Blank
+Especialidad: Blank
+Cédula profesional: Blank
+Cédula de especialidad: Blank
+RFC: Blank
+Domicilio: Blank
+Teléfono:Blank
+
+Médico o especialista (anestesiólogo)
+Tipo de participación: Blank
+Nombre: Blank
+Especialidad: Blank
+Cédula profesional: Blank
+Cédula de especialidad: Blank
+RFC: Blank
+Domicilio: Blank
+Teléfono:Blank
+
+Ayudante 1
+Tipo de participación: Blank
+Nombre: Blank
+
+Ayudante 2
+Tipo de participación: Blank
+Nombre: Blank
+
+Otros médicos: Blank
+
+Firma del médico: Blank
+
+Lugar y fecha: Blank
+
+Datos personales
+
+AXA Seguros, S.A. de C.V. (AXA), con domicilio en Avenida Félix Cuevas número 366, piso 6, Colonia Tlacoquemécatl, Delegación Benito Juárez, C.P. 03200, Ciudad de México, llevará a cabo el tratamiento de sus datos personales para el cumplimiento del Contrato de Seguro y demás finalidades previstas en el aviso de privacidad integral que puede consultar
+en axa.mx en la sección Aviso de Privacidad.: Checkbox - Autorizo el tratamiento y transferencia de mis datos personales patrimoniales y financieros, para efectos del cumplimiento del Contrato de Seguro y demás finalidades contempladas en el Aviso de Privacidad  ☐
+
+Transferencia de datos a terceros
+
+Para ser llenado por el Asegurado afectado, o en su defecto los padres o tutores en caso de ser menor de edad.
+
+Autorizo que AXA trate mis datos personales sensibles y los transfiera a médicos especialistas en México y/o en el extranjero,así como a prestadores de servicios médicos con los que tenga convenio, para efectos del cumplimiento de las obligaciones
+derivadas del Contrato de Seguro. : Checkbox -  Sí acepto ☐, No acepto ☐
+Firma del Asegurado: Blank
+
+Autorizo que AXA Seguros S.A. de C.V., al inscribirme en alguno de los programas que incluye la Póliza de gastos médicos mayores, transfiera mis datos personales sensibles a médicos especialistas en México y/o en el extranjero, así como a prestadores de servicios médicos, con la finalidad de ofrecerme los servicios de asistencia que me permitan dar seguimiento específico a mi padecimiento, así como solicitar una segunda opinión médica y en su caso se me ofrezcan alternativas para el tratamiento de mi enfermedad. : Checkbox -  Sí acepto ☐, No acepto ☐
+Firma del Asegurado: Blank
