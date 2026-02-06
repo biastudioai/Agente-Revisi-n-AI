@@ -3,11 +3,13 @@ import { ProviderConfig, ProviderRegistry, ProviderType, GeminiSchema } from "./
 import { METLIFE_CONFIG } from "./metlife.config";
 import { GNP_CONFIG } from "./gnp.config";
 import { NYLIFE_CONFIG } from "./nylife.config";
+import { AXA_CONFIG } from "./axa.config";
 
 export const PROVIDER_REGISTRY: ProviderRegistry = {
   METLIFE: METLIFE_CONFIG,
   GNP: GNP_CONFIG,
-  NYLIFE: NYLIFE_CONFIG
+  NYLIFE: NYLIFE_CONFIG,
+  AXA: AXA_CONFIG
 };
 
 export function getProviderConfig(provider: ProviderType): ProviderConfig | null {
@@ -54,7 +56,7 @@ export function buildCombinedGeminiSchema(): GeminiSchema {
   const combinedProperties: Record<string, any> = {
     provider: { 
       type: Type.STRING, 
-      description: "Identificador del proveedor: METLIFE, GNP, NYLIFE o UNKNOWN" 
+      description: "Identificador del proveedor: METLIFE, GNP, NYLIFE, AXA o UNKNOWN" 
     }
   };
 
