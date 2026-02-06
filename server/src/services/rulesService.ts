@@ -64,12 +64,13 @@ function mapCategoryToEnum(category: string): RuleCategory {
     'GNP': RuleCategory.GNP,
     'METLIFE': RuleCategory.METLIFE,
     'NYLIFE': RuleCategory.NYLIFE,
+    'AXA': RuleCategory.AXA,
   };
   return mapping[category.toUpperCase()] || RuleCategory.GENERAL;
 }
 
-function mapEnumToCategory(category: RuleCategory): 'GENERAL' | 'GNP' | 'METLIFE' | 'NYLIFE' {
-  return category as 'GENERAL' | 'GNP' | 'METLIFE' | 'NYLIFE';
+function mapEnumToCategory(category: RuleCategory): 'GENERAL' | 'GNP' | 'METLIFE' | 'NYLIFE' | 'AXA' {
+  return category as 'GENERAL' | 'GNP' | 'METLIFE' | 'NYLIFE' | 'AXA';
 }
 
 function transformToOutput(record: ScoringRuleRecord): ScoringRuleOutput {
