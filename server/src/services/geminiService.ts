@@ -37,6 +37,7 @@ function validateConfig(): void {
 
 let vertexAI: VertexAI | null = null;
 let generativeModel: GenerativeModel | null = null;
+let currentModelName: string | null = null;
 let credentialsSetup = false;
 
 function getGenerativeModel(): GenerativeModel {
@@ -61,10 +62,11 @@ function getGenerativeModel(): GenerativeModel {
     });
   }
   
-  if (!generativeModel) {
+  if (!generativeModel || currentModelName !== MODEL_NAME) {
     generativeModel = vertexAI.getGenerativeModel({
       model: MODEL_NAME,
     });
+    currentModelName = MODEL_NAME;
   }
   
   return generativeModel;
@@ -89,8 +91,8 @@ export const analyzeReportImages = async (
     provider: ProviderType,
     rules: ScoringRule[]
 ): Promise<AnalysisReport> => {
+  const startTime = Date.now();
   try {
-    const startTime = Date.now();
     console.log("═══════════════════════════════════════════════════════════════");
     console.log("⏱️  INICIO PROCESAMIENTO DE INFORME");
     console.log("═══════════════════════════════════════════════════════════════");
