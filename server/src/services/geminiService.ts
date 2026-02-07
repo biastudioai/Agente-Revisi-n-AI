@@ -350,11 +350,19 @@ export const analyzeReportImages = async (
     const errorTime = Date.now() - startTime;
     console.error("═══════════════════════════════════════════════════════════════");
     console.error(`❌ ERROR EN PROCESAMIENTO (después de ${errorTime}ms)`);
+    console.error(`❌ Provider: ${provider}`);
     console.error("═══════════════════════════════════════════════════════════════");
-    console.error("Error analyzing report:", error);
-    console.error("Error details:", error?.message || error);
+    console.error("Error name:", error?.name);
+    console.error("Error message:", error?.message);
+    console.error("Error stack:", error?.stack);
     if (error?.response) {
-      console.error("API Response error:", error.response);
+      console.error("API Response error:", JSON.stringify(error.response, null, 2));
+    }
+    if (error?.errorDetails) {
+      console.error("Error details:", JSON.stringify(error.errorDetails, null, 2));
+    }
+    if (error?.statusDetails) {
+      console.error("Status details:", JSON.stringify(error.statusDetails, null, 2));
     }
     throw error;
   }
