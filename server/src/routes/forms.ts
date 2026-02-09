@@ -423,8 +423,8 @@ router.get(
         const identificacion = formData.identificacion || {};
         const patientName = [
           identificacion.nombres || '',
-          identificacion.primer_apellido || '',
-          identificacion.segundo_apellido || ''
+          identificacion.apellido_paterno || identificacion.primer_apellido || '',
+          identificacion.apellido_materno || identificacion.segundo_apellido || ''
         ].filter(Boolean).join(' ').trim() || 'Sin nombre';
 
         return {
