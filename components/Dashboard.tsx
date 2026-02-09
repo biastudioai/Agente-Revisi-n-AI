@@ -1342,7 +1342,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
                                         <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>ANESTESIÓLOGO</h4>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {renderInput("Tipo Participación", (formData as any).anestesiologo?.tipo_participacion, 'anestesiologo.tipo_participacion')}
+                                            {renderInput("Médico o especialista (Anestesiólogo)", (formData as any).anestesiologo?.tipo_participacion, 'anestesiologo.tipo_participacion')}
                                             {renderInput("Nombre", (formData as any).anestesiologo?.nombre, 'anestesiologo.nombre')}
                                             {renderInput("Especialidad", (formData as any).anestesiologo?.especialidad, 'anestesiologo.especialidad')}
                                             {renderInput("Cédula Profesional", (formData as any).anestesiologo?.cedula_profesional, 'anestesiologo.cedula_profesional')}
