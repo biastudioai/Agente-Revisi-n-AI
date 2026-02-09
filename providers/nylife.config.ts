@@ -47,7 +47,7 @@ export const NYLIFE_CONFIG: ProviderConfig = {
    - Si el médico escribió texto adicional junto a una casilla (ej. "Diabetes - Controlada"), pon "Sí" en el campo individual y captura el texto completo en el array y en detalle_narrativo.
 
 5. EQUIPO QUIRÚRGICO:
-   - Extrae cada fila (Médico o especialista (anestesiólogo), Ayudantes, Otros) como un objeto dentro del array. No omitas los presupuestos de honorarios.
+   - Extrae cada fila (Anestesiólogo, Ayudantes, Otros) como un objeto dentro del array. No omitas los presupuestos de honorarios.
 
 6. FIRMAS POR PÁGINA (CRÍTICO - EXTRACCIÓN INDEPENDIENTE):
    - Cada página (1 y 2) debe evaluarse DE FORMA COMPLETAMENTE INDEPENDIENTE.

@@ -387,7 +387,7 @@ SECCIÓN 5 - OBSERVACIONES ADICIONALES:
 - observaciones: Comentarios adicionales
 
 SECCIÓN 6 - EQUIPO QUIRÚRGICO:
-Para cada miembro del equipo (Médico o especialista (anestesiólogo), Primer Ayudante, Otro 1, Otro 2):
+Para cada miembro del equipo (Anestesiólogo, Primer Ayudante, Otro 1, Otro 2):
 - nombre: Nombre completo
 - cedula_especialidad: Cédula profesional de especialidad
 - celular: Número celular
