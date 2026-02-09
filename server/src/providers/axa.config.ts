@@ -352,7 +352,7 @@ El documento AXA tiene DOS secciones de autorización separadas al final:
             }
           },
 
-          anestesiologo: {
+          medico_o_especialista_anestesiologo: {
             type: Type.OBJECT,
             properties: {
               tipo_participacion: { type: Type.STRING },

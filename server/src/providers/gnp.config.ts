@@ -406,7 +406,7 @@ MÉDICOS INTERCONSULTANTES O PARTICIPANTES:
 - Pueden haber de 0 hasta 3 médicos registrados
 
 Para cada médico que SÍ esté registrado extraer:
-- tipo_participacion: Interconsultante, Cirujano, Anestesiólogo, Ayudantía, u Otra (cuál está marcada)
+- tipo_participacion: Interconsultante, Cirujano, Médico o especialista (anestesiólogo), Ayudantía, u Otra (cuál está marcada)
 - tipo_participacion_otra: Si es "Otra", especificar cuál tipo
 - primer_apellido: Primer apellido del médico
 - segundo_apellido: Segundo apellido del médico
@@ -846,7 +846,7 @@ Al finalizar la extracción, llena el objeto metadata_ia con las siguientes obse
                 tipo_participacion: { 
                   type: Type.ARRAY, 
                   items: { type: Type.STRING },
-                  description: "Array con el tipo de participación marcado: puede contener 'Interconsultante', 'Cirujano', 'Anestesiólogo', 'Ayudantía', 'Otra'. SOLO extrae lo que VES marcado visualmente."
+                  description: "Array con el tipo de participación marcado: puede contener 'Interconsultante', 'Cirujano', 'Médico o especialista (anestesiólogo)', 'Ayudantía', 'Otra'. SOLO extrae lo que VES marcado visualmente."
                 },
                 tipo_participacion_otra: { type: Type.STRING, description: "Si es Otra, especificar cuál" },
                 primer_apellido: { type: Type.STRING, description: "Primer apellido del médico" },
