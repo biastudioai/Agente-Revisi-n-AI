@@ -362,8 +362,8 @@ const Dashboard: React.FC<DashboardProps> = ({
      { id: 'tratamiento', label: 'Tratamiento', icon: Syringe, metlifeSection: '' },
      { id: 'hospital', label: 'Hospital', icon: Hospital, metlifeSection: '4' },
      { id: 'observaciones', label: 'Observaciones', icon: ClipboardList, metlifeSection: '5' },
-     { id: 'equipo_qx', label: 'Otros Médicos', icon: Users, metlifeSection: '6' },
-     { id: 'medico', label: 'Médico', icon: Activity, metlifeSection: '7' },
+     { id: 'medico', label: 'Médico', icon: Activity, metlifeSection: '6' },
+     { id: 'equipo_qx', label: 'Otros Médicos', icon: Users, metlifeSection: '7' },
      { id: 'validacion', label: 'Firma', icon: PenTool, metlifeSection: '8' },
   ];
 
@@ -1287,85 +1287,6 @@ const Dashboard: React.FC<DashboardProps> = ({
                             </div>
                         )}
 
-                        {/* SECCIÓN: EQUIPO QUIRÚRGICO / OTROS MÉDICOS (METLIFE, GNP y AXA, no NYLIFE) */}
-                        {provider !== 'NYLIFE' && (
-                            <div id="section-equipo_qx" className="scroll-mt-20">
-                            {provider === 'METLIFE' && (
-                                <div className="space-y-4">
-                                    <p className="text-xs text-slate-500 mb-4">Profesionales de la salud que participaron en el procedimiento:</p>
-                                    {renderPersonalQuirurgico("Anestesiólogo", formData.equipo_quirurgico_metlife?.anestesiologo, 'equipo_quirurgico_metlife.anestesiologo')}
-                                    {renderPersonalQuirurgico("Primer Ayudante", formData.equipo_quirurgico_metlife?.primer_ayudante, 'equipo_quirurgico_metlife.primer_ayudante')}
-                                    {renderPersonalQuirurgico("Otro Profesional 1", formData.equipo_quirurgico_metlife?.otro_1, 'equipo_quirurgico_metlife.otro_1')}
-                                    {renderPersonalQuirurgico("Otro Profesional 2", formData.equipo_quirurgico_metlife?.otro_2, 'equipo_quirurgico_metlife.otro_2')}
-                                </div>
-                            )}
-
-                            {provider === 'GNP' && (
-                            <div className="space-y-6">
-                                <p className="text-xs text-slate-500 mb-4">Médicos interconsultantes o participantes en la intervención:</p>
-                                
-                                {[0, 1, 2].map((index) => {
-                                    const medico = formData.otros_medicos?.[index];
-                                    return (
-                                        <div key={index} className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
-                                            <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>MÉDICO {index + 1}</h4>
-                                            <div className="mb-3">
-                                                {renderCheckboxGroup("Tipo de Participación", medico?.tipo_participacion, `otros_medicos.${index}.tipo_participacion`, ['Interconsultante', 'Cirujano', 'Anestesiólogo', 'Ayudantía', 'Otra'])}
-                                            </div>
-                                            {(() => {
-                                                const tp = medico?.tipo_participacion;
-                                                if (Array.isArray(tp)) return tp.some(v => String(v).toLowerCase() === 'otra');
-                                                if (typeof tp === 'string') return tp.toLowerCase().includes('otra');
-                                                return false;
-                                            })() && renderInput("Especifique cuál", medico?.tipo_participacion_otra, `otros_medicos.${index}.tipo_participacion_otra`)}
-                                            <div className="grid grid-cols-3 gap-3 mt-3">
-                                                {renderInput("Primer Apellido", medico?.primer_apellido, `otros_medicos.${index}.primer_apellido`)}
-                                                {renderInput("Segundo Apellido", medico?.segundo_apellido, `otros_medicos.${index}.segundo_apellido`)}
-                                                {renderInput("Nombre(s)", medico?.nombres, `otros_medicos.${index}.nombres`)}
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-3 mt-3">
-                                                {renderInput("Especialidad", medico?.especialidad, `otros_medicos.${index}.especialidad`)}
-                                                {renderInput("Cédula Profesional", medico?.cedula_profesional, `otros_medicos.${index}.cedula_profesional`)}
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-3 mt-3">
-                                                {renderInput("Cédula de Especialidad", medico?.cedula_especialidad, `otros_medicos.${index}.cedula_especialidad`)}
-                                                {renderInput("Presupuesto de Honorarios", medico?.ppto_honorarios, `otros_medicos.${index}.ppto_honorarios`, 'text', '$')}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                            )}
-
-                            {provider === 'AXA' && (
-                                <div className="space-y-4">
-                                    <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
-                                        <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>ANESTESIÓLOGO</h4>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {renderInput("Médico o especialista (Anestesiólogo)", (formData as any).anestesiologo?.tipo_participacion, 'anestesiologo.tipo_participacion')}
-                                            {renderInput("Nombre", (formData as any).anestesiologo?.nombre, 'anestesiologo.nombre')}
-                                            {renderInput("Especialidad", (formData as any).anestesiologo?.especialidad, 'anestesiologo.especialidad')}
-                                            {renderInput("Cédula Profesional", (formData as any).anestesiologo?.cedula_profesional, 'anestesiologo.cedula_profesional')}
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                                            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3">Ayudante 1</div>
-                                            {renderInput("Tipo", (formData as any).ayudantes?.ayudante_1_tipo, 'ayudantes.ayudante_1_tipo')}
-                                            {renderInput("Nombre", (formData as any).ayudantes?.ayudante_1_nombre, 'ayudantes.ayudante_1_nombre')}
-                                        </div>
-                                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                                            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3">Ayudante 2</div>
-                                            {renderInput("Tipo", (formData as any).ayudantes?.ayudante_2_tipo, 'ayudantes.ayudante_2_tipo')}
-                                            {renderInput("Nombre", (formData as any).ayudantes?.ayudante_2_nombre, 'ayudantes.ayudante_2_nombre')}
-                                        </div>
-                                    </div>
-                                    {renderInput("Otros Médicos", (formData as any).ayudantes?.otros_medicos, 'ayudantes.otros_medicos', 'textarea')}
-                                </div>
-                            )}
-                            </div>
-                        )}
-
                         {/* SECCIÓN: MÉDICO TRATANTE */}
                         <div id="section-medico" className="scroll-mt-20">
                         {provider === 'METLIFE' && (
@@ -1580,6 +1501,85 @@ const Dashboard: React.FC<DashboardProps> = ({
                             </div>
                         )}
                         </div>
+
+                        {/* SECCIÓN: EQUIPO QUIRÚRGICO / OTROS MÉDICOS (METLIFE, GNP y AXA, no NYLIFE) */}
+                        {provider !== 'NYLIFE' && (
+                            <div id="section-equipo_qx" className="scroll-mt-20">
+                            {provider === 'METLIFE' && (
+                                <div className="space-y-4">
+                                    <p className="text-xs text-slate-500 mb-4">Profesionales de la salud que participaron en el procedimiento:</p>
+                                    {renderPersonalQuirurgico("Anestesiólogo", formData.equipo_quirurgico_metlife?.anestesiologo, 'equipo_quirurgico_metlife.anestesiologo')}
+                                    {renderPersonalQuirurgico("Primer Ayudante", formData.equipo_quirurgico_metlife?.primer_ayudante, 'equipo_quirurgico_metlife.primer_ayudante')}
+                                    {renderPersonalQuirurgico("Otro Profesional 1", formData.equipo_quirurgico_metlife?.otro_1, 'equipo_quirurgico_metlife.otro_1')}
+                                    {renderPersonalQuirurgico("Otro Profesional 2", formData.equipo_quirurgico_metlife?.otro_2, 'equipo_quirurgico_metlife.otro_2')}
+                                </div>
+                            )}
+
+                            {provider === 'GNP' && (
+                            <div className="space-y-6">
+                                <p className="text-xs text-slate-500 mb-4">Médicos interconsultantes o participantes en la intervención:</p>
+                                
+                                {[0, 1, 2].map((index) => {
+                                    const medico = formData.otros_medicos?.[index];
+                                    return (
+                                        <div key={index} className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
+                                            <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>MÉDICO {index + 1}</h4>
+                                            <div className="mb-3">
+                                                {renderCheckboxGroup("Tipo de Participación", medico?.tipo_participacion, `otros_medicos.${index}.tipo_participacion`, ['Interconsultante', 'Cirujano', 'Anestesiólogo', 'Ayudantía', 'Otra'])}
+                                            </div>
+                                            {(() => {
+                                                const tp = medico?.tipo_participacion;
+                                                if (Array.isArray(tp)) return tp.some(v => String(v).toLowerCase() === 'otra');
+                                                if (typeof tp === 'string') return tp.toLowerCase().includes('otra');
+                                                return false;
+                                            })() && renderInput("Especifique cuál", medico?.tipo_participacion_otra, `otros_medicos.${index}.tipo_participacion_otra`)}
+                                            <div className="grid grid-cols-3 gap-3 mt-3">
+                                                {renderInput("Primer Apellido", medico?.primer_apellido, `otros_medicos.${index}.primer_apellido`)}
+                                                {renderInput("Segundo Apellido", medico?.segundo_apellido, `otros_medicos.${index}.segundo_apellido`)}
+                                                {renderInput("Nombre(s)", medico?.nombres, `otros_medicos.${index}.nombres`)}
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3 mt-3">
+                                                {renderInput("Especialidad", medico?.especialidad, `otros_medicos.${index}.especialidad`)}
+                                                {renderInput("Cédula Profesional", medico?.cedula_profesional, `otros_medicos.${index}.cedula_profesional`)}
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3 mt-3">
+                                                {renderInput("Cédula de Especialidad", medico?.cedula_especialidad, `otros_medicos.${index}.cedula_especialidad`)}
+                                                {renderInput("Presupuesto de Honorarios", medico?.ppto_honorarios, `otros_medicos.${index}.ppto_honorarios`, 'text', '$')}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            )}
+
+                            {provider === 'AXA' && (
+                                <div className="space-y-4">
+                                    <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
+                                        <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>ANESTESIÓLOGO</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {renderInput("Médico o especialista (Anestesiólogo)", (formData as any).anestesiologo?.tipo_participacion, 'anestesiologo.tipo_participacion')}
+                                            {renderInput("Nombre", (formData as any).anestesiologo?.nombre, 'anestesiologo.nombre')}
+                                            {renderInput("Especialidad", (formData as any).anestesiologo?.especialidad, 'anestesiologo.especialidad')}
+                                            {renderInput("Cédula Profesional", (formData as any).anestesiologo?.cedula_profesional, 'anestesiologo.cedula_profesional')}
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3">Ayudante 1</div>
+                                            {renderInput("Tipo", (formData as any).ayudantes?.ayudante_1_tipo, 'ayudantes.ayudante_1_tipo')}
+                                            {renderInput("Nombre", (formData as any).ayudantes?.ayudante_1_nombre, 'ayudantes.ayudante_1_nombre')}
+                                        </div>
+                                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3">Ayudante 2</div>
+                                            {renderInput("Tipo", (formData as any).ayudantes?.ayudante_2_tipo, 'ayudantes.ayudante_2_tipo')}
+                                            {renderInput("Nombre", (formData as any).ayudantes?.ayudante_2_nombre, 'ayudantes.ayudante_2_nombre')}
+                                        </div>
+                                    </div>
+                                    {renderInput("Otros Médicos", (formData as any).ayudantes?.otros_medicos, 'ayudantes.otros_medicos', 'textarea')}
+                                </div>
+                            )}
+                            </div>
+                        )}
 
                         {/* SECCIÓN: FIRMA / VALIDACIÓN */}
                         <div id="section-validacion" className="scroll-mt-20">
