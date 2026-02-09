@@ -355,16 +355,20 @@ const Dashboard: React.FC<DashboardProps> = ({
     );
   };
 
-  const tabs: { id: TabId, label: string, icon: any, metlifeSection?: string }[] = [
+  const baseTabs: { id: TabId, label: string, icon: any, metlifeSection?: string }[] = [
      { id: 'identificacion', label: 'Paciente', icon: User, metlifeSection: '1' },
      { id: 'antecedentes', label: 'Antecedentes', icon: FileText, metlifeSection: '2' },
      { id: 'padecimiento', label: 'Padecimiento', icon: HeartPulse, metlifeSection: '3' },
      { id: 'tratamiento', label: 'Tratamiento', icon: Syringe, metlifeSection: '' },
      { id: 'hospital', label: 'Hospital', icon: Hospital, metlifeSection: '4' },
      { id: 'observaciones', label: 'Observaciones', icon: ClipboardList, metlifeSection: '5' },
-     { id: 'medico', label: 'Médico', icon: Activity, metlifeSection: '6' },
-     { id: 'equipo_qx', label: 'Otros Médicos', icon: Users, metlifeSection: '7' },
-     { id: 'validacion', label: 'Firma', icon: PenTool, metlifeSection: '8' },
+  ];
+  const medicoTab = { id: 'medico' as TabId, label: 'Médico', icon: Activity, metlifeSection: provider === 'METLIFE' ? '7' : '6' };
+  const equipoTab = { id: 'equipo_qx' as TabId, label: 'Otros Médicos', icon: Users, metlifeSection: provider === 'METLIFE' ? '6' : '7' };
+  const tabs = [
+     ...baseTabs,
+     ...(provider === 'METLIFE' ? [equipoTab, medicoTab] : [medicoTab, equipoTab]),
+     { id: 'validacion' as TabId, label: 'Firma', icon: PenTool, metlifeSection: '8' },
   ];
 
   return (
@@ -1287,6 +1291,19 @@ const Dashboard: React.FC<DashboardProps> = ({
                             </div>
                         )}
 
+                        {/* SECCIÓN: EQUIPO QUIRÚRGICO METLIFE (va antes de Médico para MetLife) */}
+                        {provider === 'METLIFE' && (
+                            <div id="section-equipo_qx" className="scroll-mt-20">
+                                <div className="space-y-4">
+                                    <p className="text-xs text-slate-500 mb-4">Profesionales de la salud que participaron en el procedimiento:</p>
+                                    {renderPersonalQuirurgico("Anestesiólogo", formData.equipo_quirurgico_metlife?.anestesiologo, 'equipo_quirurgico_metlife.anestesiologo')}
+                                    {renderPersonalQuirurgico("Primer Ayudante", formData.equipo_quirurgico_metlife?.primer_ayudante, 'equipo_quirurgico_metlife.primer_ayudante')}
+                                    {renderPersonalQuirurgico("Otro Profesional 1", formData.equipo_quirurgico_metlife?.otro_1, 'equipo_quirurgico_metlife.otro_1')}
+                                    {renderPersonalQuirurgico("Otro Profesional 2", formData.equipo_quirurgico_metlife?.otro_2, 'equipo_quirurgico_metlife.otro_2')}
+                                </div>
+                            </div>
+                        )}
+
                         {/* SECCIÓN: MÉDICO TRATANTE */}
                         <div id="section-medico" className="scroll-mt-20">
                         {provider === 'METLIFE' && (
@@ -1502,19 +1519,9 @@ const Dashboard: React.FC<DashboardProps> = ({
                         )}
                         </div>
 
-                        {/* SECCIÓN: EQUIPO QUIRÚRGICO / OTROS MÉDICOS (METLIFE, GNP y AXA, no NYLIFE) */}
-                        {provider !== 'NYLIFE' && (
+                        {/* SECCIÓN: EQUIPO QUIRÚRGICO / OTROS MÉDICOS (GNP y AXA, no NYLIFE ni METLIFE que ya se renderizó arriba) */}
+                        {provider !== 'NYLIFE' && provider !== 'METLIFE' && (
                             <div id="section-equipo_qx" className="scroll-mt-20">
-                            {provider === 'METLIFE' && (
-                                <div className="space-y-4">
-                                    <p className="text-xs text-slate-500 mb-4">Profesionales de la salud que participaron en el procedimiento:</p>
-                                    {renderPersonalQuirurgico("Anestesiólogo", formData.equipo_quirurgico_metlife?.anestesiologo, 'equipo_quirurgico_metlife.anestesiologo')}
-                                    {renderPersonalQuirurgico("Primer Ayudante", formData.equipo_quirurgico_metlife?.primer_ayudante, 'equipo_quirurgico_metlife.primer_ayudante')}
-                                    {renderPersonalQuirurgico("Otro Profesional 1", formData.equipo_quirurgico_metlife?.otro_1, 'equipo_quirurgico_metlife.otro_1')}
-                                    {renderPersonalQuirurgico("Otro Profesional 2", formData.equipo_quirurgico_metlife?.otro_2, 'equipo_quirurgico_metlife.otro_2')}
-                                </div>
-                            )}
-
                             {provider === 'GNP' && (
                             <div className="space-y-6">
                                 <p className="text-xs text-slate-500 mb-4">Médicos interconsultantes o participantes en la intervención:</p>
