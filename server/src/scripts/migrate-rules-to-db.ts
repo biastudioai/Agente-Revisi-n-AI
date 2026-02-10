@@ -1555,11 +1555,10 @@ const REGLAS_AXA: RawScoringRule[] = [
     providerTarget: 'AXA',
     isCustom: false,
     conditions: [
-      { id: 'cond_axa_firma_vacia', field: 'firma.firma_medico', operator: 'IS_EMPTY' },
-      { id: 'cond_axa_firma_no_detectada', field: 'firma.firma_medico', operator: 'EQUALS', value: 'No detectada' }
+      { id: 'cond_axa_firma_no_detectada', field: 'firma.firma_autografa_detectada', operator: 'EQUALS', value: 'false' }
     ],
-    logicOperator: 'OR',
-    affectedFields: ['firma.firma_medico']
+    logicOperator: 'AND',
+    affectedFields: ['firma.firma_autografa_detectada']
   },
   {
     id: 'axa_lugar_fecha_informe',
@@ -2280,18 +2279,33 @@ async function migrateRulesToDatabase() {
         });
         console.log(`  + Added: ${rule.name}`);
         addedCount++;
-      } else if (existingTarget !== rule.providerTarget) {
-        await prisma.scoringRuleRecord.update({
-          where: { ruleId: rule.id },
-          data: { 
-            providerTarget: rule.providerTarget,
-            category: rule.category,
-          }
-        });
-        console.log(`  ~ Updated providerTarget: ${rule.id} (${existingTarget} → ${rule.providerTarget})`);
-        updatedCount++;
       } else {
-        skippedCount++;
+        const newConditions = rule.conditions && rule.conditions.length > 0 ? JSON.parse(JSON.stringify(rule.conditions)) : undefined;
+        const newAffectedFields = rule.affectedFields;
+        const needsUpdate = existingTarget !== rule.providerTarget;
+
+        const existingRecord = await prisma.scoringRuleRecord.findUnique({ where: { ruleId: rule.id }, select: { conditions: true, affectedFields: true } });
+        const conditionsChanged = JSON.stringify(existingRecord?.conditions) !== JSON.stringify(newConditions);
+        const fieldsChanged = JSON.stringify(existingRecord?.affectedFields) !== JSON.stringify(newAffectedFields);
+
+        if (needsUpdate || conditionsChanged || fieldsChanged) {
+          const updateData: any = { category: rule.category };
+          if (needsUpdate) updateData.providerTarget = rule.providerTarget;
+          if (conditionsChanged) updateData.conditions = newConditions;
+          if (fieldsChanged) updateData.affectedFields = newAffectedFields;
+          await prisma.scoringRuleRecord.update({
+            where: { ruleId: rule.id },
+            data: updateData,
+          });
+          const changes = [];
+          if (needsUpdate) changes.push(`providerTarget: ${existingTarget} → ${rule.providerTarget}`);
+          if (conditionsChanged) changes.push('conditions');
+          if (fieldsChanged) changes.push('affectedFields');
+          console.log(`  ~ Updated ${rule.id}: ${changes.join(', ')}`);
+          updatedCount++;
+        } else {
+          skippedCount++;
+        }
       }
     } catch (error: any) {
       console.error(`  ! Error processing rule ${rule.id}:`, error.message);

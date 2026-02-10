@@ -113,6 +113,13 @@ Extrae CADA fila como un objeto separado en el array tabla_medicamentos.
 - Si una fila tiene datos parciales → inclúyela con los campos disponibles y vacíos para el resto
 - El campo "numero" corresponde al número de fila (1-10)
 
+📋 FIRMA DEL MÉDICO (PÁGINA 4):
+
+Al final de la página 4, hay una sección con dos columnas: "Firma del médico" y "Lugar y fecha".
+- firma.lugar: Extrae SOLO el lugar/ciudad del campo "Lugar y fecha" (ej: "Zapopan, Jalisco"). No incluyas la fecha aquí.
+- firma.fecha: Extrae SOLO la fecha del campo "Lugar y fecha" en formato DD/MM/AAAA (ej: "06/02/2026"). Si dice "6 febrero 2026" o "6 de febrero de 2026", convierte a DD/MM/AAAA.
+- firma.firma_autografa_detectada: true si hay una firma manuscrita/autógrafa visible en la columna "Firma del médico", false si solo hay texto impreso o está vacío.
+
 📋 SECCIONES DE AUTORIZACIÓN (PÁGINA 5):
 
 El documento AXA tiene DOS secciones de autorización separadas al final:
@@ -380,8 +387,9 @@ El documento AXA tiene DOS secciones de autorización separadas al final:
           firma: {
             type: Type.OBJECT,
             properties: {
-              firma_medico: { type: Type.STRING, description: "Detectada o No detectada" },
-              lugar_fecha: { type: Type.STRING }
+              lugar: { type: Type.STRING, description: "Solo el lugar/ciudad, sin la fecha (ej: Zapopan, Jalisco)" },
+              fecha: { type: Type.STRING, description: "Solo la fecha en formato DD/MM/AAAA" },
+              firma_autografa_detectada: { type: Type.BOOLEAN, description: "true si se detecta firma manuscrita del médico, false si solo texto o vacío" }
             }
           },
 
@@ -407,8 +415,7 @@ El documento AXA tiene DOS secciones de autorización separadas al final:
             properties: {
               existe_coherencia_clinica: { type: Type.BOOLEAN },
               observacion_coherencia: { type: Type.STRING },
-              tachaduras_detectadas: { type: Type.BOOLEAN },
-              firma_coincide_con_tratante: { type: Type.BOOLEAN }
+              tachaduras_detectadas: { type: Type.BOOLEAN }
             }
           }
         },

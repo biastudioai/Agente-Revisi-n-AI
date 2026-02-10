@@ -1596,10 +1596,10 @@ const Dashboard: React.FC<DashboardProps> = ({
                                 <h3 className="text-sm font-bold text-slate-400 mb-4 uppercase tracking-widest">Validación de Autorización</h3>
                                 
                                 <div className="grid grid-cols-2 gap-4 mb-4">
-                                    {renderInput("Lugar de Firma", formData.firma?.lugar, 'firma.lugar')}
+                                    {renderInput("Lugar de Firma", provider === 'AXA' ? (formData as any).firma?.lugar : formData.firma?.lugar, 'firma.lugar')}
                                     <DateInput 
                                         label="Fecha de Firma" 
-                                        value={formData.firma?.fecha} 
+                                        value={provider === 'AXA' ? (formData as any).firma?.fecha : formData.firma?.fecha} 
                                         path="firma.fecha" 
                                         isModified={!!modifiedFields['firma.fecha']} 
                                         isHighlighted={highlightedField === 'firma.fecha'} 
@@ -1607,12 +1607,12 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     />
                                 </div>
                                 
-                                {renderInput("Nombre Firma Autógrafa", formData.firma?.nombre_firma, 'firma.nombre_firma')}
+                                {provider !== 'AXA' && renderInput("Nombre Firma Autógrafa", formData.firma?.nombre_firma, 'firma.nombre_firma')}
                                 
                                 <div className="mt-4 flex items-center justify-center gap-2 p-3 bg-slate-50 rounded-lg">
                                     <input 
                                         type="checkbox" 
-                                        checked={formData.firma?.firma_autografa_detectada || false} 
+                                        checked={provider === 'AXA' ? ((formData as any).firma?.firma_autografa_detectada || false) : (formData.firma?.firma_autografa_detectada || false)} 
                                         onChange={(e) => handleInputChange('firma.firma_autografa_detectada', e.target.checked)} 
                                         className="w-5 h-5 rounded text-emerald-600"
                                     />
@@ -1687,10 +1687,6 @@ const Dashboard: React.FC<DashboardProps> = ({
 
                         {provider === 'AXA' && (
                             <div className="space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {renderInput("Firma del Médico", (formData as any).firma?.firma_medico, 'firma.firma_medico')}
-                                    {renderInput("Lugar y Fecha Firma", (formData as any).firma?.lugar_fecha, 'firma.lugar_fecha')}
-                                </div>
                                 <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
                                     <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>AUTORIZACIONES</h4>
                                     <div className="space-y-3">
