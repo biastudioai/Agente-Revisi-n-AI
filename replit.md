@@ -1,154 +1,56 @@
 # Veryka.ai - Evaluador Médico Inteligente
 
 ## Overview
-
-Veryka.ai is an AI-powered medical report evaluator designed for Mexican insurance companies (GNP, MetLife, NY Life Monterrey, AXA Seguros). It automates the pre-approval process for insurance claims by extracting and validating data from medical report images/PDFs using Google's Gemini AI. The system applies configurable scoring rules, generates compliance scores with detailed issue flags, and allows manual corrections with real-time re-evaluation. The project aims to standardize and accelerate medical claim pre-approval, enhancing accuracy and reducing processing time for insurance providers.
+Veryka.ai is an AI-powered medical report evaluator designed for Mexican insurance companies. It automates the pre-approval process for insurance claims by extracting and validating data from medical report images/PDFs using Google's Gemini AI. The system applies configurable scoring rules, generates compliance scores with detailed issue flags, and allows manual corrections with real-time re-evaluation. The project aims to standardize and accelerate medical claim pre-approval, enhancing accuracy and reducing processing time for insurance providers. Its business vision is to become the leading AI solution for medical claim processing in Latin America, significantly reducing operational costs and improving service for insurance companies and their clients.
 
 ## User Preferences
-
 Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Frontend
-- **Framework**: React 19 with TypeScript
-- **Styling**: Tailwind CSS, utilizing a brand color palette (`veryka-dark`, `veryka-cyan`, `veryka-light`) and a consistent border radius (`rounded-veryka`).
-- **Icons**: Lucide React
-- **Build Tool**: Vite
+### Core Architecture
+Veryka.ai utilizes a client-server architecture with a React 19 frontend and an Express.js backend. Data persistence is managed by PostgreSQL via Prisma ORM. A key design principle is the "Provider Registry Pattern" enabling multi-provider support through configurable files for extraction instructions and AI schemas. Security is paramount, implemented with token-based authentication, role-based access control (RBAC), comprehensive audit logging, and secure file storage.
 
-### Backend
-- **Framework**: Express.js with TypeScript
-- **ORM**: Prisma 7
-- **Database**: PostgreSQL
-- **Authentication**: Secure, token-based (HttpOnly cookies for web, Bearer tokens for API), with bcrypt-hashed passwords and password reset functionality.
-- **Authorization**: Role-based access control (RBAC) with hierarchical roles:
-  - `ADMIN`: Full system access, manages rules and insurance provider configurations
-  - `ASEGURADORA`: Insurance company users, can only view reports from their company
-  - `BROKER`: Insurance brokers, can view their own reports + reports from their AUDITORs
-  - `AUDITOR`: Auditors assigned to a BROKER, can only view their own reports
-- **Audit Logging**: Comprehensive tracking of user actions.
+### UI/UX Decisions
+The frontend is built with React 19 and TypeScript, styled using Tailwind CSS. It adheres to a consistent brand identity with a specific color palette (`veryka-dark`, `veryka-cyan`, `veryka-light`) and rounded corners (`rounded-veryka`). Lucide React is used for iconography. The UI provides intuitive features like multi-file drag-and-drop uploads, visual previews, and a unified image/PDF viewer with navigation and zoom capabilities.
 
-### Core Features
-- **Multi-Provider Support**: A "Provider Registry Pattern" enables easy integration of new insurance providers through configuration files, including provider-specific extraction instructions and Gemini schemas.
-- **AI Integration**: Leverages Google Vertex AI (`gemini-2.0-flash-001`) for document analysis via the `@google-cloud/vertexai` SDK, allowing VPC perimeter restrictions for enhanced security. The analysis runs server-side only, with the frontend calling the `/api/analyze` endpoint. Requires `GOOGLE_PROJECT_ID` and `GOOGLE_APPLICATION_CREDENTIALS` environment variables. Configured for consistent extractions and structured JSON output based on dynamic provider schemas.
-- **Scoring Engine**: A rule-based validation system with configurable rules categorized by severity. Each severity level has a defined point range:
-  - CRÍTICO: 16-20 points (default: 18) - Ensures critical violations always result in rejection
-  - IMPORTANTE: 8-12 points (default: 10)
-  - MODERADO: 5-8 points (default: 6)
-  - DISCRETO: 1-3 points (default: 2)
-  Points are automatically adjusted when changing severity levels, and the system validates ranges on both frontend and backend.
-- **Editable Rules System**: A UI allows dynamic creation and modification of validation rules, supporting 28 operators, AND/OR logic, and real-time previews. Rules can apply to single or multiple providers via dynamic field mapping. Rules are stored in PostgreSQL.
-- **Rule Versioning System**: Automatic versioning tracks rule changes over time. Each form stores the rule version used during processing, enabling detection of rule drift. When rules change after a form was processed, users see an indicator and can either keep the original evaluation or recalculate with current rules. Database tables: `RuleVersion` (snapshots), `RuleChangeLog` (audit trail).
-- **Audit Rules System**: Includes a comprehensive set of ~108 active rules for medical reports, covering:
-  - **Reglas Generales** (~31): Aplicables a todas las aseguradoras - validación de paciente, diagnóstico, fechas, signos vitales, médico tratante, firma, contacto del médico (teléfono/celular/correo), especialidad obligatoria, cédula profesional obligatoria
-  - **Reglas GNP** (32): Específicas de GNP - trámites, póliza, antecedentes, hospital (obligatorio para reembolso/cirugía/reporte hospitalario con validación de nombre, ciudad, tipo estancia, fecha ingreso), cédula de especialidad (recomendada nivel discreto)
-  - **Reglas MetLife** (45): Específicas de MetLife - campos obligatorios, vigencia de informe, datos gineco-obstétricos, intervenciones quirúrgicas
-  - **Validadores Inteligentes**: Lógica personalizada para comparación nombre/firma (requiere coincidencia de nombre Y apellido sin importar orden), validación de otros médicos participantes, y requisitos condicionales de hospital según tipo de trámite
-- **Multi-Provider Field Mapping**: Facilitates rule application across different insurers despite varying field paths using `fieldMappings` and dynamic autocomplete.
-- **Normalization Layer**: Maps disparate provider-specific fields to a `StandardizedMedicalReport` schema for data consistency.
-- **Provider Detection**: Automatically identifies insurance providers from PDF content using keyword matching, with manual selection as a fallback.
-- **Multi-File Upload Support**: Users can upload up to 5 files (images or PDFs) that are processed together as a single document. Features include:
-  - Drag-and-drop or click to select multiple files
-  - Visual preview of all selected files with thumbnails
-  - Individual file removal before processing
-  - Files are sent together in a single Gemini API call for consolidated extraction
-  - Provider detection uses the first file in the sequence
-  - Ideal for mobile users who take individual photos of each page of a medical report
-  - **Image Viewer**: When multiple images (JPG/PNG) are uploaded, the ImageViewer component provides:
-    - Page navigation between images (previous/next buttons with page indicator)
-    - Zoom controls (zoom in, zoom out, fit to screen)
-    - Auto-fit on initial load and window resize
-    - Consistent UI with PdfViewer controls
-- **Report History System**: Displays processed reports in a table format, allowing users to view their own reports and access detailed views with associated PDFs.
-- **File Storage System**: Integrates with Replit Object Storage for automatic upload and secure serving of PDFs and images, with transactional saving and cleanup.
-- **Stripe Subscription System**: Manages subscription plans with tiered benefits:
-  - **Plan Básico** ($499/mes): 1 Broker, 0 auditores, 25 informes/mes (50 en promo), soporte por correo
-  - **Plan Profesional** ($999/mes): 1 Broker + 3 auditores, 55 informes/mes (110 en promo), soporte prioritario, dashboard de estadísticas
-  - **Plan Empresarial** ($2,999/mes): 1 Broker + 10 auditores, 170 informes/mes (340 en promo), soporte personalizado, capacitación inicial
-  Promotional offers, extra report charges, and usage tracking. Administrators have unlimited access and a dedicated billing dashboard.
-  - **Usage Tracking Based on Stripe Billing Periods**: The UsageRecord model includes a `periodStart` field that stores the Stripe billing period start date. When a subscription renews or a new subscription starts (even in the same calendar month), the system detects that `currentPeriodStart` from Stripe is newer than the stored `periodStart` and automatically resets the usage counters (reportsUsed, extraReportsUsed, extraChargesMxn). This ensures accurate billing per Stripe period, not calendar month. Uses database transactions to prevent race conditions.
-  - **Discount Code System**: Admins can create and manage discount codes from the billing dashboard:
-    - Codes can be percentage-based (e.g., 20% off) or fixed amount (e.g., $100 MXN off)
-    - Two usage types: Single Use (limited by quantity) or Time Period (valid until a date)
-    - Each code can only be used once per user account (enforced by database unique constraint)
-    - Discounts apply only for one month (Stripe coupon duration: 'once')
-    - Integrated with Stripe Coupons and Promotion Codes
-    - Users enter codes directly in Stripe Checkout's payment page (allow_promotion_codes: true)
-    - Webhook records usage when checkout completes with a discount applied
-    - Database models: DiscountCode (stores code details + Stripe IDs), DiscountCodeUsage (tracks per-user redemptions)
-  - **Subscription Change Management**:
-    - **Upgrades**: Applied immediately with new checkout, old subscription cancelled, used reports transferred to new plan
-    - **Downgrades**: Scheduled for period end using `cancel_at_period_end`, applied when period ends
-    - **Cancellations**: Uses `cancel_at_period_end`, users can continue until period ends, reactivation available before expiry
-    - **Auditor Auto-deactivation**: When downgrade is applied, excess auditors are automatically deactivated (oldest retained)
-  - **Automatic Recurring Billing with Extra Reports**:
-    - Extra report charges are automatically added to the monthly subscription invoice
-    - When Stripe creates a renewal invoice (`invoice.created` webhook with `billing_reason: subscription_cycle`), the system:
-      1. Finds all unbilled UsageRecords from CLOSED periods (where periodStart < currentPeriodStart)
-      2. Aggregates extra report charges from all unbilled periods
-      3. Adds a single invoice item with the total extra charges
-      4. Marks records as billed to prevent duplicate charges
-    - **Idempotency**: Records are marked as billed BEFORE calling Stripe, with rollback on failure
-    - **Cancellation Billing**: When a subscription is cancelled and ends, any pending extra report charges are invoiced separately
-    - Database field: `extraChargesBilled` (Boolean) on UsageRecord tracks whether extras have been invoiced
-  - **Subscription Access Control**:
-    - BROKERs without active subscription cannot login or access the platform
-    - AUDITORs whose BROKER has no active subscription cannot login
-    - Sessions are automatically invalidated when subscription expires
-    - Database fields: `cancelAtPeriodEnd`, `scheduledPlanType`, `scheduledChangeAt` track pending changes
-  - **Admin Billing Dashboard with Real Revenue Tracking**:
-    - Displays actual revenue from Stripe invoices (not just expected based on plans)
-    - Shows expected vs actual revenue comparison for transparency
-    - Historical revenue chart using real Stripe payment data (6-month history)
-    - Revenue breakdown by plan with expected (based on active subscriptions) and actual (from Stripe invoices)
-    - Subscriber table with discount code tracking (active code, usage date)
-    - Discount code history modal to view all codes used by a subscriber
-    - API endpoint: `/api/billing/users/:userId/discount-history` for user-specific discount history
-    - Uses Stripe auto-pagination to fetch all invoices without undercounting
-    - Methods: `getStripeInvoicesForMonth`, `getDiscountCodeHistory` in billingService
-- **Email Report Sending**: Sends audit reports via email with PDF attachments using Titan SMTP (smtp.titan.email:587). Emails are sent from "Agente AI <agente@veryka.ai>" with professional HTML formatting. Includes failover to smtpout.secureserver.net if primary server fails. Credentials stored in Email_User and Email_Pass secrets.
-- **Auditor Management System**: Brokers can manage their auditors through a dedicated UI accessible from the user profile menu. Features include:
-  - Create, edit, and delete auditor accounts (with proper password hashing)
-  - Plan-based auditor limits enforced on creation (Básico: 0, Profesional: 3, Empresarial: 10)
-  - Visual indicator showing current vs maximum auditors allowed
-  - Upgrade prompts when limit is reached
-  - View auditor usage statistics for the current billing period
-  - Track how many reports each auditor has generated this month
-  - Reports generated by auditors count against the broker's monthly limit
-  - API routes at `/api/auditors` with full CRUD operations, usage statistics, and `/api/auditors/limits` endpoint
-  - **Auditor Access Control**: Each auditor has an `isActive` field that controls their access. When a broker downgrades their plan, the system automatically deactivates excess auditors (keeping the oldest by creation date). Inactive auditors cannot log in or process reports. Brokers can toggle auditor status via the UI within their plan limits.
+### Technical Implementations
+- **AI Integration**: Leverages Google Vertex AI (gemini-2.0-flash-001) for document analysis, ensuring server-side processing for security and structured JSON output based on dynamic provider schemas.
+- **Scoring Engine**: A flexible rule-based validation system where rules are dynamically configurable via a UI. Rules are categorized by severity (Crítico, Importante, Moderado, Discreto), each with adjustable point values, automatically ensuring critical violations lead to rejection.
+- **Editable Rules System**: Allows dynamic creation and modification of validation rules through a UI, supporting 28 operators, AND/OR logic, and real-time previews. Rules can be applied to single or multiple providers using dynamic field mapping.
+- **Rule Versioning**: Automatically tracks changes to rules. Each processed form stores the rule version used, indicating rule drift and allowing users to re-evaluate with current rules.
+- **Audit Rules System**: Includes an extensive set of ~108 active medical report rules, covering general validations and specific rules for GNP, MetLife, and AXA, with intelligent validators for complex comparisons (e.g., name/signature matching, conditional hospital requirements).
+- **Data Normalization**: A normalization layer maps provider-specific fields to a `StandardizedMedicalReport` schema for data consistency across different insurance companies.
+- **Provider Detection**: Automatically identifies insurance providers from uploaded PDF content using keyword matching, with manual override.
+- **Subscription Management**: Integrates a comprehensive Stripe-based subscription system with tiered plans (Básico, Profesional, Empresarial), usage tracking, automatic recurring billing for extra reports, discount code functionality, and robust subscription change management (upgrades, downgrades, cancellations).
+- **Auditor Management**: Brokers can manage their auditors via a dedicated UI, enforcing plan-based limits, tracking individual auditor usage, and automatically deactivating excess auditors upon plan downgrades.
+- **Email Reporting**: Automated email dispatch for audit reports with PDF attachments, utilizing professional HTML formatting and failover SMTP configurations.
+- **Access Control**: Role-based access control (RBAC) with hierarchical roles (ADMIN, ASEGURADORA, BROKER, AUDITOR) ensures granular permissions. Subscription status directly impacts user and auditor login access, with automatic session invalidation upon subscription expiry.
 
 ## External Dependencies
 
 ### AI/ML Services
-- **Google Gemini AI**: For document analysis and structured data extraction.
+- **Google Gemini AI**: For intelligent document analysis and structured data extraction from medical reports.
 
 ### PDF Processing
-- **pdf.js**: For client-side PDF rendering.
-- **pdf-lib**: For PDF modification and annotation.
+- **pdf.js**: Client-side rendering of PDF documents.
+- **pdf-lib**: For programmatic manipulation and annotation of PDFs.
 
-### UI Dependencies
-- **React**: Core UI framework.
-- **Lucide React**: Icon library.
-- **Tailwind CSS**: For styling.
+### UI Libraries
+- **React**: Frontend framework.
+- **Lucide React**: Icon set.
+- **Tailwind CSS**: Utility-first CSS framework for styling.
 
-### Development & Backend
+### Backend & Database Technologies
 - **Vite**: Frontend build tool.
-- **TypeScript**: For type-safe development.
-- **Prisma**: ORM for PostgreSQL.
-- **Express.js**: Backend server framework.
-- **bcrypt**: For password hashing.
-- **googleapis**: For Gmail API (password reset emails).
-- **nodemailer**: For SMTP email sending (Titan Email).
-- **Replit Object Storage**: For file storage.
-- **Stripe**: For subscription and payment processing.
+- **TypeScript**: For type-safe development across the stack.
+- **Prisma**: ORM for robust database interaction.
+- **Express.js**: Backend web application framework.
+- **bcrypt**: For secure password hashing.
+- **googleapis**: Utilized for Google services, specifically for Gmail API integration (e.g., password resets).
+- **nodemailer**: For sending emails via SMTP (e.g., Titan Email, GoDaddy SecureServer).
 
-### Production Database (Google Cloud SQL)
-- **Provider**: Google Cloud SQL PostgreSQL
-- **Connection**: Uses SSL client certificates for secure connections
-- **Configuration**:
-  - Development: Uses Replit's built-in PostgreSQL via `DATABASE_URL`
-  - Production: Uses Google Cloud SQL with `DB_PROD_HOST`, `DB_PROD_USER`, `DB_PROD_PASSWORD`, `DB_PROD_NAME` secrets
-  - SSL certificates stored in `certs/` directory (server-ca.pem, client-cert.pem, client-key.pem)
-- **Migration Script**: `npm run migrate:production` (in server directory) pushes schema and migrates rules to production
-- **Admin User**: proyectos@biastudio.ai (password in `PROD_ADMIN_PASSWORD` secret)
+### Cloud & Payment Services
+- **Replit Object Storage**: For secure and scalable file storage (PDFs, images).
+- **Stripe**: Comprehensive platform for subscription management, billing, and payment processing.
+- **Google Cloud SQL PostgreSQL**: Production database solution, configured for secure SSL connections.
