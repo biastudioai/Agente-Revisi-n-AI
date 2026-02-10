@@ -174,26 +174,26 @@ const ScoreCard: React.FC<ScoreCardProps> = ({
               const isObservation = issue.type === "OBSERVACIÓN";
               const hasLink = !!issue.fieldPath;
               
-              let bgClass = "bg-slate-50/50 border-slate-100";
-              let textClass = "text-slate-600";
-              let badgeClass = "bg-white border-slate-200 text-slate-500";
-              let label = "Info";
+              let bgClass = "bg-blue-50/40 border-blue-100";
+              let textClass = "text-blue-600";
+              let badgeClass = "bg-white border-blue-200 text-blue-500";
+              let label = "DISCRETO";
 
               if (isCritical) {
                   bgClass = "bg-red-50/50 border-red-100";
                   textClass = "text-red-700";
                   badgeClass = "bg-white border-red-200 text-red-600";
-                  label = "Crit";
+                  label = "CRÍTICO";
               } else if (isWarning) {
                   bgClass = "bg-amber-50/50 border-amber-100";
                   textClass = "text-amber-700";
                   badgeClass = "bg-white border-amber-200 text-amber-600";
-                  label = "Alert";
+                  label = "IMPORTANTE";
               } else if (isObservation) {
-                  bgClass = "bg-blue-50/50 border-blue-100";
-                  textClass = "text-blue-700";
-                  badgeClass = "bg-white border-blue-200 text-blue-600";
-                  label = "Nota";
+                  bgClass = "bg-orange-50/50 border-orange-100";
+                  textClass = "text-orange-700";
+                  badgeClass = "bg-white border-orange-200 text-orange-600";
+                  label = "MODERADO";
               }
 
               return (

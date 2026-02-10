@@ -172,10 +172,11 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, report }) =>
     }
 
     report.flags.forEach(issue => {
-      let badgeColor = hexToRgb('#3b82f6');
-      let badgeText = "NOTA";
+      let badgeColor = hexToRgb('#93c5fd');
+      let badgeText = "DISCRETO";
       if (issue.type === 'ERROR_CRÍTICO') { badgeColor = hexToRgb('#ef4444'); badgeText = "CRÍTICO"; }
-      else if (issue.type === 'ALERTA') { badgeColor = hexToRgb('#f59e0b'); badgeText = "ALERTA"; }
+      else if (issue.type === 'ALERTA') { badgeColor = hexToRgb('#f59e0b'); badgeText = "IMPORTANTE"; }
+      else if (issue.type === 'OBSERVACIÓN') { badgeColor = hexToRgb('#fb923c'); badgeText = "MODERADO"; }
 
       page.drawRectangle({ x: leftColX, y: leftY - 2, width: 50, height: 12, color: badgeColor });
       page.drawText(badgeText, { x: leftColX + 5, y: leftY + 1, size: 7, font: fontBold, color: white });
@@ -453,15 +454,18 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, report }) =>
       }
 
       issues.forEach(issue => {
-        let badgeColor = hexToRgb('#3b82f6'); // Blue
-        let badgeText = "NOTA";
+        let badgeColor = hexToRgb('#93c5fd');
+        let badgeText = "DISCRETO";
         
         if (issue.type === 'ERROR_CRÍTICO') {
-            badgeColor = hexToRgb('#ef4444'); // Red
+            badgeColor = hexToRgb('#ef4444');
             badgeText = "CRÍTICO";
         } else if (issue.type === 'ALERTA') {
-             badgeColor = hexToRgb('#f59e0b'); // Amber
-             badgeText = "ALERTA";
+             badgeColor = hexToRgb('#f59e0b');
+             badgeText = "IMPORTANTE";
+        } else if (issue.type === 'OBSERVACIÓN') {
+             badgeColor = hexToRgb('#fb923c');
+             badgeText = "MODERADO";
         }
 
         // Draw Badge (Rect + Text)
@@ -630,26 +634,26 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, report }) =>
                                     const isWarning = issue.type === "ALERTA";
                                     const isObservation = issue.type === "OBSERVACIÓN";
                                     
-                                    let bgClass = "bg-slate-50 border-slate-100";
-                                    let textClass = "text-slate-600";
-                                    let badgeClass = "bg-white border-slate-200 text-slate-500";
-                                    let label = "Nota";
+                                    let bgClass = "bg-blue-50/40 border-blue-100";
+                                    let textClass = "text-blue-600";
+                                    let badgeClass = "bg-white border-blue-200 text-blue-500";
+                                    let label = "DISCRETO";
 
                                     if (isCritical) {
                                         bgClass = "bg-red-50/60 border-red-100";
                                         textClass = "text-red-700";
                                         badgeClass = "bg-white border-red-200 text-red-600";
-                                        label = "Crítico";
+                                        label = "CRÍTICO";
                                     } else if (isWarning) {
                                         bgClass = "bg-amber-50/60 border-amber-100";
                                         textClass = "text-amber-700";
                                         badgeClass = "bg-white border-amber-200 text-amber-600";
-                                        label = "Alerta";
+                                        label = "IMPORTANTE";
                                     } else if (isObservation) {
-                                        bgClass = "bg-blue-50/60 border-blue-100";
-                                        textClass = "text-blue-700";
-                                        badgeClass = "bg-white border-blue-200 text-blue-600";
-                                        label = "Observación";
+                                        bgClass = "bg-orange-50/60 border-orange-100";
+                                        textClass = "text-orange-700";
+                                        badgeClass = "bg-white border-orange-200 text-orange-600";
+                                        label = "MODERADO";
                                     }
 
                                     return (
@@ -660,7 +664,8 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, report }) =>
                                             <div className="mt-0.5">
                                                 {isCritical ? <XCircle className="w-5 h-5 text-red-500" /> : 
                                                  isWarning ? <AlertTriangle className="w-5 h-5 text-amber-500" /> :
-                                                 <AlertCircle className="w-5 h-5 text-blue-500" />}
+                                                 isObservation ? <AlertCircle className="w-5 h-5 text-orange-500" /> :
+                                                 <AlertCircle className="w-5 h-5 text-blue-400" />}
                                             </div>
                                             <div className="flex-1">
                                                 <div className="flex justify-between items-start mb-1">
