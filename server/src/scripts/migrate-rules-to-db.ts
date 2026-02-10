@@ -2193,20 +2193,6 @@ const REGLAS_AXA: RawScoringRule[] = [
     affectedFields: ['medico_principal.cedula_profesional', 'medico_principal.nombre']
   },
   {
-    id: 'axa_firma_no_coincide_tratante',
-    name: 'Firma del médico no coincide con médico tratante',
-    level: 'IMPORTANTE',
-    points: 15,
-    description: 'La firma detectada en el documento no parece corresponder al médico tratante indicado.',
-    providerTarget: 'AXA',
-    isCustom: false,
-    conditions: [
-      { id: 'cond_axa_firma_coincide_false', field: 'metadata.firma_coincide_con_tratante', operator: 'EQUALS', value: 'false' }
-    ],
-    logicOperator: 'AND',
-    affectedFields: ['metadata.firma_coincide_con_tratante', 'medico_principal.nombre', 'firma.firma_medico']
-  },
-  {
     id: 'axa_informe_antes_diagnostico',
     name: 'Informe anterior al diagnóstico',
     level: 'CRÍTICO',
