@@ -299,8 +299,7 @@ export interface ScoringRule {
   fieldMappings?: FieldMappings;
   normalizedFieldName?: string; // Nombre normalizado para el campo mapeado entre aseguradoras
   
-  // Retrocompatibilidad con reglas antiguas (único provider)
-  providerTarget?: 'ALL' | 'GNP' | 'METLIFE';
+  providerTarget?: string;
   
   // Nueva estructura de condiciones (para reglas creadas desde UI)
   conditions?: RuleCondition[];

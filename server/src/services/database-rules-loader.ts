@@ -249,7 +249,7 @@ function transformDbRuleToScoringRule(dbRule: DbRuleResponse): ScoringRule {
     level: dbRule.level,
     points: dbRule.points,
     description: dbRule.description,
-    providerTarget: dbRule.providerTarget as 'ALL' | 'GNP' | 'METLIFE',
+    providerTarget: dbRule.providerTarget,
     isCustom: dbRule.isCustom,
     conditions: dbRule.conditions || undefined,
     logicOperator: (dbRule.logicOperator as 'AND' | 'OR') || undefined,

@@ -54,7 +54,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 25,
     description: 'El primer apellido del asegurado es obligatorio.',
-    providerTarget: 'NY_LIFE',
+    providerTarget: 'NYLIFE',
     isCustom: false,
     conditions: [{ id: 'cond_nylife_paciente_apellido', field: 'identificacion.primer_apellido', operator: 'IS_EMPTY' }],
     logicOperator: 'AND',
@@ -90,7 +90,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 25,
     description: 'El diagnóstico definitivo es la base de la reclamación.',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP,METLIFE,NYLIFE',
     isCustom: false,
     conditions: [{ id: 'cond_diag_falta_1', field: 'diagnostico.diagnostico_definitivo', operator: 'IS_EMPTY' }],
     logicOperator: 'AND',
@@ -126,7 +126,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'MODERADO',
     points: 5,
     description: 'Frecuencia de pulso fuera de rango fisiológico probable (30-220).',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP,METLIFE,NYLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_pulso_bajo', field: 'signos_vitales.pulso', operator: 'LESS_THAN', value: 30 },
@@ -141,7 +141,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'MODERADO',
     points: 5,
     description: 'Frecuencia respiratoria fuera de rango fisiológico probable (8-60).',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP,METLIFE,NYLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_resp_bajo', field: 'signos_vitales.respiracion', operator: 'LESS_THAN', value: 8 },
@@ -156,7 +156,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'IMPORTANTE',
     points: 10,
     description: 'Temperatura fuera de rango fisiológico (34-42°C).',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP,METLIFE,NYLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_temp_bajo', field: 'signos_vitales.temperatura', operator: 'LESS_THAN', value: 34 },
@@ -171,7 +171,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 15,
     description: 'Use el formato XXX/XX para la presión arterial.',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP,METLIFE,NYLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_presion_formato_1', field: 'signos_vitales.presion_arterial', operator: 'NOT_EMPTY' },
@@ -186,7 +186,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'IMPORTANTE',
     points: 10,
     description: 'Ingrese valores de peso y talla válidos (mayores a cero).',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP,METLIFE,NYLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_peso_invalido', field: 'signos_vitales.peso', operator: 'LESS_THAN_OR_EQUAL', value: 0 },
@@ -213,7 +213,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'El primer apellido del médico tratante es obligatorio.',
-    providerTarget: 'NY_LIFE',
+    providerTarget: 'NYLIFE',
     isCustom: false,
     conditions: [{ id: 'cond_nylife_medico_apellido', field: 'medico_tratante.primer_apellido', operator: 'IS_EMPTY' }],
     logicOperator: 'AND',
@@ -225,7 +225,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'El nombre del médico tratante es obligatorio.',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP,METLIFE,NYLIFE',
     isCustom: false,
     conditions: [{ id: 'cond_medico_nombre_1', field: 'medico_tratante.nombres', operator: 'IS_EMPTY' }],
     logicOperator: 'AND',
@@ -237,7 +237,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 15,
     description: 'Debe proporcionar al menos un dato de contacto del médico: teléfono de consultorio, celular o correo electrónico.',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP,METLIFE,NYLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_tel_consultorio', field: 'medico_tratante.telefono_consultorio', operator: 'IS_EMPTY' },
@@ -253,7 +253,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'IMPORTANTE',
     points: 10,
     description: 'El formato del correo electrónico del médico es inválido.',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP,METLIFE,NYLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_email_no_vacio', field: 'medico_tratante.correo_electronico', operator: 'NOT_EMPTY' },
@@ -268,7 +268,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'Inconsistencia: El inicio de síntomas no puede ser posterior al diagnóstico.',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP,METLIFE,NYLIFE',
     isCustom: false,
     conditions: [{ id: 'cond_crono_inicio_diag', field: 'padecimiento_actual.fecha_inicio', operator: 'DATE_AFTER', compareField: 'diagnostico.fecha_diagnostico' }],
     logicOperator: 'AND',
@@ -280,7 +280,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'Inconsistencia: El tratamiento no puede haber iniciado antes del diagnóstico.',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP,METLIFE,NYLIFE',
     isCustom: false,
     conditions: [{ id: 'cond_crono_trat_diag', field: 'diagnostico.fecha_diagnostico', operator: 'DATE_AFTER', compareField: 'tratamiento.fecha_inicio' }],
     logicOperator: 'AND',
@@ -292,7 +292,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'Inconsistencia: El ingreso hospitalario es previo a la fecha de diagnóstico.',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP,METLIFE,NYLIFE',
     isCustom: false,
     conditions: [{ id: 'cond_crono_hosp_diag', field: 'hospital.fecha_ingreso', operator: 'DATE_BEFORE', compareField: 'diagnostico.fecha_diagnostico' }],
     logicOperator: 'AND',
@@ -304,7 +304,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'El informe médico no puede tener fecha anterior a la del diagnóstico.',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP,METLIFE,NYLIFE',
     isCustom: false,
     conditions: [{ id: 'cond_crono_firma_diag', field: 'firma.fecha', operator: 'DATE_BEFORE', compareField: 'diagnostico.fecha_diagnostico' }],
     logicOperator: 'AND',
@@ -316,7 +316,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'La fecha de emisión del informe no puede ser una fecha futura.',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP,METLIFE,NYLIFE',
     isCustom: false,
     conditions: [{ id: 'cond_firma_futura', field: 'firma.fecha', operator: 'DATE_AFTER', value: 'TODAY' }],
     logicOperator: 'AND',
@@ -328,7 +328,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'El informe debe contener la firma autógrafa del médico tratante.',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP,METLIFE,NYLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_firma_faltante_1', field: 'firma.firma_autografa_detectada', operator: 'IS_EMPTY' },
@@ -343,7 +343,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 15,
     description: 'Falta el lugar y la fecha de la firma al final del informe.',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP,METLIFE,NYLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_lugar_firma', field: 'firma.lugar', operator: 'IS_EMPTY' },
@@ -370,7 +370,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'IMPORTANTE',
     points: 15,
     description: 'El nombre o apellido del médico tratante no coincide con quien firma el documento. Verifique que el nombre y apellido aparezcan en ambas secciones.',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP,METLIFE,NYLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_firma_nombres_match', field: 'firma.nombre_firma', operator: 'NAMES_MATCH', compareField: 'medico_tratante.nombres', additionalFields: ['medico_tratante.primer_apellido', 'medico_tratante.segundo_apellido'] }
@@ -384,7 +384,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'El médico tratante debe especificar su especialidad para validar que está capacitado para realizar el informe.',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP,METLIFE,NYLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_medico_nombre_existe', field: 'medico_tratante.nombres', operator: 'NOT_EMPTY' },
@@ -399,7 +399,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'Si hay un médico tratante identificado, debe proporcionar su cédula profesional.',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP,METLIFE,NYLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_medico_nombre_existe_2', field: 'medico_tratante.nombres', operator: 'NOT_EMPTY' },
@@ -414,7 +414,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 15,
     description: 'Si se registra un médico participante, debe especificarse su especialidad.',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP,METLIFE,NYLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_otros_medicos_especialidad', field: 'otros_medicos', operator: 'ARRAY_ITEMS_MISSING_FIELD', value: 'especialidad', compareField: 'nombres' }
@@ -428,7 +428,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 15,
     description: 'Si se registra un médico participante, debe proporcionar su cédula profesional.',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP,METLIFE,NYLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_otros_medicos_cedula', field: 'otros_medicos', operator: 'ARRAY_ITEMS_MISSING_FIELD', value: 'cedula_profesional', compareField: 'nombres' }
@@ -442,7 +442,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 25,
     description: 'El llenado debe ser con una sola tinta en todo el documento o mismo color de escritura.',
-    providerTarget: 'ALL',
+    providerTarget: 'GNP,METLIFE,NYLIFE',
     isCustom: false,
     conditions: [{ id: 'cond_uniformidad_tinta', field: 'metadata.uniformidad_tinta', operator: 'EQUALS', value: 'false' }],
     logicOperator: 'AND',
@@ -2135,11 +2135,109 @@ const REGLAS_AXA: RawScoringRule[] = [
     ],
     logicOperator: 'OR',
     affectedFields: ['transferencia_datos.firma_asegurado_2']
+  },
+
+  // ========== XII. REGLAS AXA EQUIVALENTES A GENERALES ==========
+  {
+    id: 'axa_diagnostico_texto_faltante',
+    name: 'Diagnóstico faltante',
+    level: 'CRÍTICO',
+    points: 25,
+    description: 'El diagnóstico es la base de la reclamación y es obligatorio.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [{ id: 'cond_axa_diag_texto_vacio', field: 'diagnostico.diagnostico_texto', operator: 'IS_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['diagnostico.diagnostico_texto']
+  },
+  {
+    id: 'axa_medico_nombre_obligatorio',
+    name: 'Nombre del médico obligatorio',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'El nombre del médico tratante es obligatorio.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [{ id: 'cond_axa_med_nombre_vacio', field: 'medico_principal.nombre', operator: 'IS_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['medico_principal.nombre']
+  },
+  {
+    id: 'axa_medico_especialidad_obligatoria',
+    name: 'Especialidad del médico tratante obligatoria',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'El médico tratante debe especificar su especialidad.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_med_nombre_esp', field: 'medico_principal.nombre', operator: 'NOT_EMPTY' },
+      { id: 'cond_axa_esp_vacia', field: 'medico_principal.especialidad', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['medico_principal.especialidad', 'medico_principal.nombre']
+  },
+  {
+    id: 'axa_medico_cedula_obligatoria',
+    name: 'Cédula profesional del médico tratante obligatoria',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Si hay un médico tratante identificado, debe proporcionar su cédula profesional.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_med_nombre_ced', field: 'medico_principal.nombre', operator: 'NOT_EMPTY' },
+      { id: 'cond_axa_ced_vacia', field: 'medico_principal.cedula_profesional', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['medico_principal.cedula_profesional', 'medico_principal.nombre']
+  },
+  {
+    id: 'axa_firma_no_coincide_tratante',
+    name: 'Firma del médico no coincide con médico tratante',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'La firma detectada en el documento no parece corresponder al médico tratante indicado.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_firma_coincide_false', field: 'metadata.firma_coincide_con_tratante', operator: 'EQUALS', value: 'false' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['metadata.firma_coincide_con_tratante', 'medico_principal.nombre', 'firma.firma_medico']
+  },
+  {
+    id: 'axa_informe_antes_diagnostico',
+    name: 'Informe anterior al diagnóstico',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'El informe médico no puede tener fecha anterior a la del diagnóstico.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [{ id: 'cond_axa_informe_diag', field: 'lugar_fecha.fecha', operator: 'DATE_BEFORE', compareField: 'diagnostico.fecha_diagnostico' }],
+    logicOperator: 'AND',
+    affectedFields: ['lugar_fecha.fecha', 'diagnostico.fecha_diagnostico']
+  },
+  {
+    id: 'axa_anestesiologo_telefono',
+    name: 'Teléfono del anestesiólogo obligatorio',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Si se registra un anestesiólogo, debe proporcionar un teléfono de contacto.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_anest_nombre_tel', field: 'anestesiologo.nombre', operator: 'NOT_EMPTY' },
+      { id: 'cond_axa_anest_tel_vacio', field: 'anestesiologo.telefono', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['anestesiologo.telefono', 'anestesiologo.nombre']
   }
 ];
 
 function getCategoryFromProvider(providerTarget: string): RuleCategory {
   if (providerTarget === 'ALL' || providerTarget === 'GENERAL') return RuleCategory.GENERAL;
+  if (providerTarget.includes(',')) return RuleCategory.GENERAL;
   if (providerTarget === 'GNP') return RuleCategory.GNP;
   if (providerTarget === 'METLIFE') return RuleCategory.METLIFE;
   if (providerTarget === 'NYLIFE') return RuleCategory.NYLIFE;
@@ -2149,69 +2247,77 @@ function getCategoryFromProvider(providerTarget: string): RuleCategory {
 
 async function migrateRulesToDatabase() {
   console.log('Starting rules migration to database...');
-  console.log('Mode: SAFE - Only adding new rules, preserving existing modifications\n');
+  console.log('Mode: UPSERT - Adding new rules and updating providerTarget for existing rules\n');
 
   const existingRules = await prisma.scoringRuleRecord.findMany({
-    select: { ruleId: true }
+    select: { ruleId: true, providerTarget: true }
   });
-  const existingRuleIds = new Set(existingRules.map(r => r.ruleId));
+  const existingRuleMap = new Map(existingRules.map(r => [r.ruleId, r.providerTarget]));
   
-  console.log(`Found ${existingRuleIds.size} existing rules in database.`);
+  console.log(`Found ${existingRuleMap.size} existing rules in database.`);
 
   const allRules = [
-    ...REGLAS_GENERALES.map(r => ({ ...r, category: RuleCategory.GENERAL })),
+    ...REGLAS_GENERALES.map(r => ({ ...r, category: getCategoryFromProvider(r.providerTarget) })),
     ...REGLAS_GNP.map(r => ({ ...r, category: RuleCategory.GNP })),
     ...REGLAS_METLIFE.map(r => ({ ...r, category: RuleCategory.METLIFE })),
     ...REGLAS_AXA.map(r => ({ ...r, category: RuleCategory.AXA })),
   ];
 
-  const newRules = allRules.filter(r => !existingRuleIds.has(r.id));
-  
-  if (newRules.length === 0) {
-    console.log('No new rules to add. All rules already exist in the database.');
-    console.log('Existing rules and their modifications have been preserved.');
-    return { success: 0, errors: 0, skipped: allRules.length };
-  }
-
-  console.log(`Adding ${newRules.length} new rules (skipping ${allRules.length - newRules.length} existing)...`);
-
-  let successCount = 0;
+  let addedCount = 0;
+  let updatedCount = 0;
+  let skippedCount = 0;
   let errorCount = 0;
 
-  for (const rule of newRules) {
+  for (const rule of allRules) {
     try {
       const hasValidator = !!rule.validator;
       const validatorKey = hasValidator ? rule.id : null;
+      const existingTarget = existingRuleMap.get(rule.id);
 
-      await prisma.scoringRuleRecord.create({
-        data: {
-          ruleId: rule.id,
-          name: rule.name,
-          level: mapLevelToEnum(rule.level),
-          points: rule.points,
-          description: rule.description,
-          providerTarget: rule.providerTarget,
-          category: rule.category,
-          isCustom: rule.isCustom || false,
-          conditions: rule.conditions && rule.conditions.length > 0 ? JSON.parse(JSON.stringify(rule.conditions)) : undefined,
-          logicOperator: rule.logicOperator || null,
-          affectedFields: rule.affectedFields,
-          hasValidator,
-          validatorKey,
-        }
-      });
-      console.log(`  + Added: ${rule.name}`);
-      successCount++;
+      if (existingTarget === undefined) {
+        await prisma.scoringRuleRecord.create({
+          data: {
+            ruleId: rule.id,
+            name: rule.name,
+            level: mapLevelToEnum(rule.level),
+            points: rule.points,
+            description: rule.description,
+            providerTarget: rule.providerTarget,
+            category: rule.category,
+            isCustom: rule.isCustom || false,
+            conditions: rule.conditions && rule.conditions.length > 0 ? JSON.parse(JSON.stringify(rule.conditions)) : undefined,
+            logicOperator: rule.logicOperator || null,
+            affectedFields: rule.affectedFields,
+            hasValidator,
+            validatorKey,
+          }
+        });
+        console.log(`  + Added: ${rule.name}`);
+        addedCount++;
+      } else if (existingTarget !== rule.providerTarget) {
+        await prisma.scoringRuleRecord.update({
+          where: { ruleId: rule.id },
+          data: { 
+            providerTarget: rule.providerTarget,
+            category: rule.category,
+          }
+        });
+        console.log(`  ~ Updated providerTarget: ${rule.id} (${existingTarget} → ${rule.providerTarget})`);
+        updatedCount++;
+      } else {
+        skippedCount++;
+      }
     } catch (error: any) {
-      console.error(`  ! Error adding rule ${rule.id}:`, error.message);
+      console.error(`  ! Error processing rule ${rule.id}:`, error.message);
       errorCount++;
     }
   }
 
   console.log(`\nMigration complete!`);
-  console.log(`  - New rules added: ${successCount}`);
+  console.log(`  - New rules added: ${addedCount}`);
+  console.log(`  - Rules updated: ${updatedCount}`);
+  console.log(`  - Rules unchanged: ${skippedCount}`);
   console.log(`  - Errors: ${errorCount}`);
-  console.log(`  - Existing rules preserved: ${existingRuleIds.size}`);
 
   const counts = await prisma.scoringRuleRecord.groupBy({
     by: ['category'],
@@ -2223,7 +2329,7 @@ async function migrateRulesToDatabase() {
     console.log(`  - ${c.category}: ${c._count}`);
   });
 
-  return { success: successCount, errors: errorCount, skipped: allRules.length - newRules.length };
+  return { success: addedCount + updatedCount, errors: errorCount, skipped: skippedCount };
 }
 
 if (require.main === module) {

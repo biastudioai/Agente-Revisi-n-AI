@@ -19,17 +19,74 @@ function isEmpty(value: any): boolean {
   return false;
 }
 
+function parseMexicanDate(dateStr: string): Date | null {
+  if (!dateStr || typeof dateStr !== 'string') return null;
+  const trimmed = dateStr.trim();
+
+  const ddmmyyyy = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (ddmmyyyy) {
+    const day = parseInt(ddmmyyyy[1], 10);
+    const month = parseInt(ddmmyyyy[2], 10) - 1;
+    const year = parseInt(ddmmyyyy[3], 10);
+    const d = new Date(year, month, day);
+    if (d.getFullYear() === year && d.getMonth() === month && d.getDate() === day) {
+      return d;
+    }
+    return null;
+  }
+
+  const ddmmyyyyDot = trimmed.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (ddmmyyyyDot) {
+    const day = parseInt(ddmmyyyyDot[1], 10);
+    const month = parseInt(ddmmyyyyDot[2], 10) - 1;
+    const year = parseInt(ddmmyyyyDot[3], 10);
+    const d = new Date(year, month, day);
+    if (d.getFullYear() === year && d.getMonth() === month && d.getDate() === day) {
+      return d;
+    }
+    return null;
+  }
+
+  const textDate = trimmed.match(/^(\d{1,2})\s+(?:de\s+)?(\w+)\s+(?:de\s+)?(\d{4})$/i);
+  if (textDate) {
+    const day = parseInt(textDate[1], 10);
+    const monthName = textDate[2].toLowerCase();
+    const year = parseInt(textDate[3], 10);
+    const monthMap: Record<string, number> = {
+      'enero': 0, 'febrero': 1, 'marzo': 2, 'abril': 3, 'mayo': 4, 'junio': 5,
+      'julio': 6, 'agosto': 7, 'septiembre': 8, 'octubre': 9, 'noviembre': 10, 'diciembre': 11
+    };
+    const month = monthMap[monthName];
+    if (month !== undefined) {
+      const d = new Date(year, month, day);
+      if (d.getFullYear() === year && d.getMonth() === month && d.getDate() === day) {
+        return d;
+      }
+    }
+    return null;
+  }
+
+  const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    const year = parseInt(isoMatch[1], 10);
+    const month = parseInt(isoMatch[2], 10) - 1;
+    const day = parseInt(isoMatch[3], 10);
+    const d = new Date(year, month, day);
+    if (d.getFullYear() === year && d.getMonth() === month && d.getDate() === day) {
+      return d;
+    }
+    return null;
+  }
+
+  return null;
+}
+
 function isValidDate(dateStr: string): boolean {
-  if (!dateStr || typeof dateStr !== 'string') return false;
-  const date = new Date(dateStr);
-  return !isNaN(date.getTime());
+  return parseMexicanDate(dateStr) !== null;
 }
 
 function parseDate(dateStr: string): Date | null {
-  if (!dateStr) return null;
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return null;
-  return date;
+  return parseMexicanDate(dateStr);
 }
 
 function isValidEmail(email: string): boolean {

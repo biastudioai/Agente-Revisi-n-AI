@@ -4,6 +4,7 @@ import { requireAuth } from '../middlewares/auth';
 import {
   getAllActiveRules,
   getRulesForAseguradora,
+  getRulesByProvider,
   getRuleById,
   createRule,
   updateRule,
@@ -44,7 +45,7 @@ router.get(
   '/aseguradora/:provider',
   expressAsyncHandler(async (req: Request, res: Response) => {
     const { provider } = req.params;
-    const validProviders = ['GNP', 'METLIFE', 'NYLIFE'];
+    const validProviders = ['GNP', 'METLIFE', 'NYLIFE', 'AXA'];
     
     if (!validProviders.includes(provider.toUpperCase())) {
       res.status(400).json({ 
@@ -55,7 +56,7 @@ router.get(
     }
 
     try {
-      const rules = await getRulesForAseguradora(provider.toUpperCase() as 'GNP' | 'METLIFE' | 'NYLIFE');
+      const rules = await getRulesByProvider(provider.toUpperCase());
       res.json({ success: true, data: rules, count: rules.length });
     } catch (error: any) {
       console.error('Error fetching rules for provider:', error);

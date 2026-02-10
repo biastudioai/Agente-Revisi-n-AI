@@ -113,17 +113,26 @@ export async function getRulesByCategory(category: 'GENERAL' | 'GNP' | 'METLIFE'
 }
 
 export async function getRulesByProvider(providerTarget: string): Promise<ScoringRuleOutput[]> {
+  const upperTarget = providerTarget.toUpperCase();
   const rules = await prisma.scoringRuleRecord.findMany({
     where: {
       isActive: true,
       OR: [
         { providerTarget: 'ALL' },
-        { providerTarget: providerTarget.toUpperCase() },
+        { providerTarget: upperTarget },
+        { providerTarget: { contains: upperTarget } },
       ],
     },
     orderBy: { points: 'desc' },
   });
-  return rules.map(transformToOutput);
+  const filtered = rules.filter(r => {
+    if (r.providerTarget === 'ALL' || r.providerTarget === upperTarget) return true;
+    if (r.providerTarget.includes(',')) {
+      return r.providerTarget.split(',').map(t => t.trim()).includes(upperTarget);
+    }
+    return false;
+  });
+  return filtered.map(transformToOutput);
 }
 
 export async function getRulesForAseguradora(aseguradora: 'GNP' | 'METLIFE' | 'NYLIFE'): Promise<ScoringRuleOutput[]> {
