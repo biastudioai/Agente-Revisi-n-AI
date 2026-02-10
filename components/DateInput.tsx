@@ -8,6 +8,7 @@ interface DateInputProps {
   isModified: boolean;
   isHighlighted: boolean;
   onChange: (path: string, value: any) => void;
+  compact?: boolean;
 }
 
 const DateInput: React.FC<DateInputProps> = ({
@@ -16,15 +17,13 @@ const DateInput: React.FC<DateInputProps> = ({
   path,
   isModified,
   isHighlighted,
-  onChange
+  onChange,
+  compact = false
 }) => {
-  // Logic to sync text input (DD/MM/YYYY) with native date picker (YYYY-MM-DD)
   const getPickerValue = (val: string) => {
       if (!val || typeof val !== 'string') return '';
-      // Try to parse DD/MM/YYYY or DD.MM.YYYY
       const dmy = val.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})$/);
       if (dmy) {
-          // Return YYYY-MM-DD for the native date picker
           return `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}`;
       }
       return '';
@@ -34,21 +33,13 @@ const DateInput: React.FC<DateInputProps> = ({
       const val = e.target.value;
       if (!val) return;
       const [y, m, d] = val.split('-');
-      // Convert back to DD/MM/YYYY for the text input
       onChange(path, `${d}/${m}/${y}`);
   };
 
   const formatDateInput = (inputValue: string) => {
-      // Extract only numbers
       const numbers = inputValue.replace(/\D/g, '');
-      
-      // Limit to 8 digits (DDMMYYYY)
       const limited = numbers.slice(0, 8);
-      
-      // If empty, return empty string
       if (limited.length === 0) return '';
-      
-      // Format as DD/MM/YYYY
       if (limited.length <= 2) {
           return limited;
       } else if (limited.length <= 4) {
@@ -68,6 +59,48 @@ const DateInput: React.FC<DateInputProps> = ({
   let confidenceDot = "bg-emerald-400"; 
   if (isModified) confidenceDot = "bg-accent-500";
   else if (isEmpty) confidenceDot = "bg-gray-300";
+
+  if (compact) {
+    let compactInputClass = "";
+    if (isModified) {
+      compactInputClass = "border-accent-400 bg-accent-50 text-accent-900 ring-1 ring-accent-100";
+    } else if (isHighlighted) {
+      compactInputClass = "border-yellow-400 bg-white ring-1 ring-yellow-100";
+    } else {
+      compactInputClass = "border-slate-200 bg-white hover:border-brand-300 focus:border-brand-500";
+    }
+
+    return (
+      <div className={`flex-1 relative group ${isHighlighted ? 'ring-1 ring-yellow-300 rounded' : ''}`} id={`field-${path}`}>
+          <input
+            type="text"
+            value={value || ''}
+            onChange={handleTextInputChange}
+            placeholder="DD/MM/AAAA"
+            autoComplete="off"
+            inputMode="numeric"
+            className={`w-full px-2 py-1 pr-8 text-xs border rounded transition-colors ${compactInputClass}`}
+          />
+          <div className="absolute right-0 top-0 h-full w-8 flex items-center justify-center z-10 cursor-pointer">
+              <Calendar className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-colors pointer-events-none" />
+              <input 
+                  type="date"
+                  value={getPickerValue(value)}
+                  onChange={handleDatePick}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  tabIndex={-1}
+                  title="Seleccionar fecha"
+              />
+          </div>
+          {isModified && (
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent-500 rounded-full" title="Editado"></span>
+          )}
+          {isEmpty && !isModified && (
+            <span className="absolute -top-1 left-0 w-1.5 h-1.5 bg-gray-300 rounded-full" title="Dato faltante"></span>
+          )}
+      </div>
+    );
+  }
 
   const baseClasses = "block w-full rounded-lg text-sm px-3 py-2.5 transition-all duration-200 font-medium outline-none border shadow-sm";
   
@@ -108,7 +141,6 @@ const DateInput: React.FC<DateInputProps> = ({
             className={`${baseClasses} ${stateClasses} pr-10`}
           />
           
-          {/* Native Date Picker Overlay */}
           <div className="absolute right-0 top-0 h-full w-10 flex items-center justify-center z-10 cursor-pointer">
               <Calendar className="w-5 h-5 text-slate-400 group-hover:text-brand-600 transition-colors pointer-events-none" />
               <input 

@@ -204,7 +204,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
         <div className="relative">
           {type === 'textarea' ? 
-            <textarea value={value || ''} onChange={(e) => handleInputChange(path, e.target.value)} rows={2} className={`${baseInputClass} ${ilegibleClass}`} /> : 
+            <textarea value={value || ''} onChange={(e) => handleInputChange(path, e.target.value)} rows={2} className={`${baseInputClass} ${ilegibleClass} resize-y min-h-[3rem]`} /> : 
             type === 'checkbox' ?
             <input type="checkbox" checked={value || false} onChange={(e) => handleInputChange(path, e.target.checked)} className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500" /> :
             <input type={type} value={value || ''} onChange={(e) => handleInputChange(path, e.target.value)} placeholder="No detectado" className={`${baseInputClass} ${ilegibleClass}`} />
@@ -746,7 +746,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                                     <input type="checkbox" checked={(formData as any).antecedentes_patologicos?.[key] || false} onChange={(e) => handleInputChange(`antecedentes_patologicos.${key}`, e.target.checked)} className="w-4 h-4 rounded" />
                                                     <span className="text-xs font-medium text-slate-700">{key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
                                                 </label>
-                                                <input type="text" value={(formData as any).antecedentes_patologicos?.[`${key}_fecha`] || ''} onChange={(e) => handleInputChange(`antecedentes_patologicos.${key}_fecha`, e.target.value)} placeholder="Fecha..." className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded" />
+                                                <DateInput compact label="" value={(formData as any).antecedentes_patologicos?.[`${key}_fecha`] || ''} path={`antecedentes_patologicos.${key}_fecha`} isModified={!!modifiedFields[`antecedentes_patologicos.${key}_fecha`]} isHighlighted={highlightedField === `antecedentes_patologicos.${key}_fecha`} onChange={handleInputChange} />
                                             </div>
                                         ))}
                                     </div>
@@ -1069,8 +1069,8 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     {renderCheckboxGroup("Incapacidad", (formData as any).diagnostico?.incapacidad, 'diagnostico.incapacidad', ['Sí', 'No', 'Parcial', 'Total'])}
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {renderInput("Incapacidad Desde", (formData as any).diagnostico?.incapacidad_desde, 'diagnostico.incapacidad_desde')}
-                                    {renderInput("Incapacidad Hasta", (formData as any).diagnostico?.incapacidad_hasta, 'diagnostico.incapacidad_hasta')}
+                                    <DateInput label="Incapacidad Desde" value={(formData as any).diagnostico?.incapacidad_desde} path="diagnostico.incapacidad_desde" isModified={!!modifiedFields['diagnostico.incapacidad_desde']} isHighlighted={highlightedField === 'diagnostico.incapacidad_desde'} onChange={handleInputChange} />
+                                    <DateInput label="Incapacidad Hasta" value={(formData as any).diagnostico?.incapacidad_hasta} path="diagnostico.incapacidad_hasta" isModified={!!modifiedFields['diagnostico.incapacidad_hasta']} isHighlighted={highlightedField === 'diagnostico.incapacidad_hasta'} onChange={handleInputChange} />
                                 </div>
                                 {renderInput("Diagnóstico", (formData as any).diagnostico?.diagnostico_texto, 'diagnostico.diagnostico_texto', 'textarea')}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1137,10 +1137,10 @@ const Dashboard: React.FC<DashboardProps> = ({
                                                 <thead>
                                                     <tr className="bg-slate-100">
                                                         <th className="p-2 text-left border border-slate-200 w-8">#</th>
-                                                        <th className="p-2 text-left border border-slate-200">Nombre / Presentación</th>
-                                                        <th className="p-2 text-left border border-slate-200 w-20">Cantidad</th>
-                                                        <th className="p-2 text-left border border-slate-200 w-24">Cada cuánto</th>
-                                                        <th className="p-2 text-left border border-slate-200 w-28">Durante cuánto</th>
+                                                        <th className="p-2 text-left border border-slate-200" style={{width: '40%'}}>Nombre / Presentación</th>
+                                                        <th className="p-2 text-left border border-slate-200" style={{width: '15%'}}>Cantidad</th>
+                                                        <th className="p-2 text-left border border-slate-200" style={{width: '20%'}}>Cada cuánto</th>
+                                                        <th className="p-2 text-left border border-slate-200" style={{width: '20%'}}>Durante cuánto</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
