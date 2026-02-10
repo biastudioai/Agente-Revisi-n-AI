@@ -59,7 +59,8 @@ export function calculateScore(
       totalDeducted += rule.points;
       flags.push({
         type: rule.level === 'CRÍTICO' ? 'ERROR_CRÍTICO' : 
-              rule.level === 'IMPORTANTE' ? 'ALERTA' : 'OBSERVACIÓN',
+              rule.level === 'IMPORTANTE' ? 'ALERTA' : 
+              rule.level === 'MODERADO' ? 'OBSERVACIÓN' : 'NOTA',
         rule: rule.name,
         message: rule.description,
         fieldPath: rule.affectedFields[0]
