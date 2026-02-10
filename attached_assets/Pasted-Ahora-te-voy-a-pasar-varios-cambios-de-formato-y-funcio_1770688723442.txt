@@ -1,0 +1,11 @@
+Ahora te voy a pasar varios cambios de formato y funcionalidad que me gustaría que agregaras en la parte de la UI para que el usuario pueda verlo y asegurarse de que esté de forma más sencilla.
+
+Necesito que me agregues el formato de fecha que aparezca como con calendario, así como lo tienes en los otros, en la parte de antecedentes patológicos. Ahí la fecha debe aparecer, ¿sí? pero agregar también un calendario para poder elegir la fecha de ser necesario. Y en la parte de incapacidad desde e incapacidad hasta, también agregar una fecha y un calendario.Te agrego una imagen de fecha alta para darte idea del tipo de calendario al que me refiero en el que le das clic y te aparece para seleccionar la fecha.
+
+
+
+En la parte de tabla de medicamentos, me gustaría que pudieras hacer un poco más pequeña la parte de nombre, presentación, la columna, y agrandar un poco la parte de cantidad, cada cuánto y durante cuánto, para que se vea un poco más equitativo. No te digo que sean iguales, pero sí a lo mejor agrandar un poco estas últimas tres columnas de cantidad, cada cuánto y durante cuánto, y reducir un poco la parte de nombre, presentación, para que sea más sencillo poder verlo y leerlo. Extra a esto, también estaría bien que agregaras las tres o dos rayitas en la esquina inferior derecha, en cada uno de estos donde se escriba, para que en caso de que no se alcance a leer, poder agrandarlo o reducirlo y poder hacer que se pueda ver mejor. Esto igual afectaría a toda la fila en la cual no se alcanza a leer. Por ejemplo, si quiero leer más la parte de durante cuánto y le jalo esa esquina inferior derecha, toda la fila se debería de agrandar.
+
+Luego, estas dos flechitas para agrandar o disminuir los cuadros de texto debería de estar en absolutamente todos los cuadros de texto que tuvieran un espacio para escribir así, ya que en caso de ser mayor el tema de la escritura, me gustaría que él se pudiera adaptar para poder comparar esta parte. aplícalo para los cuadros de texto donde puede ser grande, por ejemplo, a lo mejor en teléfono no, pero sí ponerlo en los otros donde pudiera ser más grande.Te adjunto una imagen para que sepas qué dos rayitas en la esquina inferior derecha me estoy refiriendo.
+
+Hazme preguntas si necesitas más contexto o no ha sido lo suficientemente claro.
