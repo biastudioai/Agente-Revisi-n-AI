@@ -1147,39 +1147,39 @@ const Dashboard: React.FC<DashboardProps> = ({
                                                     {Array.from({ length: 10 }, (_, i) => {
                                                         const med = ((formData as any).tabla_medicamentos || [])[i] || {};
                                                         return (
-                                                            <tr key={i} className="hover:bg-slate-50">
+                                                            <tr key={i} className="hover:bg-slate-50 align-top">
                                                                 <td className="p-1 border border-slate-200 text-center text-slate-400">{i + 1}</td>
                                                                 <td className="p-1 border border-slate-200">
-                                                                    <input type="text" value={med.nombre_presentacion || ''} onChange={(e) => {
+                                                                    <textarea value={med.nombre_presentacion || ''} onChange={(e) => {
                                                                         const meds = [...((formData as any).tabla_medicamentos || [])];
                                                                         while (meds.length <= i) meds.push({});
                                                                         meds[i] = { ...meds[i], nombre_presentacion: e.target.value };
                                                                         handleInputChange('tabla_medicamentos', meds);
-                                                                    }} className="w-full px-1 py-0.5 text-xs border-0 bg-transparent focus:bg-white focus:ring-1 focus:ring-red-300 rounded" />
+                                                                    }} rows={1} className="w-full px-1 py-0.5 text-xs border-0 bg-transparent focus:bg-white focus:ring-1 focus:ring-red-300 rounded resize-y min-h-[1.5rem]" />
                                                                 </td>
                                                                 <td className="p-1 border border-slate-200">
-                                                                    <input type="text" value={med.cantidad || ''} onChange={(e) => {
+                                                                    <textarea value={med.cantidad || ''} onChange={(e) => {
                                                                         const meds = [...((formData as any).tabla_medicamentos || [])];
                                                                         while (meds.length <= i) meds.push({});
                                                                         meds[i] = { ...meds[i], cantidad: e.target.value };
                                                                         handleInputChange('tabla_medicamentos', meds);
-                                                                    }} className="w-full px-1 py-0.5 text-xs border-0 bg-transparent focus:bg-white focus:ring-1 focus:ring-red-300 rounded" />
+                                                                    }} rows={1} className="w-full px-1 py-0.5 text-xs border-0 bg-transparent focus:bg-white focus:ring-1 focus:ring-red-300 rounded resize-y min-h-[1.5rem]" />
                                                                 </td>
                                                                 <td className="p-1 border border-slate-200">
-                                                                    <input type="text" value={med.cada_cuanto || ''} onChange={(e) => {
+                                                                    <textarea value={med.cada_cuanto || ''} onChange={(e) => {
                                                                         const meds = [...((formData as any).tabla_medicamentos || [])];
                                                                         while (meds.length <= i) meds.push({});
                                                                         meds[i] = { ...meds[i], cada_cuanto: e.target.value };
                                                                         handleInputChange('tabla_medicamentos', meds);
-                                                                    }} className="w-full px-1 py-0.5 text-xs border-0 bg-transparent focus:bg-white focus:ring-1 focus:ring-red-300 rounded" />
+                                                                    }} rows={1} className="w-full px-1 py-0.5 text-xs border-0 bg-transparent focus:bg-white focus:ring-1 focus:ring-red-300 rounded resize-y min-h-[1.5rem]" />
                                                                 </td>
                                                                 <td className="p-1 border border-slate-200">
-                                                                    <input type="text" value={med.durante_cuanto_tiempo || ''} onChange={(e) => {
+                                                                    <textarea value={med.durante_cuanto_tiempo || ''} onChange={(e) => {
                                                                         const meds = [...((formData as any).tabla_medicamentos || [])];
                                                                         while (meds.length <= i) meds.push({});
                                                                         meds[i] = { ...meds[i], durante_cuanto_tiempo: e.target.value };
                                                                         handleInputChange('tabla_medicamentos', meds);
-                                                                    }} className="w-full px-1 py-0.5 text-xs border-0 bg-transparent focus:bg-white focus:ring-1 focus:ring-red-300 rounded" />
+                                                                    }} rows={1} className="w-full px-1 py-0.5 text-xs border-0 bg-transparent focus:bg-white focus:ring-1 focus:ring-red-300 rounded resize-y min-h-[1.5rem]" />
                                                                 </td>
                                                             </tr>
                                                         );
