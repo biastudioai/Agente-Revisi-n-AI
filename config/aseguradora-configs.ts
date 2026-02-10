@@ -534,6 +534,17 @@ export const CONFIG_AXA: AseguradoraConfig = {
       parser: (v) => v === 'Detectada' || v === 'detected' 
     },
 
+    'firma_asegurado_transferencia': {
+      path: 'transferencia_datos.firma_asegurado_1',
+      opcional: true,
+      parser: (v) => v === 'Detectada' || v === 'detected'
+    },
+    'firma_asegurado_programas': {
+      path: 'transferencia_datos.firma_asegurado_2',
+      opcional: true,
+      parser: (v) => v === 'Detectada' || v === 'detected'
+    },
+
     'metadata.coherencia_clinica': { 
       path: 'metadata.existe_coherencia_clinica', 
       opcional: true, 

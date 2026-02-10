@@ -1698,8 +1698,28 @@ const Dashboard: React.FC<DashboardProps> = ({
                                             <input type="checkbox" checked={(formData as any).datos_personales?.autorizacion_datos || false} onChange={(e) => handleInputChange('datos_personales.autorizacion_datos', e.target.checked)} className="w-4 h-4 rounded" />
                                             <span className="text-xs font-medium text-slate-700">Autorización tratamiento datos personales</span>
                                         </label>
-                                        {renderCheckboxGroup("Transferencia Datos", (formData as any).transferencia_datos?.autorizacion_transferencia, 'transferencia_datos.autorizacion_transferencia', ['Sí acepto', 'No acepto'])}
-                                        {renderCheckboxGroup("Programas/Servicios", (formData as any).transferencia_datos?.autorizacion_programas, 'transferencia_datos.autorizacion_programas', ['Sí acepto', 'No acepto'])}
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between gap-4">
+                                                <div className="flex-1">
+                                                    {renderCheckboxGroup("Transferencia Datos", (formData as any).transferencia_datos?.autorizacion_transferencia, 'transferencia_datos.autorizacion_transferencia', ['Sí acepto', 'No acepto'])}
+                                                </div>
+                                                <label className="flex items-center gap-1.5 shrink-0">
+                                                    <input type="checkbox" checked={(formData as any).transferencia_datos?.firma_asegurado_1 === 'Detectada'} onChange={(e) => handleInputChange('transferencia_datos.firma_asegurado_1', e.target.checked ? 'Detectada' : 'No detectada')} className="w-4 h-4 rounded" />
+                                                    <span className="text-[10px] font-medium text-slate-600">Firma autógrafa asegurado</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between gap-4">
+                                                <div className="flex-1">
+                                                    {renderCheckboxGroup("Programas/Servicios", (formData as any).transferencia_datos?.autorizacion_programas, 'transferencia_datos.autorizacion_programas', ['Sí acepto', 'No acepto'])}
+                                                </div>
+                                                <label className="flex items-center gap-1.5 shrink-0">
+                                                    <input type="checkbox" checked={(formData as any).transferencia_datos?.firma_asegurado_2 === 'Detectada'} onChange={(e) => handleInputChange('transferencia_datos.firma_asegurado_2', e.target.checked ? 'Detectada' : 'No detectada')} className="w-4 h-4 rounded" />
+                                                    <span className="text-[10px] font-medium text-slate-600">Firma autógrafa asegurado</span>
+                                                </label>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

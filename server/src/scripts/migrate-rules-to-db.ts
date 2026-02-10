@@ -1529,11 +1529,621 @@ const REGLAS_METLIFE: RawScoringRule[] = [
   }
 ];
 
+const REGLAS_AXA: RawScoringRule[] = [
+  // ========== I. VALIDEZ DOCUMENTAL ==========
+  {
+    id: 'axa_vigencia_informe',
+    name: 'Informe médico con más de 6 meses de antigüedad',
+    level: 'CRÍTICO',
+    points: 25,
+    description: 'La fecha del informe no debe ser mayor a 6 meses respecto a la fecha actual.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_vigencia_existe', field: 'lugar_fecha.fecha', operator: 'NOT_EMPTY' },
+      { id: 'cond_axa_vigencia_antigua', field: 'lugar_fecha.fecha', operator: 'DATE_OLDER_THAN_MONTHS', value: 6 }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['lugar_fecha.fecha']
+  },
+  {
+    id: 'axa_firma_medico_faltante',
+    name: 'Firma del médico faltante',
+    level: 'CRÍTICO',
+    points: 25,
+    description: 'El informe debe contener la firma autógrafa del médico tratante.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_firma_vacia', field: 'firma.firma_medico', operator: 'IS_EMPTY' },
+      { id: 'cond_axa_firma_no_detectada', field: 'firma.firma_medico', operator: 'EQUALS', value: 'No detectada' }
+    ],
+    logicOperator: 'OR',
+    affectedFields: ['firma.firma_medico']
+  },
+  {
+    id: 'axa_lugar_fecha_informe',
+    name: 'Lugar y fecha del informe faltante',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Deben completarse el lugar y la fecha del informe.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_lugar_vacio', field: 'lugar_fecha.lugar', operator: 'IS_EMPTY' },
+      { id: 'cond_axa_fecha_vacio', field: 'lugar_fecha.fecha', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'OR',
+    affectedFields: ['lugar_fecha.lugar', 'lugar_fecha.fecha']
+  },
+
+  // ========== II. IDENTIFICACIÓN DEL PACIENTE ==========
+  {
+    id: 'axa_apellido_paterno',
+    name: 'Apellido paterno del paciente obligatorio',
+    level: 'CRÍTICO',
+    points: 25,
+    description: 'El apellido paterno del asegurado es obligatorio.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [{ id: 'cond_axa_apellido_pat', field: 'identificacion.apellido_paterno', operator: 'IS_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['identificacion.apellido_paterno']
+  },
+  {
+    id: 'axa_apellido_materno_nota',
+    name: 'Apellido materno del paciente recomendado',
+    level: 'DISCRETO',
+    points: 2,
+    description: 'Falta apellido materno del paciente. Se recomienda "N/A" si no tiene.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [{ id: 'cond_axa_apellido_mat', field: 'identificacion.apellido_materno', operator: 'IS_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['identificacion.apellido_materno']
+  },
+  {
+    id: 'axa_sexo_vacio',
+    name: 'Sexo del paciente no seleccionado',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Debe marcarse al menos una opción de sexo: Masculino o Femenino.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [{ id: 'cond_axa_sexo_vacio', field: 'identificacion.sexo', operator: 'ARRAY_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['identificacion.sexo']
+  },
+  {
+    id: 'axa_fecha_nacimiento',
+    name: 'Fecha de nacimiento faltante',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'La fecha de nacimiento del paciente es importante para validar la edad reportada.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [{ id: 'cond_axa_fecha_nac', field: 'identificacion.fecha_nacimiento', operator: 'IS_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['identificacion.fecha_nacimiento']
+  },
+  {
+    id: 'axa_peso_talla_validos',
+    name: 'Peso y talla inválidos',
+    level: 'IMPORTANTE',
+    points: 10,
+    description: 'Los valores de peso y talla deben ser mayores a cero si están presentes.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_peso_invalido', field: 'identificacion.peso', operator: 'LESS_THAN_OR_EQUAL', value: 0 },
+      { id: 'cond_axa_talla_invalido', field: 'identificacion.talla', operator: 'LESS_THAN_OR_EQUAL', value: 0 }
+    ],
+    logicOperator: 'OR',
+    affectedFields: ['identificacion.peso', 'identificacion.talla']
+  },
+
+  // ========== III. MOTIVO DE ATENCIÓN Y TIPO DE ESTANCIA ==========
+  {
+    id: 'axa_motivo_atencion_vacio',
+    name: 'Motivo de atención no seleccionado',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Debe marcarse al menos un motivo de atención: Enfermedad, Accidente, Maternidad o Segunda opinión médica.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [{ id: 'cond_axa_motivo_vacio', field: 'motivo_atencion', operator: 'ARRAY_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['motivo_atencion']
+  },
+  {
+    id: 'axa_tipo_estancia_vacio',
+    name: 'Tipo de estancia no seleccionado',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Debe marcarse al menos un tipo de estancia: Urgencia, Hospitalización, Corta estancia/ambulatoria o Consultorio.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [{ id: 'cond_axa_estancia_vacia', field: 'tipo_estancia', operator: 'ARRAY_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['tipo_estancia']
+  },
+
+  // ========== IV. ANTECEDENTES ==========
+  {
+    id: 'axa_antecedente_sin_fecha',
+    name: 'Antecedente patológico marcado sin fecha',
+    level: 'IMPORTANTE',
+    points: 10,
+    description: 'Si un antecedente patológico está marcado como positivo, debe registrarse la fecha correspondiente.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_ant_cardiacos', field: 'antecedentes_patologicos.cardiacos', operator: 'EQUALS', value: 'true' },
+      { id: 'cond_axa_ant_cardiacos_fecha', field: 'antecedentes_patologicos.cardiacos_fecha', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['antecedentes_patologicos.cardiacos', 'antecedentes_patologicos.cardiacos_fecha', 'antecedentes_patologicos.diabetes_mellitus', 'antecedentes_patologicos.diabetes_mellitus_fecha', 'antecedentes_patologicos.cancer', 'antecedentes_patologicos.cancer_fecha', 'antecedentes_patologicos.hipertensivos', 'antecedentes_patologicos.hipertensivos_fecha']
+  },
+  {
+    id: 'axa_gineco_obstetricos_mujer',
+    name: 'Antecedentes gineco-obstétricos obligatorios para mujer',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Si el paciente es de sexo femenino, los campos de gestación, partos, abortos y cesáreas son obligatorios.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_sexo_fem', field: 'identificacion.sexo', operator: 'CONTAINS', value: 'Femenino' },
+      { id: 'cond_axa_gineco_g', field: 'antecedentes_gineco_obstetricos.gestacion', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['antecedentes_gineco_obstetricos.gestacion', 'antecedentes_gineco_obstetricos.partos', 'antecedentes_gineco_obstetricos.abortos', 'antecedentes_gineco_obstetricos.cesareas', 'identificacion.sexo']
+  },
+  {
+    id: 'axa_gineco_obstetricos_maternidad',
+    name: 'Antecedentes gineco-obstétricos obligatorios por maternidad',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Si el motivo de atención es Maternidad, los campos G, P, A, C son obligatorios.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_motivo_mat', field: 'motivo_atencion', operator: 'CONTAINS', value: 'Maternidad' },
+      { id: 'cond_axa_gineco_mat_g', field: 'antecedentes_gineco_obstetricos.gestacion', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['antecedentes_gineco_obstetricos.gestacion', 'antecedentes_gineco_obstetricos.partos', 'antecedentes_gineco_obstetricos.abortos', 'antecedentes_gineco_obstetricos.cesareas', 'motivo_atencion']
+  },
+  {
+    id: 'axa_perinatales_menor',
+    name: 'Antecedentes perinatales para menores',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Los antecedentes perinatales son obligatorios para menores de 18 años.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_edad_menor', field: 'identificacion.edad', operator: 'LESS_THAN', value: 18 },
+      { id: 'cond_axa_perinatales_vacio', field: 'antecedentes_perinatales.descripcion', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['antecedentes_perinatales.descripcion', 'identificacion.edad']
+  },
+
+  // ========== V. DIAGNÓSTICO ==========
+  {
+    id: 'axa_padecimiento_insuficiente',
+    name: 'Descripción del padecimiento insuficiente',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'La descripción del padecimiento actual debe tener al menos 15 caracteres.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [{ id: 'cond_axa_padecimiento_corto', field: 'diagnostico.padecimiento_actual', operator: 'LENGTH_LESS_THAN', value: 15 }],
+    logicOperator: 'AND',
+    affectedFields: ['diagnostico.padecimiento_actual']
+  },
+  {
+    id: 'axa_tipo_padecimiento_vacio',
+    name: 'Tipo de padecimiento no seleccionado',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Debe marcarse al menos una opción de tipo de padecimiento: Congénito, Adquirido, Agudo o Crónico.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [{ id: 'cond_axa_tipo_pad_vacio', field: 'diagnostico.tipo_padecimiento', operator: 'ARRAY_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['diagnostico.tipo_padecimiento']
+  },
+  {
+    id: 'axa_origen_contradictorio',
+    name: 'Origen del padecimiento contradictorio',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'No puede ser Congénito y Adquirido al mismo tiempo. Seleccione solo uno.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [{ id: 'cond_axa_origen_dual', field: 'diagnostico.tipo_padecimiento', operator: 'ARRAY_MUTUALLY_EXCLUSIVE', value: 'Congénito,Adquirido' }],
+    logicOperator: 'AND',
+    affectedFields: ['diagnostico.tipo_padecimiento']
+  },
+  {
+    id: 'axa_curso_contradictorio',
+    name: 'Curso del padecimiento contradictorio',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'No puede ser Agudo y Crónico al mismo tiempo. Seleccione solo uno.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [{ id: 'cond_axa_curso_dual', field: 'diagnostico.tipo_padecimiento', operator: 'ARRAY_MUTUALLY_EXCLUSIVE', value: 'Agudo,Crónico' }],
+    logicOperator: 'AND',
+    affectedFields: ['diagnostico.tipo_padecimiento']
+  },
+  {
+    id: 'axa_codigo_cie_faltante',
+    name: 'Código CIE-10 faltante',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Si hay diagnóstico, debe registrarse el código CIE-10 correspondiente.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_diag_existe', field: 'diagnostico.diagnostico_texto', operator: 'NOT_EMPTY' },
+      { id: 'cond_axa_cie_vacio', field: 'diagnostico.codigo_icd', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['diagnostico.codigo_icd', 'diagnostico.diagnostico_texto']
+  },
+  {
+    id: 'axa_exploracion_fisica_faltante',
+    name: 'Exploración física faltante',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Los resultados de la exploración física son obligatorios para sustentar el diagnóstico.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [{ id: 'cond_axa_exploracion', field: 'diagnostico.exploracion_fisica', operator: 'IS_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['diagnostico.exploracion_fisica']
+  },
+  {
+    id: 'axa_estudios_laboratorio',
+    name: 'Estudios de laboratorio faltantes',
+    level: 'MODERADO',
+    points: 10,
+    description: 'Se recomienda incluir los estudios de laboratorio y gabinete practicados.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [{ id: 'cond_axa_estudios', field: 'diagnostico.estudios_laboratorio', operator: 'IS_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['diagnostico.estudios_laboratorio']
+  },
+  {
+    id: 'axa_cancer_sin_tnm',
+    name: 'Cáncer diagnosticado sin escala TNM',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Si el diagnóstico indica cáncer, la escala TNM es obligatoria para clasificar la neoplasia.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_es_cancer', field: 'diagnostico.es_cancer', operator: 'CONTAINS', value: 'Sí' },
+      { id: 'cond_axa_tnm_vacio', field: 'diagnostico.escala_tnm', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['diagnostico.es_cancer', 'diagnostico.escala_tnm']
+  },
+  {
+    id: 'axa_incapacidad_sin_fechas',
+    name: 'Incapacidad marcada sin fechas',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Si se indica incapacidad (Sí, Parcial o Total), las fechas desde/hasta son obligatorias.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_incap_si', field: 'diagnostico.incapacidad', operator: 'CONTAINS', value: 'Sí' },
+      { id: 'cond_axa_incap_desde', field: 'diagnostico.incapacidad_desde', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['diagnostico.incapacidad', 'diagnostico.incapacidad_desde', 'diagnostico.incapacidad_hasta']
+  },
+
+  // ========== VI. TRATAMIENTO ==========
+  {
+    id: 'axa_histopatologico_sin_resultado',
+    name: 'Histopatológico sin resultado',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Si se marcó histopatológico como "Sí", el resultado es obligatorio.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_histo_si', field: 'tratamiento.histopatologico', operator: 'CONTAINS', value: 'Sí' },
+      { id: 'cond_axa_histo_resultado', field: 'tratamiento.histopatologico_resultado', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['tratamiento.histopatologico', 'tratamiento.histopatologico_resultado']
+  },
+  {
+    id: 'axa_complicaciones_sin_descripcion',
+    name: 'Complicaciones sin descripción',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Si se marcaron complicaciones como "Sí", la descripción es obligatoria.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_comp_si', field: 'tratamiento.complicaciones', operator: 'CONTAINS', value: 'Sí' },
+      { id: 'cond_axa_comp_desc', field: 'tratamiento.complicaciones_descripcion', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['tratamiento.complicaciones', 'tratamiento.complicaciones_descripcion']
+  },
+  {
+    id: 'axa_tratamiento_futuro_sin_descripcion',
+    name: 'Tratamiento futuro sin descripción',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Si se marcó tratamiento futuro como "Sí", la descripción es obligatoria.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_fut_si', field: 'tratamiento.tratamiento_futuro', operator: 'CONTAINS', value: 'Sí' },
+      { id: 'cond_axa_fut_desc', field: 'tratamiento.tratamiento_futuro_descripcion', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['tratamiento.tratamiento_futuro', 'tratamiento.tratamiento_futuro_descripcion']
+  },
+  {
+    id: 'axa_hospital_obligatorio_hospitalizacion',
+    name: 'Nombre del hospital obligatorio si hospitalización',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Si el tipo de estancia incluye Hospitalización, el nombre del hospital es obligatorio.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_estancia_hosp', field: 'tipo_estancia', operator: 'CONTAINS', value: 'Hospitalización' },
+      { id: 'cond_axa_hospital_nombre', field: 'tratamiento.nombre_hospital', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['tipo_estancia', 'tratamiento.nombre_hospital']
+  },
+  {
+    id: 'axa_fecha_alta_antes_hospitalizacion',
+    name: 'Fecha de alta anterior a fecha de hospitalización',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'La fecha de alta no puede ser anterior a la fecha de hospitalización.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [{ id: 'cond_axa_alta_hosp', field: 'tratamiento.fecha_alta', operator: 'DATE_BEFORE', compareField: 'tratamiento.fecha_hospitalizacion' }],
+    logicOperator: 'AND',
+    affectedFields: ['tratamiento.fecha_alta', 'tratamiento.fecha_hospitalizacion']
+  },
+  {
+    id: 'axa_fecha_alta_antes_cirugia',
+    name: 'Fecha de alta anterior a fecha de cirugía',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'La fecha de alta no puede ser anterior a la fecha de cirugía.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [{ id: 'cond_axa_alta_cirugia', field: 'tratamiento.fecha_alta', operator: 'DATE_BEFORE', compareField: 'tratamiento.fecha_cirugia' }],
+    logicOperator: 'AND',
+    affectedFields: ['tratamiento.fecha_alta', 'tratamiento.fecha_cirugia']
+  },
+
+  // ========== VII. CRONOLOGÍA MÉDICA ==========
+  {
+    id: 'axa_padecimiento_posterior_diagnostico',
+    name: 'Fecha de padecimiento posterior al diagnóstico',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'La fecha del padecimiento no puede ser posterior a la fecha de diagnóstico.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [{ id: 'cond_axa_pad_diag', field: 'diagnostico.fecha_padecimiento', operator: 'DATE_AFTER', compareField: 'diagnostico.fecha_diagnostico' }],
+    logicOperator: 'AND',
+    affectedFields: ['diagnostico.fecha_padecimiento', 'diagnostico.fecha_diagnostico']
+  },
+  {
+    id: 'axa_diagnostico_posterior_cirugia',
+    name: 'Diagnóstico posterior a cirugía',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'La fecha de diagnóstico no puede ser posterior a la fecha de cirugía.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [{ id: 'cond_axa_diag_cirugia', field: 'diagnostico.fecha_diagnostico', operator: 'DATE_AFTER', compareField: 'tratamiento.fecha_cirugia' }],
+    logicOperator: 'AND',
+    affectedFields: ['diagnostico.fecha_diagnostico', 'tratamiento.fecha_cirugia']
+  },
+  {
+    id: 'axa_fecha_informe_futura',
+    name: 'Fecha del informe futura',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'La fecha del informe no puede ser una fecha futura.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [{ id: 'cond_axa_informe_futuro', field: 'lugar_fecha.fecha', operator: 'DATE_AFTER', value: 'TODAY' }],
+    logicOperator: 'AND',
+    affectedFields: ['lugar_fecha.fecha']
+  },
+
+  // ========== VIII. MEDICAMENTOS ==========
+  {
+    id: 'axa_medicamento_incompleto',
+    name: 'Medicamento con datos incompletos',
+    level: 'MODERADO',
+    points: 10,
+    description: 'Cada medicamento registrado debe incluir nombre, cantidad, frecuencia y duración.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_med_nombre', field: 'tabla_medicamentos', operator: 'ARRAY_ITEMS_MISSING_FIELD', value: 'nombre_presentacion', compareField: 'numero' },
+      { id: 'cond_axa_med_cantidad', field: 'tabla_medicamentos', operator: 'ARRAY_ITEMS_MISSING_FIELD', value: 'cantidad', compareField: 'numero' }
+    ],
+    logicOperator: 'OR',
+    affectedFields: ['tabla_medicamentos']
+  },
+
+  // ========== IX. DATOS DEL MÉDICO ==========
+  {
+    id: 'axa_rfc_medico_formato',
+    name: 'RFC del médico con formato inválido',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'El RFC del médico debe tener exactamente 13 caracteres alfanuméricos.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_rfc_no_vacio', field: 'medico_principal.rfc', operator: 'NOT_EMPTY' },
+      { id: 'cond_axa_rfc_formato', field: 'medico_principal.rfc', operator: 'REGEX', value: '^[A-Z]{4}\\d{6}[A-Z0-9]{3}$' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['medico_principal.rfc']
+  },
+  {
+    id: 'axa_cedula_especialidad_recomendada',
+    name: 'Cédula de especialidad del médico recomendada',
+    level: 'DISCRETO',
+    points: 3,
+    description: 'Se recomienda incluir la cédula de especialidad del médico tratante.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_med_nombre_existe', field: 'medico_principal.nombre', operator: 'NOT_EMPTY' },
+      { id: 'cond_axa_ced_esp_vacia', field: 'medico_principal.cedula_especialidad', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['medico_principal.cedula_especialidad', 'medico_principal.nombre']
+  },
+  {
+    id: 'axa_anestesiologo_sin_cedula',
+    name: 'Anestesiólogo sin cédula profesional',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Si se registra un anestesiólogo, debe incluir su cédula profesional.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_anest_nombre', field: 'anestesiologo.nombre', operator: 'NOT_EMPTY' },
+      { id: 'cond_axa_anest_cedula', field: 'anestesiologo.cedula_profesional', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['anestesiologo.nombre', 'anestesiologo.cedula_profesional']
+  },
+  {
+    id: 'axa_medico_telefono_obligatorio',
+    name: 'Teléfono del médico tratante obligatorio',
+    level: 'CRÍTICO',
+    points: 15,
+    description: 'El médico tratante debe proporcionar al menos un número de teléfono de contacto.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_med_nombre_tel', field: 'medico_principal.nombre', operator: 'NOT_EMPTY' },
+      { id: 'cond_axa_tel_vacio', field: 'medico_principal.telefono', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['medico_principal.telefono', 'medico_principal.nombre']
+  },
+
+  // ========== X. REFERIDO ==========
+  {
+    id: 'axa_referido_sin_cual',
+    name: 'Referido sin especificar a quién',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Si el paciente fue referido por otro médico, debe especificar cuál.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_referido_si', field: 'referido_otro_medico.referido', operator: 'CONTAINS', value: 'Sí' },
+      { id: 'cond_axa_referido_cual', field: 'referido_otro_medico.cual', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['referido_otro_medico.referido', 'referido_otro_medico.cual']
+  },
+
+  // ========== XI. AUTORIZACIONES Y FIRMAS DEL ASEGURADO ==========
+  {
+    id: 'axa_autorizacion_datos_personales',
+    name: 'Autorización de datos personales no marcada',
+    level: 'MODERADO',
+    points: 10,
+    description: 'Se recomienda que la autorización de tratamiento de datos personales esté marcada.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [{ id: 'cond_axa_aut_datos', field: 'datos_personales.autorizacion_datos', operator: 'EQUALS', value: 'false' }],
+    logicOperator: 'AND',
+    affectedFields: ['datos_personales.autorizacion_datos']
+  },
+  {
+    id: 'axa_transferencia_sin_seleccion',
+    name: 'Transferencia de datos sin selección',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Debe seleccionarse "Sí acepto" o "No acepto" en la autorización de transferencia de datos.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [{ id: 'cond_axa_transf_vacio', field: 'transferencia_datos.autorizacion_transferencia', operator: 'ARRAY_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['transferencia_datos.autorizacion_transferencia']
+  },
+  {
+    id: 'axa_firma_asegurado_transferencia',
+    name: 'Firma del asegurado en transferencia de datos faltante',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'La firma autógrafa del asegurado debe estar presente en la sección de transferencia de datos.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_firma_aseg_1_vacia', field: 'transferencia_datos.firma_asegurado_1', operator: 'IS_EMPTY' },
+      { id: 'cond_axa_firma_aseg_1_no', field: 'transferencia_datos.firma_asegurado_1', operator: 'EQUALS', value: 'No detectada' }
+    ],
+    logicOperator: 'OR',
+    affectedFields: ['transferencia_datos.firma_asegurado_1']
+  },
+  {
+    id: 'axa_programas_sin_seleccion',
+    name: 'Programas y servicios sin selección',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Debe seleccionarse "Sí acepto" o "No acepto" en la autorización de programas y servicios.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [{ id: 'cond_axa_prog_vacio', field: 'transferencia_datos.autorizacion_programas', operator: 'ARRAY_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['transferencia_datos.autorizacion_programas']
+  },
+  {
+    id: 'axa_firma_asegurado_programas',
+    name: 'Firma del asegurado en programas y servicios faltante',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'La firma autógrafa del asegurado debe estar presente en la sección de programas y servicios.',
+    providerTarget: 'AXA',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_firma_aseg_2_vacia', field: 'transferencia_datos.firma_asegurado_2', operator: 'IS_EMPTY' },
+      { id: 'cond_axa_firma_aseg_2_no', field: 'transferencia_datos.firma_asegurado_2', operator: 'EQUALS', value: 'No detectada' }
+    ],
+    logicOperator: 'OR',
+    affectedFields: ['transferencia_datos.firma_asegurado_2']
+  }
+];
+
 function getCategoryFromProvider(providerTarget: string): RuleCategory {
   if (providerTarget === 'ALL' || providerTarget === 'GENERAL') return RuleCategory.GENERAL;
   if (providerTarget === 'GNP') return RuleCategory.GNP;
   if (providerTarget === 'METLIFE') return RuleCategory.METLIFE;
   if (providerTarget === 'NYLIFE') return RuleCategory.NYLIFE;
+  if (providerTarget === 'AXA') return RuleCategory.AXA;
   return RuleCategory.GENERAL;
 }
 
@@ -1552,6 +2162,7 @@ async function migrateRulesToDatabase() {
     ...REGLAS_GENERALES.map(r => ({ ...r, category: RuleCategory.GENERAL })),
     ...REGLAS_GNP.map(r => ({ ...r, category: RuleCategory.GNP })),
     ...REGLAS_METLIFE.map(r => ({ ...r, category: RuleCategory.METLIFE })),
+    ...REGLAS_AXA.map(r => ({ ...r, category: RuleCategory.AXA })),
   ];
 
   const newRules = allRules.filter(r => !existingRuleIds.has(r.id));
