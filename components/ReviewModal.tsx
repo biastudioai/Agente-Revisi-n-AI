@@ -752,12 +752,23 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, report }) =>
                         onClick={handleSend}
                         disabled={!email || isSending}
                         className={`
-                            flex items-center gap-2 px-8 py-2.5 rounded-xl text-white text-sm font-bold shadow-xl shadow-brand-500/20 transition-all
-                            ${!email || isSending ? 'bg-slate-400 cursor-not-allowed transform-none' : 'bg-brand-600 hover:bg-brand-700 hover:scale-105 active:scale-95'}
+                            flex items-center gap-2 px-10 py-3 rounded-2xl text-white text-sm font-bold shadow-xl transition-all relative overflow-hidden group
+                            ${!email || isSending 
+                                ? 'bg-slate-400 cursor-not-allowed transform-none' 
+                                : 'bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 hover:scale-105 active:scale-95 shadow-brand-500/40 hover:shadow-brand-500/60'}
                         `}
                     >
-                        {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                        {isSending ? 'Enviando...' : 'Enviar Reporte'}
+                        {/* Shimmer effect */}
+                        {!(!email || isSending) && (
+                            <div className="absolute inset-0 w-1/2 h-full bg-white/20 -skew-x-12 -translate-x-full group-hover:animate-shimmer" />
+                        )}
+                        
+                        {isSending ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <Send className={`w-4 h-4 transition-transform duration-300 ${!email || isSending ? '' : 'group-hover:translate-x-1 group-hover:-translate-y-0.5'}`} />
+                        )}
+                        <span>{isSending ? 'Enviando...' : 'Enviar Reporte'}</span>
                     </button>
                 </div>
             </div>
