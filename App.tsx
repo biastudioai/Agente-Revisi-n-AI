@@ -1472,9 +1472,6 @@ const App: React.FC = () => {
                     filePreview.type === 'application/pdf' ? (
                     <PdfViewer 
                         base64Data={filePreview.data} 
-                        approvalStatus={approvalStatus}
-                        pendingChanges={pendingChanges}
-                        userRole={user?.rol}
                     />
                     ) : (
                     pendingFiles.length > 0 ? (
