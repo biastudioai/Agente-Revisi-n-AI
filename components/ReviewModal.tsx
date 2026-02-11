@@ -760,7 +760,7 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, report }) =>
                     >
                         {/* Shimmer effect */}
                         {!(!email || isSending) && (
-                            <div className="absolute inset-0 w-1/2 h-full bg-white/20 -skew-x-12 -translate-x-full group-hover:animate-shimmer" />
+                            <div className="absolute inset-0 w-1/2 h-full bg-white/20 -skew-x-12 -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
                         )}
                         
                         {isSending ? (
