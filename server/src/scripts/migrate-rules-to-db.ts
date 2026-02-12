@@ -49,18 +49,6 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     affectedFields: ['identificacion.primer_apellido']
   },
   {
-    id: 'nylife_paciente_apellido',
-    name: 'Apellido paterno del paciente obligatorio',
-    level: 'CRÍTICO',
-    points: 25,
-    description: 'El primer apellido del asegurado es obligatorio.',
-    providerTarget: 'NYLIFE',
-    isCustom: false,
-    conditions: [{ id: 'cond_nylife_paciente_apellido', field: 'identificacion.primer_apellido', operator: 'IS_EMPTY' }],
-    logicOperator: 'AND',
-    affectedFields: ['identificacion.primer_apellido']
-  },
-  {
     id: 'gen_paciente_nombre',
     name: 'Nombre del paciente obligatorio',
     level: 'CRÍTICO',
@@ -90,7 +78,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 25,
     description: 'El diagnóstico definitivo es la base de la reclamación.',
-    providerTarget: 'GNP,METLIFE,NYLIFE',
+    providerTarget: 'GNP,METLIFE',
     isCustom: false,
     conditions: [{ id: 'cond_diag_falta_1', field: 'diagnostico.diagnostico_definitivo', operator: 'IS_EMPTY' }],
     logicOperator: 'AND',
@@ -126,7 +114,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'MODERADO',
     points: 5,
     description: 'Frecuencia de pulso fuera de rango fisiológico probable (30-220).',
-    providerTarget: 'GNP,METLIFE,NYLIFE',
+    providerTarget: 'GNP,METLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_pulso_bajo', field: 'signos_vitales.pulso', operator: 'LESS_THAN', value: 30 },
@@ -141,7 +129,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'MODERADO',
     points: 5,
     description: 'Frecuencia respiratoria fuera de rango fisiológico probable (8-60).',
-    providerTarget: 'GNP,METLIFE,NYLIFE',
+    providerTarget: 'GNP,METLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_resp_bajo', field: 'signos_vitales.respiracion', operator: 'LESS_THAN', value: 8 },
@@ -156,7 +144,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'IMPORTANTE',
     points: 10,
     description: 'Temperatura fuera de rango fisiológico (34-42°C).',
-    providerTarget: 'GNP,METLIFE,NYLIFE',
+    providerTarget: 'GNP,METLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_temp_bajo', field: 'signos_vitales.temperatura', operator: 'LESS_THAN', value: 34 },
@@ -171,7 +159,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 15,
     description: 'Use el formato XXX/XX para la presión arterial.',
-    providerTarget: 'GNP,METLIFE,NYLIFE',
+    providerTarget: 'GNP,METLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_presion_formato_1', field: 'signos_vitales.presion_arterial', operator: 'NOT_EMPTY' },
@@ -186,7 +174,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'IMPORTANTE',
     points: 10,
     description: 'Ingrese valores de peso y talla válidos (mayores a cero).',
-    providerTarget: 'GNP,METLIFE,NYLIFE',
+    providerTarget: 'GNP,METLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_peso_invalido', field: 'signos_vitales.peso', operator: 'LESS_THAN_OR_EQUAL', value: 0 },
@@ -208,18 +196,6 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     affectedFields: ['medico_tratante.primer_apellido']
   },
   {
-    id: 'nylife_medico_apellido',
-    name: 'Apellido del médico obligatorio',
-    level: 'CRÍTICO',
-    points: 20,
-    description: 'El primer apellido del médico tratante es obligatorio.',
-    providerTarget: 'NYLIFE',
-    isCustom: false,
-    conditions: [{ id: 'cond_nylife_medico_apellido', field: 'medico_tratante.primer_apellido', operator: 'IS_EMPTY' }],
-    logicOperator: 'AND',
-    affectedFields: ['medico_tratante.primer_apellido']
-  },
-  {
     id: 'gen_medico_nombre',
     name: 'Nombre del médico obligatorio',
     level: 'CRÍTICO',
@@ -237,7 +213,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 15,
     description: 'Debe proporcionar al menos un dato de contacto del médico: teléfono de consultorio, celular o correo electrónico.',
-    providerTarget: 'GNP,METLIFE,NYLIFE',
+    providerTarget: 'GNP,METLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_tel_consultorio', field: 'medico_tratante.telefono_consultorio', operator: 'IS_EMPTY' },
@@ -268,7 +244,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'Inconsistencia: El inicio de síntomas no puede ser posterior al diagnóstico.',
-    providerTarget: 'GNP,METLIFE,NYLIFE',
+    providerTarget: 'GNP,METLIFE',
     isCustom: false,
     conditions: [{ id: 'cond_crono_inicio_diag', field: 'padecimiento_actual.fecha_inicio', operator: 'DATE_AFTER', compareField: 'diagnostico.fecha_diagnostico' }],
     logicOperator: 'AND',
@@ -280,7 +256,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'Inconsistencia: El tratamiento no puede haber iniciado antes del diagnóstico.',
-    providerTarget: 'GNP,METLIFE,NYLIFE',
+    providerTarget: 'GNP,METLIFE',
     isCustom: false,
     conditions: [{ id: 'cond_crono_trat_diag', field: 'diagnostico.fecha_diagnostico', operator: 'DATE_AFTER', compareField: 'tratamiento.fecha_inicio' }],
     logicOperator: 'AND',
@@ -292,7 +268,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'Inconsistencia: El ingreso hospitalario es previo a la fecha de diagnóstico.',
-    providerTarget: 'GNP,METLIFE,NYLIFE',
+    providerTarget: 'GNP,METLIFE',
     isCustom: false,
     conditions: [{ id: 'cond_crono_hosp_diag', field: 'hospital.fecha_ingreso', operator: 'DATE_BEFORE', compareField: 'diagnostico.fecha_diagnostico' }],
     logicOperator: 'AND',
@@ -304,7 +280,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'El informe médico no puede tener fecha anterior a la del diagnóstico.',
-    providerTarget: 'GNP,METLIFE,NYLIFE',
+    providerTarget: 'GNP,METLIFE',
     isCustom: false,
     conditions: [{ id: 'cond_crono_firma_diag', field: 'firma.fecha', operator: 'DATE_BEFORE', compareField: 'diagnostico.fecha_diagnostico' }],
     logicOperator: 'AND',
@@ -316,7 +292,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'La fecha de emisión del informe no puede ser una fecha futura.',
-    providerTarget: 'GNP,METLIFE,NYLIFE',
+    providerTarget: 'GNP,METLIFE',
     isCustom: false,
     conditions: [{ id: 'cond_firma_futura', field: 'firma.fecha', operator: 'DATE_AFTER', value: 'TODAY' }],
     logicOperator: 'AND',
@@ -328,7 +304,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'El informe debe contener la firma autógrafa del médico tratante.',
-    providerTarget: 'GNP,METLIFE,NYLIFE',
+    providerTarget: 'GNP,METLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_firma_faltante_1', field: 'firma.firma_autografa_detectada', operator: 'IS_EMPTY' },
@@ -343,7 +319,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 15,
     description: 'Falta el lugar y la fecha de la firma al final del informe.',
-    providerTarget: 'GNP,METLIFE,NYLIFE',
+    providerTarget: 'GNP,METLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_lugar_firma', field: 'firma.lugar', operator: 'IS_EMPTY' },
@@ -370,7 +346,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'IMPORTANTE',
     points: 15,
     description: 'El nombre o apellido del médico tratante no coincide con quien firma el documento. Verifique que el nombre y apellido aparezcan en ambas secciones.',
-    providerTarget: 'GNP,METLIFE,NYLIFE',
+    providerTarget: 'GNP,METLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_firma_nombres_match', field: 'firma.nombre_firma', operator: 'NAMES_MATCH', compareField: 'medico_tratante.nombres', additionalFields: ['medico_tratante.primer_apellido', 'medico_tratante.segundo_apellido'] }
@@ -414,7 +390,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 15,
     description: 'Si se registra un médico participante, debe especificarse su especialidad.',
-    providerTarget: 'GNP,METLIFE,NYLIFE',
+    providerTarget: 'GNP,METLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_otros_medicos_especialidad', field: 'otros_medicos', operator: 'ARRAY_ITEMS_MISSING_FIELD', value: 'especialidad', compareField: 'nombres' }
@@ -428,7 +404,7 @@ const REGLAS_GENERALES: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 15,
     description: 'Si se registra un médico participante, debe proporcionar su cédula profesional.',
-    providerTarget: 'GNP,METLIFE,NYLIFE',
+    providerTarget: 'GNP,METLIFE',
     isCustom: false,
     conditions: [
       { id: 'cond_otros_medicos_cedula', field: 'otros_medicos', operator: 'ARRAY_ITEMS_MISSING_FIELD', value: 'cedula_profesional', compareField: 'nombres' }
@@ -1500,9 +1476,119 @@ const REGLAS_METLIFE: RawScoringRule[] = [
     conditions: [{ id: 'cond_metlife_sexo_unica', field: 'identificacion.sexo', operator: 'ARRAY_LENGTH_GREATER_THAN', value: 1 }],
     logicOperator: 'AND',
     affectedFields: ['identificacion.sexo']
+  }
+];
+
+const REGLAS_NYLIFE: RawScoringRule[] = [
+  // ========== REGLAS MIGRADAS DESDE GENERALES ==========
+  {
+    id: 'nylife_paciente_apellido',
+    name: 'Apellido paterno del paciente obligatorio',
+    level: 'CRÍTICO',
+    points: 25,
+    description: 'El apellido paterno del asegurado es obligatorio.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_paciente_apellido', field: 'identificacion.apellido_paterno', operator: 'IS_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['identificacion.apellido_paterno']
+  },
+  {
+    id: 'nylife_apellido_materno_nota',
+    name: 'Apellido materno del paciente recomendado',
+    level: 'DISCRETO',
+    points: 2,
+    description: 'Falta apellido materno del paciente. Se recomienda "N/A" si no tiene.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_apellido_materno', field: 'identificacion.apellido_materno', operator: 'IS_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['identificacion.apellido_materno']
+  },
+  {
+    id: 'nylife_medico_apellido',
+    name: 'Apellido del médico obligatorio',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'El primer apellido del médico tratante es obligatorio.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_medico_apellido', field: 'medico_tratante.apellido_paterno', operator: 'IS_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['medico_tratante.apellido_paterno']
   },
 
-  // ========== VIII. REGLAS NYLIFE - SEXO ==========
+  // ========== I. VALIDEZ DOCUMENTAL ==========
+  {
+    id: 'nylife_vigencia_informe',
+    name: 'Informe médico con más de 6 meses de antigüedad',
+    level: 'CRÍTICO',
+    points: 25,
+    description: 'La fecha de firma del documento (última página) no debe ser mayor a 6 meses respecto a la fecha actual.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_nylife_vigencia_existe', field: 'firma_pagina_2.fecha.formatted', operator: 'NOT_EMPTY' },
+      { id: 'cond_nylife_vigencia_antigua', field: 'firma_pagina_2.fecha.formatted', operator: 'DATE_OLDER_THAN_MONTHS', value: 6 }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['firma_pagina_2.fecha.formatted']
+  },
+  {
+    id: 'nylife_firma_faltante',
+    name: 'Firma del médico faltante',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'El informe debe contener la firma autógrafa del médico tratante en la última página.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_nylife_firma_faltante_1', field: 'firma_pagina_2.firma_autografa_detectada', operator: 'IS_EMPTY' },
+      { id: 'cond_nylife_firma_faltante_2', field: 'firma_pagina_2.firma_autografa_detectada', operator: 'EQUALS', value: 'No detectada' }
+    ],
+    logicOperator: 'OR',
+    affectedFields: ['firma_pagina_2.firma_autografa_detectada']
+  },
+  {
+    id: 'nylife_fecha_firma_faltante',
+    name: 'Fecha de firma faltante',
+    level: 'CRÍTICO',
+    points: 15,
+    description: 'Falta la fecha de firma del documento en la última página.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_fecha_firma', field: 'firma_pagina_2.fecha.formatted', operator: 'IS_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['firma_pagina_2.fecha.formatted']
+  },
+  {
+    id: 'nylife_informe_futuro',
+    name: 'Fecha de informe futura',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'La fecha de firma del informe no puede ser una fecha futura.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_firma_futura', field: 'firma_pagina_2.fecha.formatted', operator: 'DATE_AFTER', value: 'TODAY' }],
+    logicOperator: 'AND',
+    affectedFields: ['firma_pagina_2.fecha.formatted']
+  },
+  {
+    id: 'nylife_medico_firma_coincide',
+    name: 'Médico firmante no coincide con médico tratante',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'El nombre del médico en la firma de la última página no coincide con el médico tratante registrado.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_nylife_firma_nombres_match', field: 'firma_pagina_2.nombre_firma', operator: 'NAMES_MATCH', compareField: 'medico_tratante.nombres', additionalFields: ['medico_tratante.apellido_paterno', 'medico_tratante.apellido_materno'] }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['firma_pagina_2.nombre_firma', 'medico_tratante.nombres', 'medico_tratante.apellido_paterno', 'medico_tratante.apellido_materno']
+  },
+
+  // ========== II. IDENTIFICACIÓN ==========
   {
     id: 'nylife_sexo_vacio',
     name: 'Sexo del paciente no seleccionado',
@@ -1526,6 +1612,511 @@ const REGLAS_METLIFE: RawScoringRule[] = [
     conditions: [{ id: 'cond_nylife_sexo_unica', field: 'identificacion.sexo', operator: 'ARRAY_LENGTH_GREATER_THAN', value: 1 }],
     logicOperator: 'AND',
     affectedFields: ['identificacion.sexo']
+  },
+  {
+    id: 'nylife_tipo_evento_vacio',
+    name: 'Tipo de evento no seleccionado',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Debe marcarse al menos una opción: Accidente, Enfermedad o Embarazo.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_tipo_evento_vacio', field: 'identificacion.tipo_evento', operator: 'ARRAY_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['identificacion.tipo_evento']
+  },
+  {
+    id: 'nylife_tipo_evento_seleccion_unica',
+    name: 'Solo puede seleccionar un tipo de evento',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Solo puede seleccionar Accidente, Enfermedad O Embarazo, no múltiples.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_tipo_evento_unica', field: 'identificacion.tipo_evento', operator: 'ARRAY_LENGTH_GREATER_THAN', value: 1 }],
+    logicOperator: 'AND',
+    affectedFields: ['identificacion.tipo_evento']
+  },
+
+  // ========== III. ANTECEDENTES ==========
+  {
+    id: 'nylife_antecedentes_patologicos',
+    name: 'Antecedentes patológicos faltantes',
+    level: 'IMPORTANTE',
+    points: 10,
+    description: 'La sección de antecedentes patológicos no tiene ninguna casilla marcada ni descripción narrativa.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_nylife_ant_pat_raw', field: 'antecedentes_patologicos.captura_raw_marcas', operator: 'ARRAY_EMPTY' },
+      { id: 'cond_nylife_ant_pat_detalle', field: 'antecedentes_patologicos.detalle_narrativo', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['antecedentes_patologicos.captura_raw_marcas', 'antecedentes_patologicos.detalle_narrativo']
+  },
+  {
+    id: 'nylife_gineco_obstetricos_mujer',
+    name: 'Antecedentes gineco-obstétricos faltantes para mujer',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Si el paciente es de sexo femenino, los antecedentes gineco-obstétricos son obligatorios.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_nylife_sexo_f', field: 'identificacion.sexo', operator: 'CONTAINS', value: 'Femenino' },
+      { id: 'cond_nylife_gineco_vacio', field: 'antecedentes_no_patologicos.gineco_obstetricos', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['antecedentes_no_patologicos.gineco_obstetricos', 'identificacion.sexo']
+  },
+  {
+    id: 'nylife_perinatales_menor',
+    name: 'Antecedentes perinatales faltantes para menor',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Los antecedentes perinatales son obligatorios para menores de 18 años.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_nylife_edad_menor', field: 'identificacion.edad', operator: 'LESS_THAN', value: 18 },
+      { id: 'cond_nylife_perinatales_vacio', field: 'antecedentes_no_patologicos.perinatales', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['antecedentes_no_patologicos.perinatales', 'identificacion.edad']
+  },
+
+  // ========== IV. DIAGNÓSTICO Y PADECIMIENTO ==========
+  {
+    id: 'nylife_diagnostico_faltante',
+    name: 'Diagnóstico faltante',
+    level: 'CRÍTICO',
+    points: 25,
+    description: 'El diagnóstico es la base de la reclamación. Debe tener al menos un diagnóstico.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_diag_falta', field: 'padecimiento_actual.diagnosticos', operator: 'ARRAY_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['padecimiento_actual.diagnosticos']
+  },
+  {
+    id: 'nylife_descripcion_padecimiento',
+    name: 'Descripción del padecimiento insuficiente',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'La descripción de la evolución del padecimiento actual es insuficiente (mínimo 15 caracteres).',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_padecimiento_corto', field: 'padecimiento_actual.descripcion_evolucion', operator: 'LENGTH_LESS_THAN', value: 15 }],
+    logicOperator: 'AND',
+    affectedFields: ['padecimiento_actual.descripcion_evolucion']
+  },
+  {
+    id: 'nylife_tipo_padecimiento_vacio',
+    name: 'Tipo de padecimiento no seleccionado',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Debe marcarse al menos una opción: Congénito, Adquirido, Agudo o Crónico.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_tipo_pad_vacio', field: 'padecimiento_actual.tipo_padecimiento', operator: 'ARRAY_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['padecimiento_actual.tipo_padecimiento']
+  },
+  {
+    id: 'nylife_tipo_padecimiento_sin_origen',
+    name: 'Origen del padecimiento no seleccionado',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Debe marcar si el padecimiento es Congénito o Adquirido.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_sin_origen', field: 'padecimiento_actual.tipo_padecimiento', operator: 'ARRAY_CONTAINS_NONE', value: 'Congénito,Adquirido' }],
+    logicOperator: 'AND',
+    affectedFields: ['padecimiento_actual.tipo_padecimiento']
+  },
+  {
+    id: 'nylife_tipo_padecimiento_sin_curso',
+    name: 'Curso del padecimiento no seleccionado',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Debe marcar si el padecimiento es Agudo o Crónico.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_sin_curso', field: 'padecimiento_actual.tipo_padecimiento', operator: 'ARRAY_CONTAINS_NONE', value: 'Agudo,Crónico' }],
+    logicOperator: 'AND',
+    affectedFields: ['padecimiento_actual.tipo_padecimiento']
+  },
+  {
+    id: 'nylife_tipo_padecimiento_origen_dual',
+    name: 'Origen del padecimiento contradictorio',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'No puede ser Congénito y Adquirido al mismo tiempo. Seleccione solo uno.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_origen_dual', field: 'padecimiento_actual.tipo_padecimiento', operator: 'ARRAY_MUTUALLY_EXCLUSIVE', value: 'Congénito,Adquirido' }],
+    logicOperator: 'AND',
+    affectedFields: ['padecimiento_actual.tipo_padecimiento']
+  },
+  {
+    id: 'nylife_tipo_padecimiento_curso_dual',
+    name: 'Curso del padecimiento contradictorio',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'No puede ser Agudo y Crónico al mismo tiempo. Seleccione solo uno.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_curso_dual', field: 'padecimiento_actual.tipo_padecimiento', operator: 'ARRAY_MUTUALLY_EXCLUSIVE', value: 'Agudo,Crónico' }],
+    logicOperator: 'AND',
+    affectedFields: ['padecimiento_actual.tipo_padecimiento']
+  },
+  {
+    id: 'nylife_tiempo_evolucion_faltante',
+    name: 'Tiempo de evolución faltante',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'El tiempo de evolución del padecimiento es obligatorio.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_tiempo_evol', field: 'padecimiento_actual.tiempo_evolucion', operator: 'IS_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['padecimiento_actual.tiempo_evolucion']
+  },
+  {
+    id: 'nylife_fecha_diagnostico_futura',
+    name: 'Fecha de diagnóstico futura',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'La fecha de diagnóstico no puede ser una fecha futura.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_fecha_diag_futura', field: 'padecimiento_actual.fecha_diagnostico.formatted', operator: 'DATE_AFTER', value: 'TODAY' }],
+    logicOperator: 'AND',
+    affectedFields: ['padecimiento_actual.fecha_diagnostico.formatted']
+  },
+  {
+    id: 'nylife_discapacidad_sin_fechas',
+    name: 'Discapacidad marcada sin fechas',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Si se marcó discapacidad (Sí), las fechas desde/hasta son obligatorias.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_nylife_discap_si', field: 'padecimiento_actual.discapacidad.marcada', operator: 'CONTAINS', value: 'Sí' },
+      { id: 'cond_nylife_discap_desde', field: 'padecimiento_actual.discapacidad.desde', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['padecimiento_actual.discapacidad.marcada', 'padecimiento_actual.discapacidad.desde', 'padecimiento_actual.discapacidad.hasta']
+  },
+
+  // ========== V. EXPLORACIÓN FÍSICA ==========
+  {
+    id: 'nylife_exploracion_fisica_faltante',
+    name: 'Exploración física faltante',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Los resultados de la exploración física y estudios practicados son obligatorios.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_exploracion', field: 'exploracion_fisica.resultados', operator: 'IS_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['exploracion_fisica.resultados']
+  },
+  {
+    id: 'nylife_peso_talla_validos',
+    name: 'Peso y talla inválidos',
+    level: 'IMPORTANTE',
+    points: 10,
+    description: 'Los valores de peso y talla deben ser mayores a cero si están presentes.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_nylife_peso_invalido', field: 'exploracion_fisica.peso', operator: 'LESS_THAN_OR_EQUAL', value: 0 },
+      { id: 'cond_nylife_talla_invalido', field: 'exploracion_fisica.talla', operator: 'LESS_THAN_OR_EQUAL', value: 0 }
+    ],
+    logicOperator: 'OR',
+    affectedFields: ['exploracion_fisica.peso', 'exploracion_fisica.talla']
+  },
+
+  // ========== VI. TRATAMIENTO Y HOSPITALIZACIÓN ==========
+  {
+    id: 'nylife_complicaciones_sin_descripcion',
+    name: 'Complicaciones sin descripción',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Si se marcaron complicaciones como "Sí", la descripción del detalle es obligatoria.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_nylife_comp_si', field: 'tratamiento_y_hospital.complicaciones.marcada', operator: 'CONTAINS', value: 'Sí' },
+      { id: 'cond_nylife_comp_desc', field: 'tratamiento_y_hospital.complicaciones.detalle', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['tratamiento_y_hospital.complicaciones.marcada', 'tratamiento_y_hospital.complicaciones.detalle']
+  },
+  {
+    id: 'nylife_continuara_tratamiento_sin_detalle',
+    name: 'Continuará tratamiento sin detalle',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Si se marcó que continuará tratamiento, debe describir el plan a seguir.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_nylife_cont_trat_si', field: 'padecimiento_actual.continuara_tratamiento.marcada', operator: 'CONTAINS', value: 'Sí' },
+      { id: 'cond_nylife_cont_trat_det', field: 'padecimiento_actual.continuara_tratamiento.detalle', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['padecimiento_actual.continuara_tratamiento.marcada', 'padecimiento_actual.continuara_tratamiento.detalle']
+  },
+  {
+    id: 'nylife_hospital_tipo_estancia',
+    name: 'Tipo de estancia hospitalaria no seleccionado',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Si se registra un hospital, debe marcarse el tipo de estancia (Urgencia, Hospitalización o Corta estancia).',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_nylife_hosp_nombre', field: 'tratamiento_y_hospital.hospital.nombre', operator: 'NOT_EMPTY' },
+      { id: 'cond_nylife_hosp_tipo_vacio', field: 'tratamiento_y_hospital.hospital.tipo_estancia', operator: 'ARRAY_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['tratamiento_y_hospital.hospital.nombre', 'tratamiento_y_hospital.hospital.tipo_estancia']
+  },
+  {
+    id: 'nylife_hospital_fechas_ingreso',
+    name: 'Fecha de ingreso hospitalario faltante',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Si se registra un hospital, la fecha de ingreso es obligatoria.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_nylife_hosp_nombre_2', field: 'tratamiento_y_hospital.hospital.nombre', operator: 'NOT_EMPTY' },
+      { id: 'cond_nylife_hosp_ingreso', field: 'tratamiento_y_hospital.hospital.ingreso.formatted', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['tratamiento_y_hospital.hospital.nombre', 'tratamiento_y_hospital.hospital.ingreso.formatted']
+  },
+  {
+    id: 'nylife_hospital_periodo_incoherente',
+    name: 'Período hospitalario incoherente',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'La fecha de ingreso hospitalario debe ser anterior o igual a la de egreso.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_hosp_fechas', field: 'tratamiento_y_hospital.hospital.ingreso.formatted', operator: 'DATE_AFTER', compareField: 'tratamiento_y_hospital.hospital.egreso.formatted' }],
+    logicOperator: 'AND',
+    affectedFields: ['tratamiento_y_hospital.hospital.ingreso.formatted', 'tratamiento_y_hospital.hospital.egreso.formatted']
+  },
+
+  // ========== VII. CRONOLOGÍA MÉDICA ==========
+  {
+    id: 'nylife_crono_sintomas_antes_diagnostico',
+    name: 'Inicio síntomas posterior al diagnóstico',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Inconsistencia: La fecha de primeros síntomas no puede ser posterior al diagnóstico.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_crono_sint_diag', field: 'padecimiento_actual.fecha_primeros_sintomas.formatted', operator: 'DATE_AFTER', compareField: 'padecimiento_actual.fecha_diagnostico.formatted' }],
+    logicOperator: 'AND',
+    affectedFields: ['padecimiento_actual.fecha_primeros_sintomas.formatted', 'padecimiento_actual.fecha_diagnostico.formatted']
+  },
+  {
+    id: 'nylife_crono_ingreso_antes_diagnostico',
+    name: 'Ingreso hospitalario antes del diagnóstico',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Inconsistencia: El ingreso hospitalario es previo a la fecha de diagnóstico.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_crono_hosp_diag', field: 'tratamiento_y_hospital.hospital.ingreso.formatted', operator: 'DATE_BEFORE', compareField: 'padecimiento_actual.fecha_diagnostico.formatted' }],
+    logicOperator: 'AND',
+    affectedFields: ['tratamiento_y_hospital.hospital.ingreso.formatted', 'padecimiento_actual.fecha_diagnostico.formatted']
+  },
+  {
+    id: 'nylife_crono_informe_antes_diagnostico',
+    name: 'Informe anterior al diagnóstico',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'El informe médico no puede tener fecha de firma anterior a la del diagnóstico.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_crono_firma_diag', field: 'firma_pagina_2.fecha.formatted', operator: 'DATE_BEFORE', compareField: 'padecimiento_actual.fecha_diagnostico.formatted' }],
+    logicOperator: 'AND',
+    affectedFields: ['firma_pagina_2.fecha.formatted', 'padecimiento_actual.fecha_diagnostico.formatted']
+  },
+
+  // ========== VIII. MÉDICO TRATANTE ==========
+  {
+    id: 'nylife_medico_contacto',
+    name: 'Dato de contacto del médico faltante',
+    level: 'CRÍTICO',
+    points: 15,
+    description: 'Debe proporcionar al menos un dato de contacto del médico: teléfono de consultorio, celular o correo electrónico.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_nylife_tel_consultorio', field: 'medico_tratante.telefono_consultorio', operator: 'IS_EMPTY' },
+      { id: 'cond_nylife_tel_movil', field: 'medico_tratante.telefono_movil', operator: 'IS_EMPTY' },
+      { id: 'cond_nylife_correo', field: 'medico_tratante.correo_electronico', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['medico_tratante.telefono_consultorio', 'medico_tratante.telefono_movil', 'medico_tratante.correo_electronico']
+  },
+  {
+    id: 'nylife_rfc_medico_obligatorio',
+    name: 'RFC del médico tratante obligatorio',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Si hay un médico tratante identificado, debe proporcionar su RFC.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_nylife_med_nombre_rfc', field: 'medico_tratante.nombres', operator: 'NOT_EMPTY' },
+      { id: 'cond_nylife_rfc_vacio', field: 'medico_tratante.rfc', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['medico_tratante.rfc', 'medico_tratante.nombres']
+  },
+  {
+    id: 'nylife_rfc_medico_formato',
+    name: 'RFC del médico con formato inválido',
+    level: 'IMPORTANTE',
+    points: 10,
+    description: 'El RFC del médico debe tener formato válido (13 caracteres alfanuméricos para persona física).',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_nylife_rfc_no_vacio', field: 'medico_tratante.rfc', operator: 'NOT_EMPTY' },
+      { id: 'cond_nylife_rfc_formato', field: 'medico_tratante.rfc', operator: 'IS_RFC' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['medico_tratante.rfc']
+  },
+  {
+    id: 'nylife_cedula_especialidad_recomendada',
+    name: 'Cédula de especialidad del médico recomendada',
+    level: 'DISCRETO',
+    points: 3,
+    description: 'Se recomienda incluir la cédula de especialidad del médico tratante si tiene nombre registrado.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_nylife_medico_nombre_ced_esp', field: 'medico_tratante.nombres', operator: 'NOT_EMPTY' },
+      { id: 'cond_nylife_cedula_esp_vacia', field: 'medico_tratante.cedula_especialidad', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['medico_tratante.cedula_especialidad', 'medico_tratante.nombres']
+  },
+  {
+    id: 'nylife_convenio_red_no_seleccionado',
+    name: 'Convenio de red no seleccionado',
+    level: 'IMPORTANTE',
+    points: 10,
+    description: 'Debe marcarse si el médico pertenece a la red de proveedores (Sí o No).',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_convenio_vacio', field: 'medico_tratante.convenio_red', operator: 'ARRAY_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['medico_tratante.convenio_red']
+  },
+  {
+    id: 'nylife_acepta_tabulador_no_seleccionado',
+    name: 'Aceptación de tabulador no seleccionada',
+    level: 'IMPORTANTE',
+    points: 10,
+    description: 'Debe marcarse si el médico acepta el tabulador de la aseguradora (Sí o No).',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [{ id: 'cond_nylife_tabulador_vacio', field: 'medico_tratante.acepta_tabulador', operator: 'ARRAY_EMPTY' }],
+    logicOperator: 'AND',
+    affectedFields: ['medico_tratante.acepta_tabulador']
+  },
+
+  // ========== IX. EQUIPO QUIRÚRGICO ==========
+  {
+    id: 'nylife_anestesiologo_incompleto',
+    name: 'Datos del anestesiólogo incompletos',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Si registra un anestesiólogo, su especialidad y presupuesto de honorarios son obligatorios.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_nylife_anest_nombre', field: 'equipo_quirurgico_nylife.anestesiologo.nombre', operator: 'NOT_EMPTY' },
+      { id: 'cond_nylife_anest_esp', field: 'equipo_quirurgico_nylife.anestesiologo.especialidad', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['equipo_quirurgico_nylife.anestesiologo.nombre', 'equipo_quirurgico_nylife.anestesiologo.especialidad', 'equipo_quirurgico_nylife.anestesiologo.presupuesto']
+  },
+  {
+    id: 'nylife_primer_ayudante_incompleto',
+    name: 'Datos del primer ayudante incompletos',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Si registra un primer ayudante, su especialidad y presupuesto de honorarios son obligatorios.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_nylife_ayud1_nombre', field: 'equipo_quirurgico_nylife.primer_ayudante.nombre', operator: 'NOT_EMPTY' },
+      { id: 'cond_nylife_ayud1_esp', field: 'equipo_quirurgico_nylife.primer_ayudante.especialidad', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['equipo_quirurgico_nylife.primer_ayudante.nombre', 'equipo_quirurgico_nylife.primer_ayudante.especialidad', 'equipo_quirurgico_nylife.primer_ayudante.presupuesto']
+  },
+  {
+    id: 'nylife_segundo_ayudante_incompleto',
+    name: 'Datos del segundo ayudante incompletos',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Si registra un segundo ayudante, su especialidad y presupuesto de honorarios son obligatorios.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_nylife_ayud2_nombre', field: 'equipo_quirurgico_nylife.segundo_ayudante.nombre', operator: 'NOT_EMPTY' },
+      { id: 'cond_nylife_ayud2_esp', field: 'equipo_quirurgico_nylife.segundo_ayudante.especialidad', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['equipo_quirurgico_nylife.segundo_ayudante.nombre', 'equipo_quirurgico_nylife.segundo_ayudante.especialidad', 'equipo_quirurgico_nylife.segundo_ayudante.presupuesto']
+  },
+
+  // ========== X. FIRMA PÁGINA 1 ==========
+  {
+    id: 'nylife_firma_pagina_1_faltante',
+    name: 'Firma en página 1 faltante',
+    level: 'MODERADO',
+    points: 10,
+    description: 'Se recomienda que la primera página del informe también contenga firma del médico tratante.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_nylife_firma_p1_1', field: 'firma_pagina_1.firma_autografa_detectada', operator: 'IS_EMPTY' },
+      { id: 'cond_nylife_firma_p1_2', field: 'firma_pagina_1.firma_autografa_detectada', operator: 'EQUALS', value: 'No detectada' }
+    ],
+    logicOperator: 'OR',
+    affectedFields: ['firma_pagina_1.firma_autografa_detectada']
+  },
+
+  // ========== XI. RELACIÓN CON OTRO PADECIMIENTO ==========
+  {
+    id: 'nylife_relacion_padecimiento_sin_cual',
+    name: 'Relación con otro padecimiento sin especificar',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Si se marcó que el padecimiento se relaciona con otro, debe especificar cuál.',
+    providerTarget: 'NYLIFE',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_nylife_relacion_si', field: 'padecimiento_actual.relacion_otro_padecimiento.marcada', operator: 'CONTAINS', value: 'Sí' },
+      { id: 'cond_nylife_relacion_cual', field: 'padecimiento_actual.relacion_otro_padecimiento.cual', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['padecimiento_actual.relacion_otro_padecimiento.marcada', 'padecimiento_actual.relacion_otro_padecimiento.cual']
   }
 ];
 
@@ -2245,6 +2836,7 @@ async function migrateRulesToDatabase() {
     ...REGLAS_GENERALES.map(r => ({ ...r, category: getCategoryFromProvider(r.providerTarget) })),
     ...REGLAS_GNP.map(r => ({ ...r, category: RuleCategory.GNP })),
     ...REGLAS_METLIFE.map(r => ({ ...r, category: RuleCategory.METLIFE })),
+    ...REGLAS_NYLIFE.map(r => ({ ...r, category: RuleCategory.NYLIFE })),
     ...REGLAS_AXA.map(r => ({ ...r, category: RuleCategory.AXA })),
   ];
 
