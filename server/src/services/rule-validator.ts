@@ -766,7 +766,54 @@ export const AVAILABLE_FIELDS: string[] = [
   'metadata.tachaduras_detectadas',
   'metadata.firma_coincide_con_tratante',
   'metadata.diagnostico_severidad',
-  'otros_medicos'
+  'otros_medicos',
+  'identificacion.apellido_paterno',
+  'identificacion.apellido_materno',
+  'identificacion.tipo_evento',
+  'antecedentes_patologicos.captura_raw_marcas',
+  'antecedentes_patologicos.detalle_narrativo',
+  'antecedentes_no_patologicos.gineco_obstetricos',
+  'antecedentes_no_patologicos.perinatales',
+  'padecimiento_actual.diagnosticos',
+  'padecimiento_actual.descripcion_evolucion',
+  'padecimiento_actual.tipo_padecimiento',
+  'padecimiento_actual.tiempo_evolucion',
+  'padecimiento_actual.fecha_diagnostico.formatted',
+  'padecimiento_actual.fecha_primeros_sintomas.formatted',
+  'padecimiento_actual.discapacidad.marcada',
+  'padecimiento_actual.discapacidad.desde',
+  'padecimiento_actual.discapacidad.hasta',
+  'padecimiento_actual.relacion_otro_padecimiento.marcada',
+  'padecimiento_actual.relacion_otro_padecimiento.cual',
+  'padecimiento_actual.continuara_tratamiento.marcada',
+  'padecimiento_actual.continuara_tratamiento.detalle',
+  'exploracion_fisica.peso',
+  'exploracion_fisica.talla',
+  'tratamiento_y_hospital.complicaciones.marcada',
+  'tratamiento_y_hospital.complicaciones.detalle',
+  'tratamiento_y_hospital.hospital.nombre',
+  'tratamiento_y_hospital.hospital.tipo_estancia',
+  'tratamiento_y_hospital.hospital.ingreso.formatted',
+  'tratamiento_y_hospital.hospital.egreso.formatted',
+  'medico_tratante.apellido_paterno',
+  'medico_tratante.apellido_materno',
+  'medico_tratante.telefono_movil',
+  'medico_tratante.rfc',
+  'medico_tratante.convenio_red',
+  'medico_tratante.acepta_tabulador',
+  'firma_pagina_1.firma_autografa_detectada',
+  'firma_pagina_2.firma_autografa_detectada',
+  'firma_pagina_2.fecha.formatted',
+  'firma_pagina_2.nombre_firma',
+  'equipo_quirurgico_nylife.anestesiologo.nombre',
+  'equipo_quirurgico_nylife.anestesiologo.especialidad',
+  'equipo_quirurgico_nylife.anestesiologo.presupuesto',
+  'equipo_quirurgico_nylife.primer_ayudante.nombre',
+  'equipo_quirurgico_nylife.primer_ayudante.especialidad',
+  'equipo_quirurgico_nylife.primer_ayudante.presupuesto',
+  'equipo_quirurgico_nylife.segundo_ayudante.nombre',
+  'equipo_quirurgico_nylife.segundo_ayudante.especialidad',
+  'equipo_quirurgico_nylife.segundo_ayudante.presupuesto'
 ];
 
 export const OPERATOR_LABELS: Record<RuleOperator, string> = {
@@ -800,7 +847,12 @@ export const OPERATOR_LABELS: Record<RuleOperator, string> = {
   'LENGTH_GREATER_THAN': 'Longitud mayor que',
   'NAMES_MATCH': 'Nombre y apellido no coinciden',
   'ARRAY_ITEMS_MISSING_FIELD': 'Elementos del array sin campo requerido',
-  'CONDITIONAL_REQUIRED': 'Campo requerido cuando condición se cumple'
+  'CONDITIONAL_REQUIRED': 'Campo requerido cuando condición se cumple',
+  'ARRAY_EMPTY': 'Array vacío (sin elementos)',
+  'ARRAY_LENGTH_GREATER_THAN': 'Array tiene más elementos que',
+  'ARRAY_CONTAINS_NONE': 'Array no contiene ninguno de',
+  'ARRAY_MUTUALLY_EXCLUSIVE': 'Array contiene valores excluyentes',
+  'DATE_OLDER_THAN_MONTHS': 'Fecha más antigua que N meses'
 };
 
 export const OPERATOR_GROUPS: { name: string; operators: RuleOperator[] }[] = [
@@ -831,11 +883,19 @@ export const OPERATOR_GROUPS: { name: string; operators: RuleOperator[] }[] = [
   {
     name: 'Validadores Médicos',
     operators: ['NAMES_MATCH', 'ARRAY_ITEMS_MISSING_FIELD', 'CONDITIONAL_REQUIRED']
+  },
+  {
+    name: 'Arrays',
+    operators: ['ARRAY_EMPTY', 'ARRAY_LENGTH_GREATER_THAN', 'ARRAY_CONTAINS_NONE', 'ARRAY_MUTUALLY_EXCLUSIVE']
+  },
+  {
+    name: 'Fechas Extendidas',
+    operators: ['DATE_OLDER_THAN_MONTHS']
   }
 ];
 
 export function operatorNeedsValue(op: RuleOperator): boolean {
-  return ['EQUALS', 'NOT_EQUALS', 'GREATER_THAN', 'LESS_THAN', 'GREATER_THAN_OR_EQUAL', 'LESS_THAN_OR_EQUAL', 'REGEX', 'CONTAINS', 'NOT_CONTAINS', 'LENGTH_LESS_THAN', 'LENGTH_GREATER_THAN', 'ARRAY_ITEMS_MISSING_FIELD', 'CONDITIONAL_REQUIRED'].includes(op);
+  return ['EQUALS', 'NOT_EQUALS', 'GREATER_THAN', 'LESS_THAN', 'GREATER_THAN_OR_EQUAL', 'LESS_THAN_OR_EQUAL', 'REGEX', 'CONTAINS', 'NOT_CONTAINS', 'LENGTH_LESS_THAN', 'LENGTH_GREATER_THAN', 'ARRAY_ITEMS_MISSING_FIELD', 'CONDITIONAL_REQUIRED', 'ARRAY_LENGTH_GREATER_THAN', 'ARRAY_CONTAINS_NONE', 'ARRAY_MUTUALLY_EXCLUSIVE', 'DATE_OLDER_THAN_MONTHS'].includes(op);
 }
 
 export function operatorNeedsCompareField(op: RuleOperator): boolean {

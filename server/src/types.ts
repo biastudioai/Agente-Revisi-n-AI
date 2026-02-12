@@ -268,7 +268,14 @@ export type RuleOperator =
   // Grupo 7: Validadores Especiales Médicos (3)
   | 'NAMES_MATCH'        // Compara nombre+apellido entre dos campos (ej: firma vs médico)
   | 'ARRAY_ITEMS_MISSING_FIELD' // Valida que elementos de un array tengan cierto campo
-  | 'CONDITIONAL_REQUIRED'; // Si campo A tiene valor X, entonces campo B debe tener valor
+  | 'CONDITIONAL_REQUIRED' // Si campo A tiene valor X, entonces campo B debe tener valor
+  // Grupo 8: Arrays (4)
+  | 'ARRAY_EMPTY'        // Array vacío (sin elementos)
+  | 'ARRAY_LENGTH_GREATER_THAN' // Array tiene más elementos que N
+  | 'ARRAY_CONTAINS_NONE' // Array no contiene ninguno de los valores listados
+  | 'ARRAY_MUTUALLY_EXCLUSIVE' // Array contiene valores mutuamente excluyentes
+  // Grupo 9: Fechas extendidas (1)
+  | 'DATE_OLDER_THAN_MONTHS'; // Fecha es más antigua que N meses
 
 export type LogicOperator = 'AND' | 'OR';
 
