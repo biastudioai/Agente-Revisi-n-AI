@@ -1972,6 +1972,78 @@ const App: React.FC = () => {
           <p className="text-lg text-slate-500 max-w-2xl mx-auto leading-relaxed font-light">
             Sube tu documento PDF o imagen. Nuestra IA extrae datos, valida reglas de 9 aseguradoras y calcula el riesgo de aprobación en segundos.
           </p>
+
+          {usage && (
+            <div className={`mt-8 inline-flex items-center gap-4 px-6 py-3 rounded-2xl border shadow-sm ${
+              isTrialUser 
+                ? (trialExpired || usage.remaining <= 0 
+                    ? 'bg-red-50 border-red-200' 
+                    : usage.remaining <= 3 
+                      ? 'bg-amber-50 border-amber-200' 
+                      : 'bg-blue-50 border-blue-200')
+                : usage.remaining <= 3 
+                  ? 'bg-amber-50 border-amber-200' 
+                  : 'bg-white border-slate-200'
+            }`}>
+              <div className="text-left">
+                <p className="text-xs text-slate-500 font-medium">
+                  {isTrialUser ? 'Informes de prueba' : subscription ? `Plan ${subscription.planName || 'Activo'}` : 'Uso este mes'}
+                </p>
+                <p className={`text-lg font-bold ${
+                  isTrialUser 
+                    ? (trialExpired || usage.remaining <= 0 ? 'text-red-700' : usage.remaining <= 3 ? 'text-amber-700' : 'text-blue-700')
+                    : usage.remaining <= 3 ? 'text-amber-700' : 'text-slate-800'
+                }`}>
+                  {usage.reportsUsed} / {usage.isAdmin ? '∞' : usage.reportsLimit} informes
+                </p>
+                <p className={`text-xs ${
+                  isTrialUser 
+                    ? (trialExpired || usage.remaining <= 0 ? 'text-red-500' : 'text-blue-500')
+                    : usage.remaining <= 3 ? 'text-amber-500' : 'text-slate-400'
+                }`}>
+                  {isTrialUser 
+                    ? (trialExpired || usage.remaining <= 0 
+                        ? 'Prueba gratuita expirada' 
+                        : `Prueba gratuita - ${usage.remaining} restantes`)
+                    : usage.extraReportsUsed > 0 
+                      ? `+${usage.extraReportsUsed} extras ($${usage.extraChargesMxn} MXN)` 
+                      : `${usage.remaining} restantes`
+                  }
+                </p>
+              </div>
+              <div className="w-20 h-20 relative">
+                <svg className="w-20 h-20 -rotate-90" viewBox="0 0 36 36">
+                  <path
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke="#e2e8f0"
+                    strokeWidth="3"
+                  />
+                  <path
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke={
+                      isTrialUser 
+                        ? (trialExpired || usage.remaining <= 0 ? '#ef4444' : usage.remaining <= 3 ? '#f59e0b' : '#3b82f6')
+                        : usage.remaining <= 3 ? '#f59e0b' : '#10b981'
+                    }
+                    strokeWidth="3"
+                    strokeDasharray={`${usage.isAdmin ? 100 : Math.min((usage.reportsUsed / usage.reportsLimit) * 100, 100)}, 100`}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className={`text-sm font-bold ${
+                    isTrialUser 
+                      ? (trialExpired || usage.remaining <= 0 ? 'text-red-600' : usage.remaining <= 3 ? 'text-amber-600' : 'text-blue-600')
+                      : usage.remaining <= 3 ? 'text-amber-600' : 'text-slate-700'
+                  }`}>
+                    {usage.isAdmin ? '∞' : usage.remaining}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         
         <div className="w-full max-w-xl animate-fade-in delay-100 relative z-10">
