@@ -159,42 +159,35 @@ export async function loginUser(data: LoginData): Promise<AuthResult> {
       orderBy: { createdAt: 'desc' },
     });
 
-    if (!subscription) {
-      const isTrialActive = user.isTrial && 
-        user.trialExpiresAt && 
-        new Date() < user.trialExpiresAt && 
-        user.freeReportsUsed < user.freeReportsLimit;
+    if (!subscription && !user.isTrial) {
+      const sessionToken = generateSessionToken();
+      const expiresAt = getSessionExpiry(7);
 
-      if (!isTrialActive) {
-        const sessionToken = generateSessionToken();
-        const expiresAt = getSessionExpiry(7);
-
-        await prisma.$transaction(async (tx) => {
-          await tx.session.deleteMany({
-            where: { userId: user.id },
-          });
-          await tx.session.create({
-            data: {
-              userId: user.id,
-              sessionToken,
-              expiresAt,
-              ipAddress: data.ipAddress,
-              userAgent: data.userAgent,
-            },
-          });
+      await prisma.$transaction(async (tx) => {
+        await tx.session.deleteMany({
+          where: { userId: user.id },
         });
-
-        throw new NoSubscriptionError(
-          {
-            id: user.id,
-            email: user.email,
-            nombre: user.nombre,
-            rol: user.rol,
+        await tx.session.create({
+          data: {
+            userId: user.id,
+            sessionToken,
+            expiresAt,
+            ipAddress: data.ipAddress,
+            userAgent: data.userAgent,
           },
-          sessionToken,
-          expiresAt
-        );
-      }
+        });
+      });
+
+      throw new NoSubscriptionError(
+        {
+          id: user.id,
+          email: user.email,
+          nombre: user.nombre,
+          rol: user.rol,
+        },
+        sessionToken,
+        expiresAt
+      );
     }
   }
 
