@@ -123,10 +123,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, blockedMessage })
         throw new Error(data.error || 'Error al registrarse');
       }
 
-      setPendingUser(data.user);
-      setNoSubscriptionMode(false);
-      setView('select-plan');
-      fetchPlans();
+      onLoginSuccess(data.user);
     } catch (err) {
       setError((err as Error).message);
     } finally {

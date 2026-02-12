@@ -66,6 +66,9 @@ export async function registerUser(data: RegisterData): Promise<AuthResult> {
 
   const passwordHash = await hashPassword(data.password);
   
+  const isBrokerRole = !data.rol || data.rol === UserRole.BROKER;
+  const trialExpiresAt = isBrokerRole ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : undefined;
+  
   const user = await prisma.user.create({
     data: {
       email: data.email.toLowerCase(),
@@ -74,6 +77,10 @@ export async function registerUser(data: RegisterData): Promise<AuthResult> {
       rol: data.rol || UserRole.BROKER,
       parentId: data.parentId,
       aseguradoraId: data.aseguradoraId,
+      isTrial: isBrokerRole,
+      freeReportsUsed: 0,
+      freeReportsLimit: 10,
+      trialExpiresAt,
     },
   });
 
@@ -153,35 +160,41 @@ export async function loginUser(data: LoginData): Promise<AuthResult> {
     });
 
     if (!subscription) {
-      // Delete all previous sessions and create new one atomically
-      const sessionToken = generateSessionToken();
-      const expiresAt = getSessionExpiry(7);
+      const isTrialActive = user.isTrial && 
+        user.trialExpiresAt && 
+        new Date() < user.trialExpiresAt && 
+        user.freeReportsUsed < user.freeReportsLimit;
 
-      await prisma.$transaction(async (tx) => {
-        await tx.session.deleteMany({
-          where: { userId: user.id },
+      if (!isTrialActive) {
+        const sessionToken = generateSessionToken();
+        const expiresAt = getSessionExpiry(7);
+
+        await prisma.$transaction(async (tx) => {
+          await tx.session.deleteMany({
+            where: { userId: user.id },
+          });
+          await tx.session.create({
+            data: {
+              userId: user.id,
+              sessionToken,
+              expiresAt,
+              ipAddress: data.ipAddress,
+              userAgent: data.userAgent,
+            },
+          });
         });
-        await tx.session.create({
-          data: {
-            userId: user.id,
-            sessionToken,
-            expiresAt,
-            ipAddress: data.ipAddress,
-            userAgent: data.userAgent,
+
+        throw new NoSubscriptionError(
+          {
+            id: user.id,
+            email: user.email,
+            nombre: user.nombre,
+            rol: user.rol,
           },
-        });
-      });
-
-      throw new NoSubscriptionError(
-        {
-          id: user.id,
-          email: user.email,
-          nombre: user.nombre,
-          rol: user.rol,
-        },
-        sessionToken,
-        expiresAt
-      );
+          sessionToken,
+          expiresAt
+        );
+      }
     }
   }
 
@@ -313,6 +326,10 @@ export async function validateSession(sessionToken: string) {
       rol: session.user.rol,
       isActive: session.user.isActive,
       parentId: session.user.parentId,
+      isTrial: session.user.isTrial,
+      freeReportsUsed: session.user.freeReportsUsed,
+      freeReportsLimit: session.user.freeReportsLimit,
+      trialExpiresAt: session.user.trialExpiresAt,
     },
     expiresAt: session.expiresAt,
   };

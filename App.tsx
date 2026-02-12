@@ -17,6 +17,7 @@ import { getCurrentRulesVersion, checkIfRulesChanged, RulesChangedResult } from 
 import { RuleVersionInfo } from './components/RuleVersionIndicator';
 import { detectProviderFromPdf, DetectedProvider } from './services/providerDetection';
 import AdminBillingDashboard from './components/AdminBillingDashboard';
+import TrialConversionDashboard from './components/TrialConversionDashboard';
 import AuditorManager from './components/AuditorManager';
 import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw, AlignLeft, Image as ImageIcon, Loader2, Building2, LogOut, ChevronDown, User as UserIcon, CreditCard, BarChart3, History, Users } from 'lucide-react';
 
@@ -115,6 +116,9 @@ const App: React.FC = () => {
   
   // State for Admin Billing Dashboard
   const [isBillingDashboardOpen, setIsBillingDashboardOpen] = useState(false);
+  
+  // State for Trial Conversion Dashboard
+  const [isTrialDashboardOpen, setIsTrialDashboardOpen] = useState(false);
   
   // State for Report History View
   const [isHistoryViewOpen, setIsHistoryViewOpen] = useState(false);
@@ -239,6 +243,7 @@ const App: React.FC = () => {
     setPendingChanges({});
     setIsHistoryViewOpen(false);
     setIsBillingDashboardOpen(false);
+    setIsTrialDashboardOpen(false);
     setIsAuditorManagerOpen(false);
     setIsSubscriptionModalOpen(false);
     setIsRulesModalOpen(false);
@@ -534,13 +539,26 @@ const App: React.FC = () => {
       return;
     }
 
+    const isTrial = (usage as any)?.isTrial === true;
+    const trialIsExpired = (usage as any)?.trialExpired === true;
+
     if (!usage?.hasActiveSubscription) {
-      setError("Necesitas una suscripción activa para procesar informes. Haz clic en tu perfil para ver los planes disponibles.");
-      setStatus('error');
+      if (isTrial && (trialIsExpired || usage.remaining <= 0)) {
+        setIsSubscriptionModalOpen(true);
+        return;
+      }
+      if (!isTrial) {
+        setIsSubscriptionModalOpen(true);
+        return;
+      }
+    }
+
+    if (isTrial && usage && usage.remaining <= 0) {
+      setIsSubscriptionModalOpen(true);
       return;
     }
 
-    if (usage && usage.remaining <= 0) {
+    if (usage && !isTrial && usage.remaining <= 0) {
       const extraPrice = usage.extraReportPriceMxn;
       const confirmExtra = window.confirm(
         `Has alcanzado tu límite de ${usage.reportsLimit} informes. ` +
@@ -1241,8 +1259,11 @@ const App: React.FC = () => {
     }} blockedMessage={blockedMessage} />;
   }
 
-  // Show subscription selection for BROKER users without active subscription
-  if (user.rol === 'BROKER' && usage !== null && !usage.hasActiveSubscription) {
+  // Show subscription selection for BROKER users without active subscription AND not in trial
+  const isTrialUser = (usage as any)?.isTrial === true;
+  const trialExpired = (usage as any)?.trialExpired === true;
+  
+  if (user.rol === 'BROKER' && usage !== null && !usage.hasActiveSubscription && !isTrialUser) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#F8FAFC] via-white to-[#e8f7f8] flex items-center justify-center p-4">
         <div className="w-full max-w-5xl">
@@ -1388,9 +1409,11 @@ const App: React.FC = () => {
               {usage && (
                 <div className="flex items-center gap-2 ml-2 pl-2 border-l border-slate-200">
                   <div className="flex flex-col items-end">
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wide">Uso mensual</span>
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wide">
+                      {isTrialUser ? 'Prueba gratuita' : 'Uso mensual'}
+                    </span>
                     <div className="flex items-center gap-1">
-                      <span className={`text-xs font-bold ${usage.remaining <= 5 ? 'text-amber-600' : 'text-slate-700'}`}>
+                      <span className={`text-xs font-bold ${usage.remaining <= 3 ? 'text-amber-600' : isTrialUser ? 'text-blue-600' : 'text-slate-700'}`}>
                         {usage.reportsUsed}/{usage.reportsLimit}
                       </span>
                       <span className="text-[10px] text-slate-400">informes</span>
@@ -1399,7 +1422,8 @@ const App: React.FC = () => {
                   <div className="w-16 h-2 bg-slate-200 rounded-full overflow-hidden">
                     <div 
                       className={`h-full rounded-full transition-all ${
-                        usage.remaining <= 5 ? 'bg-amber-500' : 
+                        usage.remaining <= 3 ? 'bg-amber-500' : 
+                        isTrialUser ? 'bg-blue-500' :
                         usage.remaining <= 10 ? 'bg-brand-400' : 'bg-emerald-500'
                       }`}
                       style={{ width: `${Math.min((usage.reportsUsed / usage.reportsLimit) * 100, 100)}%` }}
@@ -1824,18 +1848,26 @@ const App: React.FC = () => {
                     <p className="text-xs text-green-600 mt-1">
                       Plan: {subscription.planConfig?.name || subscription.planType}
                     </p>
+                  ) : isTrialUser ? (
+                    <p className="text-xs text-blue-600 mt-1">Prueba gratuita</p>
                   ) : (
                     <p className="text-xs text-amber-600 mt-1">Sin suscripción activa</p>
                   )}
                 </div>
                 {usage && (
                   <div className="px-4 py-2 border-b border-slate-100">
-                    <p className="text-xs text-slate-500">Uso este mes</p>
+                    <p className="text-xs text-slate-500">
+                      {isTrialUser ? 'Informes de prueba' : 'Uso este mes'}
+                    </p>
                     <p className="text-sm font-medium">
                       {usage.reportsUsed} / {usage.isAdmin ? '∞' : usage.reportsLimit} informes
                     </p>
                     {usage.isAdmin ? (
                       <p className="text-xs text-veryka-cyan">Acceso ilimitado (Admin)</p>
+                    ) : isTrialUser ? (
+                      <p className="text-xs text-blue-600">
+                        Prueba gratuita {trialExpired ? '(expirada)' : `- ${usage.remaining} restantes`}
+                      </p>
                     ) : usage.extraReportsUsed > 0 && (
                       <p className="text-xs text-amber-600">
                         +{usage.extraReportsUsed} extras (${usage.extraChargesMxn} MXN)
@@ -1879,16 +1911,28 @@ const App: React.FC = () => {
                   </button>
                 )}
                 {user?.rol === 'ADMIN' && (
-                  <button
-                    onClick={() => {
-                      setIsUserMenuOpen(false);
-                      setIsBillingDashboardOpen(true);
-                    }}
-                    className="w-full text-left px-4 py-2.5 text-sm text-veryka-dark hover:bg-veryka-cyan/10 flex items-center gap-2 transition-colors"
-                  >
-                    <BarChart3 className="w-4 h-4" />
-                    Panel de Facturación
-                  </button>
+                  <>
+                    <button
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        setIsBillingDashboardOpen(true);
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-veryka-dark hover:bg-veryka-cyan/10 flex items-center gap-2 transition-colors"
+                    >
+                      <BarChart3 className="w-4 h-4" />
+                      Panel de Facturación
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        setIsTrialDashboardOpen(true);
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-veryka-dark hover:bg-veryka-cyan/10 flex items-center gap-2 transition-colors"
+                    >
+                      <Users className="w-4 h-4" />
+                      Conversión de Pruebas
+                    </button>
+                  </>
                 )}
                 <button
                   onClick={() => {
@@ -1994,6 +2038,12 @@ const App: React.FC = () => {
         isOpen={isAuditorManagerOpen}
         onClose={() => setIsAuditorManagerOpen(false)}
         onOpenPlans={() => setIsSubscriptionModalOpen(true)}
+      />
+
+      {/* Trial Conversion Dashboard */}
+      <TrialConversionDashboard
+        isOpen={isTrialDashboardOpen}
+        onClose={() => setIsTrialDashboardOpen(false)}
       />
     </div>
   );

@@ -56,6 +56,20 @@ export class UsageService {
     return periodStart1.getTime() === periodStart2.getTime();
   }
 
+  private async getTrialInfo(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { 
+        isTrial: true, 
+        freeReportsUsed: true, 
+        freeReportsLimit: true, 
+        trialExpiresAt: true,
+        trialConvertedAt: true,
+      },
+    });
+    return user;
+  }
+
   async getCurrentUsage(userId: string): Promise<UsageInfo> {
     const now = new Date();
     const periodYear = now.getFullYear();
@@ -93,33 +107,73 @@ export class UsageService {
     const subscriptionOwnerId = await this.getSubscriptionOwnerId(userId);
     const subscription = await subscriptionService.getActiveSubscription(subscriptionOwnerId);
     
-    const hasActiveSubscription = !!subscription;
-    const planType = subscription?.planType || null;
-    const isInPromotion = subscription?.isInPromotion || false;
-    const reportsLimit = subscription?.reportsLimit || 0;
-    const extraReportPriceMxn = subscription?.extraReportPrice || 0;
-    const currentPeriodStart = subscription?.currentPeriodStart || null;
+    if (subscription) {
+      const hasActiveSubscription = true;
+      const planType = subscription.planType;
+      const isInPromotion = subscription.isInPromotion || false;
+      const reportsLimit = subscription.reportsLimit || 0;
+      const extraReportPriceMxn = subscription.extraReportPrice || 0;
+      const currentPeriodStart = subscription.currentPeriodStart || null;
 
-    const usageRecord = await this.getOrCreateUsageRecord(
-      subscriptionOwnerId,
-      periodYear,
-      periodMonth,
-      reportsLimit,
-      currentPeriodStart
-    );
+      const usageRecord = await this.getOrCreateUsageRecord(
+        subscriptionOwnerId,
+        periodYear,
+        periodMonth,
+        reportsLimit,
+        currentPeriodStart
+      );
+
+      return {
+        periodYear,
+        periodMonth,
+        reportsUsed: usageRecord.reportsUsed,
+        reportsLimit: usageRecord.reportsLimit,
+        remaining: Math.max(0, usageRecord.reportsLimit - usageRecord.reportsUsed),
+        extraReportsUsed: usageRecord.extraReportsUsed,
+        extraChargesMxn: usageRecord.extraChargesMxn,
+        planType,
+        isInPromotion,
+        extraReportPriceMxn,
+        hasActiveSubscription,
+      };
+    }
+
+    const trialInfo = await this.getTrialInfo(userId);
+    if (trialInfo?.isTrial) {
+      const trialExpired = trialInfo.trialExpiresAt ? new Date() >= trialInfo.trialExpiresAt : true;
+      const trialRemaining = Math.max(0, trialInfo.freeReportsLimit - trialInfo.freeReportsUsed);
+      const isTrialActive = !trialExpired && trialRemaining > 0;
+
+      return {
+        periodYear,
+        periodMonth,
+        reportsUsed: trialInfo.freeReportsUsed,
+        reportsLimit: trialInfo.freeReportsLimit,
+        remaining: trialExpired ? 0 : trialRemaining,
+        extraReportsUsed: 0,
+        extraChargesMxn: 0,
+        planType: null,
+        isInPromotion: false,
+        extraReportPriceMxn: 0,
+        hasActiveSubscription: isTrialActive,
+        isTrial: true,
+        trialExpired,
+        trialExpiresAt: trialInfo.trialExpiresAt?.toISOString() || null,
+      } as any;
+    }
 
     return {
       periodYear,
       periodMonth,
-      reportsUsed: usageRecord.reportsUsed,
-      reportsLimit: usageRecord.reportsLimit,
-      remaining: Math.max(0, usageRecord.reportsLimit - usageRecord.reportsUsed),
-      extraReportsUsed: usageRecord.extraReportsUsed,
-      extraChargesMxn: usageRecord.extraChargesMxn,
-      planType,
-      isInPromotion,
-      extraReportPriceMxn,
-      hasActiveSubscription,
+      reportsUsed: 0,
+      reportsLimit: 0,
+      remaining: 0,
+      extraReportsUsed: 0,
+      extraChargesMxn: 0,
+      planType: null,
+      isInPromotion: false,
+      extraReportPriceMxn: 0,
+      hasActiveSubscription: false,
     };
   }
 
@@ -239,6 +293,44 @@ export class UsageService {
     const subscription = await subscriptionService.getActiveSubscription(subscriptionOwnerId);
 
     if (!subscription) {
+      const trialInfo = await this.getTrialInfo(userId);
+      if (trialInfo?.isTrial) {
+        const trialExpired = trialInfo.trialExpiresAt ? new Date() >= trialInfo.trialExpiresAt : true;
+        if (trialExpired) {
+          const usage = await this.getCurrentUsage(userId);
+          return {
+            success: false,
+            isExtra: false,
+            extraChargeMxn: 0,
+            usage,
+            error: 'Tu periodo de prueba ha expirado. Elige un plan para continuar procesando informes.',
+          };
+        }
+        if (trialInfo.freeReportsUsed >= trialInfo.freeReportsLimit) {
+          const usage = await this.getCurrentUsage(userId);
+          return {
+            success: false,
+            isExtra: false,
+            extraChargeMxn: 0,
+            usage,
+            error: 'Has utilizado tus 10 informes gratuitos. Elige un plan para continuar procesando informes.',
+          };
+        }
+
+        await prisma.user.update({
+          where: { id: userId },
+          data: { freeReportsUsed: { increment: 1 } },
+        });
+
+        const usage = await this.getCurrentUsage(userId);
+        return {
+          success: true,
+          isExtra: false,
+          extraChargeMxn: 0,
+          usage,
+        };
+      }
+
       const usage = await this.getCurrentUsage(userId);
       return {
         success: false,

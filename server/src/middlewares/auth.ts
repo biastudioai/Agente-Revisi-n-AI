@@ -92,12 +92,18 @@ export async function authMiddleware(
       });
 
       if (!subscription) {
-        await prisma.session.deleteMany({ where: { id: session.id } });
-        res.status(403).json({ 
-          error: 'No tienes una suscripción activa. Por favor, contrata un plan para acceder a la plataforma.',
-          code: 'NO_SUBSCRIPTION'
-        });
-        return;
+        const isTrialActive = session.user.isTrial && 
+          session.user.trialExpiresAt && 
+          new Date() < session.user.trialExpiresAt;
+
+        if (!isTrialActive) {
+          await prisma.session.deleteMany({ where: { id: session.id } });
+          res.status(403).json({ 
+            error: 'No tienes una suscripción activa. Por favor, contrata un plan para acceder a la plataforma.',
+            code: 'NO_SUBSCRIPTION'
+          });
+          return;
+        }
       }
     }
 

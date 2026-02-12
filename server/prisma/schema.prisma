@@ -35,16 +35,21 @@ enum PlanType {
 }
 
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  passwordHash  String    @map("password_hash")
-  nombre        String
-  rol           UserRole  @default(BROKER)
-  isActive      Boolean   @default(true) @map("is_active")
-  parentId      String?   @map("parent_id")
-  aseguradoraId String?   @map("aseguradora_id")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  id              String    @id @default(uuid())
+  email           String    @unique
+  passwordHash    String    @map("password_hash")
+  nombre          String
+  rol             UserRole  @default(BROKER)
+  isActive        Boolean   @default(true) @map("is_active")
+  parentId        String?   @map("parent_id")
+  aseguradoraId   String?   @map("aseguradora_id")
+  isTrial         Boolean   @default(false) @map("is_trial")
+  freeReportsUsed Int       @default(0) @map("free_reports_used")
+  freeReportsLimit Int      @default(10) @map("free_reports_limit")
+  trialExpiresAt  DateTime? @map("trial_expires_at")
+  trialConvertedAt DateTime? @map("trial_converted_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
   parent          User?     @relation("UserHierarchy", fields: [parentId], references: [id])
   children        User[]    @relation("UserHierarchy")

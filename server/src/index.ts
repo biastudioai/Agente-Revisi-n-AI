@@ -19,6 +19,7 @@ import reportsRoutes from './routes/reports';
 import auditorsRoutes from './routes/auditors';
 import setupRoutes from './routes/setup';
 import analyzeRoutes from './routes/analyze';
+import trialRoutes from './routes/trial';
 import { initializeDatabase, getPrisma, closeDatabaseConnection } from './config/database';
 import { registerObjectStorageRoutes } from '../replit_integrations/object_storage';
 import { runMigrations } from 'stripe-replit-sync';
@@ -134,6 +135,31 @@ app.post(
             planType
           );
           console.log(`Subscription ${subscription.id} created successfully in database`);
+          
+          try {
+            const prismaDb = (await import('./config/database')).default;
+            const stripeCustomer = await prismaDb.stripeCustomer.findUnique({
+              where: { stripeCustomerId: subscription.customer as string },
+            });
+            if (stripeCustomer) {
+              const trialUser = await prismaDb.user.findUnique({
+                where: { id: stripeCustomer.userId },
+                select: { isTrial: true },
+              });
+              if (trialUser?.isTrial) {
+                await prismaDb.user.update({
+                  where: { id: stripeCustomer.userId },
+                  data: { 
+                    isTrial: false,
+                    trialConvertedAt: new Date(),
+                  },
+                });
+                console.log(`Trial user ${stripeCustomer.userId} converted to paid subscription`);
+              }
+            }
+          } catch (convError) {
+            console.error('Error converting trial user:', convError);
+          }
         } else {
           console.warn(`No planType in subscription metadata for ${subscription.id}`);
         }
@@ -268,6 +294,7 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/auditors', auditorsRoutes);
 app.use('/api/setup', setupRoutes);
 app.use('/api/analyze', analyzeRoutes);
+app.use('/api/trial', trialRoutes);
 
 registerObjectStorageRoutes(app);
 
