@@ -221,6 +221,21 @@ export class SubscriptionService {
       },
     });
 
+    const trialUser = await prisma.user.findUnique({
+      where: { id: stripeCustomer.userId },
+      select: { isTrial: true },
+    });
+    if (trialUser?.isTrial) {
+      await prisma.user.update({
+        where: { id: stripeCustomer.userId },
+        data: {
+          isTrial: false,
+          trialConvertedAt: new Date(),
+        },
+      });
+      console.log(`Trial user ${stripeCustomer.userId} converted to paid subscription (${planType})`);
+    }
+
     // If this is an upgrade, transfer the reports used from the previous period
     if (isUpgrade && reportsUsedTransfer > 0) {
       const currentMonth = now.getMonth() + 1;

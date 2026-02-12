@@ -317,10 +317,25 @@ export class UsageService {
           };
         }
 
-        await prisma.user.update({
-          where: { id: userId },
-          data: { freeReportsUsed: { increment: 1 } },
-        });
+        const result = await prisma.$executeRaw`
+          UPDATE users 
+          SET free_reports_used = free_reports_used + 1 
+          WHERE id = ${userId} 
+            AND is_trial = true 
+            AND free_reports_used < free_reports_limit
+            AND (trial_expires_at IS NULL OR trial_expires_at > NOW())
+        `;
+
+        if (result === 0) {
+          const usage = await this.getCurrentUsage(userId);
+          return {
+            success: false,
+            isExtra: false,
+            extraChargeMxn: 0,
+            usage,
+            error: 'No se pudo procesar el informe. Tu prueba gratuita puede haber expirado.',
+          };
+        }
 
         const usage = await this.getCurrentUsage(userId);
         return {
