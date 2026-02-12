@@ -110,9 +110,6 @@ export async function registerUser(data: RegisterData): Promise<AuthResult> {
 export async function loginUser(data: LoginData): Promise<AuthResult> {
   const user = await prisma.user.findUnique({
     where: { email: data.email.toLowerCase() },
-    include: {
-      parent: true,
-    },
   });
 
   if (!user) {
