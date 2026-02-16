@@ -8,7 +8,7 @@ import { getProviderGeminiSchema, buildProviderSystemPrompt, ProviderType } from
 
 const PROJECT_ID = process.env.GOOGLE_PROJECT_ID;
 const LOCATION = process.env.GOOGLE_LOCATION || "us-central1";
-const MODEL_NAME = "gemini-3-flash-preview";
+const MODEL_NAME = "gemini-3-flash-preview-0514";
 
 let credentialsSetup = false;
 
