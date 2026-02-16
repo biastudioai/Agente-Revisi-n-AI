@@ -325,10 +325,12 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 async function initStripe() {
-  const databaseUrl = process.env.DATABASE_URL;
-
-  if (!databaseUrl) {
-    console.warn('DATABASE_URL not set, skipping Stripe initialization');
+  let databaseUrl: string;
+  try {
+    const { getDatabaseUrl } = await import('./config/database');
+    databaseUrl = getDatabaseUrl();
+  } catch {
+    console.warn('Database URL not available, skipping Stripe initialization');
     return;
   }
 

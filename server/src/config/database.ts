@@ -1,10 +1,9 @@
 import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
 import { PrismaClient } from '../generated/prisma';
 
 let prismaInstance: PrismaClient | null = null;
 
-function getDatabaseUrl(): string {
+export function getDatabaseUrl(): string {
   const isProduction = process.env.NODE_ENV === 'production';
 
   if (isProduction) {
@@ -20,7 +19,7 @@ function getDatabaseUrl(): string {
     const host = process.env.DB_PROD_HOST;
 
     if (user && password && database && host) {
-      const url = `postgresql://${user}:${encodeURIComponent(password)}@${host}:5432/${database}?sslmode=require`;
+      const url = `postgresql://${user}:${encodeURIComponent(password)}@${host}:5432/${database}`;
       console.log('Production mode - Connecting to:', host);
       return url;
     }
@@ -35,16 +34,19 @@ function getDatabaseUrl(): string {
   return devUrl;
 }
 
+export function getDatabaseSslConfig(): any {
+  const isProduction = process.env.NODE_ENV === 'production';
+  return isProduction ? { rejectUnauthorized: false } : false;
+}
+
 function createAdapter(): PrismaPg {
   const connectionString = getDatabaseUrl();
-  const isProduction = process.env.NODE_ENV === 'production';
+  const ssl = getDatabaseSslConfig();
 
-  const pool = new Pool({
+  return new PrismaPg({
     connectionString,
-    ssl: isProduction ? { rejectUnauthorized: false } : false,
+    ssl,
   });
-
-  return new PrismaPg(pool);
 }
 
 export async function initializeDatabase(): Promise<PrismaClient> {
