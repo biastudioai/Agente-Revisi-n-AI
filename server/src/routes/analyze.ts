@@ -1,16 +1,20 @@
 import { Router, Request, Response } from 'express';
 import expressAsyncHandler from 'express-async-handler';
 import { requireAuth } from '../middlewares/auth';
-import { analyzeReportImages, reEvaluateReport, FileInput } from '../services/geminiService';
+import { analyzeReportImages, analyzeReportWithVisionOcr, reEvaluateReport, FileInput } from '../services/geminiService';
+import { extractTextWithVisionOcr } from '../services/visionOcrService';
 import { ProviderType } from '../providers';
 import { ScoringRule, ExtractedData, AnalysisReport } from '../types';
 
 const router = Router();
 
+type OcrEngine = 'vertex' | 'vision-ocr';
+
 interface AnalyzeRequest {
   files: FileInput[];
   provider: ProviderType;
   rules: ScoringRule[];
+  ocrEngine?: OcrEngine;
 }
 
 interface ReEvaluateRequest {
@@ -54,7 +58,7 @@ router.post(
   '/images',
   requireAuth,
   expressAsyncHandler(async (req: Request, res: Response) => {
-    const { files, provider, rules } = req.body as AnalyzeRequest;
+    const { files, provider, rules, ocrEngine } = req.body as AnalyzeRequest;
 
     if (!files || files.length === 0) {
       res.status(400).json({ error: 'No se proporcionaron archivos para analizar' });
@@ -88,9 +92,20 @@ router.post(
       return;
     }
 
+    const engine: OcrEngine = ocrEngine || 'vertex';
+
     try {
-      console.log(`Analyzing ${files.length} files for provider ${provider}`);
-      const result = await analyzeReportImages(files, provider, rules);
+      let result: AnalysisReport;
+
+      if (engine === 'vision-ocr') {
+        console.log(`Analyzing ${files.length} files for provider ${provider} using Vision OCR + Gemini`);
+        const ocrText = await extractTextWithVisionOcr(files);
+        result = await analyzeReportWithVisionOcr(ocrText, provider, rules);
+      } else {
+        console.log(`Analyzing ${files.length} files for provider ${provider} using Vertex AI`);
+        result = await analyzeReportImages(files, provider, rules);
+      }
+
       res.json(result);
     } catch (error: any) {
       console.error('Error analyzing images:', error);
