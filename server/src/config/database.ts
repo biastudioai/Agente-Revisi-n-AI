@@ -1,4 +1,5 @@
 import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 import { PrismaClient } from '../generated/prisma';
 
 let prismaInstance: PrismaClient | null = null;
@@ -36,7 +37,14 @@ function getDatabaseUrl(): string {
 
 function createAdapter(): PrismaPg {
   const connectionString = getDatabaseUrl();
-  return new PrismaPg({ connectionString });
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  const pool = new Pool({
+    connectionString,
+    ssl: isProduction ? { rejectUnauthorized: false } : false,
+  });
+
+  return new PrismaPg(pool);
 }
 
 export async function initializeDatabase(): Promise<PrismaClient> {
@@ -79,6 +87,6 @@ const adapter = createAdapter();
 const prisma = new PrismaClient({
   adapter,
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-});
+}) as PrismaClient;
 
 export default prisma;
