@@ -12,6 +12,7 @@
     "@google-cloud/cloud-sql-connector": "^1.9.0",
     "@google-cloud/storage": "^7.18.0",
     "@google-cloud/vertexai": "^1.10.0",
+    "@google-cloud/vision": "^5.3.4",
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
     "@tailwindcss/postcss": "^4.1.18",

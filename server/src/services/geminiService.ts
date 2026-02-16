@@ -368,6 +368,119 @@ export const analyzeReportImages = async (
   }
 };
 
+export const analyzeReportWithVisionOcr = async (
+    ocrText: string,
+    provider: ProviderType,
+    rules: ScoringRule[]
+): Promise<AnalysisReport> => {
+  const startTime = Date.now();
+  try {
+    console.log("═══════════════════════════════════════════════════════════════");
+    console.log("⏱️  INICIO PROCESAMIENTO HÍBRIDO (Vision OCR + Gemini)");
+    console.log("═══════════════════════════════════════════════════════════════");
+    console.log("Starting structured extraction with Vertex AI model:", MODEL_NAME);
+    console.log("Project:", PROJECT_ID, "Location:", LOCATION);
+    console.log("Selected provider:", provider);
+    console.log("OCR text length:", ocrText.length, "characters");
+    
+    const schemaStartTime = Date.now();
+    const responseSchema = getProviderGeminiSchema(provider);
+    if (!responseSchema) {
+      throw new Error(`No schema available for provider: ${provider}`);
+    }
+    
+    const systemPrompt = buildProviderSystemPrompt(provider);
+    const schemaTime = Date.now() - schemaStartTime;
+    console.log(`⏱️  Schema y prompt construidos en: ${schemaTime}ms`);
+
+    const contextMessage = `A continuación se presenta el texto extraído mediante OCR de un documento médico de ${provider}. Analiza el texto y extrae toda la información siguiendo el esquema JSON. El texto fue extraído de las imágenes/páginas del documento original.\n\n--- TEXTO OCR EXTRAÍDO ---\n${ocrText}\n--- FIN TEXTO OCR ---\n\nExtrae toda la información disponible del texto anterior siguiendo el esquema JSON proporcionado.`;
+
+    const request = {
+      contents: [
+        {
+          role: "user" as const,
+          parts: [
+            { text: systemPrompt },
+            { text: contextMessage }
+          ]
+        }
+      ],
+      generationConfig: {
+        temperature: 0.0,
+        responseMimeType: "application/json",
+        responseSchema: responseSchema as any
+      }
+    };
+
+    const model = getGenerativeModel();
+    const geminiStartTime = Date.now();
+    console.log("⏱️  Enviando texto OCR a Gemini para estructuración...");
+    const response = await model.generateContent(request);
+    const result = response.response;
+    const geminiTime = Date.now() - geminiStartTime;
+    console.log(`⏱️  Respuesta de Gemini recibida en: ${geminiTime}ms (${(geminiTime/1000).toFixed(2)}s)`);
+
+    console.log("Response received from Vertex AI");
+    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error("Empty response from AI");
+    
+    const parseStartTime = Date.now();
+    console.log("Parsing JSON response...");
+    const jsonData = JSON.parse(text);
+    const parseTime = Date.now() - parseStartTime;
+    console.log(`⏱️  JSON parseado en: ${parseTime}ms`);
+    console.log("📦 JSON COMPLETO DE GEMINI (Híbrido):", jsonData);
+    
+    const extractedData: ExtractedData = { ...jsonData.extracted, provider };
+    console.log("Provider:", extractedData.provider);
+
+    const scoringStartTime = Date.now();
+    const scoringResult = calculateScore(extractedData, undefined, rules);
+    const scoringTime = Date.now() - scoringStartTime;
+    console.log(`⏱️  Cálculo de puntuación en: ${scoringTime}ms`);
+
+    const totalTime = Date.now() - startTime;
+    console.log("═══════════════════════════════════════════════════════════════");
+    console.log(`✅ PROCESAMIENTO HÍBRIDO COMPLETADO`);
+    console.log(`⏱️  TIEMPO TOTAL: ${totalTime}ms (${(totalTime/1000).toFixed(2)}s)`);
+    console.log("───────────────────────────────────────────────────────────────");
+    console.log(`   📊 Desglose de tiempos:`);
+    console.log(`      - Gemini API (estructuración): ${geminiTime}ms (${((geminiTime/totalTime)*100).toFixed(1)}%)`);
+    console.log(`      - Parsing JSON: ${parseTime}ms`);
+    console.log(`      - Scoring: ${scoringTime}ms`);
+    console.log(`   🏢 Proveedor: ${provider}`);
+    console.log(`   📈 Score final: ${scoringResult.finalScore}/100`);
+    console.log("═══════════════════════════════════════════════════════════════");
+
+    return {
+      extracted: extractedData,
+      score: scoringResult,
+      flags: scoringResult.flags,
+      raw_response: text
+    };
+
+  } catch (error: any) {
+    const errorTime = Date.now() - startTime;
+    console.error("═══════════════════════════════════════════════════════════════");
+    console.error(`❌ ERROR EN PROCESAMIENTO HÍBRIDO (después de ${errorTime}ms)`);
+    console.error(`❌ Provider: ${provider}`);
+    console.error("═══════════════════════════════════════════════════════════════");
+    console.error("Error name:", error?.name);
+    console.error("Error message:", error?.message);
+    console.error("Error stack:", error?.stack);
+    if (error?.response) {
+      console.error("API Response error:", JSON.stringify(error.response, null, 2));
+    }
+    if (error?.errorDetails) {
+      console.error("Error details:", JSON.stringify(error.errorDetails, null, 2));
+    }
+    if (error?.statusDetails) {
+      console.error("Status details:", JSON.stringify(error.statusDetails, null, 2));
+    }
+    throw error;
+  }
+};
+
 export const reEvaluateReport = async (
   previousReport: AnalysisReport, 
   updatedData: ExtractedData,
