@@ -9,7 +9,7 @@ import ProviderSelector, { ProviderOption } from './components/ProviderSelector'
 import LoginPage from './components/LoginPage';
 import SubscriptionPlans from './components/SubscriptionPlans';
 import ReportHistory from './components/ReportHistory';
-import { analyzeReportImage, analyzeReportImages, reEvaluateReport, FileInput } from './services/analyzeApi';
+import { analyzeReportImage, analyzeReportImages, reEvaluateReport, FileInput, OcrEngine } from './services/analyzeApi';
 import { getReglasParaAseguradora } from './services/scoring-engine';
 import { updateRuleInDatabase, createRuleInDatabase, deleteRuleInDatabase, clearRulesCache } from './services/database-rules-loader';
 import { AnalysisReport, AnalysisStatus, ExtractedData, ScoringRule, SavedReport } from './types';
@@ -89,6 +89,7 @@ const App: React.FC = () => {
 
   // State for Provider Selection
   const [selectedProvider, setSelectedProvider] = useState<ProviderOption>('UNKNOWN');
+  const [selectedOcrEngine, setSelectedOcrEngine] = useState<OcrEngine>('vertex');
   const [detectedProvider, setDetectedProvider] = useState<DetectedProvider | undefined>();
   const [detectionConfidence, setDetectionConfidence] = useState<'high' | 'medium' | 'low'>('low');
   const [pendingFiles, setPendingFiles] = useState<FileData[]>([]);
@@ -580,7 +581,7 @@ const App: React.FC = () => {
         mimeType: f.mimeType
       }));
       
-      const data = await analyzeReportImages(fileInputs, selectedProvider, rules);
+      const data = await analyzeReportImages(fileInputs, selectedProvider, rules, user?.rol === 'ADMIN' ? selectedOcrEngine : undefined);
       setReport(data);
       setStatus('complete');
       
@@ -1634,6 +1635,43 @@ const App: React.FC = () => {
                   confidence={detectionConfidence}
                   disabled={status === 'analyzing'}
                 />
+
+                {user?.rol === 'ADMIN' && (
+                  <div className="w-full p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                    <label className="block text-xs font-semibold text-amber-800 mb-2">
+                      Motor de Extracción (Admin)
+                    </label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedOcrEngine('vertex')}
+                        className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all ${
+                          selectedOcrEngine === 'vertex'
+                            ? 'bg-amber-600 text-white shadow-sm'
+                            : 'bg-white text-amber-700 border border-amber-300 hover:bg-amber-100'
+                        }`}
+                      >
+                        Vertex AI (Actual)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedOcrEngine('vision-ocr')}
+                        className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all ${
+                          selectedOcrEngine === 'vision-ocr'
+                            ? 'bg-amber-600 text-white shadow-sm'
+                            : 'bg-white text-amber-700 border border-amber-300 hover:bg-amber-100'
+                        }`}
+                      >
+                        Vision OCR + Gemini
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-amber-600 mt-1.5">
+                      {selectedOcrEngine === 'vertex' 
+                        ? 'Gemini procesa las imágenes directamente' 
+                        : 'Vision API extrae texto, luego Gemini lo estructura'}
+                    </p>
+                  </div>
+                )}
 
                 <button
                   onClick={handleStartAnalysis}

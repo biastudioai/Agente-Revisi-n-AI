@@ -25,10 +25,13 @@ export const analyzeReportImage = async (
   return analyzeReportImages([{ base64Data, mimeType }], provider, rules);
 };
 
+export type OcrEngine = 'vertex' | 'vision-ocr';
+
 export const analyzeReportImages = async (
   files: FileInput[],
   provider: ProviderType,
-  rules: ScoringRule[]
+  rules: ScoringRule[],
+  ocrEngine?: OcrEngine
 ): Promise<AnalysisReport> => {
   const headers = await getAuthHeaders();
   
@@ -36,7 +39,7 @@ export const analyzeReportImages = async (
     method: 'POST',
     headers,
     credentials: 'include',
-    body: JSON.stringify({ files, provider, rules })
+    body: JSON.stringify({ files, provider, rules, ocrEngine })
   });
 
   if (!response.ok) {
