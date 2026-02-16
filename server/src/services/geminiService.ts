@@ -1,5 +1,4 @@
-import { VertexAI, GenerativeModel } from "@google-cloud/vertexai";
-import { GoogleAuth } from "google-auth-library";
+import { GoogleGenAI } from "@google/genai";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
@@ -9,9 +8,9 @@ import { getProviderGeminiSchema, buildProviderSystemPrompt, ProviderType } from
 
 const PROJECT_ID = process.env.GOOGLE_PROJECT_ID;
 const LOCATION = process.env.GOOGLE_LOCATION || "us-central1";
-const MODEL_NAME = "gemini-2.5-flash";
+const MODEL_NAME = "gemini-3-flash-preview";
 
-let credentialsFilePath: string | null = null;
+let credentialsSetup = false;
 
 function setupCredentials(): void {
   const credentialsEnv = process.env.GOOGLE_APPLICATION_CREDENTIALS;
@@ -22,7 +21,7 @@ function setupCredentials(): void {
   
   if (credentialsEnv.startsWith('{')) {
     const tempDir = os.tmpdir();
-    credentialsFilePath = path.join(tempDir, 'gcp-credentials.json');
+    const credentialsFilePath = path.join(tempDir, 'gcp-credentials.json');
     fs.writeFileSync(credentialsFilePath, credentialsEnv, 'utf8');
     process.env.GOOGLE_APPLICATION_CREDENTIALS = credentialsFilePath;
     console.log("Credenciales de GCP escritas a archivo temporal");
@@ -35,12 +34,9 @@ function validateConfig(): void {
   }
 }
 
-let vertexAI: VertexAI | null = null;
-let generativeModel: GenerativeModel | null = null;
-let currentModelName: string | null = null;
-let credentialsSetup = false;
+let aiClient: GoogleGenAI | null = null;
 
-function getGenerativeModel(): GenerativeModel {
+function getAIClient(): GoogleGenAI {
   validateConfig();
   
   if (!credentialsSetup) {
@@ -48,28 +44,15 @@ function getGenerativeModel(): GenerativeModel {
     credentialsSetup = true;
   }
   
-  if (!vertexAI) {
-    const auth = new GoogleAuth({
-      scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-    });
-    
-    vertexAI = new VertexAI({ 
-      project: PROJECT_ID!, 
+  if (!aiClient) {
+    aiClient = new GoogleGenAI({
+      vertexai: true,
+      project: PROJECT_ID!,
       location: LOCATION,
-      googleAuthOptions: {
-        scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-      }
     });
   }
   
-  if (!generativeModel || currentModelName !== MODEL_NAME) {
-    generativeModel = vertexAI.getGenerativeModel({
-      model: MODEL_NAME,
-    });
-    currentModelName = MODEL_NAME;
-  }
-  
-  return generativeModel;
+  return aiClient;
 }
 
 export interface FileInput {
@@ -123,34 +106,29 @@ export const analyzeReportImages = async (
       ? `Extrae toda la información del documento de ${files.length} páginas/imágenes siguiendo el esquema JSON. Este es un documento de ${provider}. Las imágenes están en orden de página (1, 2, 3, etc.). Analiza todas las páginas como un solo documento continuo.`
       : `Extrae toda la información del documento siguiendo el esquema JSON. Este es un documento de ${provider}.`;
 
-    const request = {
-      contents: [
-        {
-          role: "user" as const,
-          parts: [
-            { text: systemPrompt },
-            ...imageParts,
-            { text: contextMessage }
-          ]
-        }
-      ],
-      generationConfig: {
+    const contents = [
+      { text: systemPrompt },
+      ...imageParts,
+      { text: contextMessage }
+    ];
+
+    const ai = getAIClient();
+    const geminiStartTime = Date.now();
+    console.log("⏱️  Enviando solicitud a Gemini...");
+    const response = await ai.models.generateContent({
+      model: MODEL_NAME,
+      contents: contents as any,
+      config: {
         temperature: 0.0,
         responseMimeType: "application/json",
         responseSchema: responseSchema as any
       }
-    };
-
-    const model = getGenerativeModel();
-    const geminiStartTime = Date.now();
-    console.log("⏱️  Enviando solicitud a Gemini...");
-    const response = await model.generateContent(request);
-    const result = response.response;
+    });
     const geminiTime = Date.now() - geminiStartTime;
     console.log(`⏱️  Respuesta de Gemini recibida en: ${geminiTime}ms (${(geminiTime/1000).toFixed(2)}s)`);
 
-    console.log("Response received from Vertex AI");
-    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+    console.log("Response received from Gemini");
+    const text = response.text;
     if (!text) throw new Error("Empty response from AI");
     
     const parseStartTime = Date.now();
@@ -395,33 +373,28 @@ export const analyzeReportWithVisionOcr = async (
 
     const contextMessage = `A continuación se presenta el texto extraído mediante OCR de un documento médico de ${provider}. Analiza el texto y extrae toda la información siguiendo el esquema JSON. El texto fue extraído de las imágenes/páginas del documento original.\n\n--- TEXTO OCR EXTRAÍDO ---\n${ocrText}\n--- FIN TEXTO OCR ---\n\nExtrae toda la información disponible del texto anterior siguiendo el esquema JSON proporcionado.`;
 
-    const request = {
-      contents: [
-        {
-          role: "user" as const,
-          parts: [
-            { text: systemPrompt },
-            { text: contextMessage }
-          ]
-        }
-      ],
-      generationConfig: {
+    const contents = [
+      { text: systemPrompt },
+      { text: contextMessage }
+    ];
+
+    const ai = getAIClient();
+    const geminiStartTime = Date.now();
+    console.log("⏱️  Enviando texto OCR a Gemini para estructuración...");
+    const response = await ai.models.generateContent({
+      model: MODEL_NAME,
+      contents: contents,
+      config: {
         temperature: 0.0,
         responseMimeType: "application/json",
         responseSchema: responseSchema as any
       }
-    };
-
-    const model = getGenerativeModel();
-    const geminiStartTime = Date.now();
-    console.log("⏱️  Enviando texto OCR a Gemini para estructuración...");
-    const response = await model.generateContent(request);
-    const result = response.response;
+    });
     const geminiTime = Date.now() - geminiStartTime;
     console.log(`⏱️  Respuesta de Gemini recibida en: ${geminiTime}ms (${(geminiTime/1000).toFixed(2)}s)`);
 
-    console.log("Response received from Vertex AI");
-    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+    console.log("Response received from Gemini");
+    const text = response.text;
     if (!text) throw new Error("Empty response from AI");
     
     const parseStartTime = Date.now();
