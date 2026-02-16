@@ -41,6 +41,48 @@ export interface FileInput {
   mimeType: string;
 }
 
+const isPdf = (mimeType: string): boolean => mimeType === 'application/pdf';
+
+const extractTextFromImage = async (client: ImageAnnotatorClient, base64Data: string): Promise<string> => {
+  const imageBuffer = Buffer.from(base64Data, 'base64');
+  const [response] = await client.documentTextDetection({
+    image: { content: imageBuffer },
+    imageContext: { languageHints: ["es"] }
+  });
+  return response.fullTextAnnotation?.text || "";
+};
+
+const extractTextFromPdf = async (client: ImageAnnotatorClient, base64Data: string): Promise<string> => {
+  const pdfBuffer = Buffer.from(base64Data, 'base64');
+  
+  const [result] = await client.batchAnnotateFiles({
+    requests: [{
+      inputConfig: {
+        content: pdfBuffer,
+        mimeType: 'application/pdf',
+      },
+      features: [{ type: 'DOCUMENT_TEXT_DETECTION' }],
+      imageContext: { languageHints: ["es"] },
+      pages: [1, 2, 3, 4, 5]
+    }]
+  });
+
+  const fileResponse = result.responses?.[0];
+  if (!fileResponse?.responses) return "";
+
+  const pageTexts: string[] = [];
+  for (let i = 0; i < fileResponse.responses.length; i++) {
+    const pageResponse = fileResponse.responses[i];
+    const pageText = pageResponse.fullTextAnnotation?.text || "";
+    if (i > 0) {
+      pageTexts.push(`--- Página ${i + 1} ---`);
+    }
+    pageTexts.push(pageText);
+  }
+  
+  return pageTexts.join("\n");
+};
+
 export const extractTextWithVisionOcr = async (files: FileInput[]): Promise<string> => {
   const startTime = Date.now();
   try {
@@ -56,27 +98,27 @@ export const extractTextWithVisionOcr = async (files: FileInput[]): Promise<stri
       const file = files[fileIndex];
       const fileStartTime = Date.now();
       const pageNumber = fileIndex + 1;
+      const fileType = isPdf(file.mimeType) ? 'PDF' : 'Imagen';
       
-      console.log(`⏱️  Procesando archivo ${pageNumber}/${files.length}...`);
-      
-      const imageBuffer = Buffer.from(file.base64Data, 'base64');
+      console.log(`⏱️  Procesando archivo ${pageNumber}/${files.length} (${fileType})...`);
       
       const visionStartTime = Date.now();
-      const [response] = await client.documentTextDetection({
-        image: { content: imageBuffer },
-        imageContext: { languageHints: ["es"] }
-      });
+      let extractedText: string;
+
+      if (isPdf(file.mimeType)) {
+        extractedText = await extractTextFromPdf(client, file.base64Data);
+      } else {
+        extractedText = await extractTextFromImage(client, file.base64Data);
+      }
+
       const visionTime = Date.now() - visionStartTime;
       
-      const fullTextAnnotation = response.fullTextAnnotation;
-      const extractedText = fullTextAnnotation?.text || "";
-      
       const fileTime = Date.now() - fileStartTime;
-      console.log(`✅ Archivo ${pageNumber} procesado en: ${fileTime}ms (Vision API: ${visionTime}ms)`);
+      console.log(`✅ Archivo ${pageNumber} (${fileType}) procesado en: ${fileTime}ms (Vision API: ${visionTime}ms)`);
       console.log(`📄 Caracteres extraídos: ${extractedText.length}`);
       
       if (pageNumber > 1) {
-        allTexts.push(`--- Página ${pageNumber} ---`);
+        allTexts.push(`--- Archivo ${pageNumber} ---`);
       }
       allTexts.push(extractedText);
     }
