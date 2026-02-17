@@ -1321,7 +1321,6 @@ const App: React.FC = () => {
         onNewAudit={() => {
           setIsHistoryViewOpen(false);
           setStatus('idle');
-          setPendingFile(null);
           setFilePreview(null);
           setDetectedProvider(undefined);
           setPendingFiles([]);
@@ -2159,7 +2158,6 @@ const App: React.FC = () => {
                 loadUsage();
                 if (shouldShowSubscriptionPlans()) {
                   setStatus('idle');
-                  setPendingFile(null);
                   setFilePreview(null);
                   setDetectedProvider(undefined);
                   setPendingFiles([]);
