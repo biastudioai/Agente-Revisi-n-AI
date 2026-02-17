@@ -19,9 +19,10 @@ interface Report {
 interface ReportHistoryProps {
   onViewReport: (reportId: string) => void;
   onBack: () => void;
+  onNewAudit?: () => void;
 }
 
-const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport, onBack }) => {
+const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport, onBack, onNewAudit }) => {
   const [reports, setReports] = useState<Report[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
@@ -199,13 +200,24 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport, onBack }) =
                 <h1 className="text-lg font-semibold text-slate-900">Historial de Informes Procesados</h1>
               </div>
             </div>
-            <button
-              onClick={fetchReports}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Actualizar
-            </button>
+            <div className="flex items-center gap-3">
+              {onNewAudit && (
+                <button
+                  onClick={onNewAudit}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-veryka-dark bg-slate-50 border border-slate-200 hover:bg-slate-100 hover:border-slate-300 rounded-xl transition-all shadow-sm"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Nueva Auditoría (Reiniciar)
+                </button>
+              )}
+              <button
+                onClick={fetchReports}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Actualizar
+              </button>
+            </div>
           </div>
         </div>
       </header>

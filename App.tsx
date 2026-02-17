@@ -1318,6 +1318,16 @@ const App: React.FC = () => {
       <ReportHistory 
         onViewReport={handleViewReportFromHistory}
         onBack={() => setIsHistoryViewOpen(false)}
+        onNewAudit={() => {
+          setIsHistoryViewOpen(false);
+          setStatus('idle');
+          setPendingFile(null);
+          setFilePreview(null);
+          setDetectedProvider(undefined);
+          setPendingFiles([]);
+          setReport(null);
+          setError(null);
+        }}
       />
     );
   }
