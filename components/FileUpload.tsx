@@ -18,7 +18,7 @@ interface FileUploadProps {
   onLoadReport?: (id: string) => void;
 }
 
-const MAX_FILES = 5;
+const MAX_FILES = 6;
 const MAX_FILE_SIZE_SINGLE_MB = 25; // 25MB max si es un único archivo
 const MAX_FILE_SIZE_MULTIPLE_MB = 8; // 8MB max por archivo si hay múltiples
 const MAX_TOTAL_SIZE_MB = 25; // 25MB total máximo

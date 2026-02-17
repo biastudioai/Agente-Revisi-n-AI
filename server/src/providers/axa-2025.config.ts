@@ -674,7 +674,7 @@ El documento AXA 2025 tiene una sección simplificada de Aviso de Privacidad al 
             }
           }
         },
-        required: ['provider', 'identificacion', 'diagnostico', 'medico_principal']
+        required: ['provider']
       }
     },
     required: ['extracted']
