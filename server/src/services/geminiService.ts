@@ -114,16 +114,62 @@ export const analyzeReportImages = async (
 
     const ai = getAIClient();
     const geminiStartTime = Date.now();
-    console.log("⏱️  Enviando solicitud a Gemini...");
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: contents as any,
-      config: {
-        temperature: 0.0,
-        responseMimeType: "application/json",
-        responseSchema: responseSchema as any
+
+    function trimSchemaDescriptions(obj: any, maxLen = 80): any {
+      if (!obj || typeof obj !== 'object') return obj;
+      const result = { ...obj };
+      if (result.description && result.description.length > maxLen) {
+        result.description = result.description.substring(0, maxLen);
       }
-    });
+      if (result.properties) {
+        result.properties = {};
+        for (const [k, v] of Object.entries(obj.properties)) {
+          result.properties[k] = trimSchemaDescriptions(v, maxLen);
+        }
+      }
+      if (result.items) {
+        result.items = trimSchemaDescriptions(result.items, maxLen);
+      }
+      return result;
+    }
+
+    const optimizedSchema = trimSchemaDescriptions(responseSchema);
+    const schemaJson = JSON.stringify(optimizedSchema);
+    console.log(`⏱️  Schema size: ${schemaJson.length} chars (original: ${JSON.stringify(responseSchema).length})`);
+    console.log("⏱️  Enviando solicitud a Gemini...");
+
+    let response;
+    try {
+      response = await ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: contents as any,
+        config: {
+          temperature: 0.0,
+          responseMimeType: "application/json",
+          responseSchema: optimizedSchema as any
+        }
+      });
+    } catch (schemaError: any) {
+      if (schemaError.status === 400) {
+        console.log("⚠️  Schema rejected by Gemini (400), retrying without responseSchema (JSON prompt mode)...");
+        const schemaHint = `\n\nResponde ÚNICAMENTE con un JSON válido que siga esta estructura:\n${schemaJson}`;
+        const fallbackContents = [
+          { text: systemPrompt + schemaHint },
+          ...imageParts,
+          { text: contextMessage }
+        ];
+        response = await ai.models.generateContent({
+          model: MODEL_NAME,
+          contents: fallbackContents as any,
+          config: {
+            temperature: 0.0,
+            responseMimeType: "application/json"
+          }
+        });
+      } else {
+        throw schemaError;
+      }
+    }
     const geminiTime = Date.now() - geminiStartTime;
     console.log(`⏱️  Respuesta de Gemini recibida en: ${geminiTime}ms (${(geminiTime/1000).toFixed(2)}s)`);
 
