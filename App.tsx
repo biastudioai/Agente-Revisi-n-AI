@@ -1260,9 +1260,22 @@ const App: React.FC = () => {
     }} blockedMessage={blockedMessage} />;
   }
 
-  // Show subscription selection for BROKER users without active subscription AND not in trial
   const isTrialUser = (usage as any)?.isTrial === true;
   const trialExpired = (usage as any)?.trialExpired === true;
+
+  const shouldShowSubscriptionPlans = (): boolean => {
+    if (!usage) return false;
+    const isTrial = (usage as any)?.isTrial === true;
+    const trialIsExpired = (usage as any)?.trialExpired === true;
+    if (!usage.hasActiveSubscription) {
+      if (isTrial && (trialIsExpired || usage.remaining <= 0)) return true;
+      if (!isTrial) return true;
+    }
+    if (isTrial && usage.remaining <= 0) return true;
+    return false;
+  };
+
+  // Show subscription selection for BROKER users without active subscription AND not in trial
   
   if (user.rol === 'BROKER' && usage !== null && !usage.hasActiveSubscription && !isTrialUser) {
     return (
@@ -1687,6 +1700,10 @@ const App: React.FC = () => {
 
                 <button
                   onClick={() => {
+                    if (shouldShowSubscriptionPlans()) {
+                      setIsSubscriptionModalOpen(true);
+                      return;
+                    }
                     setStatus('idle');
                     setPendingFile(null);
                     setFilePreview(null);
@@ -2130,6 +2147,13 @@ const App: React.FC = () => {
                 setIsSubscriptionModalOpen(false);
                 loadSubscription();
                 loadUsage();
+                if (shouldShowSubscriptionPlans()) {
+                  setStatus('idle');
+                  setPendingFile(null);
+                  setFilePreview(null);
+                  setDetectedProvider(undefined);
+                  setPendingFiles([]);
+                }
               }}
               onSubscriptionChange={() => {
                 loadSubscription();
