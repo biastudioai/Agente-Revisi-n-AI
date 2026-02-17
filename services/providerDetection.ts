@@ -2,7 +2,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-export type DetectedProvider = 'METLIFE' | 'GNP' | 'UNKNOWN';
+export type DetectedProvider = 'METLIFE' | 'GNP' | 'NYLIFE' | 'AXA' | 'AXA_2018' | 'UNKNOWN';
 
 interface DetectionResult {
   provider: DetectedProvider;
@@ -10,7 +10,7 @@ interface DetectionResult {
   matchedKeywords: string[];
 }
 
-const PROVIDER_KEYWORDS: Record<DetectedProvider, string[]> = {
+const PROVIDER_KEYWORDS: Record<string, string[]> = {
   METLIFE: [
     'metlife',
     'metropolitan life',
@@ -25,8 +25,31 @@ const PROVIDER_KEYWORDS: Record<DetectedProvider, string[]> = {
     'gnp mexico',
     'gnp méxico'
   ],
-  UNKNOWN: []
+  NYLIFE: [
+    'seguros monterrey',
+    'new york life',
+    'monterrey new york',
+    'nylife'
+  ],
+  AXA: [
+    'axa seguros',
+    'axa',
+  ]
 };
+
+const AXA_2025_MARKERS = ['ai-461', 'ai - 461', 'julio 2025', 'piso 3'];
+const AXA_2018_MARKERS = ['ai-346', 'ai - 346', 'noviembre 2018', 'piso 6'];
+
+function detectAxaVersion(text: string): DetectedProvider {
+  const normalizedText = text.toLowerCase();
+  for (const marker of AXA_2025_MARKERS) {
+    if (normalizedText.includes(marker)) return 'AXA';
+  }
+  for (const marker of AXA_2018_MARKERS) {
+    if (normalizedText.includes(marker)) return 'AXA_2018';
+  }
+  return 'AXA';
+}
 
 export async function extractTextFromPdf(base64Data: string): Promise<string> {
   try {
@@ -58,10 +81,9 @@ export async function extractTextFromPdf(base64Data: string): Promise<string> {
 
 export function detectProviderFromText(text: string): DetectionResult {
   const normalizedText = text.toLowerCase();
-  const matchedKeywords: string[] = [];
   
   for (const [provider, keywords] of Object.entries(PROVIDER_KEYWORDS)) {
-    if (provider === 'UNKNOWN') continue;
+    const matchedKeywords: string[] = [];
     
     for (const keyword of keywords) {
       if (normalizedText.includes(keyword)) {
@@ -70,8 +92,14 @@ export function detectProviderFromText(text: string): DetectionResult {
     }
     
     if (matchedKeywords.length > 0) {
+      let detectedProvider = provider as DetectedProvider;
+      
+      if (provider === 'AXA') {
+        detectedProvider = detectAxaVersion(normalizedText);
+      }
+      
       return {
-        provider: provider as DetectedProvider,
+        provider: detectedProvider,
         confidence: matchedKeywords.length >= 2 ? 'high' : 'medium',
         matchedKeywords
       };
@@ -101,12 +129,20 @@ export function detectProviderFromFilename(filename: string): DetectionResult {
   const normalizedName = filename.toLowerCase();
   
   for (const [provider, keywords] of Object.entries(PROVIDER_KEYWORDS)) {
-    if (provider === 'UNKNOWN') continue;
-    
     for (const keyword of keywords) {
       if (normalizedName.includes(keyword)) {
+        let detectedProvider = provider as DetectedProvider;
+        
+        if (provider === 'AXA') {
+          if (normalizedName.includes('2018')) {
+            detectedProvider = 'AXA_2018';
+          } else {
+            detectedProvider = 'AXA';
+          }
+        }
+        
         return {
-          provider: provider as DetectedProvider,
+          provider: detectedProvider,
           confidence: 'medium',
           matchedKeywords: [keyword]
         };

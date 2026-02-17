@@ -1714,7 +1714,7 @@ const App: React.FC = () => {
                       return;
                     }
                     setStatus('idle');
-                    setPendingFile(null);
+                    setPendingFiles([]);
                     setFilePreview(null);
                     setDetectedProvider(undefined);
                   }}
@@ -1813,7 +1813,7 @@ const App: React.FC = () => {
               <button
                 onClick={() => {
                   setStatus('idle');
-                  setPendingFile(null);
+                  setPendingFiles([]);
                   setFilePreview(null);
                   setDetectedProvider(undefined);
                   setError(null);

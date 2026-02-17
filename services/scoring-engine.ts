@@ -37,7 +37,14 @@ export function calculateScore(
   const provider = data.provider || 'UNKNOWN';
 
   for (const rule of rules) {
-    if (rule.providerTarget !== 'ALL' && rule.providerTarget !== provider) continue;
+    if (rule.providerTarget !== 'ALL') {
+      if (rule.providerTarget.includes(',')) {
+        const targets = rule.providerTarget.split(',').map(t => t.trim());
+        if (!targets.includes(provider)) continue;
+      } else if (rule.providerTarget !== provider) {
+        continue;
+      }
+    }
 
     let fails = false;
     try {

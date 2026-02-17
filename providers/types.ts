@@ -1,6 +1,6 @@
 import { Type } from "./schema-types";
 
-export type ProviderType = 'GNP' | 'METLIFE' | 'NYLIFE' | 'AXA' | 'UNKNOWN';
+export type ProviderType = 'GNP' | 'METLIFE' | 'NYLIFE' | 'AXA' | 'AXA_2018' | 'UNKNOWN';
 
 export interface ProviderTheme {
   primary: string;
@@ -56,5 +56,6 @@ export interface ProviderRegistry {
   METLIFE: ProviderConfig;
   NYLIFE: ProviderConfig;
   AXA: ProviderConfig;
+  AXA_2018: ProviderConfig;
   [key: string]: ProviderConfig;
 }

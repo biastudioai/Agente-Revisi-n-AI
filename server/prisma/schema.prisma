@@ -211,6 +211,7 @@ enum RuleCategory {
   METLIFE
   NYLIFE
   AXA
+  AXA_2018
 }
 
 model ScoringRuleRecord {

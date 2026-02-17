@@ -1,5 +1,5 @@
 
-export type ProviderType = 'GNP' | 'METLIFE' | 'NYLIFE' | 'AXA' | 'UNKNOWN';
+export type ProviderType = 'GNP' | 'METLIFE' | 'NYLIFE' | 'AXA' | 'AXA_2018' | 'UNKNOWN';
 
 export interface TramiteData {
   reembolso?: boolean;

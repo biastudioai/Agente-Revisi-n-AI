@@ -554,9 +554,200 @@ export const CONFIG_AXA: AseguradoraConfig = {
   },
 };
 
+export const CONFIG_AXA_2025: AseguradoraConfig = {
+  codigo: 'AXA',
+  nombre_completo: 'AXA Seguros S.A. de C.V. (2025)',
+  mappings: {
+    'paciente.nombre': { path: 'identificacion.nombres', parser: (v) => v?.trim() || '' },
+    'paciente.apellido_paterno': { path: 'identificacion.apellido_paterno', parser: (v) => v?.trim() || '' },
+    'paciente.apellido_materno': { path: 'identificacion.apellido_materno', opcional: true, parser: (v) => v?.trim() },
+    'paciente.edad': { path: 'identificacion.edad', parser: (v) => parseInt(v, 10), validador: (v) => !isNaN(v) && v >= 0 && v <= 120 },
+    'paciente.sexo': { 
+      path: 'identificacion.sexo', 
+      parser: (v) => {
+        if (Array.isArray(v)) {
+          if (v.includes('Femenino')) return 'Femenino';
+          if (v.includes('Masculino')) return 'Masculino';
+          return v[0] || 'Otro';
+        }
+        const normalized = v?.toLowerCase().trim();
+        if (normalized === 'm' || normalized === 'masculino') return 'Masculino';
+        if (normalized === 'f' || normalized === 'femenino') return 'Femenino';
+        return 'Otro';
+      },
+      validador: (v) => ['Masculino', 'Femenino', 'Otro'].includes(v)
+    },
+    'paciente.fecha_nacimiento': { path: 'identificacion.fecha_nacimiento', opcional: true, parser: (v) => v ? new Date(v.split('/').reverse().join('-')) : undefined },
+    'paciente.talla': { path: 'identificacion.talla', opcional: true },
+    'paciente.peso': { path: 'identificacion.peso', opcional: true },
+    'paciente.tension_arterial': { path: 'identificacion.tension_arterial', opcional: true },
+
+    'poliza.motivo_atencion': { 
+      path: 'motivo_atencion', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v : [] 
+    },
+    'poliza.tipo_estancia': { 
+      path: 'tipo_estancia', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v : [] 
+    },
+
+    'medico_tratante.nombre': { path: 'medico_principal.nombre', parser: (v) => v?.trim() || '' },
+    'medico_tratante.especialidad': { path: 'medico_principal.especialidad', parser: (v) => v?.trim() || '' },
+    'medico_tratante.cedula_profesional': { path: 'medico_principal.cedula_profesional', validador: (v) => /^\d{7,10}$/.test(v) },
+    'medico_tratante.cedula_especialidad': { path: 'medico_principal.cedula_especialidad', opcional: true },
+    'medico_tratante.rfc': { path: 'medico_principal.rfc', opcional: true, validador: (v) => !v || /^[A-Z]{4}\d{6}[A-Z0-9]{3}$/i.test(v) },
+    'medico_tratante.domicilio': { path: 'medico_principal.domicilio', opcional: true },
+    'medico_tratante.telefono': { path: 'medico_principal.telefono', opcional: true },
+    'medico_tratante.tipo_participacion': { path: 'medico_principal.tipo_participacion', opcional: true },
+    'medico_tratante.ajusta_tabulador': { 
+      path: 'medico_principal.ajusta_tabulador', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v.includes('Sí') : false 
+    },
+    'medico_tratante.persona_moral_nombre': { path: 'medico_principal.persona_moral_nombre_comun', opcional: true },
+    'medico_tratante.persona_moral_razon_social': { path: 'medico_principal.persona_moral_razon_social', opcional: true },
+
+    'fecha.padecimiento': { 
+      path: 'diagnostico.fecha_padecimiento', 
+      opcional: true, 
+      parser: (v) => v ? new Date(v.split('/').reverse().join('-')) : undefined 
+    },
+    'fecha.diagnostico': { 
+      path: 'diagnostico.fecha_diagnostico', 
+      opcional: true, 
+      parser: (v) => v ? new Date(v.split('/').reverse().join('-')) : undefined 
+    },
+    'fecha.cirugia': { 
+      path: 'tratamiento.fecha_cirugia', 
+      opcional: true, 
+      parser: (v) => v ? new Date(v.split('/').reverse().join('-')) : undefined 
+    },
+    'fecha.hospitalizacion': { 
+      path: 'tratamiento.fecha_hospitalizacion', 
+      opcional: true, 
+      parser: (v) => v ? new Date(v.split('/').reverse().join('-')) : undefined 
+    },
+    'fecha.alta': { 
+      path: 'tratamiento.fecha_alta', 
+      opcional: true, 
+      parser: (v) => v ? new Date(v.split('/').reverse().join('-')) : undefined 
+    },
+    'fecha.informe': { 
+      path: 'firma.lugar_fecha', 
+      opcional: true 
+    },
+
+    'diagnostico.descripcion': { path: 'diagnostico.diagnostico_texto', parser: (v) => v?.trim() || '' },
+    'diagnostico.padecimiento_actual': { path: 'diagnostico.padecimiento_actual', opcional: true },
+    'diagnostico.codigo_icd': { path: 'diagnostico.codigo_icd', opcional: true },
+    'diagnostico.tipo_padecimiento': { 
+      path: 'diagnostico.tipo_padecimiento', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v : [] 
+    },
+    'diagnostico.es_cancer': { 
+      path: 'diagnostico.es_cancer', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v.includes('Sí') : false 
+    },
+    'diagnostico.estadificacion_tnm': { path: 'diagnostico.estadificacion_tnm', opcional: true },
+    'diagnostico.causa_etiologia': { path: 'diagnostico.causa_etiologia', opcional: true },
+    'diagnostico.exploracion_fisica': { path: 'diagnostico.exploracion_fisica', opcional: true },
+    'diagnostico.estudios_laboratorio': { path: 'diagnostico.estudios_laboratorio', opcional: true },
+
+    'tratamiento.propuesto': { path: 'tratamiento.tratamiento_propuesto', opcional: true },
+    'tratamiento.sitio_procedimiento': { 
+      path: 'tratamiento.sitio_procedimiento', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v : [] 
+    },
+    'tratamiento.nombre_hospital': { path: 'tratamiento.nombre_hospital', opcional: true },
+    'tratamiento.complicaciones': { 
+      path: 'tratamiento.complicaciones', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v.includes('Sí') : false 
+    },
+    'tratamiento.complicaciones_descripcion': { path: 'tratamiento.complicaciones_descripcion', opcional: true },
+    'tratamiento.tratamiento_futuro': { 
+      path: 'tratamiento.tratamiento_futuro', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v.includes('Sí') : false 
+    },
+
+    'medicamentos': { 
+      path: 'tabla_medicamentos', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v : [] 
+    },
+
+    'antecedentes.patologicos_tabla': { 
+      path: 'antecedentes_patologicos', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v : [] 
+    },
+
+    'antecedentes.no_patologicos.fuma': { path: 'antecedentes_no_patologicos.fuma', opcional: true, parser: (v) => Boolean(v) },
+    'antecedentes.no_patologicos.alcohol': { path: 'antecedentes_no_patologicos.alcohol', opcional: true, parser: (v) => Boolean(v) },
+    'antecedentes.no_patologicos.drogas': { path: 'antecedentes_no_patologicos.drogas', opcional: true, parser: (v) => Boolean(v) },
+
+    'antecedentes.gineco_obstetricos.gestacion': { path: 'antecedentes_gineco_obstetricos.gestacion', opcional: true },
+    'antecedentes.gineco_obstetricos.partos': { path: 'antecedentes_gineco_obstetricos.partos', opcional: true },
+    'antecedentes.gineco_obstetricos.abortos': { path: 'antecedentes_gineco_obstetricos.abortos', opcional: true },
+    'antecedentes.gineco_obstetricos.cesareas': { path: 'antecedentes_gineco_obstetricos.cesareas', opcional: true },
+
+    'rehabilitacion.dias': { path: 'rehabilitacion_fisica.dias', opcional: true },
+    'rehabilitacion.sesiones': { path: 'rehabilitacion_fisica.numero_sesiones', opcional: true },
+
+    'enfermeria.dias': { path: 'enfermeria.dias_requeridos', opcional: true },
+    'enfermeria.turno': { 
+      path: 'enfermeria.turno', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v : [] 
+    },
+    'enfermeria.descripcion_actividades': { path: 'enfermeria.descripcion_actividades', opcional: true },
+
+    'plan_terapeutico.tecnica_detallada': { path: 'plan_terapeutico.tecnica_detallada', opcional: true },
+    'plan_terapeutico.tiempo_hospitalizacion': { path: 'plan_terapeutico.tiempo_esperado_hospitalizacion', opcional: true },
+
+    'solicitud_material': { 
+      path: 'solicitud_material', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v : [] 
+    },
+
+    'firma.lugar_fecha': { path: 'firma.lugar_fecha', opcional: true },
+    'firma_medico': { 
+      path: 'firma.firma_medico', 
+      parser: (v) => v === 'Detectada' || v === 'detected' 
+    },
+
+    'firma_asegurado': {
+      path: 'aviso_privacidad.firma_asegurado',
+      opcional: true,
+      parser: (v) => v === 'Detectada' || v === 'detected'
+    },
+
+    'metadata.coherencia_clinica': { 
+      path: 'metadata.existe_coherencia_clinica', 
+      opcional: true, 
+      parser: (v) => Boolean(v) 
+    },
+    'metadata.observaciones': { path: 'observaciones.observaciones', opcional: true },
+  },
+};
+
+export const CONFIG_AXA_2018: AseguradoraConfig = {
+  ...CONFIG_AXA,
+  codigo: 'AXA_2018',
+  nombre_completo: 'AXA Seguros S.A. de C.V. (2018)',
+};
+
 export const ASEGURADORAS_CONFIG: Record<string, AseguradoraConfig> = {
   'GNP': CONFIG_GNP,
   'METLIFE': CONFIG_METLIFE,
   'NYLIFE': CONFIG_NYLIFE,
-  'AXA': CONFIG_AXA,
+  'AXA': CONFIG_AXA_2025,
+  'AXA_2018': CONFIG_AXA_2018,
 };

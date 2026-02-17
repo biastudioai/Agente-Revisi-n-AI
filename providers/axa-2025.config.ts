@@ -1,9 +1,9 @@
 import { Type } from "./schema-types";
 import { ProviderConfig } from "./types";
 
-export const AXA_CONFIG: ProviderConfig = {
+export const AXA_2025_CONFIG: ProviderConfig = {
   id: 'AXA',
-  name: 'axa',
+  name: 'axa_2025',
   displayName: 'AXA Seguros',
 
   theme: {
@@ -17,9 +17,14 @@ export const AXA_CONFIG: ProviderConfig = {
   identificationRules: [
     'Texto "AXA Seguros, S.A. de C.V."',
     'Título "Informe Médico" con subtítulo "Gastos Médicos Mayores"',
-    'Referencia "AI - 346 • NOVIEMBRE 2018"',
-    'Dirección "Félix Cuevas 366, Piso 6, Col. Tlacoquemécatl"',
-    'Formato de 5 páginas con secciones numeradas'
+    'Referencia "AI-461 • JULIO 2025"',
+    'Dirección "Félix Cuevas 366, piso 3, Col. Tlacoquemécatl"',
+    'Formato de 6 páginas con secciones numeradas',
+    'Tabla de antecedentes patológicos con columnas No., Diagnóstico, Fecha, Tratamiento',
+    'Sección "Plan terapéutico a seguir"',
+    'Sección "Solicitud de material o rentas de equipo" con tabla de 15 filas',
+    'Campo "¿Se ajusta a Tabulador médico?" en datos del médico',
+    'Campo "Estadificación TNM" en diagnóstico'
   ],
 
   extractionInstructions: `
@@ -62,13 +67,14 @@ Solo aplica estas reglas cuando NO hay recuadros/checkboxes visibles:
 - Si el documento muestra casillas separadas para día, mes y año, concatena en DD/MM/AAAA
 - Si una fecha está vacía → déjala como cadena vacía ""
 
-📋 ESTRUCTURA DEL DOCUMENTO AXA (5 PÁGINAS):
-Este formulario de AXA Seguros tiene 5 páginas con las siguientes secciones principales:
-- Página 1: Datos del asegurado, motivo de atención, tipo de estancia, antecedentes médicos
-- Página 2: Antecedentes gineco-obstétricos, perinatales, referido, diagnóstico
-- Página 3: Tratamiento, otros tratamientos, tabla de medicamentos
-- Página 4: Rehabilitación, enfermería, terapia especial, observaciones, datos del médico
-- Página 5: Datos personales, transferencia de datos, autorizaciones y firmas
+📋 ESTRUCTURA DEL DOCUMENTO AXA 2025 (6 PÁGINAS):
+Este formulario de AXA Seguros versión 2025 (AI-461 • JULIO 2025) tiene 6 páginas con las siguientes secciones principales:
+- Página 1: Datos del asegurado, motivo de atención, tipo de estancia, antecedentes médicos (tabla de patológicos)
+- Página 2: Antecedentes no patológicos, gineco-obstétricos, perinatales, referido, diagnóstico
+- Página 3: Tratamiento, tabla de medicamentos
+- Página 4: Rehabilitación, enfermería, observaciones, plan terapéutico, solicitud de material
+- Página 5: Datos del médico principal, anestesiólogo, ayudantes
+- Página 6: Aviso de privacidad y firma del asegurado
 
 🔴🔴🔴 SEXO DEL PACIENTE - AUDITORÍA VISUAL OBLIGATORIA (OBJETO sexo_audit) 🔴🔴🔴
 
@@ -130,17 +136,36 @@ CÓMO CONSTRUIR tipo_estancia A PARTIR DE tipo_estancia_audit:
 - Si consultorio_marcado = true → incluir "Consultorio"
 - Si NINGUNO tiene marca → tipo_estancia = []
 
-🔴🔴🔴 ANTECEDENTES PATOLÓGICOS - EXTRACCIÓN CON CHECKBOX + FECHA 🔴🔴🔴
+🔴🔴🔴 ANTECEDENTES PATOLÓGICOS - EXTRACCIÓN DE TABLA (FORMATO 2025) 🔴🔴🔴
 
-Cada antecedente patológico tiene un checkbox y un campo de fecha asociado:
-   cardiacos ☐ [fecha]   diabetes mellitus ☐ [fecha]   cáncer ☐ [fecha]
-   convulsivos ☐ [fecha]   hipertensivos ☐ [fecha]   VIH/SIDA ☐ [fecha]
-   hepáticos ☐ [fecha]   otros ☐ [detalle]
+⚠️ IMPORTANTE: En el formato AXA 2025, los antecedentes patológicos son una TABLA con hasta 10 filas.
+Ya NO son checkboxes individuales como en la versión anterior.
+
+La tabla tiene las siguientes columnas:
+1. No. - Número de fila (1-10)
+2. Diagnóstico - Nombre del diagnóstico/padecimiento
+3. Fecha de diagnóstico - En formato DD/MM/AAAA
+4. Tratamiento recibido - Descripción del tratamiento
+
+REGLAS DE EXTRACCIÓN:
+- Extrae CADA fila como un objeto separado en el array antecedentes_patologicos
+- Si una fila está completamente vacía → NO la incluyas en el array
+- Si una fila tiene datos parciales → inclúyela con los campos disponibles y vacíos para el resto
+- El campo "numero" corresponde al número de fila (1-10)
+- Si NO hay ningún antecedente registrado → el array debe quedar vacío []
+
+🔴🔴🔴 ANTECEDENTES NO PATOLÓGICOS - CHECKBOXES CON TEXTO (FORMATO 2025) 🔴🔴🔴
+
+⚠️ Cada antecedente no patológico tiene un checkbox Y un campo de texto libre:
+   ☐ ¿Fuma? [texto]
+   ☐ ¿consume bebidas alcohólicas? [texto]
+   ☐ ¿consume o ha consumido algún tipo de drogas? [texto]
+   ☐ otros [texto]
 
 Para CADA antecedente:
-- El campo booleano (ej: cardiacos) = true SOLO si el checkbox tiene marca visual
-- El campo fecha (ej: cardiacos_fecha) = fecha escrita junto al checkbox, formato DD/MM/AAAA
-- Si el checkbox está vacío → booleano = false Y fecha = ""
+- El campo booleano (ej: fuma) = true SOLO si el checkbox tiene marca visual
+- El campo texto (ej: fuma_detalle) = texto escrito junto al checkbox (frecuencia, cantidad, desde cuándo)
+- Si el checkbox está vacío → booleano = false Y texto = ""
 
 🔴🔴🔴 TIPO DE PADECIMIENTO - AUDITORÍA VISUAL OBLIGATORIA (OBJETO tipo_padecimiento_audit) 🔴🔴🔴
 
@@ -201,7 +226,7 @@ DEBES llenar turno_audit ANTES de construir el array turno.
 
 📋 TABLA DE MEDICAMENTOS (10 FILAS):
 
-El formulario AXA incluye una tabla con 10 filas de medicamentos.
+El formulario AXA 2025 incluye una tabla con 10 filas de medicamentos.
 Cada fila tiene 4 columnas:
 1. Nombre y presentación del medicamento (ej: Paracetamol 100 mg)
 2. Cantidad (ej: 1 tableta)
@@ -213,18 +238,49 @@ Extrae CADA fila como un objeto separado en el array tabla_medicamentos.
 - Si una fila tiene datos parciales → inclúyela con los campos disponibles y vacíos para el resto
 - El campo "numero" corresponde al número de fila (1-10)
 
-📋 SECCIONES DE AUTORIZACIÓN (PÁGINA 5):
+📋 PLAN TERAPÉUTICO (SECCIÓN NUEVA EN 2025):
 
-El documento AXA tiene DOS secciones de autorización separadas al final:
+Esta sección contiene:
+1. Técnica detallada: explicación de en qué consiste la cirugía planeada (texto libre)
+2. Tiempo esperado de hospitalización de acuerdo con el procedimiento programado (texto libre)
 
-1. DATOS PERSONALES:
-   - Checkbox de autorización de tratamiento de datos personales
-   - Extrae como booleano (true si marcado, false si vacío)
+Extrae ambos campos como texto. Si están vacíos → cadena vacía "".
 
-2. TRANSFERENCIA DE DATOS A TERCEROS:
-   - Primera autorización: "Sí acepto ☐ / No acepto ☐" + firma del asegurado
-   - Segunda autorización (programas de póliza): "Sí acepto ☐ / No acepto ☐" + firma del asegurado
-   - Cada autorización es independiente, extrae por separado
+📋 SOLICITUD DE MATERIAL O RENTAS DE EQUIPO (SECCIÓN NUEVA EN 2025):
+
+Tabla con hasta 15 filas con las siguientes columnas:
+1. Cantidad
+2. Insumo o equipo
+3. Marca
+4. Distribuidor (Nombre o razón social)
+5. RFC
+6. Correo electrónico
+
+Extrae CADA fila como un objeto separado en el array solicitud_material.
+- Si una fila está completamente vacía → NO la incluyas en el array
+- Si una fila tiene datos parciales → inclúyela con los campos disponibles y vacíos para el resto
+
+📋 DATOS DEL MÉDICO (CAMBIOS 2025):
+
+El médico principal ahora incluye:
+- ¿Se ajusta a Tabulador médico?: checkbox Sí ☐ / No ☐ → requiere ajusta_tabulador_audit
+- Persona moral: Nombre común y Razón social (campos nuevos)
+
+El anestesiólogo también incluye:
+- Persona moral: Nombre común y Razón social (campos nuevos)
+
+🔴🔴🔴 AJUSTA A TABULADOR MÉDICO - AUDITORÍA VISUAL OBLIGATORIA (OBJETO ajusta_tabulador_audit) 🔴🔴🔴
+
+⚠️ Este campo tiene 2 checkboxes:
+   Sí ☐   No ☐
+
+DEBES llenar ajusta_tabulador_audit ANTES de construir el array ajusta_tabulador.
+
+📋 SECCIÓN DE AVISO DE PRIVACIDAD (PÁGINA 6):
+
+El documento AXA 2025 tiene una sección simplificada de Aviso de Privacidad al final:
+- Texto del aviso de privacidad (no se extrae, solo se verifica presencia)
+- Firma del asegurado: 'Detectada' o 'No detectada'
 `,
 
   requiredFields: [
@@ -302,31 +358,22 @@ El documento AXA tiene DOS secciones de autorización separadas al final:
           tipo_estancia: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array construido desde tipo_estancia_audit. Incluir nombre de cada opción cuyo _marcado sea true." },
 
           antecedentes_patologicos: {
-            type: Type.OBJECT,
-            description: "Antecedentes patológicos con checkbox + fecha para cada uno. Solo marcar true si el checkbox tiene marca visual.",
-            properties: {
-              cardiacos: { type: Type.BOOLEAN, description: "¿El checkbox de 'cardiacos' tiene una marca visual? true = SÍ veo marca, false = casilla vacía" },
-              cardiacos_fecha: { type: Type.STRING, description: "Fecha de inicio del padecimiento cardiaco, formato DD/MM/AAAA" },
-              diabetes_mellitus: { type: Type.BOOLEAN, description: "¿El checkbox de 'diabetes mellitus' tiene una marca visual? true = SÍ veo marca, false = casilla vacía" },
-              diabetes_mellitus_fecha: { type: Type.STRING, description: "Fecha de inicio de diabetes mellitus, formato DD/MM/AAAA" },
-              cancer: { type: Type.BOOLEAN, description: "¿El checkbox de 'cáncer' tiene una marca visual? true = SÍ veo marca, false = casilla vacía" },
-              cancer_fecha: { type: Type.STRING, description: "Fecha de inicio de cáncer, formato DD/MM/AAAA" },
-              convulsivos: { type: Type.BOOLEAN, description: "¿El checkbox de 'convulsivos' tiene una marca visual? true = SÍ veo marca, false = casilla vacía" },
-              convulsivos_fecha: { type: Type.STRING, description: "Fecha de inicio de padecimiento convulsivo, formato DD/MM/AAAA" },
-              hipertensivos: { type: Type.BOOLEAN, description: "¿El checkbox de 'hipertensivos' tiene una marca visual? true = SÍ veo marca, false = casilla vacía" },
-              hipertensivos_fecha: { type: Type.STRING, description: "Fecha de inicio de padecimiento hipertensivo, formato DD/MM/AAAA" },
-              vih_sida: { type: Type.BOOLEAN, description: "¿El checkbox de 'VIH/SIDA' tiene una marca visual? true = SÍ veo marca, false = casilla vacía" },
-              vih_sida_fecha: { type: Type.STRING, description: "Fecha de inicio de VIH/SIDA, formato DD/MM/AAAA" },
-              hepaticos: { type: Type.BOOLEAN, description: "¿El checkbox de 'hepáticos' tiene una marca visual? true = SÍ veo marca, false = casilla vacía" },
-              hepaticos_fecha: { type: Type.STRING, description: "Fecha de inicio de padecimiento hepático, formato DD/MM/AAAA" },
-              otros: { type: Type.BOOLEAN, description: "¿El checkbox de 'otros' tiene una marca visual? true = SÍ veo marca, false = casilla vacía" },
-              otros_detalle: { type: Type.STRING, description: "Detalle de otros antecedentes patológicos" }
+            type: Type.ARRAY,
+            description: "Tabla de antecedentes patológicos con hasta 10 filas. Solo incluir filas que tengan al menos un dato. Formato 2025: tabla con columnas No., Diagnóstico, Fecha de diagnóstico, Tratamiento recibido.",
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                numero: { type: Type.STRING, description: "Número de fila (1-10)" },
+                diagnostico: { type: Type.STRING, description: "Diagnóstico o nombre del padecimiento" },
+                fecha_diagnostico: { type: Type.STRING, description: "Fecha de diagnóstico en formato DD/MM/AAAA" },
+                tratamiento_recibido: { type: Type.STRING, description: "Tratamiento recibido para este antecedente" }
+              }
             }
           },
 
           antecedentes_no_patologicos: {
             type: Type.OBJECT,
-            description: "Antecedentes no patológicos con checkbox + detalle. Solo marcar true si el checkbox tiene marca visual.",
+            description: "Antecedentes no patológicos con checkbox + texto libre. Solo marcar true si el checkbox tiene marca visual.",
             properties: {
               fuma: { type: Type.BOOLEAN, description: "¿El checkbox de '¿Fuma?' tiene una marca visual? true = SÍ veo marca, false = casilla vacía" },
               fuma_detalle: { type: Type.STRING, description: "Frecuencia, cantidad y desde cuándo fuma" },
@@ -403,7 +450,7 @@ El documento AXA tiene DOS secciones de autorización separadas al final:
               incapacidad_desde: { type: Type.STRING, description: "Fecha desde cuándo la incapacidad" },
               incapacidad_hasta: { type: Type.STRING, description: "Fecha hasta cuándo la incapacidad" },
               diagnostico_texto: { type: Type.STRING, description: "Diagnóstico indicando si es unilateral o bilateral, derecho o izquierdo" },
-              codigo_icd: { type: Type.STRING, description: "Código ICD/CIE-10" },
+              codigo_icd: { type: Type.STRING, description: "Código ICD" },
               es_cancer_audit: {
                 type: Type.OBJECT,
                 description: "Auditoría visual de los checkboxes de es cáncer. Llenar ANTES de construir el array es_cancer.",
@@ -413,7 +460,7 @@ El documento AXA tiene DOS secciones de autorización separadas al final:
                 }
               },
               es_cancer: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array construido desde es_cancer_audit. Sí/No según marca visual." },
-              escala_tnm: { type: Type.STRING, description: "Escala TNM si aplica" },
+              estadificacion_tnm: { type: Type.STRING, description: "Estadificación TNM si aplica" },
               exploracion_fisica: { type: Type.STRING, description: "Datos relevantes de exploración física" },
               estudios_laboratorio: { type: Type.STRING, description: "Estudios de laboratorio y/o gabinete con interpretación" }
             }
@@ -469,20 +516,13 @@ El documento AXA tiene DOS secciones de autorización separadas al final:
                 }
               },
               tratamiento_futuro: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array construido desde tratamiento_futuro_audit. Sí/No según marca visual." },
-              tratamiento_futuro_descripcion: { type: Type.STRING, description: "Descripción del tratamiento futuro" }
-            }
-          },
-
-          otros_tratamientos: {
-            type: Type.OBJECT,
-            properties: {
-              especificar_tratamiento: { type: Type.STRING, description: "Especificar tratamiento: sesiones de quimioterapia, rehabilitación física, número de sesiones, cantidad, cada cuánto y durante cuánto tiempo" }
+              tratamiento_futuro_descripcion: { type: Type.STRING, description: "Descripción del tratamiento futuro (número de sesiones, cantidad, cada cuánto y durante cuánto tiempo)" }
             }
           },
 
           tabla_medicamentos: {
             type: Type.ARRAY,
-            description: "Tabla de hasta 10 medicamentos. Solo incluir filas que tengan al menos un dato.",
+            description: "Tabla de hasta 10 medicamentos (programación de sesiones de quimioterapia o radioterapia). Solo incluir filas que tengan al menos un dato.",
             items: {
               type: Type.OBJECT,
               properties: {
@@ -518,17 +558,8 @@ El documento AXA tiene DOS secciones de autorización separadas al final:
                 }
               },
               turno: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array construido desde turno_audit. Incluir nombre de cada turno cuyo _marcado sea true." },
-              nombre_medicamentos: { type: Type.STRING, description: "Nombre de medicamentos para enfermería" }
-            }
-          },
-
-          terapia_especial: {
-            type: Type.OBJECT,
-            properties: {
-              justificacion_terapia: { type: Type.STRING, description: "Justificación del tratamiento inmunológico, biológico, etc." },
-              materiales_cirugia: { type: Type.STRING, description: "Lista de materiales utilizados o a utilizar en cirugía y/o equipo especial" },
-              tipo_terapia: { type: Type.STRING, description: "Tipo de terapia" },
-              cedula_especialidad: { type: Type.STRING, description: "Cédula de especialidad" },
+              descripcion_actividades: { type: Type.STRING, description: "Descripción de actividades de enfermería" },
+              justificacion_terapia: { type: Type.STRING, description: "En caso de terapia inmunológica, biológica, etc., justifique el tratamiento" },
               detalle_evolucion: { type: Type.STRING, description: "Detalle de evolución" }
             }
           },
@@ -540,9 +571,43 @@ El documento AXA tiene DOS secciones de autorización separadas al final:
             }
           },
 
+          plan_terapeutico: {
+            type: Type.OBJECT,
+            description: "Plan terapéutico a seguir. Sección nueva en formato AXA 2025.",
+            properties: {
+              tecnica_detallada: { type: Type.STRING, description: "Técnica detallada: explique en qué consiste la cirugía planeada" },
+              tiempo_esperado_hospitalizacion: { type: Type.STRING, description: "Tiempo esperado de hospitalización de acuerdo con el procedimiento programado" }
+            }
+          },
+
+          solicitud_material: {
+            type: Type.ARRAY,
+            description: "Solicitud de material o rentas de equipo. Tabla con hasta 15 filas. Solo incluir filas que tengan al menos un dato. Sección nueva en formato AXA 2025.",
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                cantidad: { type: Type.STRING, description: "Cantidad del insumo o equipo" },
+                insumo_equipo: { type: Type.STRING, description: "Nombre del insumo o equipo" },
+                marca: { type: Type.STRING, description: "Marca del insumo o equipo" },
+                distribuidor: { type: Type.STRING, description: "Distribuidor: Nombre o razón social" },
+                rfc: { type: Type.STRING, description: "RFC del distribuidor" },
+                correo_electronico: { type: Type.STRING, description: "Correo electrónico del distribuidor" }
+              }
+            }
+          },
+
           medico_principal: {
             type: Type.OBJECT,
             properties: {
+              ajusta_tabulador_audit: {
+                type: Type.OBJECT,
+                description: "Auditoría visual de los checkboxes de ¿Se ajusta a Tabulador médico?. Llenar ANTES de construir el array ajusta_tabulador.",
+                properties: {
+                  si_marcado: { type: Type.BOOLEAN, description: "¿El checkbox de 'Sí' tiene una marca visual? true = SÍ veo marca, false = casilla vacía" },
+                  no_marcado: { type: Type.BOOLEAN, description: "¿El checkbox de 'No' tiene una marca visual? true = SÍ veo marca, false = casilla vacía" }
+                }
+              },
+              ajusta_tabulador: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Array construido desde ajusta_tabulador_audit. Sí/No según marca visual." },
               tipo_participacion: { type: Type.STRING, description: "Tipo de participación del médico" },
               nombre: { type: Type.STRING, description: "Nombre completo del médico principal" },
               especialidad: { type: Type.STRING },
@@ -550,7 +615,9 @@ El documento AXA tiene DOS secciones de autorización separadas al final:
               cedula_especialidad: { type: Type.STRING },
               rfc: { type: Type.STRING },
               domicilio: { type: Type.STRING },
-              telefono: { type: Type.STRING }
+              telefono: { type: Type.STRING },
+              persona_moral_nombre_comun: { type: Type.STRING, description: "En caso de ser persona moral o pertenecer a un grupo médico: Nombre común" },
+              persona_moral_razon_social: { type: Type.STRING, description: "En caso de ser persona moral o pertenecer a un grupo médico: Razón social" }
             }
           },
 
@@ -564,7 +631,9 @@ El documento AXA tiene DOS secciones de autorización separadas al final:
               cedula_especialidad: { type: Type.STRING },
               rfc: { type: Type.STRING },
               domicilio: { type: Type.STRING },
-              telefono: { type: Type.STRING }
+              telefono: { type: Type.STRING },
+              persona_moral_nombre_comun: { type: Type.STRING, description: "En caso de ser persona moral o pertenecer a un grupo médico: Nombre común" },
+              persona_moral_razon_social: { type: Type.STRING, description: "En caso de ser persona moral o pertenecer a un grupo médico: Razón social" }
             }
           },
 
@@ -587,20 +656,11 @@ El documento AXA tiene DOS secciones de autorización separadas al final:
             }
           },
 
-          datos_personales: {
+          aviso_privacidad: {
             type: Type.OBJECT,
+            description: "Aviso de Privacidad simplificado en formato AXA 2025. Ya no hay secciones separadas de datos_personales y transferencia_datos.",
             properties: {
-              autorizacion_datos: { type: Type.BOOLEAN, description: "¿El checkbox de autorización de tratamiento de datos personales tiene una marca visual? true = SÍ veo marca, false = casilla vacía" }
-            }
-          },
-
-          transferencia_datos: {
-            type: Type.OBJECT,
-            properties: {
-              autorizacion_transferencia: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Primera autorización de transferencia de datos: 'Sí acepto' o 'No acepto' según checkbox marcado" },
-              firma_asegurado_1: { type: Type.STRING, description: "Firma del asegurado en primera autorización: 'Detectada' o 'No detectada'" },
-              autorizacion_programas: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Segunda autorización para programas de póliza: 'Sí acepto' o 'No acepto' según checkbox marcado" },
-              firma_asegurado_2: { type: Type.STRING, description: "Firma del asegurado en segunda autorización: 'Detectada' o 'No detectada'" }
+              firma_asegurado: { type: Type.STRING, description: "Firma del asegurado al final del aviso de privacidad: 'Detectada' o 'No detectada'" }
             }
           },
 

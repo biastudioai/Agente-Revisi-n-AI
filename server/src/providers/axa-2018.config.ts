@@ -1,10 +1,10 @@
 import { Type } from "./schema-types";
 import { ProviderConfig } from "./types";
 
-export const AXA_CONFIG: ProviderConfig = {
-  id: 'AXA',
-  name: 'axa',
-  displayName: 'AXA Seguros',
+export const AXA_2018_CONFIG: ProviderConfig = {
+  id: 'AXA_2018',
+  name: 'axa_2018',
+  displayName: 'AXA Seguros 2018',
 
   theme: {
     primary: 'bg-red-600',

@@ -2818,6 +2818,7 @@ function getCategoryFromProvider(providerTarget: string): RuleCategory {
   if (providerTarget === 'METLIFE') return RuleCategory.METLIFE;
   if (providerTarget === 'NYLIFE') return RuleCategory.NYLIFE;
   if (providerTarget === 'AXA') return RuleCategory.AXA;
+  if (providerTarget === 'AXA_2018') return RuleCategory.AXA_2018;
   return RuleCategory.GENERAL;
 }
 
