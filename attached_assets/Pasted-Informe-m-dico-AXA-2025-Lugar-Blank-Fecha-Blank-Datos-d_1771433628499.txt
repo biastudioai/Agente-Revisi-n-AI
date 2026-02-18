@@ -1,0 +1,217 @@
+Informe médico AXA 2025
+
+Lugar: Blank
+Fecha: Blank
+
+Datos del Asegurado afectado (paciente).
+
+Apellido paterno: Blank
+Apellido materno: Blank
+Nombre(s): Blank
+Edad: Blank
+Fecha de nacimiento:DD/MM/AAAA Blank  
+Sexo: Checkbox - ☐ Masculino,  ☐ Femenino
+Talla: Blank
+Peso: Blank
+Tensión arterial:Blank
+
+Motivo de la atención médica
+
+Motivo de la atención médica: Checkbox -  ☐ Enfermedad ,  ☐ Accidente,   ☐ Maternidad,   ☐ Segunda opinión médica
+
+Tipo de estancia
+
+Tipo de estancia: Checkbox -  ☐ Urgencia,  ☐Hospitalización,   ☐ corta estancia/ambulatoria,   ☐ Consultorio
+
+Antecedentes médicos
+
+Antecedentes patológicos, tabla
+ columnas:
+No. , Diagnóstico, Fecha de diagnóstico DD/MM/AAAA, tratamiento recibido.
+
+Filas:
+Blank
+Blank
+Blank
+Blank
+Blank
+Blank
+Blank
+Blank
+Blank
+Blank
+
+Antecedentes no patológicos (especificar frecuencia, cantidad
+y desde cuándo): Checkbox + Blank - ☐ ¿Fuma? Blank, ☐ ¿consume bebidas alcohólicas? Blank, ☐ ¿consume o ha consumido algún tipo de drogas?  Blank,  ☐ otros  Blank
+
+Antecedentes gineco-obstétricos:
+Gestación: Blank
+Partos: Blank
+Abortos: Blank
+Cesáreas: Blank
+Fecha de última menstruación: DD/MM/AAAA Blank
+Especificar si recibió tratamiento para infertilidad: Blank
+Tiempo de evolución: Blank
+
+Antecedentes perinatales (evolución, complicaciones, tratamientos): 
+Blank
+Tiempo de evolución: Blank
+
+
+
+Referido por otro medico o unidad: Checkbox -  ☐ si, ☐ no,  ¿Cual?: Blank
+
+Diagnóstico(s)
+
+Padecimiento actual (principales signos, síntomas y detalles de evolución): Blank
+Fecha de padecimiento: DD/MM/AAAA Blank 
+Fecha de diagnóstico: DD/MM/AAAA Blank
+Tipo de padecimiento: Checkbox - ☐ Congénito, ☐ Adquirido, ☐ Agudo, ☐ Crónico
+Tiempo de evolución: Blank
+Causa o etiología del padecimiento (en caso de accidente, describa tiempo, modo y lugar donde ocurrió la lesión): Blank
+Tiene relación con otro padecimiento: Checkbox - ☐ Sí, ☐ No
+¿Cuál?: Blank
+El padecimiento ocasionó incapacidad: Checkbox - ☐ Sí, ☐ No, ☐ Parcial, ☐ Total
+Desde: Blank
+Hasta: Blank
+Diagnóstico (indicando si es unilateral o bilateral, derecho o izquierdo): Blank
+Código ICD: Blank
+Es cáncer: Checkbox - ☐Sí, ☐ No
+Estadificación TNM: Blank
+Señale los datos relevantes de exploración física:Blank
+Describe los estudios de laboratorio y/o gabinete que realizaron para confirmar el diagnóstico, con su interpretación: Blank
+
+Tratamiento
+
+Tratamiento propuesto (quirúrgico, no quirúrgico): Blank
+Fecha de cirugía: DD/MM/AAAA Blank
+Fecha de hospitalización: DD/MM/AAAA Blank
+Fecha de alta:  DD/MM/AAAA Blank
+Días que se brindó atención médica: Blank
+Sitio en el cual se realizará el procedimiento: Checkbox-  ☐ Consultorio, ☐ Hospital, ☐ Gabinete, ☐ Otro
+Especifique: Blank
+
+
+En caso de haber seleccionado hospital indique el nombre del hospital: Blank
+Se realizó estudio histopatológico: Checkbox - ☐ Sí, ☐ No
+Describa el resultado del estudio histopatológico: Blank
+Se presentaron complicaciones: checkbox -  ☐ Sí, ☐ No
+Describa las complicaciones: Blank
+Continuará recibiendo tratamiento en el futuro: checkbox - ☐ Sí, ☐ No
+Describa el tratamiento  (número de sesiones, cantidad, cada cuánto y durante cuánto tiempo):: Blank
+
+Programación de sesiones de quimioterapia o radioterapia (en caso de ser más de 10 medicamentos, favor de llenar otro formato)
+
+Tabla
+Encabezados: Nombre y presentación del medicamento (Ej: Paracetamol 100 mg), Cantidad (Ej: 1 tableta), Cada cuánto (Ej: Cada 24 hrs), Durante cuánto tiempo (Ej: Por un mes).
+
+Filas
+1: Blank
+2: Blank
+3: Blank
+4: Blank
+5: Blank
+6: Blank
+7: Blank
+8: Blank
+9: Blank
+10: Blank
+
+Programación de sesiones de rehabilitación física
+
+Días: Blank
+No. de sesiones: Blank
+
+Se requiere servicio de enfermería
+
+Días requeridos: Blank + Checkbox -☐ Matutino, ☐ Vespertino, ☐ Nocturno, ☐ 24 horas
+Descripción de actividades: Blank
+En caso de terapia inmunológica, biológica, etc., justifique el tratamiento: Blank
+Detalle de evolución: Blank
+
+Observaciones
+
+Si tiene alguna observación adicional, favor de agregarla aquí: Blank
+
+Plan terapéutico a seguir
+Técnica detallada (explique en qué consiste la cirugía planeada): Blank
+Tiempo esperado de hospitalización de acuerdo con el procedimiento programado: Blank
+
+Solicitud de material o rentas de equipo
+Indique el equipo, instrumental a utilizar y datos de los proveedores; en caso de biológicos, informar el banco del que provienen:
+
+Tabla:
+Columnas:
+Cantidad, Insumo o equipo, Marca, Distribuidor (Nombre o razón social), RFC, Correo electrónico*
+
+Filas:
+Blank
+Blank
+Blank
+Blank
+Blank
+Blank
+Blank
+Blank
+Blank
+Blank
+Blank
+Blank
+Blank
+Blank
+Blank
+
+Datos del médico
+
+Médico o especialista
+¿Se ajusta a Tabulador médico?: ☐ Sí, ☐ No
+Tipo de participación: Blank
+Nombre: Blank
+Especialidad: Blank
+Cédula profesional: Blank
+Cédula de especialidad: Blank
+RFC a facturar: Blank
+Domicilio: Blank
+Teléfono:Blank
+En caso de ser persona moral o pertenecer a un grupo médico
+Nombre común: Blank
+Razón social: Blank
+
+Médico o especialista (anestesiólogo)
+Tipo de participación: Blank
+Nombre: Blank
+Especialidad: Blank
+Cédula profesional: Blank
+Cédula de especialidad: Blank
+RFC a facturar: Blank
+Domicilio: Blank
+Teléfono:Blank
+En caso de ser persona moral o pertenecer a un grupo médico
+Nombre común: Blank
+Razón social: Blank
+
+Ayudante 1
+Tipo de participación: Blank
+Nombre: Blank
+
+Ayudante 2
+Tipo de participación: Blank
+Nombre: Blank
+
+Otros médicos: Blank
+
+Firma del médico: Blank
+Lugar y fecha: Blank
+
+Avisa de Privacidad
+
+Autorizo a AXA Seguros, S.A. de C.V. (“AXA”) con domicilio en Avenida Félix Cuevas 366, piso 3, Colonia Tlacoquemécatl, Alcaldía Benito Juárez, C.P. 03200, Ciudad de México) llevar a cabo el tratamiento de mis datos personales, incluidos patrimoniales, financieros y sensibles (“Datos”), para procesar la presente solicitud, en su caso la operación de la póliza,
+así como para todos los demás fines vinculados con la relación jurídica/contractual que tengamos celebrada, o en su caso se vaya a celebrar y demás finalidades especificadas en el aviso de privacidad integral, disponible en axa.mx en la sección. Aviso de Privacidad. Con la firma de esta solicitud de seguro, autorizo a AXA el tratamiento de mis Datos, finalidades y su transferencia a terceros autorizados. 
+
+Si proporciono Datos de terceros, me comprometo a informarles sobre su entrega, finalidades y dónde consultar el Aviso de Privacidad Integral.
+
+Podré oponerme al tratamiento de mis Datos para finalidades secundarias como frecimiento y promoción de servicios, mediante el procedimiento establecido en el aviso de privacidad integral, disponible en axa.mx
+
+Autorizo mediante la presente firma de forma expresa y por escrito la transferencia de mis “Datos” relativos a la siniestralidad de mi póliza, incluyendo datos personales sensibles, al Contratante de la misma para el trámite de mis siniestros y demás finalidades especificadas en el Aviso de Privacidad Integral.
+
+Firma del asegurado: Blank
