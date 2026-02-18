@@ -1,0 +1,11 @@
+Parece ser que ya está funcionando, solo hay que hacer varios cambios más. Por ejemplo, en la parte de antecedentes patológicos sí está obteniendo bien la información, sin embargo, ponle también el nombre de las columnas, como sería el número, diagnóstico, fecha de diagnóstico, día, día, mes, mes, año, año, año, tratamiento recibido, para que se pueda saber de qué es cada columna. 
+
+En esta parte de infertilidad, pon tratamiento infertilidad.Te agregó una foto como la tabla de medicamentos donde sí pusiste los nombres de las columnas.
+
+Para el médico especialista anestesiólogo, no me estás poniendo todos los campos, solo me estás poniendo pocos. Por ejemplo, con el médico tratante, o sea, o el médico especialista, sí me pusiste todos los campos de forma correcta, así que habría que hacer lo mismo para el médico o especialista anestesiólogo.Te adjunto imágenes de cómo viene el formato y de cómo lo pusiste en la UI del mapeo.
+
+Por último, en el área de validación de autorización que va referente a la firma del médico y lugar y fecha de la firma del médico, no me estás poniendo los datos a pesar de que sí vienen ahí. No se detectó ni la firma autógrafa, que ahí te estoy adjuntando la imagen donde sí viene, ni el lugar y fecha que también ahí viene. Te estoy adjuntando la imagen y también el mapeo en la UI donde debería aparecer la extracción. Asegúrate de que esté bien relacionado el campo de donde se extrae y donde debería de ir.
+
+Y por último, también hay ocasiones en las que hay checkboxes de sí o no, que donde no está marcado ni uno me está marcando el no. Sin embargo, si no está marcado ninguno, tengo que dejar que no está marcado ninguno. No debe de inferir para nada el que si no hay marcado nada quiere decir que no. Tenemos que extraer exactamente lo que haya en el informe, ni más ni menos, sin inferir nada en cuanto a llenado.Esto, como el ejemplo que te estoy dando de complicaciones, no hay nada marcado, sin embargo, me lo pone como no. Entonces, por ende, no debería de marcarlo si es que no hay nada, insisto. Así hay algunos otros, revísalos y asegúrate de que sea correcto todo.
+
+Dime si necesitas más contexto o tienes más preguntas para asegurarnos de que sea correcto lo que se está buscando hacer y evitar cualquier error.
