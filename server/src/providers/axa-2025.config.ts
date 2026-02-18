@@ -43,7 +43,9 @@ PARA CUALQUIER CAMPO QUE DEPENDA DE UNA CASILLA MARCADA:
 - ❌ NO inferieras el valor porque "tiene sentido clínicamente"
 - ❌ NO completes automáticamente basándote en otros campos
 - 🔹 Si la casilla está VACÍA → el campo debe quedar false/""/null/[] según su tipo
+- 🔹 Si NINGUNA casilla de un grupo Sí/No está marcada → el array debe quedar VACÍO [] (NO poner ["No"])
 - 🔹 Si hay DUDA sobre si está marcada → déjalo VACÍO
+- 🔹 La ausencia de una marca en "Sí" NO implica "No". Ambas casillas deben evaluarse independientemente
 
 📋 JERARQUÍA DE DETECCIÓN - ORDEN DE PRIORIDAD:
 
@@ -216,6 +218,14 @@ Los siguientes campos tienen checkboxes Sí ☐ / No ☐ y requieren objetos _au
 - tratamiento_futuro_audit → tratamiento_futuro
 
 Para cada uno: llenar el _audit ANTES de construir el array correspondiente.
+
+🚨 REGLA CRÍTICA PARA CAMPOS SÍ/NO:
+- Si el checkbox "Sí" tiene marca visual → array = ["Sí"]
+- Si el checkbox "No" tiene marca visual → array = ["No"]
+- Si NINGUNO de los dos tiene marca visual → array = [] (VACÍO)
+- ❌ NUNCA inferir "No" cuando ninguno está marcado
+- ❌ NUNCA asumir que la ausencia de "Sí" significa "No"
+- Si ambos están vacíos, el array DEBE quedar vacío []
 
 🔴🔴🔴 TURNO DE ENFERMERÍA - AUDITORÍA VISUAL OBLIGATORIA (OBJETO turno_audit) 🔴🔴🔴
 

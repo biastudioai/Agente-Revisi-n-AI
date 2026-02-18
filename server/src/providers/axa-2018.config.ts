@@ -38,7 +38,9 @@ PARA CUALQUIER CAMPO QUE DEPENDA DE UNA CASILLA MARCADA:
 - ❌ NO inferieras el valor porque "tiene sentido clínicamente"
 - ❌ NO completes automáticamente basándote en otros campos
 - 🔹 Si la casilla está VACÍA → el campo debe quedar false/""/null/[] según su tipo
+- 🔹 Si NINGUNA casilla de un grupo Sí/No está marcada → el array debe quedar VACÍO [] (NO poner ["No"])
 - 🔹 Si hay DUDA sobre si está marcada → déjalo VACÍO
+- 🔹 La ausencia de una marca en "Sí" NO implica "No". Ambas casillas deben evaluarse independientemente
 
 📋 JERARQUÍA DE DETECCIÓN - ORDEN DE PRIORIDAD:
 

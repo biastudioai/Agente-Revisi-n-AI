@@ -528,21 +528,54 @@ export const CONFIG_AXA: AseguradoraConfig = {
       parser: (v) => Array.isArray(v) ? v : [] 
     },
 
-    'firma.lugar_fecha': { path: 'firma.lugar_fecha', opcional: true },
+    'firma.lugar': { 
+      path: 'firma.lugar_fecha', 
+      opcional: true,
+      parser: (v) => {
+        if (!v) return '';
+        const parts = v.split(/,\s*/);
+        return parts.length > 1 ? parts.slice(0, -1).join(', ').trim() : v.trim();
+      }
+    },
+    'firma.fecha': { 
+      path: 'firma.lugar_fecha', 
+      opcional: true,
+      parser: (v) => {
+        if (!v) return '';
+        const parts = v.split(/,\s*/);
+        return parts.length > 1 ? parts[parts.length - 1].trim() : '';
+      }
+    },
     'firma_medico': { 
       path: 'firma.firma_medico', 
-      parser: (v) => v === 'Detectada' || v === 'detected' 
+      parser: (v) => {
+        if (typeof v === 'string') return v.toLowerCase().includes('detect');
+        return Boolean(v);
+      }
+    },
+    'firma.firma_autografa_detectada': { 
+      path: 'firma.firma_medico', 
+      parser: (v) => {
+        if (typeof v === 'string') return v.toLowerCase().includes('detect');
+        return Boolean(v);
+      }
     },
 
     'firma_asegurado_transferencia': {
       path: 'transferencia_datos.firma_asegurado_1',
       opcional: true,
-      parser: (v) => v === 'Detectada' || v === 'detected'
+      parser: (v) => {
+        if (typeof v === 'string') return v.toLowerCase().includes('detect');
+        return Boolean(v);
+      }
     },
     'firma_asegurado_programas': {
       path: 'transferencia_datos.firma_asegurado_2',
       opcional: true,
-      parser: (v) => v === 'Detectada' || v === 'detected'
+      parser: (v) => {
+        if (typeof v === 'string') return v.toLowerCase().includes('detect');
+        return Boolean(v);
+      }
     },
 
     'metadata.coherencia_clinica': { 
@@ -768,16 +801,46 @@ export const CONFIG_AXA_2025: AseguradoraConfig = {
     'ayudantes.ayudante_2_nombre': { path: 'ayudantes.ayudante_2_nombre', opcional: true },
     'ayudantes.otros_medicos': { path: 'ayudantes.otros_medicos', opcional: true },
 
-    'firma.lugar_fecha': { path: 'firma.lugar_fecha', opcional: true },
+    'firma.lugar': { 
+      path: 'firma.lugar_fecha', 
+      opcional: true,
+      parser: (v) => {
+        if (!v) return '';
+        const parts = v.split(/,\s*/);
+        return parts.length > 1 ? parts.slice(0, -1).join(', ').trim() : v.trim();
+      }
+    },
+    'firma.fecha': { 
+      path: 'firma.lugar_fecha', 
+      opcional: true,
+      parser: (v) => {
+        if (!v) return '';
+        const parts = v.split(/,\s*/);
+        return parts.length > 1 ? parts[parts.length - 1].trim() : '';
+      }
+    },
     'firma_medico': { 
       path: 'firma.firma_medico', 
-      parser: (v) => v === 'Detectada' || v === 'detected' 
+      parser: (v) => {
+        if (typeof v === 'string') return v.toLowerCase().includes('detect');
+        return Boolean(v);
+      }
+    },
+    'firma.firma_autografa_detectada': { 
+      path: 'firma.firma_medico', 
+      parser: (v) => {
+        if (typeof v === 'string') return v.toLowerCase().includes('detect');
+        return Boolean(v);
+      }
     },
 
     'firma_asegurado': {
       path: 'aviso_privacidad.firma_asegurado',
       opcional: true,
-      parser: (v) => v === 'Detectada' || v === 'detected'
+      parser: (v) => {
+        if (typeof v === 'string') return v.toLowerCase().includes('detect');
+        return Boolean(v);
+      }
     },
 
     'metadata.coherencia_clinica': { 

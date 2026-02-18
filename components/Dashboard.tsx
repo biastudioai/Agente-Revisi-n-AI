@@ -743,18 +743,36 @@ const Dashboard: React.FC<DashboardProps> = ({
                                 <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
                                     <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>ANTECEDENTES PATOLÓGICOS</h4>
                                     {isAXA2025 ? (
-                                        <div className="space-y-2">
-                                            {(Array.isArray((formData as any).antecedentes_patologicos) ? (formData as any).antecedentes_patologicos : []).map((row: any, idx: number) => (
-                                                <div key={idx} className="grid grid-cols-4 gap-2 p-2 bg-white rounded-lg border border-slate-200">
-                                                    <div className="text-[10px] font-bold text-slate-400">{row.numero || idx + 1}</div>
-                                                    <input type="text" value={row.diagnostico || ''} onChange={(e) => { const arr = [...((formData as any).antecedentes_patologicos || [])]; arr[idx] = {...arr[idx], diagnostico: e.target.value}; handleInputChange('antecedentes_patologicos', arr); }} placeholder="Diagnóstico" className="text-xs px-2 py-1 border border-slate-200 rounded" />
-                                                    <input type="text" value={row.fecha_diagnostico || ''} onChange={(e) => { const arr = [...((formData as any).antecedentes_patologicos || [])]; arr[idx] = {...arr[idx], fecha_diagnostico: e.target.value}; handleInputChange('antecedentes_patologicos', arr); }} placeholder="DD/MM/AAAA" className="text-xs px-2 py-1 border border-slate-200 rounded" />
-                                                    <input type="text" value={row.tratamiento_recibido || ''} onChange={(e) => { const arr = [...((formData as any).antecedentes_patologicos || [])]; arr[idx] = {...arr[idx], tratamiento_recibido: e.target.value}; handleInputChange('antecedentes_patologicos', arr); }} placeholder="Tratamiento" className="text-xs px-2 py-1 border border-slate-200 rounded" />
-                                                </div>
-                                            ))}
-                                            {(!(formData as any).antecedentes_patologicos || (formData as any).antecedentes_patologicos.length === 0) && (
-                                                <p className="text-[10px] text-slate-400 italic p-2">Sin antecedentes patológicos registrados</p>
-                                            )}
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-xs border-collapse">
+                                                <thead>
+                                                    <tr className="bg-slate-100">
+                                                        <th className="p-2 text-left border border-slate-200 w-8">No.</th>
+                                                        <th className="p-2 text-left border border-slate-200" style={{width: '35%'}}>Diagnóstico</th>
+                                                        <th className="p-2 text-left border border-slate-200" style={{width: '25%'}}>Fecha de Diagnóstico</th>
+                                                        <th className="p-2 text-left border border-slate-200" style={{width: '30%'}}>Tratamiento Recibido</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {(Array.isArray((formData as any).antecedentes_patologicos) ? (formData as any).antecedentes_patologicos : []).map((row: any, idx: number) => (
+                                                        <tr key={idx} className="hover:bg-slate-50 align-top">
+                                                            <td className="p-1 border border-slate-200 text-center text-slate-400">{row.numero || idx + 1}</td>
+                                                            <td className="p-1 border border-slate-200">
+                                                                <input type="text" value={row.diagnostico || ''} onChange={(e) => { const arr = [...((formData as any).antecedentes_patologicos || [])]; arr[idx] = {...arr[idx], diagnostico: e.target.value}; handleInputChange('antecedentes_patologicos', arr); }} className="w-full px-1 py-0.5 text-xs border-0 bg-transparent focus:bg-white focus:ring-1 focus:ring-red-300 rounded" />
+                                                            </td>
+                                                            <td className="p-1 border border-slate-200">
+                                                                <input type="text" value={row.fecha_diagnostico || ''} onChange={(e) => { const arr = [...((formData as any).antecedentes_patologicos || [])]; arr[idx] = {...arr[idx], fecha_diagnostico: e.target.value}; handleInputChange('antecedentes_patologicos', arr); }} placeholder="DD/MM/AAAA" className="w-full px-1 py-0.5 text-xs border-0 bg-transparent focus:bg-white focus:ring-1 focus:ring-red-300 rounded" />
+                                                            </td>
+                                                            <td className="p-1 border border-slate-200">
+                                                                <input type="text" value={row.tratamiento_recibido || ''} onChange={(e) => { const arr = [...((formData as any).antecedentes_patologicos || [])]; arr[idx] = {...arr[idx], tratamiento_recibido: e.target.value}; handleInputChange('antecedentes_patologicos', arr); }} className="w-full px-1 py-0.5 text-xs border-0 bg-transparent focus:bg-white focus:ring-1 focus:ring-red-300 rounded" />
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                    {(!(formData as any).antecedentes_patologicos || (formData as any).antecedentes_patologicos.length === 0) && (
+                                                        <tr><td colSpan={4} className="p-2 border border-slate-200 text-center text-slate-400 italic text-[10px]">Sin antecedentes patológicos registrados</td></tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
                                         </div>
                                     ) : (
                                         <div className="space-y-2">
@@ -794,7 +812,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <DateInput label="Última Menstruación" value={(formData as any).antecedentes_gineco_obstetricos?.fecha_ultima_menstruacion} path="antecedentes_gineco_obstetricos.fecha_ultima_menstruacion" isModified={!!modifiedFields['antecedentes_gineco_obstetricos.fecha_ultima_menstruacion']} isHighlighted={highlightedField === 'antecedentes_gineco_obstetricos.fecha_ultima_menstruacion'} onChange={handleInputChange} />
-                                        {renderInput("Infertilidad", (formData as any).antecedentes_gineco_obstetricos?.tratamiento_infertilidad, 'antecedentes_gineco_obstetricos.tratamiento_infertilidad')}
+                                        {renderInput("Tratamiento Infertilidad", (formData as any).antecedentes_gineco_obstetricos?.tratamiento_infertilidad, 'antecedentes_gineco_obstetricos.tratamiento_infertilidad')}
                                         {renderInput("Tiempo Evolución", (formData as any).antecedentes_gineco_obstetricos?.tiempo_evolucion, 'antecedentes_gineco_obstetricos.tiempo_evolucion')}
                                     </div>
                                 </div>
@@ -1640,13 +1658,32 @@ const Dashboard: React.FC<DashboardProps> = ({
                             {isAXA && (
                                 <div className="space-y-4">
                                     <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
-                                        <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>ANESTESIÓLOGO</h4>
+                                        <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>MÉDICO O ESPECIALISTA (ANESTESIÓLOGO)</h4>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {renderInput("Médico o especialista (Anestesiólogo)", (formData as any).anestesiologo?.tipo_participacion, 'anestesiologo.tipo_participacion')}
+                                            {renderInput("Tipo de Participación", (formData as any).anestesiologo?.tipo_participacion, 'anestesiologo.tipo_participacion')}
                                             {renderInput("Nombre", (formData as any).anestesiologo?.nombre, 'anestesiologo.nombre')}
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                                             {renderInput("Especialidad", (formData as any).anestesiologo?.especialidad, 'anestesiologo.especialidad')}
                                             {renderInput("Cédula Profesional", (formData as any).anestesiologo?.cedula_profesional, 'anestesiologo.cedula_profesional')}
                                         </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                            {renderInput("Cédula de Especialidad", (formData as any).anestesiologo?.cedula_especialidad, 'anestesiologo.cedula_especialidad')}
+                                            {renderInput("RFC a Facturar", (formData as any).anestesiologo?.rfc, 'anestesiologo.rfc')}
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                            {renderInput("Domicilio", (formData as any).anestesiologo?.domicilio, 'anestesiologo.domicilio')}
+                                            {renderInput("Teléfono", (formData as any).anestesiologo?.telefono, 'anestesiologo.telefono')}
+                                        </div>
+                                        {isAXA2025 && (
+                                            <div className="mt-4 p-3 bg-white rounded-lg border border-slate-200">
+                                                <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Persona Moral (si aplica)</div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    {renderInput("Nombre Común", (formData as any).anestesiologo?.persona_moral_nombre_comun, 'anestesiologo.persona_moral_nombre_comun')}
+                                                    {renderInput("Razón Social", (formData as any).anestesiologo?.persona_moral_razon_social, 'anestesiologo.persona_moral_razon_social')}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
