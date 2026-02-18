@@ -582,6 +582,9 @@ export const CONFIG_AXA_2025: AseguradoraConfig = {
     'paciente.peso': { path: 'identificacion.peso', opcional: true },
     'paciente.tension_arterial': { path: 'identificacion.tension_arterial', opcional: true },
 
+    'lugar_fecha.lugar': { path: 'lugar_fecha.lugar', opcional: true },
+    'lugar_fecha.fecha': { path: 'lugar_fecha.fecha', opcional: true },
+
     'poliza.motivo_atencion': { 
       path: 'motivo_atencion', 
       opcional: true, 
@@ -654,6 +657,12 @@ export const CONFIG_AXA_2025: AseguradoraConfig = {
     },
     'diagnostico.estadificacion_tnm': { path: 'diagnostico.estadificacion_tnm', opcional: true },
     'diagnostico.causa_etiologia': { path: 'diagnostico.causa_etiologia', opcional: true },
+    'diagnostico.tiempo_evolucion': { path: 'diagnostico.tiempo_evolucion', opcional: true },
+    'diagnostico.relacion_otro_padecimiento': { path: 'diagnostico.relacion_otro_padecimiento', opcional: true, parser: (v) => Array.isArray(v) ? v : [] },
+    'diagnostico.relacion_cual': { path: 'diagnostico.relacion_cual', opcional: true },
+    'diagnostico.incapacidad': { path: 'diagnostico.incapacidad', opcional: true, parser: (v) => Array.isArray(v) ? v : [] },
+    'diagnostico.incapacidad_desde': { path: 'diagnostico.incapacidad_desde', opcional: true },
+    'diagnostico.incapacidad_hasta': { path: 'diagnostico.incapacidad_hasta', opcional: true },
     'diagnostico.exploracion_fisica': { path: 'diagnostico.exploracion_fisica', opcional: true },
     'diagnostico.estudios_laboratorio': { path: 'diagnostico.estudios_laboratorio', opcional: true },
 
@@ -663,7 +672,15 @@ export const CONFIG_AXA_2025: AseguradoraConfig = {
       opcional: true, 
       parser: (v) => Array.isArray(v) ? v : [] 
     },
+    'tratamiento.sitio_especifique': { path: 'tratamiento.sitio_especifique', opcional: true },
     'tratamiento.nombre_hospital': { path: 'tratamiento.nombre_hospital', opcional: true },
+    'tratamiento.dias_atencion': { path: 'tratamiento.dias_atencion', opcional: true },
+    'tratamiento.histopatologico': { 
+      path: 'tratamiento.histopatologico', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v.includes('Sí') : false 
+    },
+    'tratamiento.histopatologico_resultado': { path: 'tratamiento.histopatologico_resultado', opcional: true },
     'tratamiento.complicaciones': { 
       path: 'tratamiento.complicaciones', 
       opcional: true, 
@@ -675,6 +692,7 @@ export const CONFIG_AXA_2025: AseguradoraConfig = {
       opcional: true, 
       parser: (v) => Array.isArray(v) ? v.includes('Sí') : false 
     },
+    'tratamiento.tratamiento_futuro_descripcion': { path: 'tratamiento.tratamiento_futuro_descripcion', opcional: true },
 
     'medicamentos': { 
       path: 'tabla_medicamentos', 
@@ -689,13 +707,27 @@ export const CONFIG_AXA_2025: AseguradoraConfig = {
     },
 
     'antecedentes.no_patologicos.fuma': { path: 'antecedentes_no_patologicos.fuma', opcional: true, parser: (v) => Boolean(v) },
+    'antecedentes.no_patologicos.fuma_detalle': { path: 'antecedentes_no_patologicos.fuma_detalle', opcional: true },
     'antecedentes.no_patologicos.alcohol': { path: 'antecedentes_no_patologicos.alcohol', opcional: true, parser: (v) => Boolean(v) },
+    'antecedentes.no_patologicos.alcohol_detalle': { path: 'antecedentes_no_patologicos.alcohol_detalle', opcional: true },
     'antecedentes.no_patologicos.drogas': { path: 'antecedentes_no_patologicos.drogas', opcional: true, parser: (v) => Boolean(v) },
+    'antecedentes.no_patologicos.drogas_detalle': { path: 'antecedentes_no_patologicos.drogas_detalle', opcional: true },
+    'antecedentes.no_patologicos.otros': { path: 'antecedentes_no_patologicos.otros', opcional: true, parser: (v) => Boolean(v) },
+    'antecedentes.no_patologicos.otros_detalle': { path: 'antecedentes_no_patologicos.otros_detalle', opcional: true },
 
     'antecedentes.gineco_obstetricos.gestacion': { path: 'antecedentes_gineco_obstetricos.gestacion', opcional: true },
     'antecedentes.gineco_obstetricos.partos': { path: 'antecedentes_gineco_obstetricos.partos', opcional: true },
     'antecedentes.gineco_obstetricos.abortos': { path: 'antecedentes_gineco_obstetricos.abortos', opcional: true },
     'antecedentes.gineco_obstetricos.cesareas': { path: 'antecedentes_gineco_obstetricos.cesareas', opcional: true },
+    'antecedentes.gineco_obstetricos.fecha_ultima_menstruacion': { path: 'antecedentes_gineco_obstetricos.fecha_ultima_menstruacion', opcional: true },
+    'antecedentes.gineco_obstetricos.tratamiento_infertilidad': { path: 'antecedentes_gineco_obstetricos.tratamiento_infertilidad', opcional: true },
+    'antecedentes.gineco_obstetricos.tiempo_evolucion': { path: 'antecedentes_gineco_obstetricos.tiempo_evolucion', opcional: true },
+
+    'antecedentes.perinatales.descripcion': { path: 'antecedentes_perinatales.descripcion', opcional: true },
+    'antecedentes.perinatales.tiempo_evolucion': { path: 'antecedentes_perinatales.tiempo_evolucion', opcional: true },
+
+    'referido.referido': { path: 'referido_otro_medico.referido', opcional: true, parser: (v) => Array.isArray(v) ? v : [] },
+    'referido.cual': { path: 'referido_otro_medico.cual', opcional: true },
 
     'rehabilitacion.dias': { path: 'rehabilitacion_fisica.dias', opcional: true },
     'rehabilitacion.sesiones': { path: 'rehabilitacion_fisica.numero_sesiones', opcional: true },
@@ -707,6 +739,8 @@ export const CONFIG_AXA_2025: AseguradoraConfig = {
       parser: (v) => Array.isArray(v) ? v : [] 
     },
     'enfermeria.descripcion_actividades': { path: 'enfermeria.descripcion_actividades', opcional: true },
+    'enfermeria.justificacion_terapia': { path: 'enfermeria.justificacion_terapia', opcional: true },
+    'enfermeria.detalle_evolucion': { path: 'enfermeria.detalle_evolucion', opcional: true },
 
     'plan_terapeutico.tecnica_detallada': { path: 'plan_terapeutico.tecnica_detallada', opcional: true },
     'plan_terapeutico.tiempo_hospitalizacion': { path: 'plan_terapeutico.tiempo_esperado_hospitalizacion', opcional: true },
@@ -716,6 +750,23 @@ export const CONFIG_AXA_2025: AseguradoraConfig = {
       opcional: true, 
       parser: (v) => Array.isArray(v) ? v : [] 
     },
+
+    'anestesiologo.tipo_participacion': { path: 'anestesiologo.tipo_participacion', opcional: true },
+    'anestesiologo.nombre': { path: 'anestesiologo.nombre', opcional: true },
+    'anestesiologo.especialidad': { path: 'anestesiologo.especialidad', opcional: true },
+    'anestesiologo.cedula_profesional': { path: 'anestesiologo.cedula_profesional', opcional: true },
+    'anestesiologo.cedula_especialidad': { path: 'anestesiologo.cedula_especialidad', opcional: true },
+    'anestesiologo.rfc': { path: 'anestesiologo.rfc', opcional: true },
+    'anestesiologo.domicilio': { path: 'anestesiologo.domicilio', opcional: true },
+    'anestesiologo.telefono': { path: 'anestesiologo.telefono', opcional: true },
+    'anestesiologo.persona_moral_nombre': { path: 'anestesiologo.persona_moral_nombre_comun', opcional: true },
+    'anestesiologo.persona_moral_razon_social': { path: 'anestesiologo.persona_moral_razon_social', opcional: true },
+
+    'ayudantes.ayudante_1_tipo': { path: 'ayudantes.ayudante_1_tipo', opcional: true },
+    'ayudantes.ayudante_1_nombre': { path: 'ayudantes.ayudante_1_nombre', opcional: true },
+    'ayudantes.ayudante_2_tipo': { path: 'ayudantes.ayudante_2_tipo', opcional: true },
+    'ayudantes.ayudante_2_nombre': { path: 'ayudantes.ayudante_2_nombre', opcional: true },
+    'ayudantes.otros_medicos': { path: 'ayudantes.otros_medicos', opcional: true },
 
     'firma.lugar_fecha': { path: 'firma.lugar_fecha', opcional: true },
     'firma_medico': { 
@@ -739,9 +790,250 @@ export const CONFIG_AXA_2025: AseguradoraConfig = {
 };
 
 export const CONFIG_AXA_2018: AseguradoraConfig = {
-  ...CONFIG_AXA,
   codigo: 'AXA_2018',
   nombre_completo: 'AXA Seguros S.A. de C.V. (2018)',
+  mappings: {
+    'paciente.nombre': { path: 'identificacion.nombres', parser: (v) => v?.trim() || '' },
+    'paciente.apellido_paterno': { path: 'identificacion.apellido_paterno', parser: (v) => v?.trim() || '' },
+    'paciente.apellido_materno': { path: 'identificacion.apellido_materno', opcional: true, parser: (v) => v?.trim() },
+    'paciente.edad': { path: 'identificacion.edad', parser: (v) => parseInt(v, 10), validador: (v) => !isNaN(v) && v >= 0 && v <= 120 },
+    'paciente.sexo': { 
+      path: 'identificacion.sexo', 
+      parser: (v) => {
+        if (Array.isArray(v)) {
+          if (v.includes('Femenino')) return 'Femenino';
+          if (v.includes('Masculino')) return 'Masculino';
+          return v[0] || 'Otro';
+        }
+        const normalized = v?.toLowerCase().trim();
+        if (normalized === 'm' || normalized === 'masculino') return 'Masculino';
+        if (normalized === 'f' || normalized === 'femenino') return 'Femenino';
+        return 'Otro';
+      },
+      validador: (v) => ['Masculino', 'Femenino', 'Otro'].includes(v)
+    },
+    'paciente.fecha_nacimiento': { path: 'identificacion.fecha_nacimiento', opcional: true, parser: (v) => v ? new Date(v.split('/').reverse().join('-')) : undefined },
+    'paciente.talla': { path: 'identificacion.talla', opcional: true },
+    'paciente.peso': { path: 'identificacion.peso', opcional: true },
+    'paciente.tension_arterial': { path: 'identificacion.tension_arterial', opcional: true },
+
+    'lugar_fecha.lugar': { path: 'lugar_fecha.lugar', opcional: true },
+    'lugar_fecha.fecha': { path: 'lugar_fecha.fecha', opcional: true },
+
+    'poliza.motivo_atencion': { 
+      path: 'motivo_atencion', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v : [] 
+    },
+    'poliza.tipo_estancia': { 
+      path: 'tipo_estancia', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v : [] 
+    },
+
+    'medico_tratante.nombre': { path: 'medico_principal.nombre', parser: (v) => v?.trim() || '' },
+    'medico_tratante.especialidad': { path: 'medico_principal.especialidad', parser: (v) => v?.trim() || '' },
+    'medico_tratante.cedula_profesional': { path: 'medico_principal.cedula_profesional', validador: (v) => /^\d{7,10}$/.test(v) },
+    'medico_tratante.cedula_especialidad': { path: 'medico_principal.cedula_especialidad', opcional: true },
+    'medico_tratante.rfc': { path: 'medico_principal.rfc', opcional: true, validador: (v) => !v || /^[A-Z]{4}\d{6}[A-Z0-9]{3}$/i.test(v) },
+    'medico_tratante.domicilio': { path: 'medico_principal.domicilio', opcional: true },
+    'medico_tratante.telefono': { path: 'medico_principal.telefono', opcional: true },
+    'medico_tratante.tipo_participacion': { path: 'medico_principal.tipo_participacion', opcional: true },
+
+    'fecha.padecimiento': { 
+      path: 'diagnostico.fecha_padecimiento', 
+      opcional: true, 
+      parser: (v) => v ? new Date(v.split('/').reverse().join('-')) : undefined 
+    },
+    'fecha.diagnostico': { 
+      path: 'diagnostico.fecha_diagnostico', 
+      opcional: true, 
+      parser: (v) => v ? new Date(v.split('/').reverse().join('-')) : undefined 
+    },
+    'fecha.cirugia': { 
+      path: 'tratamiento.fecha_cirugia', 
+      opcional: true, 
+      parser: (v) => v ? new Date(v.split('/').reverse().join('-')) : undefined 
+    },
+    'fecha.hospitalizacion': { 
+      path: 'tratamiento.fecha_hospitalizacion', 
+      opcional: true, 
+      parser: (v) => v ? new Date(v.split('/').reverse().join('-')) : undefined 
+    },
+    'fecha.alta': { 
+      path: 'tratamiento.fecha_alta', 
+      opcional: true, 
+      parser: (v) => v ? new Date(v.split('/').reverse().join('-')) : undefined 
+    },
+    'fecha.informe': { 
+      path: 'firma.fecha', 
+      opcional: true 
+    },
+
+    'diagnostico.descripcion': { path: 'diagnostico.diagnostico_texto', parser: (v) => v?.trim() || '' },
+    'diagnostico.padecimiento_actual': { path: 'diagnostico.padecimiento_actual', opcional: true },
+    'diagnostico.codigo_icd': { path: 'diagnostico.codigo_icd', opcional: true },
+    'diagnostico.tipo_padecimiento': { 
+      path: 'diagnostico.tipo_padecimiento', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v : [] 
+    },
+    'diagnostico.es_cancer': { 
+      path: 'diagnostico.es_cancer', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v.includes('Sí') : false 
+    },
+    'diagnostico.escala_tnm': { path: 'diagnostico.escala_tnm', opcional: true },
+    'diagnostico.causa_etiologia': { path: 'diagnostico.causa_etiologia', opcional: true },
+    'diagnostico.tiempo_evolucion': { path: 'diagnostico.tiempo_evolucion', opcional: true },
+    'diagnostico.relacion_otro_padecimiento': { path: 'diagnostico.relacion_otro_padecimiento', opcional: true, parser: (v) => Array.isArray(v) ? v : [] },
+    'diagnostico.relacion_cual': { path: 'diagnostico.relacion_cual', opcional: true },
+    'diagnostico.incapacidad': { path: 'diagnostico.incapacidad', opcional: true, parser: (v) => Array.isArray(v) ? v : [] },
+    'diagnostico.incapacidad_desde': { path: 'diagnostico.incapacidad_desde', opcional: true },
+    'diagnostico.incapacidad_hasta': { path: 'diagnostico.incapacidad_hasta', opcional: true },
+    'diagnostico.exploracion_fisica': { path: 'diagnostico.exploracion_fisica', opcional: true },
+    'diagnostico.estudios_laboratorio': { path: 'diagnostico.estudios_laboratorio', opcional: true },
+
+    'tratamiento.propuesto': { path: 'tratamiento.tratamiento_propuesto', opcional: true },
+    'tratamiento.sitio_procedimiento': { 
+      path: 'tratamiento.sitio_procedimiento', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v : [] 
+    },
+    'tratamiento.sitio_especifique': { path: 'tratamiento.sitio_especifique', opcional: true },
+    'tratamiento.nombre_hospital': { path: 'tratamiento.nombre_hospital', opcional: true },
+    'tratamiento.dias_atencion': { path: 'tratamiento.dias_atencion', opcional: true },
+    'tratamiento.histopatologico': { 
+      path: 'tratamiento.histopatologico', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v.includes('Sí') : false 
+    },
+    'tratamiento.histopatologico_resultado': { path: 'tratamiento.histopatologico_resultado', opcional: true },
+    'tratamiento.complicaciones': { 
+      path: 'tratamiento.complicaciones', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v.includes('Sí') : false 
+    },
+    'tratamiento.complicaciones_descripcion': { path: 'tratamiento.complicaciones_descripcion', opcional: true },
+    'tratamiento.tratamiento_futuro': { 
+      path: 'tratamiento.tratamiento_futuro', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v.includes('Sí') : false 
+    },
+    'tratamiento.tratamiento_futuro_descripcion': { path: 'tratamiento.tratamiento_futuro_descripcion', opcional: true },
+
+    'otros_tratamientos.especificar_tratamiento': { path: 'otros_tratamientos.especificar_tratamiento', opcional: true },
+
+    'medicamentos': { 
+      path: 'tabla_medicamentos', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v : [] 
+    },
+
+    'antecedentes.patologicos.cardiacos': { path: 'antecedentes_patologicos.cardiacos', opcional: true, parser: (v) => Boolean(v) },
+    'antecedentes.patologicos.cardiacos_fecha': { path: 'antecedentes_patologicos.cardiacos_fecha', opcional: true },
+    'antecedentes.patologicos.diabetes': { path: 'antecedentes_patologicos.diabetes_mellitus', opcional: true, parser: (v) => Boolean(v) },
+    'antecedentes.patologicos.diabetes_fecha': { path: 'antecedentes_patologicos.diabetes_mellitus_fecha', opcional: true },
+    'antecedentes.patologicos.cancer': { path: 'antecedentes_patologicos.cancer', opcional: true, parser: (v) => Boolean(v) },
+    'antecedentes.patologicos.cancer_fecha': { path: 'antecedentes_patologicos.cancer_fecha', opcional: true },
+    'antecedentes.patologicos.convulsivos': { path: 'antecedentes_patologicos.convulsivos', opcional: true, parser: (v) => Boolean(v) },
+    'antecedentes.patologicos.convulsivos_fecha': { path: 'antecedentes_patologicos.convulsivos_fecha', opcional: true },
+    'antecedentes.patologicos.hipertensivos': { path: 'antecedentes_patologicos.hipertensivos', opcional: true, parser: (v) => Boolean(v) },
+    'antecedentes.patologicos.hipertensivos_fecha': { path: 'antecedentes_patologicos.hipertensivos_fecha', opcional: true },
+    'antecedentes.patologicos.vih_sida': { path: 'antecedentes_patologicos.vih_sida', opcional: true, parser: (v) => Boolean(v) },
+    'antecedentes.patologicos.vih_sida_fecha': { path: 'antecedentes_patologicos.vih_sida_fecha', opcional: true },
+    'antecedentes.patologicos.hepaticos': { path: 'antecedentes_patologicos.hepaticos', opcional: true, parser: (v) => Boolean(v) },
+    'antecedentes.patologicos.hepaticos_fecha': { path: 'antecedentes_patologicos.hepaticos_fecha', opcional: true },
+    'antecedentes.patologicos.otros': { path: 'antecedentes_patologicos.otros', opcional: true, parser: (v) => Boolean(v) },
+    'antecedentes.patologicos.otros_detalle': { path: 'antecedentes_patologicos.otros_detalle', opcional: true },
+
+    'antecedentes.no_patologicos.fuma': { path: 'antecedentes_no_patologicos.fuma', opcional: true, parser: (v) => Boolean(v) },
+    'antecedentes.no_patologicos.fuma_detalle': { path: 'antecedentes_no_patologicos.fuma_detalle', opcional: true },
+    'antecedentes.no_patologicos.alcohol': { path: 'antecedentes_no_patologicos.alcohol', opcional: true, parser: (v) => Boolean(v) },
+    'antecedentes.no_patologicos.alcohol_detalle': { path: 'antecedentes_no_patologicos.alcohol_detalle', opcional: true },
+    'antecedentes.no_patologicos.drogas': { path: 'antecedentes_no_patologicos.drogas', opcional: true, parser: (v) => Boolean(v) },
+    'antecedentes.no_patologicos.drogas_detalle': { path: 'antecedentes_no_patologicos.drogas_detalle', opcional: true },
+    'antecedentes.no_patologicos.otros': { path: 'antecedentes_no_patologicos.otros', opcional: true, parser: (v) => Boolean(v) },
+    'antecedentes.no_patologicos.otros_detalle': { path: 'antecedentes_no_patologicos.otros_detalle', opcional: true },
+
+    'antecedentes.gineco_obstetricos.gestacion': { path: 'antecedentes_gineco_obstetricos.gestacion', opcional: true },
+    'antecedentes.gineco_obstetricos.partos': { path: 'antecedentes_gineco_obstetricos.partos', opcional: true },
+    'antecedentes.gineco_obstetricos.abortos': { path: 'antecedentes_gineco_obstetricos.abortos', opcional: true },
+    'antecedentes.gineco_obstetricos.cesareas': { path: 'antecedentes_gineco_obstetricos.cesareas', opcional: true },
+    'antecedentes.gineco_obstetricos.fecha_ultima_menstruacion': { path: 'antecedentes_gineco_obstetricos.fecha_ultima_menstruacion', opcional: true },
+    'antecedentes.gineco_obstetricos.tratamiento_infertilidad': { path: 'antecedentes_gineco_obstetricos.tratamiento_infertilidad', opcional: true },
+    'antecedentes.gineco_obstetricos.tiempo_evolucion': { path: 'antecedentes_gineco_obstetricos.tiempo_evolucion', opcional: true },
+
+    'antecedentes.perinatales.descripcion': { path: 'antecedentes_perinatales.descripcion', opcional: true },
+    'antecedentes.perinatales.tiempo_evolucion': { path: 'antecedentes_perinatales.tiempo_evolucion', opcional: true },
+
+    'referido.referido': { path: 'referido_otro_medico.referido', opcional: true, parser: (v) => Array.isArray(v) ? v : [] },
+    'referido.cual': { path: 'referido_otro_medico.cual', opcional: true },
+
+    'rehabilitacion.dias': { path: 'rehabilitacion_fisica.dias', opcional: true },
+    'rehabilitacion.sesiones': { path: 'rehabilitacion_fisica.numero_sesiones', opcional: true },
+
+    'enfermeria.dias': { path: 'enfermeria.dias_requeridos', opcional: true },
+    'enfermeria.turno': { 
+      path: 'enfermeria.turno', 
+      opcional: true, 
+      parser: (v) => Array.isArray(v) ? v : [] 
+    },
+    'enfermeria.descripcion_actividades': { path: 'enfermeria.nombre_medicamentos', opcional: true },
+
+    'terapia_especial.justificacion_terapia': { path: 'terapia_especial.justificacion_terapia', opcional: true },
+    'terapia_especial.materiales_cirugia': { path: 'terapia_especial.materiales_cirugia', opcional: true },
+    'terapia_especial.tipo_terapia': { path: 'terapia_especial.tipo_terapia', opcional: true },
+    'terapia_especial.cedula_especialidad': { path: 'terapia_especial.cedula_especialidad', opcional: true },
+    'terapia_especial.detalle_evolucion': { path: 'terapia_especial.detalle_evolucion', opcional: true },
+
+    'anestesiologo.tipo_participacion': { path: 'anestesiologo.tipo_participacion', opcional: true },
+    'anestesiologo.nombre': { path: 'anestesiologo.nombre', opcional: true },
+    'anestesiologo.especialidad': { path: 'anestesiologo.especialidad', opcional: true },
+    'anestesiologo.cedula_profesional': { path: 'anestesiologo.cedula_profesional', opcional: true },
+    'anestesiologo.cedula_especialidad': { path: 'anestesiologo.cedula_especialidad', opcional: true },
+    'anestesiologo.rfc': { path: 'anestesiologo.rfc', opcional: true },
+    'anestesiologo.domicilio': { path: 'anestesiologo.domicilio', opcional: true },
+    'anestesiologo.telefono': { path: 'anestesiologo.telefono', opcional: true },
+
+    'ayudantes.ayudante_1_tipo': { path: 'ayudantes.ayudante_1_tipo', opcional: true },
+    'ayudantes.ayudante_1_nombre': { path: 'ayudantes.ayudante_1_nombre', opcional: true },
+    'ayudantes.ayudante_2_tipo': { path: 'ayudantes.ayudante_2_tipo', opcional: true },
+    'ayudantes.ayudante_2_nombre': { path: 'ayudantes.ayudante_2_nombre', opcional: true },
+    'ayudantes.otros_medicos': { path: 'ayudantes.otros_medicos', opcional: true },
+
+    'firma.lugar': { path: 'firma.lugar', opcional: true },
+    'firma.fecha': { path: 'firma.fecha', opcional: true },
+    'firma_medico': { 
+      path: 'firma.firma_autografa_detectada', 
+      parser: (v) => Boolean(v) 
+    },
+
+    'datos_personales.autorizacion_datos': { 
+      path: 'datos_personales.autorizacion_datos', 
+      opcional: true, 
+      parser: (v) => Boolean(v) 
+    },
+
+    'firma_asegurado_transferencia': {
+      path: 'transferencia_datos.firma_asegurado_1',
+      opcional: true,
+      parser: (v) => v === 'Detectada' || v === 'detected'
+    },
+    'firma_asegurado_programas': {
+      path: 'transferencia_datos.firma_asegurado_2',
+      opcional: true,
+      parser: (v) => v === 'Detectada' || v === 'detected'
+    },
+
+    'metadata.coherencia_clinica': { 
+      path: 'metadata.existe_coherencia_clinica', 
+      opcional: true, 
+      parser: (v) => Boolean(v) 
+    },
+    'metadata.observaciones': { path: 'observaciones.observaciones', opcional: true },
+    'metadata.tachaduras_detectadas': { path: 'metadata.tachaduras_detectadas', opcional: true, parser: (v) => Boolean(v) },
+  },
 };
 
 export const ASEGURADORAS_CONFIG: Record<string, AseguradoraConfig> = {

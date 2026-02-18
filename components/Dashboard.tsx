@@ -52,6 +52,9 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   
   const provider: ProviderType = formData.provider || 'GNP';
+  const isAXA = provider === 'AXA' || provider === 'AXA_2018';
+  const isAXA2025 = provider === 'AXA';
+  const isAXA2018 = provider === 'AXA_2018';
   const theme = getProviderTheme(provider);
 
   useEffect(() => {
@@ -381,7 +384,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 INFORME <span className={theme.secondary}>{provider}</span>
             </h1>
             <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest">
-                {provider === 'METLIFE' ? 'Mapeo por Secciones 1-7' : provider === 'NYLIFE' ? 'Formato NY Life Monterrey' : provider === 'AXA' ? 'Formato AXA Gastos Médicos' : 'Formato Estándar GNP'}
+                {provider === 'METLIFE' ? 'Mapeo por Secciones 1-7' : provider === 'NYLIFE' ? 'Formato NY Life Monterrey' : isAXA2025 ? 'Formato AXA 2025 Gastos Médicos' : isAXA2018 ? 'Formato AXA 2018 Gastos Médicos' : 'Formato Estándar GNP'}
             </p>
          </div>
          <div className="flex items-center gap-2">
@@ -533,7 +536,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                             </div>
                         )}
 
-                        {provider === 'AXA' && (
+                        {isAXA && (
                             <div className="space-y-6">
                                 <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
                                     <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>LUGAR Y FECHA</h4>
@@ -735,26 +738,42 @@ const Dashboard: React.FC<DashboardProps> = ({
                             </div>
                         )}
 
-                        {provider === 'AXA' && (
+                        {isAXA && (
                             <div className="space-y-4">
                                 <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
                                     <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>ANTECEDENTES PATOLÓGICOS</h4>
-                                    <div className="space-y-2">
-                                        {['cardiacos', 'diabetes_mellitus', 'cancer', 'convulsivos', 'hipertensivos', 'vih_sida', 'hepaticos'].map((key) => (
-                                            <div key={key} className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
-                                                <label className="flex items-center gap-2 min-w-[140px]">
-                                                    <input type="checkbox" checked={(formData as any).antecedentes_patologicos?.[key] || false} onChange={(e) => handleInputChange(`antecedentes_patologicos.${key}`, e.target.checked)} className="w-4 h-4 rounded" />
-                                                    <span className="text-xs font-medium text-slate-700">{key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
-                                                </label>
-                                                <DateInput compact label="" value={(formData as any).antecedentes_patologicos?.[`${key}_fecha`] || ''} path={`antecedentes_patologicos.${key}_fecha`} isModified={!!modifiedFields[`antecedentes_patologicos.${key}_fecha`]} isHighlighted={highlightedField === `antecedentes_patologicos.${key}_fecha`} onChange={handleInputChange} />
-                                            </div>
-                                        ))}
-                                    </div>
+                                    {isAXA2025 ? (
+                                        <div className="space-y-2">
+                                            {(Array.isArray((formData as any).antecedentes_patologicos) ? (formData as any).antecedentes_patologicos : []).map((row: any, idx: number) => (
+                                                <div key={idx} className="grid grid-cols-4 gap-2 p-2 bg-white rounded-lg border border-slate-200">
+                                                    <div className="text-[10px] font-bold text-slate-400">{row.numero || idx + 1}</div>
+                                                    <input type="text" value={row.diagnostico || ''} onChange={(e) => { const arr = [...((formData as any).antecedentes_patologicos || [])]; arr[idx] = {...arr[idx], diagnostico: e.target.value}; handleInputChange('antecedentes_patologicos', arr); }} placeholder="Diagnóstico" className="text-xs px-2 py-1 border border-slate-200 rounded" />
+                                                    <input type="text" value={row.fecha_diagnostico || ''} onChange={(e) => { const arr = [...((formData as any).antecedentes_patologicos || [])]; arr[idx] = {...arr[idx], fecha_diagnostico: e.target.value}; handleInputChange('antecedentes_patologicos', arr); }} placeholder="DD/MM/AAAA" className="text-xs px-2 py-1 border border-slate-200 rounded" />
+                                                    <input type="text" value={row.tratamiento_recibido || ''} onChange={(e) => { const arr = [...((formData as any).antecedentes_patologicos || [])]; arr[idx] = {...arr[idx], tratamiento_recibido: e.target.value}; handleInputChange('antecedentes_patologicos', arr); }} placeholder="Tratamiento" className="text-xs px-2 py-1 border border-slate-200 rounded" />
+                                                </div>
+                                            ))}
+                                            {(!(formData as any).antecedentes_patologicos || (formData as any).antecedentes_patologicos.length === 0) && (
+                                                <p className="text-[10px] text-slate-400 italic p-2">Sin antecedentes patológicos registrados</p>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            {['cardiacos', 'diabetes_mellitus', 'cancer', 'convulsivos', 'hipertensivos', 'vih_sida', 'hepaticos'].map((key) => (
+                                                <div key={key} className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
+                                                    <label className="flex items-center gap-2 min-w-[140px]">
+                                                        <input type="checkbox" checked={(formData as any).antecedentes_patologicos?.[key] || false} onChange={(e) => handleInputChange(`antecedentes_patologicos.${key}`, e.target.checked)} className="w-4 h-4 rounded" />
+                                                        <span className="text-xs font-medium text-slate-700">{key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                                                    </label>
+                                                    <DateInput compact label="" value={(formData as any).antecedentes_patologicos?.[`${key}_fecha`] || ''} path={`antecedentes_patologicos.${key}_fecha`} isModified={!!modifiedFields[`antecedentes_patologicos.${key}_fecha`]} isHighlighted={highlightedField === `antecedentes_patologicos.${key}_fecha`} onChange={handleInputChange} />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className={`p-4 bg-blue-50 rounded-xl border border-blue-200`}>
                                     <h4 className="text-xs font-black mb-3 text-blue-600">ANTECEDENTES NO PATOLÓGICOS</h4>
                                     <div className="space-y-2">
-                                        {[{key: 'fuma', label: 'Fuma'}, {key: 'alcohol', label: 'Alcohol'}, {key: 'drogas', label: 'Drogas'}].map(({key, label}) => (
+                                        {[{key: 'fuma', label: 'Fuma'}, {key: 'alcohol', label: 'Alcohol'}, {key: 'drogas', label: 'Drogas'}, ...(isAXA2025 ? [{key: 'otros', label: 'Otros'}] : [])].map(({key, label}) => (
                                             <div key={key} className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
                                                 <label className="flex items-center gap-2 min-w-[140px]">
                                                     <input type="checkbox" checked={(formData as any).antecedentes_no_patologicos?.[key] || false} onChange={(e) => handleInputChange(`antecedentes_no_patologicos.${key}`, e.target.checked)} className="w-4 h-4 rounded" />
@@ -776,6 +795,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <DateInput label="Última Menstruación" value={(formData as any).antecedentes_gineco_obstetricos?.fecha_ultima_menstruacion} path="antecedentes_gineco_obstetricos.fecha_ultima_menstruacion" isModified={!!modifiedFields['antecedentes_gineco_obstetricos.fecha_ultima_menstruacion']} isHighlighted={highlightedField === 'antecedentes_gineco_obstetricos.fecha_ultima_menstruacion'} onChange={handleInputChange} />
                                         {renderInput("Infertilidad", (formData as any).antecedentes_gineco_obstetricos?.tratamiento_infertilidad, 'antecedentes_gineco_obstetricos.tratamiento_infertilidad')}
+                                        {renderInput("Tiempo Evolución", (formData as any).antecedentes_gineco_obstetricos?.tiempo_evolucion, 'antecedentes_gineco_obstetricos.tiempo_evolucion')}
                                     </div>
                                 </div>
                                 <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-200">
@@ -1047,7 +1067,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                             </div>
                         )}
 
-                        {provider === 'AXA' && (
+                        {isAXA && (
                             <div className="space-y-4">
                                 {renderInput("Padecimiento Actual", (formData as any).diagnostico?.padecimiento_actual, 'diagnostico.padecimiento_actual', 'textarea')}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1077,7 +1097,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     {renderInput("Código ICD", (formData as any).diagnostico?.codigo_icd, 'diagnostico.codigo_icd')}
                                     {renderCheckboxGroup("¿Es Cáncer?", (formData as any).diagnostico?.es_cancer, 'diagnostico.es_cancer', ['Sí', 'No'])}
                                 </div>
-                                {renderInput("Escala TNM", (formData as any).diagnostico?.escala_tnm, 'diagnostico.escala_tnm')}
+                                {renderInput(isAXA2025 ? "Estadificación TNM" : "Escala TNM", isAXA2025 ? (formData as any).diagnostico?.estadificacion_tnm : (formData as any).diagnostico?.escala_tnm, isAXA2025 ? 'diagnostico.estadificacion_tnm' : 'diagnostico.escala_tnm')}
                                 {renderInput("Exploración Física", (formData as any).diagnostico?.exploracion_fisica, 'diagnostico.exploracion_fisica', 'textarea')}
                                 {renderInput("Estudios de Laboratorio", (formData as any).diagnostico?.estudios_laboratorio, 'diagnostico.estudios_laboratorio', 'textarea')}
                             </div>
@@ -1102,7 +1122,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                             </div>
                         )}
 
-                        {provider === 'AXA' && (
+                        {isAXA && (
                             <div id="section-tratamiento" className="scroll-mt-20">
                                 <div className="space-y-4">
                                     {renderInput("Tratamiento Propuesto", (formData as any).tratamiento?.tratamiento_propuesto, 'tratamiento.tratamiento_propuesto', 'textarea')}
@@ -1115,6 +1135,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                         {renderInput("Días Atención", (formData as any).tratamiento?.dias_atencion, 'tratamiento.dias_atencion')}
                                         {renderCheckboxGroup("Sitio Procedimiento", (formData as any).tratamiento?.sitio_procedimiento, 'tratamiento.sitio_procedimiento', ['Consultorio', 'Hospital', 'Gabinete', 'Otro'])}
                                     </div>
+                                    {renderInput("Especifique Sitio", (formData as any).tratamiento?.sitio_especifique, 'tratamiento.sitio_especifique')}
                                     {renderInput("Nombre Hospital", (formData as any).tratamiento?.nombre_hospital, 'tratamiento.nombre_hospital')}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {renderCheckboxGroup("Histopatológico", (formData as any).tratamiento?.histopatologico, 'tratamiento.histopatologico', ['Sí', 'No'])}
@@ -1128,7 +1149,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                         {renderCheckboxGroup("Tratamiento Futuro", (formData as any).tratamiento?.tratamiento_futuro, 'tratamiento.tratamiento_futuro', ['Sí', 'No'])}
                                         {renderInput("Descripción", (formData as any).tratamiento?.tratamiento_futuro_descripcion, 'tratamiento.tratamiento_futuro_descripcion', 'textarea')}
                                     </div>
-                                    {renderInput("Otros Tratamientos", (formData as any).otros_tratamientos?.especificar_tratamiento, 'otros_tratamientos.especificar_tratamiento', 'textarea')}
+                                    {isAXA2018 && renderInput("Otros Tratamientos", (formData as any).otros_tratamientos?.especificar_tratamiento, 'otros_tratamientos.especificar_tratamiento', 'textarea')}
 
                                     <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
                                         <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>TABLA DE MEDICAMENTOS</h4>
@@ -1201,13 +1222,16 @@ const Dashboard: React.FC<DashboardProps> = ({
                                             <div className="text-[9px] font-black text-violet-600 uppercase tracking-widest mb-3">Enfermería</div>
                                             {renderInput("Días Requeridos", (formData as any).enfermeria?.dias_requeridos, 'enfermeria.dias_requeridos')}
                                             {renderCheckboxGroup("Turno", (formData as any).enfermeria?.turno, 'enfermeria.turno', ['Matutino', 'Vespertino', 'Nocturno', '24 horas'])}
-                                            {renderInput("Medicamentos", (formData as any).enfermeria?.nombre_medicamentos, 'enfermeria.nombre_medicamentos')}
+                                            {isAXA2025 && renderInput("Descripción de Actividades", (formData as any).enfermeria?.descripcion_actividades, 'enfermeria.descripcion_actividades', 'textarea')}
+                                            {isAXA2025 && renderInput("Justificación de Terapia", (formData as any).enfermeria?.justificacion_terapia, 'enfermeria.justificacion_terapia', 'textarea')}
+                                            {isAXA2025 && renderInput("Detalle de Evolución", (formData as any).enfermeria?.detalle_evolucion, 'enfermeria.detalle_evolucion', 'textarea')}
+                                            {isAXA2018 && renderInput("Medicamentos", (formData as any).enfermeria?.nombre_medicamentos, 'enfermeria.nombre_medicamentos')}
                                         </div>
                                     </div>
 
-                                    {renderInput("Terapia Especial / Justificación", (formData as any).terapia_especial?.justificacion_terapia, 'terapia_especial.justificacion_terapia', 'textarea')}
-                                    {renderInput("Materiales de Cirugía", (formData as any).terapia_especial?.materiales_cirugia, 'terapia_especial.materiales_cirugia', 'textarea')}
-                                    {renderInput("Detalle de Evolución", (formData as any).terapia_especial?.detalle_evolucion, 'terapia_especial.detalle_evolucion', 'textarea')}
+                                    {isAXA2018 && renderInput("Terapia Especial / Justificación", (formData as any).terapia_especial?.justificacion_terapia, 'terapia_especial.justificacion_terapia', 'textarea')}
+                                    {isAXA2018 && renderInput("Materiales de Cirugía", (formData as any).terapia_especial?.materiales_cirugia, 'terapia_especial.materiales_cirugia', 'textarea')}
+                                    {isAXA2018 && renderInput("Detalle de Evolución", (formData as any).terapia_especial?.detalle_evolucion, 'terapia_especial.detalle_evolucion', 'textarea')}
                                 </div>
                             </div>
                         )}
@@ -1283,10 +1307,52 @@ const Dashboard: React.FC<DashboardProps> = ({
                             </div>
                         )}
 
-                        {provider === 'AXA' && (
+                        {isAXA && (
                             <div id="section-observaciones" className="scroll-mt-20">
                                 <div className="space-y-4">
                                     {renderInput("Observaciones", (formData as any).observaciones?.observaciones, 'observaciones.observaciones', 'textarea')}
+                                </div>
+                            </div>
+                        )}
+
+                        {isAXA2025 && (
+                            <div className="space-y-4">
+                                <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
+                                    <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>PLAN TERAPÉUTICO</h4>
+                                    {renderInput("Técnica Detallada", (formData as any).plan_terapeutico?.tecnica_detallada, 'plan_terapeutico.tecnica_detallada', 'textarea')}
+                                    {renderInput("Tiempo Esperado Hospitalización", (formData as any).plan_terapeutico?.tiempo_esperado_hospitalizacion, 'plan_terapeutico.tiempo_esperado_hospitalizacion')}
+                                </div>
+                                <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
+                                    <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>SOLICITUD DE MATERIAL O EQUIPO</h4>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-xs border-collapse">
+                                            <thead>
+                                                <tr className="bg-slate-100">
+                                                    <th className="p-2 text-left border border-slate-200">Cantidad</th>
+                                                    <th className="p-2 text-left border border-slate-200">Insumo/Equipo</th>
+                                                    <th className="p-2 text-left border border-slate-200">Marca</th>
+                                                    <th className="p-2 text-left border border-slate-200">Distribuidor</th>
+                                                    <th className="p-2 text-left border border-slate-200">RFC</th>
+                                                    <th className="p-2 text-left border border-slate-200">Correo</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {((formData as any).solicitud_material || []).map((row: any, idx: number) => (
+                                                    <tr key={idx} className="hover:bg-slate-50">
+                                                        <td className="p-1 border border-slate-200"><input type="text" value={row.cantidad || ''} onChange={(e) => { const arr = [...((formData as any).solicitud_material || [])]; arr[idx] = {...arr[idx], cantidad: e.target.value}; handleInputChange('solicitud_material', arr); }} className="w-full px-1 py-0.5 text-xs border-0 bg-transparent" /></td>
+                                                        <td className="p-1 border border-slate-200"><input type="text" value={row.insumo_equipo || ''} onChange={(e) => { const arr = [...((formData as any).solicitud_material || [])]; arr[idx] = {...arr[idx], insumo_equipo: e.target.value}; handleInputChange('solicitud_material', arr); }} className="w-full px-1 py-0.5 text-xs border-0 bg-transparent" /></td>
+                                                        <td className="p-1 border border-slate-200"><input type="text" value={row.marca || ''} onChange={(e) => { const arr = [...((formData as any).solicitud_material || [])]; arr[idx] = {...arr[idx], marca: e.target.value}; handleInputChange('solicitud_material', arr); }} className="w-full px-1 py-0.5 text-xs border-0 bg-transparent" /></td>
+                                                        <td className="p-1 border border-slate-200"><input type="text" value={row.distribuidor || ''} onChange={(e) => { const arr = [...((formData as any).solicitud_material || [])]; arr[idx] = {...arr[idx], distribuidor: e.target.value}; handleInputChange('solicitud_material', arr); }} className="w-full px-1 py-0.5 text-xs border-0 bg-transparent" /></td>
+                                                        <td className="p-1 border border-slate-200"><input type="text" value={row.rfc || ''} onChange={(e) => { const arr = [...((formData as any).solicitud_material || [])]; arr[idx] = {...arr[idx], rfc: e.target.value}; handleInputChange('solicitud_material', arr); }} className="w-full px-1 py-0.5 text-xs border-0 bg-transparent" /></td>
+                                                        <td className="p-1 border border-slate-200"><input type="text" value={row.correo_electronico || ''} onChange={(e) => { const arr = [...((formData as any).solicitud_material || [])]; arr[idx] = {...arr[idx], correo_electronico: e.target.value}; handleInputChange('solicitud_material', arr); }} className="w-full px-1 py-0.5 text-xs border-0 bg-transparent" /></td>
+                                                    </tr>
+                                                ))}
+                                                {(!(formData as any).solicitud_material || (formData as any).solicitud_material.length === 0) && (
+                                                    <tr><td colSpan={6} className="p-2 border border-slate-200 text-center text-slate-400 italic text-[10px]">Sin material solicitado</td></tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -1497,7 +1563,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                             </div>
                         )}
 
-                        {provider === 'AXA' && (
+                        {isAXA && (
                             <div className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {renderInput("Tipo Participación", (formData as any).medico_principal?.tipo_participacion, 'medico_principal.tipo_participacion')}
@@ -1515,6 +1581,18 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     {renderInput("Domicilio", (formData as any).medico_principal?.domicilio, 'medico_principal.domicilio')}
                                     {renderInput("Teléfono", (formData as any).medico_principal?.telefono, 'medico_principal.telefono')}
                                 </div>
+                                {isAXA2025 && (
+                                    <>
+                                        {renderCheckboxGroup("¿Ajusta a Tabulador?", (formData as any).medico_principal?.ajusta_tabulador, 'medico_principal.ajusta_tabulador', ['Sí', 'No'])}
+                                        <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
+                                            <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>PERSONA MORAL (si aplica)</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {renderInput("Nombre Común", (formData as any).medico_principal?.persona_moral_nombre_comun, 'medico_principal.persona_moral_nombre_comun')}
+                                                {renderInput("Razón Social", (formData as any).medico_principal?.persona_moral_razon_social, 'medico_principal.persona_moral_razon_social')}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         )}
                         </div>
@@ -1559,7 +1637,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                             </div>
                             )}
 
-                            {provider === 'AXA' && (
+                            {isAXA && (
                                 <div className="space-y-4">
                                     <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
                                         <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>ANESTESIÓLOGO</h4>
@@ -1596,10 +1674,10 @@ const Dashboard: React.FC<DashboardProps> = ({
                                 <h3 className="text-sm font-bold text-slate-400 mb-4 uppercase tracking-widest">Validación de Autorización</h3>
                                 
                                 <div className="grid grid-cols-2 gap-4 mb-4">
-                                    {renderInput("Lugar de Firma", provider === 'AXA' ? (formData as any).firma?.lugar : formData.firma?.lugar, 'firma.lugar')}
+                                    {renderInput("Lugar de Firma", isAXA ? (formData as any).firma?.lugar : formData.firma?.lugar, 'firma.lugar')}
                                     <DateInput 
                                         label="Fecha de Firma" 
-                                        value={provider === 'AXA' ? (formData as any).firma?.fecha : formData.firma?.fecha} 
+                                        value={isAXA ? (formData as any).firma?.fecha : formData.firma?.fecha} 
                                         path="firma.fecha" 
                                         isModified={!!modifiedFields['firma.fecha']} 
                                         isHighlighted={highlightedField === 'firma.fecha'} 
@@ -1607,12 +1685,12 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     />
                                 </div>
                                 
-                                {provider !== 'AXA' && renderInput("Nombre Firma Autógrafa", formData.firma?.nombre_firma, 'firma.nombre_firma')}
+                                {!isAXA && renderInput("Nombre Firma Autógrafa", formData.firma?.nombre_firma, 'firma.nombre_firma')}
                                 
                                 <div className="mt-4 flex items-center justify-center gap-2 p-3 bg-slate-50 rounded-lg">
                                     <input 
                                         type="checkbox" 
-                                        checked={provider === 'AXA' ? ((formData as any).firma?.firma_autografa_detectada || false) : (formData.firma?.firma_autografa_detectada || false)} 
+                                        checked={isAXA ? ((formData as any).firma?.firma_autografa_detectada || false) : (formData.firma?.firma_autografa_detectada || false)} 
                                         onChange={(e) => handleInputChange('firma.firma_autografa_detectada', e.target.checked)} 
                                         className="w-5 h-5 rounded text-emerald-600"
                                     />
@@ -1685,7 +1763,29 @@ const Dashboard: React.FC<DashboardProps> = ({
                             </div>
                         )}
 
-                        {provider === 'AXA' && (
+                        {isAXA2025 && (
+                            <div className="space-y-4">
+                                <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
+                                    <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>AVISO DE PRIVACIDAD</h4>
+                                    <div className="space-y-3">
+                                        <p className="text-[10px] text-slate-500 leading-relaxed">
+                                            Autorización de tratamiento de datos personales conforme al aviso de privacidad integral de AXA Seguros.
+                                        </p>
+                                        <div className="flex items-center gap-2 p-3 bg-white rounded-lg border border-slate-200">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={(formData as any).aviso_privacidad?.firma_asegurado === 'Detectada'} 
+                                                onChange={(e) => handleInputChange('aviso_privacidad.firma_asegurado', e.target.checked ? 'Detectada' : 'No detectada')} 
+                                                className="w-4 h-4 rounded text-emerald-600"
+                                            />
+                                            <span className="text-xs font-medium text-slate-700">Firma del asegurado detectada</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {isAXA2018 && (
                             <div className="space-y-4">
                                 <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
                                     <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>AUTORIZACIONES</h4>

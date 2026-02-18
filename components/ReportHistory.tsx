@@ -296,7 +296,7 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport, onBack, onN
                           );
                         }}
                       />
-                      <span className="text-sm text-slate-700">{broker}</span>
+                      <span className="text-sm text-slate-700">{broker === 'AXA' ? 'AXA 2025' : broker === 'AXA_2018' ? 'AXA 2018' : broker}</span>
                     </label>
                   ))}
                 </div>
@@ -434,7 +434,7 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport, onBack, onN
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       <div className="flex items-center gap-2">
                         <Building2 className="w-4 h-4" />
-                        Broker Asignado
+                        Aseguradora
                       </div>
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -484,7 +484,7 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ onViewReport, onBack, onN
                       </td>
                       <td className="px-6 py-4">
                         <span className="text-sm text-slate-600 bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium">
-                          {report.broker}
+                          {report.broker === 'AXA' ? 'AXA 2025' : report.broker === 'AXA_2018' ? 'AXA 2018' : report.broker}
                         </span>
                       </td>
                       <td className="px-6 py-4">
