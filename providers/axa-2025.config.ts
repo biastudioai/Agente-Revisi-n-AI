@@ -4,7 +4,7 @@ import { ProviderConfig } from "./types";
 export const AXA_2025_CONFIG: ProviderConfig = {
   id: 'AXA',
   name: 'axa_2025',
-  displayName: 'AXA Seguros',
+  displayName: 'AXA Seguros 2025',
 
   theme: {
     primary: 'bg-red-600',
