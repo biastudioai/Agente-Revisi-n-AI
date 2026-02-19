@@ -45,7 +45,7 @@ router.get(
   '/aseguradora/:provider',
   expressAsyncHandler(async (req: Request, res: Response) => {
     const { provider } = req.params;
-    const validProviders = ['GNP', 'METLIFE', 'NYLIFE', 'AXA'];
+    const validProviders = ['GNP', 'METLIFE', 'NYLIFE', 'AXA', 'AXA_2018'];
     
     if (!validProviders.includes(provider.toUpperCase())) {
       res.status(400).json({ 
