@@ -1583,34 +1583,39 @@ const Dashboard: React.FC<DashboardProps> = ({
 
                         {isAXA && (
                             <div className="space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {renderInput("Tipo Participación", (formData as any).medico_principal?.tipo_participacion, 'medico_principal.tipo_participacion')}
-                                    {renderInput("Nombre Completo", (formData as any).medico_principal?.nombre, 'medico_principal.nombre')}
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {renderInput("Especialidad", (formData as any).medico_principal?.especialidad, 'medico_principal.especialidad')}
-                                    {renderInput("Cédula Profesional", (formData as any).medico_principal?.cedula_profesional, 'medico_principal.cedula_profesional')}
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {renderInput("Cédula Especialidad", (formData as any).medico_principal?.cedula_especialidad, 'medico_principal.cedula_especialidad')}
-                                    {renderInput("RFC", (formData as any).medico_principal?.rfc, 'medico_principal.rfc')}
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {renderInput("Domicilio", (formData as any).medico_principal?.domicilio, 'medico_principal.domicilio')}
-                                    {renderInput("Teléfono", (formData as any).medico_principal?.telefono, 'medico_principal.telefono')}
-                                </div>
-                                {isAXA2025 && (
-                                    <>
-                                        {renderCheckboxGroup("¿Ajusta a Tabulador?", (formData as any).medico_principal?.ajusta_tabulador, 'medico_principal.ajusta_tabulador', ['Sí', 'No'])}
-                                        <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
-                                            <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>PERSONA MORAL (si aplica)</h4>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                {renderInput("Nombre Común", (formData as any).medico_principal?.persona_moral_nombre_comun, 'medico_principal.persona_moral_nombre_comun')}
-                                                {renderInput("Razón Social", (formData as any).medico_principal?.persona_moral_razon_social, 'medico_principal.persona_moral_razon_social')}
+                                <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
+                                    <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>MÉDICO O ESPECIALISTA (PRINCIPAL)</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {renderInput("Tipo Participación", (formData as any).medico_principal?.tipo_participacion, 'medico_principal.tipo_participacion')}
+                                        {renderInput("Nombre Completo", (formData as any).medico_principal?.nombre, 'medico_principal.nombre')}
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                        {renderInput("Especialidad", (formData as any).medico_principal?.especialidad, 'medico_principal.especialidad')}
+                                        {renderInput("Cédula Profesional", (formData as any).medico_principal?.cedula_profesional, 'medico_principal.cedula_profesional')}
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                        {renderInput("Cédula Especialidad", (formData as any).medico_principal?.cedula_especialidad, 'medico_principal.cedula_especialidad')}
+                                        {renderInput("RFC a Facturar", (formData as any).medico_principal?.rfc, 'medico_principal.rfc')}
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                        {renderInput("Domicilio", (formData as any).medico_principal?.domicilio, 'medico_principal.domicilio')}
+                                        {renderInput("Teléfono", (formData as any).medico_principal?.telefono, 'medico_principal.telefono')}
+                                    </div>
+                                    {isAXA2025 && (
+                                        <>
+                                            <div className="mt-4">
+                                                {renderCheckboxGroup("¿Ajusta a Tabulador?", (formData as any).medico_principal?.ajusta_tabulador, 'medico_principal.ajusta_tabulador', ['Sí', 'No'])}
                                             </div>
-                                        </div>
-                                    </>
-                                )}
+                                            <div className="mt-4 p-3 bg-white rounded-lg border border-slate-200">
+                                                <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Persona Moral (si aplica)</div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    {renderInput("Nombre Común", (formData as any).medico_principal?.persona_moral_nombre_comun, 'medico_principal.persona_moral_nombre_comun')}
+                                                    {renderInput("Razón Social", (formData as any).medico_principal?.persona_moral_razon_social, 'medico_principal.persona_moral_razon_social')}
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             </div>
                         )}
                         </div>
