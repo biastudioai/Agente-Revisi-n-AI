@@ -99,6 +99,11 @@ const VALIDATORS_REGISTRY: Record<string, (data: any) => boolean> = {
 };
 
 function transformDbRuleToScoringRule(dbRule: DbRuleResponse): ScoringRule {
+  const providerTargetStr = dbRule.providerTarget || 'ALL';
+  const providerTargetsArray = providerTargetStr.includes(',')
+    ? providerTargetStr.split(',').map(t => t.trim())
+    : [providerTargetStr];
+
   const rule: ScoringRule = {
     id: dbRule.ruleId,
     name: dbRule.name,
@@ -106,6 +111,7 @@ function transformDbRuleToScoringRule(dbRule: DbRuleResponse): ScoringRule {
     points: dbRule.points,
     description: dbRule.description,
     providerTarget: dbRule.providerTarget as 'ALL' | 'GNP' | 'METLIFE',
+    providerTargets: providerTargetsArray,
     isCustom: dbRule.isCustom,
     conditions: dbRule.conditions || undefined,
     logicOperator: (dbRule.logicOperator as 'AND' | 'OR') || undefined,
