@@ -5,6 +5,11 @@ import { analyzeReportImages, analyzeReportWithVisionOcr, reEvaluateReport, File
 import { extractTextWithVisionOcr } from '../services/visionOcrService';
 import { ProviderType } from '../providers';
 import { ScoringRule, ExtractedData, AnalysisReport } from '../types';
+import { validatePolicyCompliance } from '../services/policyValidationService';
+import { patientPolicyService } from '../services/patientPolicyService';
+import { condicionesGeneralesService } from '../services/condicionesGeneralesService';
+import prisma from '../config/database';
+import { PatientPolicyData, CondicionesGeneralesData } from '../../../types/policy-types';
 
 const router = Router();
 
@@ -144,6 +149,84 @@ router.post(
       console.error('Error re-evaluating report:', error);
       res.status(500).json({ 
         error: 'Error al re-evaluar el informe',
+        details: error?.message || 'Error desconocido'
+      });
+    }
+  })
+);
+
+// POST /api/analyze/policy-validate — Cross-validate medical form vs policy
+router.post(
+  '/policy-validate',
+  requireAuth,
+  expressAsyncHandler(async (req: Request, res: Response) => {
+    const { medicalFormId, patientPolicyId, condicionesGeneralesId } = req.body;
+
+    if (!medicalFormId || !patientPolicyId) {
+      res.status(400).json({ error: 'Se requiere medicalFormId y patientPolicyId' });
+      return;
+    }
+
+    try {
+      // Fetch medical form data
+      const medicalForm = await prisma.medicalForm.findUnique({
+        where: { id: medicalFormId },
+      });
+
+      if (!medicalForm) {
+        res.status(404).json({ error: 'Formulario médico no encontrado' });
+        return;
+      }
+
+      // Fetch patient policy
+      const patientPolicy = await patientPolicyService.getById(patientPolicyId);
+      if (!patientPolicy) {
+        res.status(404).json({ error: 'Póliza del paciente no encontrada' });
+        return;
+      }
+
+      // Optionally fetch condiciones generales
+      let condicionesData: CondicionesGeneralesData | undefined;
+      if (condicionesGeneralesId) {
+        const condiciones = await condicionesGeneralesService.getById(condicionesGeneralesId);
+        if (condiciones) {
+          condicionesData = condiciones.conditionsData as unknown as CondicionesGeneralesData;
+        }
+      }
+
+      // Extract data from the medical form
+      const formData = medicalForm.formData as any;
+      const extractedData: ExtractedData = formData.extracted || formData;
+      const medicalReportScore = medicalForm.originalScore || undefined;
+
+      // Run policy validation
+      const result = await validatePolicyCompliance(
+        extractedData,
+        patientPolicy.policyData as unknown as PatientPolicyData,
+        condicionesData,
+        medicalReportScore
+      );
+
+      // Save the result
+      const validationResult = await prisma.policyValidationResult.create({
+        data: {
+          medicalFormId,
+          patientPolicyId,
+          condicionesGeneralesId: condicionesGeneralesId || null,
+          policyComplianceScore: result.policyComplianceScore,
+          combinedScore: result.combinedScore ?? null,
+          findings: result.findings as any,
+        },
+      });
+
+      res.json({
+        ...result,
+        id: validationResult.id,
+      });
+    } catch (error: any) {
+      console.error('Error in policy validation:', error);
+      res.status(500).json({
+        error: 'Error al validar póliza',
         details: error?.message || 'Error desconocido'
       });
     }

@@ -58,6 +58,7 @@ model User {
   passwordResets  PasswordReset[]
   auditLogs       AuditLog[]
   medicalForms    MedicalForm[]
+  patientPolicies PatientPolicy[]
   stripeCustomer  StripeCustomer?
   subscriptions   Subscription[]
   paymentHistory  PaymentHistory[]
@@ -80,9 +81,11 @@ model MedicalForm {
   createdAt        DateTime    @default(now()) @map("created_at")
   updatedAt        DateTime    @updatedAt @map("updated_at")
 
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  formPdfs    FormPdf[]
-  ruleVersion RuleVersion? @relation(fields: [ruleVersionId], references: [id])
+  user                    User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  formPdfs                FormPdf[]
+  ruleVersion             RuleVersion?            @relation(fields: [ruleVersionId], references: [id])
+  patientPolicies         PatientPolicy[]
+  policyValidationResults PolicyValidationResult[]
 
   @@index([userId])
   @@index([insuranceCompany])
@@ -366,4 +369,62 @@ model DiscountCodeUsage {
   @@unique([discountCodeId, userId])
   @@index([userId])
   @@map("discount_code_usages")
+}
+
+model CondicionesGenerales {
+  id                    String   @id @default(uuid())
+  aseguradoraCodigo     String   @map("aseguradora_codigo")
+  productName           String   @map("product_name")
+  version               String
+  isActive              Boolean  @default(true) @map("is_active")
+  conditionsData        Json     @map("conditions_data") @db.JsonB
+  sourceDocumentUrl     String?  @map("source_document_url")
+  extractionRawResponse Json?    @map("extraction_raw_response") @db.JsonB
+  notes                 String?
+  createdBy             String?  @map("created_by")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  policyValidationResults PolicyValidationResult[]
+
+  @@unique([aseguradoraCodigo, productName, version])
+  @@map("condiciones_generales")
+}
+
+model PatientPolicy {
+  id                    String   @id @default(uuid())
+  medicalFormId         String?  @map("medical_form_id")
+  userId                String   @map("user_id")
+  policyNumber          String?  @map("policy_number")
+  aseguradoraCodigo     String   @map("aseguradora_codigo")
+  policyData            Json     @map("policy_data") @db.JsonB
+  documentUrls          String[] @map("document_urls")
+  extractionRawResponse Json?    @map("extraction_raw_response") @db.JsonB
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  user                  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  medicalForm           MedicalForm? @relation(fields: [medicalFormId], references: [id], onDelete: SetNull)
+  policyValidationResults PolicyValidationResult[]
+
+  @@index([medicalFormId])
+  @@map("patient_policies")
+}
+
+model PolicyValidationResult {
+  id                      String   @id @default(uuid())
+  medicalFormId           String   @map("medical_form_id")
+  patientPolicyId         String?  @map("patient_policy_id")
+  condicionesGeneralesId  String?  @map("condiciones_generales_id")
+  policyComplianceScore   Int      @map("policy_compliance_score")
+  combinedScore           Int?     @map("combined_score")
+  findings                Json     @map("findings") @db.JsonB
+  createdAt               DateTime @default(now()) @map("created_at")
+
+  medicalForm             MedicalForm           @relation(fields: [medicalFormId], references: [id], onDelete: Cascade)
+  patientPolicy           PatientPolicy?        @relation(fields: [patientPolicyId], references: [id], onDelete: SetNull)
+  condicionesGenerales    CondicionesGenerales? @relation(fields: [condicionesGeneralesId], references: [id], onDelete: SetNull)
+
+  @@index([medicalFormId])
+  @@map("policy_validation_results")
 }

@@ -19,7 +19,11 @@ import { detectProviderFromPdf, DetectedProvider } from './services/providerDete
 import AdminBillingDashboard from './components/AdminBillingDashboard';
 import TrialConversionDashboard from './components/TrialConversionDashboard';
 import AuditorManager from './components/AuditorManager';
-import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw, AlignLeft, Image as ImageIcon, Loader2, Building2, LogOut, ChevronDown, User as UserIcon, CreditCard, BarChart3, History, Users } from 'lucide-react';
+import CondicionesGeneralesManager from './components/CondicionesGeneralesManager';
+import { uploadPatientPolicy, runPolicyValidation, listCondicionesGenerales } from './services/policyApi';
+import { PolicyValidationSummary, PatientPolicyData, PatientPolicyRecord, CondicionesGeneralesRecord } from './types/policy-types';
+import { PolicyFileData } from './components/PolicyUpload';
+import { Stethoscope, Eye, PanelRightClose, PanelRightOpen, ShieldCheck, FileText, ExternalLink, Settings, RefreshCw, AlignLeft, Image as ImageIcon, Loader2, Building2, LogOut, ChevronDown, User as UserIcon, CreditCard, BarChart3, History, Users, BookOpen } from 'lucide-react';
 
 interface User {
   id: string;
@@ -131,6 +135,15 @@ const App: React.FC = () => {
   const [ruleVersionInfo, setRuleVersionInfo] = useState<RuleVersionInfo | null>(null);
   const [currentRuleVersionId, setCurrentRuleVersionId] = useState<string | null>(null);
   const [isRecalculatingWithNewRules, setIsRecalculatingWithNewRules] = useState(false);
+
+  // State for Policy Validation
+  const [patientPolicy, setPatientPolicy] = useState<PatientPolicyRecord | null>(null);
+  const [policyValidation, setPolicyValidation] = useState<PolicyValidationSummary | null>(null);
+  const [isPolicyProcessing, setIsPolicyProcessing] = useState(false);
+  const [policyError, setPolicyError] = useState<string | null>(null);
+  const [isCondicionesManagerOpen, setIsCondicionesManagerOpen] = useState(false);
+  const [condicionesGenerales, setCondicionesGenerales] = useState<CondicionesGeneralesRecord[]>([]);
+  const [selectedCondicionesId, setSelectedCondicionesId] = useState<string | null>(null);
 
   // Dynamic analyzing messages (defined after selectedProvider)
   const analyzingMessages = [
@@ -794,6 +807,63 @@ const App: React.FC = () => {
       setIsRecalculatingWithNewRules(false);
     }
   };
+
+  // Policy upload handler
+  const handlePolicyUpload = async (files: PolicyFileData[]) => {
+    if (!selectedProvider || selectedProvider === 'UNKNOWN') return;
+    setIsPolicyProcessing(true);
+    setPolicyError(null);
+    try {
+      const fileInputs = files.map(f => ({
+        base64Data: f.base64,
+        mimeType: f.mimeType,
+      }));
+      const result = await uploadPatientPolicy(fileInputs, selectedProvider, currentFormId || undefined);
+      setPatientPolicy(result);
+    } catch (err: any) {
+      setPolicyError(err.message || 'Error al procesar la póliza');
+    } finally {
+      setIsPolicyProcessing(false);
+    }
+  };
+
+  // Run policy validation handler
+  const handleRunPolicyValidation = async () => {
+    if (!currentFormId || !patientPolicy) return;
+    setIsPolicyProcessing(true);
+    setPolicyError(null);
+    try {
+      const result = await runPolicyValidation(
+        currentFormId,
+        patientPolicy.id,
+        selectedCondicionesId || undefined
+      );
+      setPolicyValidation(result);
+    } catch (err: any) {
+      setPolicyError(err.message || 'Error al validar póliza');
+    } finally {
+      setIsPolicyProcessing(false);
+    }
+  };
+
+  // Load condiciones generales when provider changes
+  useEffect(() => {
+    if (selectedProvider && selectedProvider !== 'UNKNOWN') {
+      listCondicionesGenerales(selectedProvider)
+        .then(setCondicionesGenerales)
+        .catch(() => setCondicionesGenerales([]));
+    }
+  }, [selectedProvider]);
+
+  // Reset policy state when starting new analysis
+  useEffect(() => {
+    if (status === 'idle' || status === 'analyzing') {
+      setPatientPolicy(null);
+      setPolicyValidation(null);
+      setPolicyError(null);
+      setSelectedCondicionesId(null);
+    }
+  }, [status]);
 
   // Effect to check for rule changes when report changes
   useEffect(() => {
@@ -1579,9 +1649,9 @@ const App: React.FC = () => {
             style={{ width: isPanelOpen ? '50%' : '100%', flex: 'none' }}
           >
              {report && (
-                <Dashboard 
-                  report={report} 
-                  onReevaluate={handleReevaluate} 
+                <Dashboard
+                  report={report}
+                  onReevaluate={handleReevaluate}
                   isReevaluating={status === 're-evaluating'}
                   onSyncChanges={handleSyncChanges}
                   onSaveChanges={handleSaveChanges}
@@ -1591,6 +1661,20 @@ const App: React.FC = () => {
                   isRecalculatingWithNewRules={isRecalculatingWithNewRules}
                   onRecalculateWithCurrentRules={handleRecalculateWithCurrentRules}
                   userRole={user?.rol}
+                  patientPolicy={patientPolicy}
+                  policyValidation={policyValidation}
+                  isPolicyProcessing={isPolicyProcessing}
+                  policyError={policyError}
+                  onPolicyUpload={handlePolicyUpload}
+                  onRunPolicyValidation={handleRunPolicyValidation}
+                  onUpdatePolicyData={(data) => {
+                    if (patientPolicy) {
+                      setPatientPolicy({ ...patientPolicy, policyData: data });
+                    }
+                  }}
+                  condicionesGenerales={condicionesGenerales}
+                  selectedCondicionesId={selectedCondicionesId}
+                  onSelectCondiciones={setSelectedCondicionesId}
                 />
              )}
           </div>
@@ -1999,6 +2083,16 @@ const App: React.FC = () => {
                       <Users className="w-4 h-4" />
                       Conversión de Pruebas
                     </button>
+                    <button
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        setIsCondicionesManagerOpen(true);
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-veryka-dark hover:bg-veryka-cyan/10 flex items-center gap-2 transition-colors"
+                    >
+                      <BookOpen className="w-4 h-4" />
+                      Condiciones Generales
+                    </button>
                   </>
                 )}
                 <button
@@ -2189,6 +2283,12 @@ const App: React.FC = () => {
       <TrialConversionDashboard
         isOpen={isTrialDashboardOpen}
         onClose={() => setIsTrialDashboardOpen(false)}
+      />
+
+      {/* Condiciones Generales Manager (Admin) */}
+      <CondicionesGeneralesManager
+        isOpen={isCondicionesManagerOpen}
+        onClose={() => setIsCondicionesManagerOpen(false)}
       />
     </div>
   );

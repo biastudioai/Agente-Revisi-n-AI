@@ -36,7 +36,7 @@ function validateConfig(): void {
 
 let aiClient: GoogleGenAI | null = null;
 
-function getAIClient(): GoogleGenAI {
+export function getAIClient(): GoogleGenAI {
   validateConfig();
   
   if (!credentialsSetup) {

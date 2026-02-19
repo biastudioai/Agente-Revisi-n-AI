@@ -1,16 +1,18 @@
 
 import React, { useState } from 'react';
-import { X, Send, Download, CheckCircle2, AlertTriangle, XCircle, Loader2, AlertCircle, FileText, MousePointerClick } from 'lucide-react';
+import { X, Send, Download, CheckCircle2, AlertTriangle, XCircle, Loader2, AlertCircle, FileText, MousePointerClick, Shield } from 'lucide-react';
 import { AnalysisReport } from '../types';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { PolicyValidationSummary } from '../types/policy-types';
 
 interface ReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   report: AnalysisReport;
+  policyValidation?: PolicyValidationSummary | null;
 }
 
-const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, report }) => {
+const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, report, policyValidation }) => {
   const [email, setEmail] = useState('');
   const [comments, setComments] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -682,6 +684,45 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, report }) =>
                              )}
                         </div>
                     </div>
+
+                    {/* Policy Validation Section */}
+                    {policyValidation && (
+                      <div className="mt-6">
+                        <div className="flex items-center mb-4">
+                          <Shield className="w-4 h-4 text-slate-400 mr-2" />
+                          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            Validación de Póliza (Score: {policyValidation.policyComplianceScore}/100)
+                          </h3>
+                          {policyValidation.combinedScore !== undefined && (
+                            <span className="ml-2 text-[10px] bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full font-bold">
+                              General: {policyValidation.combinedScore}/100
+                            </span>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          {policyValidation.findings.map((finding, idx) => {
+                            const severityColors: Record<string, { bg: string; text: string; badge: string }> = {
+                              CRITICO: { bg: 'bg-red-50/50 border-red-100', text: 'text-red-700', badge: 'bg-white border-red-200 text-red-600' },
+                              IMPORTANTE: { bg: 'bg-amber-50/50 border-amber-100', text: 'text-amber-700', badge: 'bg-white border-amber-200 text-amber-600' },
+                              MODERADO: { bg: 'bg-orange-50/50 border-orange-100', text: 'text-orange-700', badge: 'bg-white border-orange-200 text-orange-600' },
+                              INFORMATIVO: { bg: 'bg-blue-50/50 border-blue-100', text: 'text-blue-600', badge: 'bg-white border-blue-200 text-blue-500' },
+                            };
+                            const colors = severityColors[finding.severity] || severityColors.INFORMATIVO;
+                            return (
+                              <div key={idx} className={`p-3 rounded-xl border ${colors.bg}`}>
+                                <div className="flex justify-between items-start mb-1">
+                                  <span className={`text-xs font-bold ${colors.text}`}>{finding.title}</span>
+                                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase ${colors.badge}`}>
+                                    {finding.severity}
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-gray-600 leading-snug">{finding.description}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                 </div>
 
                 {/* RIGHT COLUMN: INPUTS */}

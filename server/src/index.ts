@@ -20,6 +20,8 @@ import auditorsRoutes from './routes/auditors';
 import setupRoutes from './routes/setup';
 import analyzeRoutes from './routes/analyze';
 import trialRoutes from './routes/trial';
+import condicionesRoutes from './routes/condiciones';
+import policiesRoutes from './routes/policies';
 import { initializeDatabase, getPrisma, closeDatabaseConnection } from './config/database';
 import { registerObjectStorageRoutes } from '../replit_integrations/object_storage';
 import { runMigrations } from 'stripe-replit-sync';
@@ -296,6 +298,8 @@ app.use('/api/auditors', auditorsRoutes);
 app.use('/api/setup', setupRoutes);
 app.use('/api/analyze', analyzeRoutes);
 app.use('/api/trial', trialRoutes);
+app.use('/api/condiciones', condicionesRoutes);
+app.use('/api/policies', policiesRoutes);
 
 registerObjectStorageRoutes(app);
 

@@ -3,9 +3,13 @@ import { AnalysisReport, ExtractedData, ProviderType, PersonalQuirurgico } from 
 import ScoreCard from './ScoreCard';
 import DateInput from './DateInput';
 import ReviewModal from './ReviewModal';
+import PolicyUpload, { PolicyFileData } from './PolicyUpload';
+import PolicyDataEditor from './PolicyDataEditor';
+import PolicyValidationCard from './PolicyValidationCard';
 import { getProviderTheme } from '../providers';
-import { RotateCcw, Activity, User, FileText, Hospital, Users, PenTool, ShieldCheck, HeartPulse, ClipboardList, BadgeCheck, Stethoscope, Syringe, Save } from 'lucide-react';
+import { RotateCcw, Activity, User, FileText, Hospital, Users, PenTool, ShieldCheck, HeartPulse, ClipboardList, BadgeCheck, Stethoscope, Syringe, Save, Shield, Play } from 'lucide-react';
 import { RuleVersionInfo } from './RuleVersionIndicator';
+import { PatientPolicyData, PatientPolicyRecord, PolicyValidationSummary, CondicionesGeneralesRecord } from '../types/policy-types';
 
 interface DashboardProps {
   report: AnalysisReport;
@@ -19,31 +23,53 @@ interface DashboardProps {
   isRecalculatingWithNewRules?: boolean;
   onRecalculateWithCurrentRules?: () => void;
   userRole?: string;
+  // Policy validation props
+  patientPolicy?: PatientPolicyRecord | null;
+  policyValidation?: PolicyValidationSummary | null;
+  isPolicyProcessing?: boolean;
+  policyError?: string | null;
+  onPolicyUpload?: (files: PolicyFileData[]) => void;
+  onRunPolicyValidation?: () => void;
+  onUpdatePolicyData?: (data: PatientPolicyData) => void;
+  condicionesGenerales?: CondicionesGeneralesRecord[];
+  selectedCondicionesId?: string | null;
+  onSelectCondiciones?: (id: string | null) => void;
 }
 
-type TabId = 
-  | 'identificacion' 
-  | 'antecedentes' 
-  | 'padecimiento' 
+type TabId =
+  | 'identificacion'
+  | 'antecedentes'
+  | 'padecimiento'
   | 'tratamiento'
-  | 'hospital' 
-  | 'observaciones' 
-  | 'equipo_qx' 
-  | 'medico' 
-  | 'validacion';
+  | 'hospital'
+  | 'observaciones'
+  | 'equipo_qx'
+  | 'medico'
+  | 'validacion'
+  | 'poliza';
 
-const Dashboard: React.FC<DashboardProps> = ({ 
-  report, 
-  onReevaluate, 
-  isReevaluating, 
-  onSyncChanges, 
-  onSaveChanges, 
-  hasUnsavedChanges, 
+const Dashboard: React.FC<DashboardProps> = ({
+  report,
+  onReevaluate,
+  isReevaluating,
+  onSyncChanges,
+  onSaveChanges,
+  hasUnsavedChanges,
   isAutoSaving,
   ruleVersionInfo,
   isRecalculatingWithNewRules,
   onRecalculateWithCurrentRules,
   userRole,
+  patientPolicy,
+  policyValidation,
+  isPolicyProcessing,
+  policyError,
+  onPolicyUpload,
+  onRunPolicyValidation,
+  onUpdatePolicyData,
+  condicionesGenerales,
+  selectedCondicionesId,
+  onSelectCondiciones,
 }) => {
   const [formData, setFormData] = useState<ExtractedData>(report.extracted);
   const [modifiedFields, setModifiedFields] = useState<Record<string, { old: any, new: any }>>({});
@@ -372,11 +398,12 @@ const Dashboard: React.FC<DashboardProps> = ({
      ...baseTabs,
      ...(provider === 'METLIFE' ? [equipoTab, medicoTab] : [medicoTab, equipoTab]),
      { id: 'validacion' as TabId, label: 'Firma', icon: PenTool, metlifeSection: '8' },
+     { id: 'poliza' as TabId, label: 'Póliza', icon: Shield },
   ];
 
   return (
     <div className="h-full flex flex-col bg-white relative overflow-auto custom-scrollbar">
-      <ReviewModal isOpen={isReviewModalOpen} onClose={() => setIsReviewModalOpen(false)} report={{ ...report, extracted: formData }} />
+      <ReviewModal isOpen={isReviewModalOpen} onClose={() => setIsReviewModalOpen(false)} report={{ ...report, extracted: formData }} policyValidation={policyValidation} />
 
       <div className={`border-b px-6 py-4 flex justify-between items-center shrink-0 ${theme.border} ${theme.light}`}>
          <div>
@@ -1873,22 +1900,90 @@ const Dashboard: React.FC<DashboardProps> = ({
                         </pre>
                     </div>
                 )}
+
+                {/* Policy Validation Section */}
+                <div id="section-poliza" className="scroll-mt-20 mt-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+                      <Shield className="w-4 h-4 text-veryka-dark" />
+                      <h2 className="text-sm font-black text-veryka-dark uppercase tracking-widest">Validación de Póliza</h2>
+                    </div>
+
+                    {/* Policy Upload or Data */}
+                    {!patientPolicy && onPolicyUpload && (
+                      <PolicyUpload
+                        onFilesConfirmed={onPolicyUpload}
+                        isProcessing={isPolicyProcessing || false}
+                        error={policyError}
+                      />
+                    )}
+
+                    {patientPolicy && (
+                      <>
+                        <PolicyDataEditor
+                          policyData={patientPolicy.policyData as PatientPolicyData}
+                          onUpdate={(data) => onUpdatePolicyData?.(data)}
+                        />
+
+                        {/* Condiciones Generales selector */}
+                        {condicionesGenerales && condicionesGenerales.length > 0 && (
+                          <div>
+                            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Condiciones Generales (opcional)</label>
+                            <select
+                              value={selectedCondicionesId || ''}
+                              onChange={(e) => onSelectCondiciones?.(e.target.value || null)}
+                              className="w-full text-xs border border-slate-200 rounded-lg px-2 py-1.5 bg-white mt-1"
+                            >
+                              <option value="">Sin condiciones generales</option>
+                              {condicionesGenerales.map(cg => (
+                                <option key={cg.id} value={cg.id}>
+                                  {cg.productName} v{cg.version}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        {/* Run Validation Button */}
+                        {!policyValidation && onRunPolicyValidation && (
+                          <button
+                            onClick={onRunPolicyValidation}
+                            disabled={isPolicyProcessing}
+                            className="w-full py-2.5 rounded-veryka text-xs font-bold text-white bg-gradient-to-r from-veryka-dark to-veryka-cyan hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-accent-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                          >
+                            <Play className="w-3.5 h-3.5" />
+                            {isPolicyProcessing ? 'Validando...' : 'Ejecutar Validación Cruzada'}
+                          </button>
+                        )}
+
+                        {/* Validation Results */}
+                        {policyValidation && (
+                          <PolicyValidationCard
+                            validation={policyValidation}
+                            onFindingClick={handleIssueClick}
+                          />
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
          </div>
 
-         {/* Right column: Sticky ScoreCard */}
+         {/* Right column: Sticky ScoreCard + Policy Score */}
          <div className="w-full lg:w-72 xl:w-80 shrink-0 lg:overflow-y-auto lg:max-h-full">
-            <div className="lg:sticky lg:top-0">
-                <ScoreCard 
-                  scoreData={report.score} 
-                  flags={report.flags} 
-                  hasChanges={Object.keys(modifiedFields).length > 0} 
-                  onReevaluate={() => onReevaluate(formData)} 
-                  isReevaluating={isReevaluating} 
-                  onIssueClick={handleIssueClick} 
+            <div className="lg:sticky lg:top-0 space-y-3">
+                <ScoreCard
+                  scoreData={report.score}
+                  flags={report.flags}
+                  hasChanges={Object.keys(modifiedFields).length > 0}
+                  onReevaluate={() => onReevaluate(formData)}
+                  isReevaluating={isReevaluating}
+                  onIssueClick={handleIssueClick}
                   onOpenReview={() => setIsReviewModalOpen(true)}
                   ruleVersionInfo={ruleVersionInfo}
                   isRecalculatingWithNewRules={isRecalculatingWithNewRules}
                   onRecalculateWithCurrentRules={onRecalculateWithCurrentRules}
+                  policyValidation={policyValidation}
                 />
             </div>
          </div>

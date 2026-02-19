@@ -1,8 +1,9 @@
 
 import React from 'react';
 import { ScoringResult, Flag } from '../types';
-import { TrendingUp, TrendingDown, RefreshCw, Save, AlertCircle, AlertTriangle, CheckCircle2, XCircle, MousePointerClick, Send } from 'lucide-react';
+import { TrendingUp, TrendingDown, RefreshCw, Save, AlertCircle, AlertTriangle, CheckCircle2, XCircle, MousePointerClick, Send, Shield } from 'lucide-react';
 import RuleVersionIndicator, { RuleVersionInfo } from './RuleVersionIndicator';
+import { PolicyValidationSummary } from '../types/policy-types';
 
 interface ScoreCardProps {
   scoreData: ScoringResult;
@@ -15,19 +16,21 @@ interface ScoreCardProps {
   ruleVersionInfo?: RuleVersionInfo | null;
   isRecalculatingWithNewRules?: boolean;
   onRecalculateWithCurrentRules?: () => void;
+  policyValidation?: PolicyValidationSummary | null;
 }
 
-const ScoreCard: React.FC<ScoreCardProps> = ({ 
-  scoreData, 
-  flags, 
-  hasChanges, 
-  isReevaluating, 
-  onReevaluate, 
-  onIssueClick, 
+const ScoreCard: React.FC<ScoreCardProps> = ({
+  scoreData,
+  flags,
+  hasChanges,
+  isReevaluating,
+  onReevaluate,
+  onIssueClick,
   onOpenReview,
   ruleVersionInfo,
   isRecalculatingWithNewRules = false,
   onRecalculateWithCurrentRules,
+  policyValidation,
 }) => {
   const { finalScore, delta } = scoreData;
   
@@ -155,6 +158,24 @@ const ScoreCard: React.FC<ScoreCardProps> = ({
                 {delta > 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
                 {delta > 0 ? '+' : ''}{delta} pts
             </div>
+            )}
+
+            {/* Policy Validation Scores */}
+            {policyValidation && (
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+                <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold gap-1
+                  ${policyValidation.policyComplianceScore >= 85 ? 'bg-emerald-100 text-emerald-700' :
+                    policyValidation.policyComplianceScore >= 60 ? 'bg-amber-100 text-amber-700' :
+                    'bg-red-100 text-red-700'}`}>
+                  <Shield className="w-3 h-3" />
+                  Póliza: {policyValidation.policyComplianceScore}/100
+                </div>
+                {policyValidation.combinedScore !== undefined && (
+                  <div className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-brand-100 text-brand-700 gap-1">
+                    General: {policyValidation.combinedScore}/100
+                  </div>
+                )}
+              </div>
             )}
         </div>
       </div>
