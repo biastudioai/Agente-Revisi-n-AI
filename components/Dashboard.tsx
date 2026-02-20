@@ -95,7 +95,18 @@ const Dashboard: React.FC<DashboardProps> = ({
   useEffect(() => {
     if (highlightedField && viewMode === 'form') {
         const timer = setTimeout(() => {
-            const element = document.getElementById(`field-${highlightedField}`);
+            let element = document.getElementById(`field-${highlightedField}`);
+            // Fallback: strip bracket notation
+            if (!element && highlightedField.includes('[')) {
+                element = document.getElementById(`field-${highlightedField.replace(/\[\d+\].*$/, '')}`);
+            }
+            // Fallback: walk up the path hierarchy
+            if (!element && highlightedField.includes('.')) {
+                const parts = highlightedField.split('.');
+                for (let i = parts.length - 1; i >= 1 && !element; i--) {
+                    element = document.getElementById(`field-${parts.slice(0, i).join('.')}`);
+                }
+            }
             if (element) {
                 // Encontrar el contenedor padre que tiene el scroll (overflow-y-auto)
                 const scrollContainer = element.closest('.overflow-y-auto');
@@ -201,13 +212,15 @@ const Dashboard: React.FC<DashboardProps> = ({
   };
 
   const getTabForField = (path: string, currentProvider: ProviderType): TabId => {
-    if (path.includes('identificacion') || path.includes('tramite') || path.includes('firma')) return 'identificacion';
+    if (path.includes('identificacion') || path.includes('tramite') || path.includes('firma') || path.includes('motivo_atencion')) return 'identificacion';
     if (path.includes('antecedentes')) return 'antecedentes';
-    if (path.includes('padecimiento') || path.includes('diagnostico') || path.includes('intervencion') || path.includes('complicaciones') || path.includes('exploracion')) return 'padecimiento';
+    if (path.includes('padecimiento') || path.includes('diagnostico') || path.includes('intervencion') || path.includes('complicaciones') || path.includes('exploracion') || path.includes('signos_vitales') || path.includes('estudios')) return 'padecimiento';
+    if (path.includes('tratamiento') || path.includes('tabla_medicamentos') || path.includes('rehabilitacion') || path.includes('enfermeria') || path.includes('terapia_especial')) return 'padecimiento';
     if (path.includes('hospital')) return 'hospital';
     if (path.includes('info_adicional')) {
       return currentProvider === 'METLIFE' ? 'observaciones' : 'padecimiento';
     }
+    if (path.includes('observaciones') || path.includes('solicitud_material') || path.includes('plan_terapeutico')) return 'observaciones';
     if (path.includes('medico')) return 'medico';
     if (path.includes('equipo_quirurgico')) {
       return currentProvider === 'NYLIFE' ? 'medico' : 'equipo_qx';
@@ -466,6 +479,20 @@ const Dashboard: React.FC<DashboardProps> = ({
                                 {isMetLife && <span className="mr-1.5 opacity-50">{tab.metlifeSection}.</span>}
                                 <Icon className="w-3.5 h-3.5 mr-2" />
                                 {tab.label.toUpperCase()}
+                                {tab.id === 'poliza' && (
+                                  <span className="ml-1.5 relative flex h-2 w-2">
+                                    {!patientPolicy ? (
+                                      <>
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                                      </>
+                                    ) : !policyValidation ? (
+                                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                                    ) : (
+                                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                                    )}
+                                  </span>
+                                )}
                                 </button>
                             );
                         })}
@@ -642,63 +669,63 @@ const Dashboard: React.FC<DashboardProps> = ({
                                 <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
                                     <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>ANTECEDENTES PATOLÓGICOS</h4>
                                     <div className="space-y-2">
-                                        <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
+                                        <div id="field-antecedentes_patologicos.cardiacos" className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
                                             <label className="flex items-center gap-2 min-w-[140px]">
                                                 <input type="checkbox" checked={(formData as any).antecedentes_patologicos?.cardiacos === 'Sí'} onChange={(e) => handleInputChange('antecedentes_patologicos.cardiacos', e.target.checked ? 'Sí' : '')} className="w-4 h-4 rounded" />
                                                 <span className="text-xs font-medium text-slate-700">Cardíacos</span>
                                             </label>
                                             <input type="text" value={(formData as any).antecedentes_patologicos?.cardiacos_detalle || ''} onChange={(e) => handleInputChange('antecedentes_patologicos.cardiacos_detalle', e.target.value)} placeholder="Detalle..." className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded" />
                                         </div>
-                                        <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
+                                        <div id="field-antecedentes_patologicos.hipertensivos" className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
                                             <label className="flex items-center gap-2 min-w-[140px]">
                                                 <input type="checkbox" checked={(formData as any).antecedentes_patologicos?.hipertensivos === 'Sí'} onChange={(e) => handleInputChange('antecedentes_patologicos.hipertensivos', e.target.checked ? 'Sí' : '')} className="w-4 h-4 rounded" />
                                                 <span className="text-xs font-medium text-slate-700">Hipertensivos</span>
                                             </label>
                                             <input type="text" value={(formData as any).antecedentes_patologicos?.hipertensivos_detalle || ''} onChange={(e) => handleInputChange('antecedentes_patologicos.hipertensivos_detalle', e.target.value)} placeholder="Detalle..." className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded" />
                                         </div>
-                                        <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
+                                        <div id="field-antecedentes_patologicos.diabetes_mellitus" className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
                                             <label className="flex items-center gap-2 min-w-[140px]">
                                                 <input type="checkbox" checked={(formData as any).antecedentes_patologicos?.diabetes_mellitus === 'Sí'} onChange={(e) => handleInputChange('antecedentes_patologicos.diabetes_mellitus', e.target.checked ? 'Sí' : '')} className="w-4 h-4 rounded" />
                                                 <span className="text-xs font-medium text-slate-700">Diabetes Mellitus</span>
                                             </label>
                                             <input type="text" value={(formData as any).antecedentes_patologicos?.diabetes_mellitus_detalle || ''} onChange={(e) => handleInputChange('antecedentes_patologicos.diabetes_mellitus_detalle', e.target.value)} placeholder="Detalle..." className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded" />
                                         </div>
-                                        <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
+                                        <div id="field-antecedentes_patologicos.vih_sida" className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
                                             <label className="flex items-center gap-2 min-w-[140px]">
                                                 <input type="checkbox" checked={(formData as any).antecedentes_patologicos?.vih_sida === 'Sí'} onChange={(e) => handleInputChange('antecedentes_patologicos.vih_sida', e.target.checked ? 'Sí' : '')} className="w-4 h-4 rounded" />
                                                 <span className="text-xs font-medium text-slate-700">VIH/SIDA</span>
                                             </label>
                                             <input type="text" value={(formData as any).antecedentes_patologicos?.vih_sida_detalle || ''} onChange={(e) => handleInputChange('antecedentes_patologicos.vih_sida_detalle', e.target.value)} placeholder="Detalle..." className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded" />
                                         </div>
-                                        <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
+                                        <div id="field-antecedentes_patologicos.cancer" className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
                                             <label className="flex items-center gap-2 min-w-[140px]">
                                                 <input type="checkbox" checked={(formData as any).antecedentes_patologicos?.cancer === 'Sí'} onChange={(e) => handleInputChange('antecedentes_patologicos.cancer', e.target.checked ? 'Sí' : '')} className="w-4 h-4 rounded" />
                                                 <span className="text-xs font-medium text-slate-700">Cáncer</span>
                                             </label>
                                             <input type="text" value={(formData as any).antecedentes_patologicos?.cancer_detalle || ''} onChange={(e) => handleInputChange('antecedentes_patologicos.cancer_detalle', e.target.value)} placeholder="Detalle..." className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded" />
                                         </div>
-                                        <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
+                                        <div id="field-antecedentes_patologicos.hepaticos" className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
                                             <label className="flex items-center gap-2 min-w-[140px]">
                                                 <input type="checkbox" checked={(formData as any).antecedentes_patologicos?.hepaticos === 'Sí'} onChange={(e) => handleInputChange('antecedentes_patologicos.hepaticos', e.target.checked ? 'Sí' : '')} className="w-4 h-4 rounded" />
                                                 <span className="text-xs font-medium text-slate-700">Hepáticos</span>
                                             </label>
                                             <input type="text" value={(formData as any).antecedentes_patologicos?.hepaticos_detalle || ''} onChange={(e) => handleInputChange('antecedentes_patologicos.hepaticos_detalle', e.target.value)} placeholder="Detalle..." className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded" />
                                         </div>
-                                        <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
+                                        <div id="field-antecedentes_patologicos.convulsivos" className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
                                             <label className="flex items-center gap-2 min-w-[140px]">
                                                 <input type="checkbox" checked={(formData as any).antecedentes_patologicos?.convulsivos === 'Sí'} onChange={(e) => handleInputChange('antecedentes_patologicos.convulsivos', e.target.checked ? 'Sí' : '')} className="w-4 h-4 rounded" />
                                                 <span className="text-xs font-medium text-slate-700">Convulsivos</span>
                                             </label>
                                             <input type="text" value={(formData as any).antecedentes_patologicos?.convulsivos_detalle || ''} onChange={(e) => handleInputChange('antecedentes_patologicos.convulsivos_detalle', e.target.value)} placeholder="Detalle..." className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded" />
                                         </div>
-                                        <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
+                                        <div id="field-antecedentes_patologicos.cirugias" className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
                                             <label className="flex items-center gap-2 min-w-[140px]">
                                                 <input type="checkbox" checked={(formData as any).antecedentes_patologicos?.cirugias === 'Sí'} onChange={(e) => handleInputChange('antecedentes_patologicos.cirugias', e.target.checked ? 'Sí' : '')} className="w-4 h-4 rounded" />
                                                 <span className="text-xs font-medium text-slate-700">Cirugías Previas</span>
                                             </label>
                                             <input type="text" value={(formData as any).antecedentes_patologicos?.cirugias_detalle || ''} onChange={(e) => handleInputChange('antecedentes_patologicos.cirugias_detalle', e.target.value)} placeholder="Detalle..." className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded" />
                                         </div>
-                                        <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
+                                        <div id="field-antecedentes_patologicos.otros" className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
                                             <label className="flex items-center gap-2 min-w-[140px]">
                                                 <input type="checkbox" checked={(formData as any).antecedentes_patologicos?.otros === 'Sí'} onChange={(e) => handleInputChange('antecedentes_patologicos.otros', e.target.checked ? 'Sí' : '')} className="w-4 h-4 rounded" />
                                                 <span className="text-xs font-medium text-slate-700">Otros</span>
@@ -711,49 +738,49 @@ const Dashboard: React.FC<DashboardProps> = ({
                                 <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
                                     <h4 className="text-xs font-black mb-3 text-blue-600">ANTECEDENTES NO PATOLÓGICOS</h4>
                                     <div className="space-y-2">
-                                        <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-100">
+                                        <div id="field-antecedentes_no_patologicos.fuma" className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-100">
                                             <label className="flex items-center gap-2 min-w-[180px]">
                                                 <input type="checkbox" checked={!!(formData as any).antecedentes_no_patologicos?.fuma} onChange={(e) => handleInputChange('antecedentes_no_patologicos.fuma', e.target.checked ? 'Sí' : '')} className="w-4 h-4 rounded" />
                                                 <span className="text-xs font-medium text-slate-700">¿Fuma? (cantidad)</span>
                                             </label>
                                             <input type="text" value={(formData as any).antecedentes_no_patologicos?.fuma || ''} onChange={(e) => handleInputChange('antecedentes_no_patologicos.fuma', e.target.value)} placeholder="Cantidad..." className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded" />
                                         </div>
-                                        <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-100">
+                                        <div id="field-antecedentes_no_patologicos.alcohol" className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-100">
                                             <label className="flex items-center gap-2 min-w-[180px]">
                                                 <input type="checkbox" checked={!!(formData as any).antecedentes_no_patologicos?.alcohol} onChange={(e) => handleInputChange('antecedentes_no_patologicos.alcohol', e.target.checked ? 'Sí' : '')} className="w-4 h-4 rounded" />
                                                 <span className="text-xs font-medium text-slate-700">¿Bebidas alcohólicas?</span>
                                             </label>
                                             <input type="text" value={(formData as any).antecedentes_no_patologicos?.alcohol || ''} onChange={(e) => handleInputChange('antecedentes_no_patologicos.alcohol', e.target.value)} placeholder="Tipo y cantidad..." className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded" />
                                         </div>
-                                        <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-100">
+                                        <div id="field-antecedentes_no_patologicos.drogas" className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-100">
                                             <label className="flex items-center gap-2 min-w-[180px]">
                                                 <input type="checkbox" checked={!!(formData as any).antecedentes_no_patologicos?.drogas} onChange={(e) => handleInputChange('antecedentes_no_patologicos.drogas', e.target.checked ? 'Sí' : '')} className="w-4 h-4 rounded" />
                                                 <span className="text-xs font-medium text-slate-700">¿Consume drogas?</span>
                                             </label>
                                             <input type="text" value={(formData as any).antecedentes_no_patologicos?.drogas || ''} onChange={(e) => handleInputChange('antecedentes_no_patologicos.drogas', e.target.value)} placeholder="Tipo y cantidad..." className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded" />
                                         </div>
-                                        <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-100">
+                                        <div id="field-antecedentes_no_patologicos.perdida_peso" className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-100">
                                             <label className="flex items-center gap-2 min-w-[180px]">
                                                 <input type="checkbox" checked={!!(formData as any).antecedentes_no_patologicos?.perdida_peso} onChange={(e) => handleInputChange('antecedentes_no_patologicos.perdida_peso', e.target.checked ? 'Sí' : '')} className="w-4 h-4 rounded" />
                                                 <span className="text-xs font-medium text-slate-700">¿Pérdida de peso?</span>
                                             </label>
                                             <input type="text" value={(formData as any).antecedentes_no_patologicos?.perdida_peso || ''} onChange={(e) => handleInputChange('antecedentes_no_patologicos.perdida_peso', e.target.value)} placeholder="Cantidad..." className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded" />
                                         </div>
-                                        <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-100">
+                                        <div id="field-antecedentes_no_patologicos.perinatales" className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-100">
                                             <label className="flex items-center gap-2 min-w-[180px]">
                                                 <input type="checkbox" checked={!!(formData as any).antecedentes_no_patologicos?.perinatales} onChange={(e) => handleInputChange('antecedentes_no_patologicos.perinatales', e.target.checked ? 'Sí' : '')} className="w-4 h-4 rounded" />
                                                 <span className="text-xs font-medium text-slate-700">Perinatales</span>
                                             </label>
                                             <input type="text" value={(formData as any).antecedentes_no_patologicos?.perinatales || ''} onChange={(e) => handleInputChange('antecedentes_no_patologicos.perinatales', e.target.value)} placeholder="Detalle..." className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded" />
                                         </div>
-                                        <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-100">
+                                        <div id="field-antecedentes_no_patologicos.gineco_obstetricos" className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-100">
                                             <label className="flex items-center gap-2 min-w-[180px]">
                                                 <input type="checkbox" checked={!!(formData as any).antecedentes_no_patologicos?.gineco_obstetricos} onChange={(e) => handleInputChange('antecedentes_no_patologicos.gineco_obstetricos', e.target.checked ? 'Sí' : '')} className="w-4 h-4 rounded" />
                                                 <span className="text-xs font-medium text-slate-700">Gineco-Obstétricos</span>
                                             </label>
                                             <input type="text" value={(formData as any).antecedentes_no_patologicos?.gineco_obstetricos || ''} onChange={(e) => handleInputChange('antecedentes_no_patologicos.gineco_obstetricos', e.target.value)} placeholder="Detalle..." className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded" />
                                         </div>
-                                        <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-100">
+                                        <div id="field-antecedentes_no_patologicos.otros" className="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-100">
                                             <label className="flex items-center gap-2 min-w-[180px]">
                                                 <input type="checkbox" checked={!!(formData as any).antecedentes_no_patologicos?.otros} onChange={(e) => handleInputChange('antecedentes_no_patologicos.otros', e.target.checked ? 'Sí' : '')} className="w-4 h-4 rounded" />
                                                 <span className="text-xs font-medium text-slate-700">Otros</span>
@@ -770,7 +797,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                 <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
                                     <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>ANTECEDENTES PATOLÓGICOS</h4>
                                     {isAXA2025 ? (
-                                        <div className="overflow-x-auto">
+                                        <div id="field-antecedentes_patologicos" className="overflow-x-auto">
                                             <table className="w-full text-xs border-collapse">
                                                 <thead>
                                                     <tr className="bg-slate-100">
@@ -804,7 +831,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     ) : (
                                         <div className="space-y-2">
                                             {['cardiacos', 'diabetes_mellitus', 'cancer', 'convulsivos', 'hipertensivos', 'vih_sida', 'hepaticos'].map((key) => (
-                                                <div key={key} className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
+                                                <div key={key} id={`field-antecedentes_patologicos.${key}`} className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
                                                     <label className="flex items-center gap-2 min-w-[140px]">
                                                         <input type="checkbox" checked={(formData as any).antecedentes_patologicos?.[key] || false} onChange={(e) => handleInputChange(`antecedentes_patologicos.${key}`, e.target.checked)} className="w-4 h-4 rounded" />
                                                         <span className="text-xs font-medium text-slate-700">{key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
@@ -819,7 +846,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     <h4 className="text-xs font-black mb-3 text-blue-600">ANTECEDENTES NO PATOLÓGICOS</h4>
                                     <div className="space-y-2">
                                         {[{key: 'fuma', label: 'Fuma'}, {key: 'alcohol', label: 'Alcohol'}, {key: 'drogas', label: 'Drogas'}, ...(isAXA2025 ? [{key: 'otros', label: 'Otros'}] : [])].map(({key, label}) => (
-                                            <div key={key} className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
+                                            <div key={key} id={`field-antecedentes_no_patologicos.${key}`} className="flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
                                                 <label className="flex items-center gap-2 min-w-[140px]">
                                                     <input type="checkbox" checked={(formData as any).antecedentes_no_patologicos?.[key] || false} onChange={(e) => handleInputChange(`antecedentes_no_patologicos.${key}`, e.target.checked)} className="w-4 h-4 rounded" />
                                                     <span className="text-xs font-medium text-slate-700">{label}</span>
@@ -1196,7 +1223,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     </div>
                                     {isAXA2018 && renderInput("Otros Tratamientos", (formData as any).otros_tratamientos?.especificar_tratamiento, 'otros_tratamientos.especificar_tratamiento', 'textarea')}
 
-                                    <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
+                                    <div id="field-tabla_medicamentos" className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
                                         <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>TABLA DE MEDICAMENTOS</h4>
                                         <div className="overflow-x-auto">
                                             <table className="w-full text-xs border-collapse">
@@ -1367,7 +1394,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     {renderInput("Técnica Detallada", (formData as any).plan_terapeutico?.tecnica_detallada, 'plan_terapeutico.tecnica_detallada', 'textarea')}
                                     {renderInput("Tiempo Esperado Hospitalización", (formData as any).plan_terapeutico?.tiempo_esperado_hospitalizacion, 'plan_terapeutico.tiempo_esperado_hospitalizacion')}
                                 </div>
-                                <div className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
+                                <div id="field-solicitud_material" className={`p-4 ${theme.light} rounded-xl border ${theme.border}`}>
                                     <h4 className={`text-xs font-black mb-3 ${theme.secondary}`}>SOLICITUD DE MATERIAL O EQUIPO</h4>
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-xs border-collapse">
@@ -1911,6 +1938,20 @@ const Dashboard: React.FC<DashboardProps> = ({
 
                     {/* Policy Upload or Data */}
                     {!patientPolicy && onPolicyUpload && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-veryka p-4 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Shield className="w-4 h-4 text-amber-600" />
+                          <span className="text-xs font-bold text-amber-800">Póliza pendiente de carga</span>
+                        </div>
+                        <p className="text-[11px] text-amber-700 leading-relaxed">
+                          La <strong>validación cruzada</strong> compara el informe médico contra la póliza del paciente y las condiciones generales del producto. Genera un <strong>Score Póliza</strong>, un <strong>Score General</strong> ajustado y una lista de <strong>hallazgos</strong> con nivel de severidad.
+                        </p>
+                        <p className="text-[11px] text-amber-600">
+                          Los resultados aparecerán aquí y en la tarjeta de Score a la derecha.
+                        </p>
+                      </div>
+                    )}
+                    {!patientPolicy && onPolicyUpload && (
                       <PolicyUpload
                         onFilesConfirmed={onPolicyUpload}
                         isProcessing={isPolicyProcessing || false}
@@ -1945,6 +1986,16 @@ const Dashboard: React.FC<DashboardProps> = ({
                         )}
 
                         {/* Run Validation Button */}
+                        {!policyValidation && onRunPolicyValidation && (
+                          <div className="bg-blue-50 border border-blue-200 rounded-veryka p-4">
+                            <div className="flex items-center gap-2">
+                              <Shield className="w-4 h-4 text-blue-600" />
+                              <span className="text-[11px] text-blue-700">
+                                Datos de póliza cargados. Presiona el botón para comparar la póliza contra el informe médico.
+                              </span>
+                            </div>
+                          </div>
+                        )}
                         {!policyValidation && onRunPolicyValidation && (
                           <button
                             onClick={onRunPolicyValidation}

@@ -151,7 +151,7 @@ El documento AXA tiene DOS secciones de autorización separadas al final:
       extracted: {
         type: Type.OBJECT,
         properties: {
-          provider: { type: Type.STRING, description: "AXA" },
+          provider: { type: Type.STRING, description: "AXA_2018" },
 
           lugar_fecha: {
             type: Type.OBJECT,

@@ -1739,7 +1739,7 @@ const App: React.FC = () => {
                   onProviderChange={setSelectedProvider}
                   detectedProvider={detectedProvider}
                   confidence={detectionConfidence}
-                  disabled={status === 'analyzing'}
+                  disabled={false}
                 />
 
                 {user?.rol === 'ADMIN' && (

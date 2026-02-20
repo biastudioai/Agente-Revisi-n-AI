@@ -265,17 +265,30 @@ export type RuleOperator =
   | 'NOT_CONTAINS'       // String NO contiene un substring
   | 'LENGTH_LESS_THAN'   // Longitud del string menor que
   | 'LENGTH_GREATER_THAN' // Longitud del string mayor que
-  // Grupo 7: Validadores Especiales Médicos (3)
+  // Grupo 7: Validadores Especiales Médicos (4)
   | 'NAMES_MATCH'        // Compara nombre+apellido entre dos campos (ej: firma vs médico)
   | 'ARRAY_ITEMS_MISSING_FIELD' // Valida que elementos de un array tengan cierto campo
   | 'CONDITIONAL_REQUIRED' // Si campo A tiene valor X, entonces campo B debe tener valor
-  // Grupo 8: Arrays (4)
+  | 'INVALID_SEX'        // Sexo inválido
+  // Grupo 8: Arrays (9)
   | 'ARRAY_EMPTY'        // Array vacío (sin elementos)
+  | 'ARRAY_NOT_EMPTY'    // Array no vacío
+  | 'ARRAY_LENGTH_EQUALS' // Array tiene exactamente N elementos
   | 'ARRAY_LENGTH_GREATER_THAN' // Array tiene más elementos que N
+  | 'ARRAY_LENGTH_LESS_THAN' // Array tiene menos elementos que N
+  | 'ARRAY_CONTAINS_ALL' // Array contiene todos los valores listados
+  | 'ARRAY_CONTAINS_ANY' // Array contiene al menos uno de los valores listados
   | 'ARRAY_CONTAINS_NONE' // Array no contiene ninguno de los valores listados
   | 'ARRAY_MUTUALLY_EXCLUSIVE' // Array contiene valores mutuamente excluyentes
-  // Grupo 9: Fechas extendidas (1)
-  | 'DATE_OLDER_THAN_MONTHS'; // Fecha es más antigua que N meses
+  | 'ARRAY_REQUIRES_ONE_OF' // Array requiere al menos uno de los valores
+  // Grupo 9: Nulabilidad y Booleanos (4)
+  | 'IS_NULL'            // Campo es null
+  | 'IS_NOT_NULL'        // Campo no es null
+  | 'IS_BOOLEAN_TRUE'    // Campo es true
+  | 'IS_BOOLEAN_FALSE'   // Campo es false
+  // Grupo 10: Fechas extendidas (2)
+  | 'DATE_OLDER_THAN_MONTHS' // Fecha es más antigua que N meses
+  | 'DATE_NEWER_THAN_MONTHS'; // Fecha es más reciente que N meses
 
 export type LogicOperator = 'AND' | 'OR';
 

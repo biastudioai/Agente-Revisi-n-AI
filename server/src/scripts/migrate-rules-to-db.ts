@@ -1,5 +1,6 @@
 import prisma from '../config/database';
 import { RuleLevel, RuleCategory } from '../generated/prisma';
+import { createRulesVersion } from '../services/ruleVersioningService';
 
 interface RuleCondition {
   id: string;
@@ -2128,7 +2129,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 25,
     description: 'La fecha del informe no debe ser mayor a 6 meses respecto a la fecha actual.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_vigencia_existe', field: 'lugar_fecha.fecha', operator: 'NOT_EMPTY' },
@@ -2143,7 +2144,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 25,
     description: 'El informe debe contener la firma autógrafa del médico tratante.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_firma_no_detectada', field: 'firma.firma_autografa_detectada', operator: 'EQUALS', value: 'false' }
@@ -2157,7 +2158,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'Deben completarse el lugar y la fecha del informe.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_lugar_vacio', field: 'lugar_fecha.lugar', operator: 'IS_EMPTY' },
@@ -2174,7 +2175,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 25,
     description: 'El apellido paterno del asegurado es obligatorio.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [{ id: 'cond_axa_apellido_pat', field: 'identificacion.apellido_paterno', operator: 'IS_EMPTY' }],
     logicOperator: 'AND',
@@ -2186,7 +2187,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'DISCRETO',
     points: 2,
     description: 'Falta apellido materno del paciente. Se recomienda "N/A" si no tiene.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [{ id: 'cond_axa_apellido_mat', field: 'identificacion.apellido_materno', operator: 'IS_EMPTY' }],
     logicOperator: 'AND',
@@ -2198,7 +2199,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'Debe marcarse al menos una opción de sexo: Masculino o Femenino.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [{ id: 'cond_axa_sexo_vacio', field: 'identificacion.sexo', operator: 'ARRAY_EMPTY' }],
     logicOperator: 'AND',
@@ -2210,7 +2211,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'IMPORTANTE',
     points: 15,
     description: 'La fecha de nacimiento del paciente es importante para validar la edad reportada.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [{ id: 'cond_axa_fecha_nac', field: 'identificacion.fecha_nacimiento', operator: 'IS_EMPTY' }],
     logicOperator: 'AND',
@@ -2222,7 +2223,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'IMPORTANTE',
     points: 10,
     description: 'Los valores de peso y talla deben ser mayores a cero si están presentes.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_peso_invalido', field: 'identificacion.peso', operator: 'LESS_THAN_OR_EQUAL', value: 0 },
@@ -2239,7 +2240,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'Debe marcarse al menos un motivo de atención: Enfermedad, Accidente, Maternidad o Segunda opinión médica.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [{ id: 'cond_axa_motivo_vacio', field: 'motivo_atencion', operator: 'ARRAY_EMPTY' }],
     logicOperator: 'AND',
@@ -2251,7 +2252,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'Debe marcarse al menos un tipo de estancia: Urgencia, Hospitalización, Corta estancia/ambulatoria o Consultorio.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [{ id: 'cond_axa_estancia_vacia', field: 'tipo_estancia', operator: 'ARRAY_EMPTY' }],
     logicOperator: 'AND',
@@ -2265,7 +2266,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'IMPORTANTE',
     points: 10,
     description: 'Si un antecedente patológico está marcado como positivo, debe registrarse la fecha correspondiente.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_ant_cardiacos', field: 'antecedentes_patologicos.cardiacos', operator: 'EQUALS', value: 'true' },
@@ -2280,7 +2281,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'Si el paciente es de sexo femenino, los campos de gestación, partos, abortos y cesáreas son obligatorios.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_sexo_fem', field: 'identificacion.sexo', operator: 'CONTAINS', value: 'Femenino' },
@@ -2295,7 +2296,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'Si el motivo de atención es Maternidad, los campos G, P, A, C son obligatorios.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_motivo_mat', field: 'motivo_atencion', operator: 'CONTAINS', value: 'Maternidad' },
@@ -2310,7 +2311,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'Los antecedentes perinatales son obligatorios para menores de 18 años.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_edad_menor', field: 'identificacion.edad', operator: 'LESS_THAN', value: 18 },
@@ -2326,10 +2327,10 @@ const REGLAS_AXA: RawScoringRule[] = [
     name: 'Descripción del padecimiento insuficiente',
     level: 'CRÍTICO',
     points: 20,
-    description: 'La descripción del padecimiento actual debe tener al menos 15 caracteres.',
-    providerTarget: 'AXA',
+    description: 'La descripción del padecimiento actual debe tener al menos 10 caracteres.',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
-    conditions: [{ id: 'cond_axa_padecimiento_corto', field: 'diagnostico.padecimiento_actual', operator: 'LENGTH_LESS_THAN', value: 15 }],
+    conditions: [{ id: 'cond_axa_padecimiento_corto', field: 'diagnostico.padecimiento_actual', operator: 'LENGTH_LESS_THAN', value: 10 }],
     logicOperator: 'AND',
     affectedFields: ['diagnostico.padecimiento_actual']
   },
@@ -2339,7 +2340,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'Debe marcarse al menos una opción de tipo de padecimiento: Congénito, Adquirido, Agudo o Crónico.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [{ id: 'cond_axa_tipo_pad_vacio', field: 'diagnostico.tipo_padecimiento', operator: 'ARRAY_EMPTY' }],
     logicOperator: 'AND',
@@ -2351,7 +2352,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'IMPORTANTE',
     points: 15,
     description: 'No puede ser Congénito y Adquirido al mismo tiempo. Seleccione solo uno.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [{ id: 'cond_axa_origen_dual', field: 'diagnostico.tipo_padecimiento', operator: 'ARRAY_MUTUALLY_EXCLUSIVE', value: 'Congénito,Adquirido' }],
     logicOperator: 'AND',
@@ -2363,7 +2364,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'IMPORTANTE',
     points: 15,
     description: 'No puede ser Agudo y Crónico al mismo tiempo. Seleccione solo uno.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [{ id: 'cond_axa_curso_dual', field: 'diagnostico.tipo_padecimiento', operator: 'ARRAY_MUTUALLY_EXCLUSIVE', value: 'Agudo,Crónico' }],
     logicOperator: 'AND',
@@ -2375,7 +2376,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'Si hay diagnóstico, debe registrarse el código CIE-10 correspondiente.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_diag_existe', field: 'diagnostico.diagnostico_texto', operator: 'NOT_EMPTY' },
@@ -2390,7 +2391,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'Los resultados de la exploración física son obligatorios para sustentar el diagnóstico.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [{ id: 'cond_axa_exploracion', field: 'diagnostico.exploracion_fisica', operator: 'IS_EMPTY' }],
     logicOperator: 'AND',
@@ -2402,7 +2403,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'MODERADO',
     points: 10,
     description: 'Se recomienda incluir los estudios de laboratorio y gabinete practicados.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [{ id: 'cond_axa_estudios', field: 'diagnostico.estudios_laboratorio', operator: 'IS_EMPTY' }],
     logicOperator: 'AND',
@@ -2414,7 +2415,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'Si el diagnóstico indica cáncer, la escala TNM es obligatoria para clasificar la neoplasia.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_es_cancer', field: 'diagnostico.es_cancer', operator: 'CONTAINS', value: 'Sí' },
@@ -2429,7 +2430,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'Si se indica incapacidad (Sí, Parcial o Total), las fechas desde/hasta son obligatorias.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_incap_si', field: 'diagnostico.incapacidad', operator: 'CONTAINS', value: 'Sí' },
@@ -2446,7 +2447,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'IMPORTANTE',
     points: 15,
     description: 'Si se marcó histopatológico como "Sí", el resultado es obligatorio.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_histo_si', field: 'tratamiento.histopatologico', operator: 'CONTAINS', value: 'Sí' },
@@ -2461,7 +2462,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'IMPORTANTE',
     points: 15,
     description: 'Si se marcaron complicaciones como "Sí", la descripción es obligatoria.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_comp_si', field: 'tratamiento.complicaciones', operator: 'CONTAINS', value: 'Sí' },
@@ -2476,7 +2477,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'IMPORTANTE',
     points: 15,
     description: 'Si se marcó tratamiento futuro como "Sí", la descripción es obligatoria.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_fut_si', field: 'tratamiento.tratamiento_futuro', operator: 'CONTAINS', value: 'Sí' },
@@ -2491,7 +2492,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'Si el tipo de estancia incluye Hospitalización, el nombre del hospital es obligatorio.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_estancia_hosp', field: 'tipo_estancia', operator: 'CONTAINS', value: 'Hospitalización' },
@@ -2506,7 +2507,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'La fecha de alta no puede ser anterior a la fecha de hospitalización.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [{ id: 'cond_axa_alta_hosp', field: 'tratamiento.fecha_alta', operator: 'DATE_BEFORE', compareField: 'tratamiento.fecha_hospitalizacion' }],
     logicOperator: 'AND',
@@ -2518,7 +2519,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'La fecha de alta no puede ser anterior a la fecha de cirugía.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [{ id: 'cond_axa_alta_cirugia', field: 'tratamiento.fecha_alta', operator: 'DATE_BEFORE', compareField: 'tratamiento.fecha_cirugia' }],
     logicOperator: 'AND',
@@ -2528,11 +2529,11 @@ const REGLAS_AXA: RawScoringRule[] = [
   // ========== VII. CRONOLOGÍA MÉDICA ==========
   {
     id: 'axa_padecimiento_posterior_diagnostico',
-    name: 'Fecha de padecimiento posterior al diagnóstico',
+    name: 'Fecha de padecimiento posterior a la del diagnóstico',
     level: 'CRÍTICO',
     points: 20,
-    description: 'La fecha del padecimiento no puede ser posterior a la fecha de diagnóstico.',
-    providerTarget: 'AXA',
+    description: 'La fecha del padecimiento debe ser anterior o igual a la fecha de diagnóstico. Se marca si la fecha del padecimiento es estrictamente posterior.',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [{ id: 'cond_axa_pad_diag', field: 'diagnostico.fecha_padecimiento', operator: 'DATE_AFTER', compareField: 'diagnostico.fecha_diagnostico' }],
     logicOperator: 'AND',
@@ -2544,7 +2545,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'La fecha de diagnóstico no puede ser posterior a la fecha de cirugía.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [{ id: 'cond_axa_diag_cirugia', field: 'diagnostico.fecha_diagnostico', operator: 'DATE_AFTER', compareField: 'tratamiento.fecha_cirugia' }],
     logicOperator: 'AND',
@@ -2556,7 +2557,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'La fecha del informe no puede ser una fecha futura.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [{ id: 'cond_axa_informe_futuro', field: 'lugar_fecha.fecha', operator: 'DATE_AFTER', value: 'TODAY' }],
     logicOperator: 'AND',
@@ -2570,7 +2571,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'MODERADO',
     points: 10,
     description: 'Cada medicamento registrado debe incluir nombre, cantidad, frecuencia y duración.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_med_nombre', field: 'tabla_medicamentos', operator: 'ARRAY_ITEMS_MISSING_FIELD', value: 'nombre_presentacion', compareField: 'numero' },
@@ -2587,7 +2588,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'El RFC del médico debe tener exactamente 13 caracteres alfanuméricos.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_rfc_no_vacio', field: 'medico_principal.rfc', operator: 'NOT_EMPTY' },
@@ -2602,7 +2603,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'DISCRETO',
     points: 3,
     description: 'Se recomienda incluir la cédula de especialidad del médico tratante.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_med_nombre_existe', field: 'medico_principal.nombre', operator: 'NOT_EMPTY' },
@@ -2617,7 +2618,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'IMPORTANTE',
     points: 15,
     description: 'Si se registra un anestesiólogo, debe incluir su cédula profesional.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_anest_nombre', field: 'anestesiologo.nombre', operator: 'NOT_EMPTY' },
@@ -2632,7 +2633,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 15,
     description: 'El médico tratante debe proporcionar al menos un número de teléfono de contacto.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_med_nombre_tel', field: 'medico_principal.nombre', operator: 'NOT_EMPTY' },
@@ -2649,7 +2650,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'IMPORTANTE',
     points: 15,
     description: 'Si el paciente fue referido por otro médico, debe especificar cuál.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_referido_si', field: 'referido_otro_medico.referido', operator: 'CONTAINS', value: 'Sí' },
@@ -2666,7 +2667,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'MODERADO',
     points: 10,
     description: 'Se recomienda que la autorización de tratamiento de datos personales esté marcada.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA_2018',
     isCustom: false,
     conditions: [{ id: 'cond_axa_aut_datos', field: 'datos_personales.autorizacion_datos', operator: 'EQUALS', value: 'false' }],
     logicOperator: 'AND',
@@ -2678,7 +2679,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'Debe seleccionarse "Sí acepto" o "No acepto" en la autorización de transferencia de datos.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA_2018',
     isCustom: false,
     conditions: [{ id: 'cond_axa_transf_vacio', field: 'transferencia_datos.autorizacion_transferencia', operator: 'ARRAY_EMPTY' }],
     logicOperator: 'AND',
@@ -2690,7 +2691,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'La firma autógrafa del asegurado debe estar presente en la sección de transferencia de datos.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_firma_aseg_1_vacia', field: 'transferencia_datos.firma_asegurado_1', operator: 'IS_EMPTY' },
@@ -2705,7 +2706,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'Debe seleccionarse "Sí acepto" o "No acepto" en la autorización de programas y servicios.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA_2018',
     isCustom: false,
     conditions: [{ id: 'cond_axa_prog_vacio', field: 'transferencia_datos.autorizacion_programas', operator: 'ARRAY_EMPTY' }],
     logicOperator: 'AND',
@@ -2717,7 +2718,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'La firma autógrafa del asegurado debe estar presente en la sección de programas y servicios.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_firma_aseg_2_vacia', field: 'transferencia_datos.firma_asegurado_2', operator: 'IS_EMPTY' },
@@ -2734,7 +2735,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 25,
     description: 'El diagnóstico es la base de la reclamación y es obligatorio.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [{ id: 'cond_axa_diag_texto_vacio', field: 'diagnostico.diagnostico_texto', operator: 'IS_EMPTY' }],
     logicOperator: 'AND',
@@ -2746,7 +2747,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'El nombre del médico tratante es obligatorio.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [{ id: 'cond_axa_med_nombre_vacio', field: 'medico_principal.nombre', operator: 'IS_EMPTY' }],
     logicOperator: 'AND',
@@ -2758,7 +2759,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'El médico tratante debe especificar su especialidad.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_med_nombre_esp', field: 'medico_principal.nombre', operator: 'NOT_EMPTY' },
@@ -2773,7 +2774,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'Si hay un médico tratante identificado, debe proporcionar su cédula profesional.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_med_nombre_ced', field: 'medico_principal.nombre', operator: 'NOT_EMPTY' },
@@ -2788,7 +2789,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'CRÍTICO',
     points: 20,
     description: 'El informe médico no puede tener fecha anterior a la del diagnóstico.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [{ id: 'cond_axa_informe_diag', field: 'lugar_fecha.fecha', operator: 'DATE_BEFORE', compareField: 'diagnostico.fecha_diagnostico' }],
     logicOperator: 'AND',
@@ -2800,7 +2801,7 @@ const REGLAS_AXA: RawScoringRule[] = [
     level: 'IMPORTANTE',
     points: 15,
     description: 'Si se registra un anestesiólogo, debe proporcionar un teléfono de contacto.',
-    providerTarget: 'AXA',
+    providerTarget: 'AXA,AXA_2018',
     isCustom: false,
     conditions: [
       { id: 'cond_axa_anest_nombre_tel', field: 'anestesiologo.nombre', operator: 'NOT_EMPTY' },
@@ -2808,17 +2809,79 @@ const REGLAS_AXA: RawScoringRule[] = [
     ],
     logicOperator: 'AND',
     affectedFields: ['anestesiologo.telefono', 'anestesiologo.nombre']
+  },
+
+  // ========== NUEVAS REGLAS: RELACIÓN PADECIMIENTO Y SITIO PROCEDIMIENTO ==========
+  {
+    id: 'axa_relacion_padecimiento_sin_cual',
+    name: 'Relación con otro padecimiento sin especificar cuál',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Si se indica que existe relación con otro padecimiento, se debe especificar cuál.',
+    providerTarget: 'AXA,AXA_2018',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_relacion_si', field: 'diagnostico.relacion_otro_padecimiento', operator: 'CONTAINS', value: 'Sí' },
+      { id: 'cond_axa_relacion_cual', field: 'diagnostico.relacion_cual', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['diagnostico.relacion_otro_padecimiento', 'diagnostico.relacion_cual']
+  },
+  {
+    id: 'axa_tratamiento_sin_sitio',
+    name: 'Tratamiento propuesto sin sitio del procedimiento',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Si se indica un tratamiento propuesto, debe seleccionarse al menos un sitio del procedimiento (Consultorio, Hospital, Gabinete u Otro).',
+    providerTarget: 'AXA,AXA_2018',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_trat_existe', field: 'tratamiento.tratamiento_propuesto', operator: 'IS_NOT_EMPTY' },
+      { id: 'cond_axa_sitio_vacio', field: 'tratamiento.sitio_procedimiento', operator: 'ARRAY_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['tratamiento.tratamiento_propuesto', 'tratamiento.sitio_procedimiento']
+  },
+  {
+    id: 'axa_sitio_otro_sin_especificar',
+    name: 'Sitio "Otro" sin especificar',
+    level: 'IMPORTANTE',
+    points: 15,
+    description: 'Si se selecciona "Otro" como sitio del procedimiento, se debe especificar cuál.',
+    providerTarget: 'AXA,AXA_2018',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_sitio_otro', field: 'tratamiento.sitio_procedimiento', operator: 'CONTAINS', value: 'Otro' },
+      { id: 'cond_axa_sitio_espec', field: 'tratamiento.sitio_especifique', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['tratamiento.sitio_procedimiento', 'tratamiento.sitio_especifique']
+  },
+  {
+    id: 'axa_sitio_hospital_sin_nombre',
+    name: 'Sitio Hospital sin indicar nombre del hospital',
+    level: 'CRÍTICO',
+    points: 20,
+    description: 'Si se selecciona "Hospital" como sitio del procedimiento, se debe indicar el nombre del hospital.',
+    providerTarget: 'AXA,AXA_2018',
+    isCustom: false,
+    conditions: [
+      { id: 'cond_axa_sitio_hosp', field: 'tratamiento.sitio_procedimiento', operator: 'CONTAINS', value: 'Hospital' },
+      { id: 'cond_axa_sitio_hosp_nombre', field: 'tratamiento.nombre_hospital', operator: 'IS_EMPTY' }
+    ],
+    logicOperator: 'AND',
+    affectedFields: ['tratamiento.sitio_procedimiento', 'tratamiento.nombre_hospital']
   }
 ];
 
 function getCategoryFromProvider(providerTarget: string): RuleCategory {
   if (providerTarget === 'ALL' || providerTarget === 'GENERAL') return RuleCategory.GENERAL;
+  if (providerTarget === 'AXA' || providerTarget === 'AXA,AXA_2018') return RuleCategory.AXA;
+  if (providerTarget === 'AXA_2018') return RuleCategory.AXA_2018;
   if (providerTarget.includes(',')) return RuleCategory.GENERAL;
   if (providerTarget === 'GNP') return RuleCategory.GNP;
   if (providerTarget === 'METLIFE') return RuleCategory.METLIFE;
   if (providerTarget === 'NYLIFE') return RuleCategory.NYLIFE;
-  if (providerTarget === 'AXA') return RuleCategory.AXA;
-  if (providerTarget === 'AXA_2018') return RuleCategory.AXA_2018;
   return RuleCategory.GENERAL;
 }
 
@@ -2838,7 +2901,7 @@ async function migrateRulesToDatabase() {
     ...REGLAS_GNP.map(r => ({ ...r, category: RuleCategory.GNP })),
     ...REGLAS_METLIFE.map(r => ({ ...r, category: RuleCategory.METLIFE })),
     ...REGLAS_NYLIFE.map(r => ({ ...r, category: RuleCategory.NYLIFE })),
-    ...REGLAS_AXA.map(r => ({ ...r, category: RuleCategory.AXA })),
+    ...REGLAS_AXA.map(r => ({ ...r, category: getCategoryFromProvider(r.providerTarget) })),
   ];
 
   let addedCount = 0;
@@ -2921,6 +2984,13 @@ async function migrateRulesToDatabase() {
   counts.forEach(c => {
     console.log(`  - ${c.category}: ${c._count}`);
   });
+
+  // Crear snapshot de versión post-migración
+  console.log('\nCreando snapshot de versión de reglas...');
+  const version = await createRulesVersion(
+    `Migración: ${addedCount} nuevas, ${updatedCount} actualizadas`
+  );
+  console.log(`  ✓ Versión de reglas: ${version.versionNumber} (hash: ${version.rulesHash})`);
 
   return { success: addedCount + updatedCount, errors: errorCount, skipped: skippedCount };
 }

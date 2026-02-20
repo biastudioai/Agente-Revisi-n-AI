@@ -208,6 +208,9 @@ export async function createManyRules(inputs: ScoringRuleInput[]): Promise<numbe
     }),
     skipDuplicates: true,
   });
+  if (result.count > 0) {
+    await createRulesVersion(`Creación masiva: ${result.count} reglas`);
+  }
   return result.count;
 }
 

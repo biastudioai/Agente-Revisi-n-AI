@@ -28,7 +28,7 @@ interface ReEvaluateRequest {
   rules: ScoringRule[];
 }
 
-const VALID_PROVIDERS = ['GNP', 'METLIFE', 'NYLIFE', 'AXA', 'UNKNOWN'];
+const VALID_PROVIDERS = ['GNP', 'METLIFE', 'NYLIFE', 'AXA', 'AXA_2018', 'UNKNOWN'];
 
 function validateFiles(files: any[]): string | null {
   if (!Array.isArray(files)) {

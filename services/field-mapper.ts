@@ -41,7 +41,7 @@ export class FieldNormalizer {
       exito: true,
       raw: rawData,
       datos: {
-        paciente: { nombre: '', apellido_paterno: '', edad: 0, sexo: 'O' },
+        paciente: { nombre: '', apellido_paterno: '', edad: 0, sexo: 'Otro' },
         poliza: { numero: '' },
         medico_tratante: { nombre: '', apellido_paterno: '', cedula_profesional: '', especialidad: '' },
         fecha: { informe: new Date() },

@@ -284,12 +284,12 @@ function getValueByPath(obj: any, path: string): any {
   return current;
 }
 
-function validatePath(config: AseguradoraConfig, realJson: any): {
+function validatePath(config: AseguradoraConfig, realJson: any): Array<{
   campoEstandar: string;
   pathConfig: string;
   existe: boolean;
   valorEncontrado?: any;
-} {
+}> {
   const resultados: any[] = [];
   
   for (const [campoEstandar, mapping] of Object.entries(config.mappings)) {

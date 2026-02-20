@@ -2,11 +2,18 @@ import { ExtractedData, ScoringRule, RuleCondition, RuleOperator, FieldMappings 
 
 function getNestedField(obj: any, path: string): any {
   if (!path) return undefined;
-  const keys = path.split('.');
+  const segments = path.split('.');
   let result = obj;
-  for (const key of keys) {
+  for (const segment of segments) {
     if (result === null || result === undefined) return undefined;
-    result = result[key];
+    const bracketMatch = segment.match(/^([^\[]+)\[(\d+)\]$/);
+    if (bracketMatch) {
+      result = result[bracketMatch[1]];
+      if (!Array.isArray(result)) return undefined;
+      result = result[parseInt(bracketMatch[2], 10)];
+    } else {
+      result = result[segment];
+    }
   }
   return result;
 }
@@ -121,19 +128,28 @@ export function validateCondition(
   let fieldPath = cond.field;
   
   if (fieldMappings && data.provider && fieldMappings[data.provider]) {
-    fieldPath = fieldMappings[data.provider][0] || cond.field;
+    const mappings = fieldMappings[data.provider];
+    let resolved = false;
+    for (const mapping of mappings) {
+      if (getNestedField(data, mapping) !== undefined) {
+        fieldPath = mapping;
+        resolved = true;
+        break;
+      }
+    }
+    if (!resolved) fieldPath = mappings[0] || cond.field;
   }
-  
+
   const fieldValue = getNestedField(data, fieldPath);
-  
+
   switch (cond.operator) {
     case 'IS_EMPTY':
       return isEmpty(fieldValue);
-    
+
     case 'IS_NOT_EMPTY':
     case 'NOT_EMPTY':
       return !isEmpty(fieldValue);
-    
+
     case 'REQUIRES': {
       const compareValue = cond.compareField ? getNestedField(data, cond.compareField) : undefined;
       const fieldExists = !isEmpty(fieldValue);
@@ -142,7 +158,7 @@ export function validateCondition(
       if (!fieldExists && compareExists) return true;
       return false;
     }
-    
+
     case 'IF_THEN': {
       const compareValue = cond.compareField ? getNestedField(data, cond.compareField) : undefined;
       const fieldExists = !isEmpty(fieldValue);
@@ -150,7 +166,7 @@ export function validateCondition(
       if (fieldExists && !compareExists) return true;
       return false;
     }
-    
+
     case 'EQUALS':
       if (fieldValue === undefined || fieldValue === null) return false;
       const targetValue = String(cond.value).trim().toLowerCase();
@@ -582,7 +598,16 @@ export function getPreviewResult(rule: Partial<ScoringRule>, data: ExtractedData
     
     let fieldPath = cond.field;
     if (rule.fieldMappings && data.provider && rule.fieldMappings[data.provider]) {
-      fieldPath = rule.fieldMappings[data.provider][0] || cond.field;
+      const mappings = rule.fieldMappings[data.provider];
+      let resolved = false;
+      for (const mapping of mappings) {
+        if (getNestedField(data, mapping) !== undefined) {
+          fieldPath = mapping;
+          resolved = true;
+          break;
+        }
+      }
+      if (!resolved) fieldPath = mappings[0] || cond.field;
     }
     
     const fieldValue = getNestedField(data, fieldPath);
@@ -848,11 +873,23 @@ export const OPERATOR_LABELS: Record<RuleOperator, string> = {
   'NAMES_MATCH': 'Nombre y apellido no coinciden',
   'ARRAY_ITEMS_MISSING_FIELD': 'Elementos del array sin campo requerido',
   'CONDITIONAL_REQUIRED': 'Campo requerido cuando condición se cumple',
+  'INVALID_SEX': 'Sexo inválido',
   'ARRAY_EMPTY': 'Array vacío (sin elementos)',
+  'ARRAY_NOT_EMPTY': 'Array no vacío',
+  'ARRAY_LENGTH_EQUALS': 'Array tiene exactamente N elementos',
   'ARRAY_LENGTH_GREATER_THAN': 'Array tiene más elementos que',
+  'ARRAY_LENGTH_LESS_THAN': 'Array tiene menos elementos que',
+  'ARRAY_CONTAINS_ALL': 'Array contiene todos los valores',
+  'ARRAY_CONTAINS_ANY': 'Array contiene al menos uno de',
   'ARRAY_CONTAINS_NONE': 'Array no contiene ninguno de',
   'ARRAY_MUTUALLY_EXCLUSIVE': 'Array contiene valores excluyentes',
-  'DATE_OLDER_THAN_MONTHS': 'Fecha más antigua que N meses'
+  'ARRAY_REQUIRES_ONE_OF': 'Array requiere al menos uno de',
+  'IS_NULL': 'Campo es nulo',
+  'IS_NOT_NULL': 'Campo no es nulo',
+  'IS_BOOLEAN_TRUE': 'Campo es verdadero',
+  'IS_BOOLEAN_FALSE': 'Campo es falso',
+  'DATE_OLDER_THAN_MONTHS': 'Fecha más antigua que N meses',
+  'DATE_NEWER_THAN_MONTHS': 'Fecha más reciente que N meses'
 };
 
 export const OPERATOR_GROUPS: { name: string; operators: RuleOperator[] }[] = [
@@ -882,15 +919,19 @@ export const OPERATOR_GROUPS: { name: string; operators: RuleOperator[] }[] = [
   },
   {
     name: 'Validadores Médicos',
-    operators: ['NAMES_MATCH', 'ARRAY_ITEMS_MISSING_FIELD', 'CONDITIONAL_REQUIRED']
+    operators: ['NAMES_MATCH', 'ARRAY_ITEMS_MISSING_FIELD', 'CONDITIONAL_REQUIRED', 'INVALID_SEX']
   },
   {
     name: 'Arrays',
-    operators: ['ARRAY_EMPTY', 'ARRAY_LENGTH_GREATER_THAN', 'ARRAY_CONTAINS_NONE', 'ARRAY_MUTUALLY_EXCLUSIVE']
+    operators: ['ARRAY_EMPTY', 'ARRAY_NOT_EMPTY', 'ARRAY_LENGTH_EQUALS', 'ARRAY_LENGTH_GREATER_THAN', 'ARRAY_LENGTH_LESS_THAN', 'ARRAY_CONTAINS_ALL', 'ARRAY_CONTAINS_ANY', 'ARRAY_CONTAINS_NONE', 'ARRAY_MUTUALLY_EXCLUSIVE', 'ARRAY_REQUIRES_ONE_OF']
+  },
+  {
+    name: 'Nulabilidad y Booleanos',
+    operators: ['IS_NULL', 'IS_NOT_NULL', 'IS_BOOLEAN_TRUE', 'IS_BOOLEAN_FALSE']
   },
   {
     name: 'Fechas Extendidas',
-    operators: ['DATE_OLDER_THAN_MONTHS']
+    operators: ['DATE_OLDER_THAN_MONTHS', 'DATE_NEWER_THAN_MONTHS']
   }
 ];
 

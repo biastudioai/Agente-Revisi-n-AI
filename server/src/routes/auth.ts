@@ -36,7 +36,7 @@ router.post('/register', asyncHandler(async (req: AuthenticatedRequest, res: Res
   const parseResult = registerSchema.safeParse(req.body);
   
   if (!parseResult.success) {
-    const firstError = parseResult.error.errors[0];
+    const firstError = parseResult.error.issues[0];
     res.status(400).json({ error: firstError.message });
     return;
   }
@@ -73,7 +73,7 @@ router.post('/login', asyncHandler(async (req: AuthenticatedRequest, res: Respon
   const parseResult = loginSchema.safeParse(req.body);
   
   if (!parseResult.success) {
-    const firstError = parseResult.error.errors[0];
+    const firstError = parseResult.error.issues[0];
     res.status(400).json({ error: firstError.message });
     return;
   }
@@ -148,7 +148,7 @@ router.post('/password-reset/request', asyncHandler(async (req: AuthenticatedReq
   const parseResult = passwordResetRequestSchema.safeParse(req.body);
   
   if (!parseResult.success) {
-    const firstError = parseResult.error.errors[0];
+    const firstError = parseResult.error.issues[0];
     res.status(400).json({ error: firstError.message });
     return;
   }
@@ -194,7 +194,7 @@ router.post('/password-reset/confirm', asyncHandler(async (req: AuthenticatedReq
   const parseResult = passwordResetConfirmSchema.safeParse(req.body);
   
   if (!parseResult.success) {
-    const firstError = parseResult.error.errors[0];
+    const firstError = parseResult.error.issues[0];
     res.status(400).json({ error: firstError.message });
     return;
   }

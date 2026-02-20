@@ -3,7 +3,7 @@ import prisma from '../config/database';
 import { AuthenticatedRequest } from './auth';
 import { Prisma } from '../generated/prisma';
 
-export type AuditAction = 
+export type AuditAction =
   | 'LOGIN'
   | 'LOGOUT'
   | 'REGISTER'
@@ -15,7 +15,12 @@ export type AuditAction =
   | 'UPDATE_FORM_STATUS'
   | 'DELETE_FORM'
   | 'UPLOAD_PDF'
-  | 'DELETE_PDF';
+  | 'DELETE_PDF'
+  | 'AUDITOR_CREATED'
+  | 'AUDITOR_UPDATED'
+  | 'AUDITOR_DELETED'
+  | 'AUDITOR_ACTIVATED'
+  | 'AUDITOR_DEACTIVATED';
 
 interface AuditLogParams {
   userId?: string | null;
